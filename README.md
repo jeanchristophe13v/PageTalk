@@ -1,8 +1,6 @@
+#### [中文/Chinese](README-zh.md) | [English](README-en.md)
 # Pagetalk - Browser Extension
-
-[中文/Chinese](README-zh.md) | [English](README-en.md)
-# Pagetalk - Browser Extension
-
+![generated-25-03-23-10-51-11-s63](https://github.com/user-attachments/assets/b0fa3e27-39d0-4bc9-a037-09288f47b585)
 
 ## Introduction
 
