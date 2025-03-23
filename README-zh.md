@@ -13,6 +13,7 @@ Pagetalk 是一款可以读取页面内容，调用 Gemini API 进行问答的�
 - Mermaid渲染
 - LaTeX渲染
 - 其他模型支持
+- 流式输出
 
 ## 安装
 

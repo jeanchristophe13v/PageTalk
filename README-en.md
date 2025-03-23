@@ -13,6 +13,7 @@ Pagetalk is a browser extension that allows you to read page content and use the
 - Mermaid rendering
 - LaTeX rendering
 - Other model support
+- Streaming output
 
 ## Installation
 
