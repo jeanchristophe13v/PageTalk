@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagetalk</title>
+    <link rel="stylesheet" href="../css/sidepanel.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 移除 header 标题区域，直接从 main 开始 -->
+        <main>
+            <!-- 聊天界面 -->
+            <section id="chat" class="tab-content active">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-model-selector">
+                            <label for="chat-model-selection">Model：</label>
+                            <select id="chat-model-selection" aria-label="选择模型">
+                                <!-- 这里的选项会通过 JavaScript 动态填充 -->
+                            </select>
+                        </div>
+                        <!-- 添加助手选择器 -->
+                        <div class="chat-agent-selector">
+                            <label for="chat-agent-selection">Agent：</label>
+                            <select id="chat-agent-selection" aria-label="选择助手">
+                                <!-- 这里的选项会通过 JavaScript 动态填充 -->
+                            </select>
+                        </div>
+                        <button id="clear-context" title="清除上下文和聊天记录" class="action-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                            </svg>
+                        </button>
+                        <!-- 添加关闭面板按钮 -->
+                        <button id="close-panel" title="关闭面板" class="action-button close-panel-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="welcome-message">
+                            <h2>欢迎使用 Pagetalk</h2>
+                            <div class="quick-actions">
+                                <button id="summarize-page" class="quick-action-btn">总结一下</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 修改图片预览区域为多图片网格布局 -->
+                    <div class="image-preview-container" id="image-preview-container" style="display: none;">
+                        <div class="images-grid" id="images-grid">
+                            <!-- 图片项将动态添加到这里 -->
+                        </div>
+                    </div>
+                    <!-- 图片全屏预览模态框 -->
+                    <div id="image-modal" class="image-modal">
+                        <span class="close-modal">&times;</span>
+                        <img id="modal-image" class="modal-content">
+                    </div>
+                    <div class="chat-input">
+                        <!-- 添加图片上传按钮 -->
+                        <button id="upload-image" title="上传图片" class="upload-image-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                                <path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v6l-3.775-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12v.54A.505.505 0 0 1 1 12.5v-9a.5.5 0 0 1 .5-.5h13z"/>
+                            </svg>
+                        </button>
+                        <!-- 隐藏的文件输入框 -->
+                        <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+                        <textarea id="user-input" placeholder="..."></textarea>
+                        <button id="send-message" title="发送消息">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agent 设置界面 -->
+            <section id="agent" class="tab-content">
+                <div class="settings-container">
+                    <h2>Agent Settings</h2>
+                    
+                    <!-- 助手列表区域 -->
+                    <div class="agents-list-container">
+                        <div class="agents-list-header">
+                            <h3>Agents</h3>
+                            <button id="add-new-agent" class="icon-btn add-btn" title="添加新助手">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- 助手列表 -->
+                        <div id="agents-list" class="agents-list">
+                            <!-- 助手项将通过 JavaScript 动态添加 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 助手编辑区域 -->
+                    <div class="agent-edit-container">
+                        <div class="setting-group">
+                            <label for="agent-name">Agent:</label>
+                            <input type="text" id="agent-name" placeholder="输入助手名称" value="默认助手">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="system-prompt">System Prompt:</label>
+                            <textarea id="system-prompt" placeholder="设置系统提示词">你是一个万能助手</textarea>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="temperature">Temperature:</label>
+                            <div class="slider-container">
+                                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" class="color-slider">
+                                <span id="temperature-value">0.7</span>
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="max-tokens">Max Output Length:</label>
+                            <input type="number" id="max-tokens" value="1024" min="50" max="8192">
+                        </div>
+                        
+                        <div class="setting-group">
+                            <label for="top-p">Top P:</label>
+                            <div class="slider-container">
+                                <input type="range" id="top-p" min="0" max="1" step="0.05" value="0.95" class="color-slider">
+                                <span id="top-p-value">0.95</span>
+                        </div>
+                        
+                        <div class="agent-actions">
+                            <button id="save-agent-settings" class="save-btn">Save</button>
+                        </div>
+                        
+                        <!-- 为Agent设置页面添加专用的状态反馈区 -->
+                        <div id="agent-connection-status" class="connection-status"></div>
+                    </div>
+                    
+                    <!-- 删除确认对话框 -->
+                    <div id="delete-confirm-dialog" class="dialog-overlay" style="display:none;">
+                        <div class="dialog-content">
+                            <h3>确认删除</h3>
+                            <p>您确定要删除助手 "<span id="delete-agent-name"></span>" 吗？此操作无法撤销。</p>
+                            <div class="dialog-actions">
+                                <button id="cancel-delete" class="cancel-btn">取消</button>
+                                <button id="confirm-delete" class="delete-btn">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 模型设置界面 -->
+            <section id="model" class="tab-content">
+                <div class="settings-container">
+                    <h2>Model Settings</h2>
+                    <div class="setting-group">
+                        <label for="api-key">Gemini API Key:</label>
+                                                <div class="api-key-input-container">
+                                                    <input type="password" id="api-key" placeholder="输入您的API Key">
+                                                    <button id="toggle-api-key" class="toggle-api-key-button" type="button">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                                          <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                          <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                                <p class="hint">Get Your API Key <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a></p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="model-selection">Model:</label>
+                        <select id="model-selection">
+                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                            <option value="gemini-2.0-flash-thinking-exp-0121">Gemini 2.0 Flash Thinking</option>
+                            <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro</option>
+                            <option value="gemini-exp-1206">Gemini exp 1206</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>Context:</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="auto-extract" checked>
+                            <label for="auto-extract">打开页面时自动提取内容</label>
+                        </div>
+                    </div>
+                    <button id="test-connection" class="test-btn">Test Connection</button>
+                    <button id="save-model-settings" class="save-btn">Save</button>
+                    <div id="connection-status" class="connection-status"></div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="status-bar">
+                <span id="context-status">Context: 无</span>
+                <span id="connection-indicator" class="disconnected">disconnected</span>
+            </div>
+            <!-- 将导航栏移到底部 -->
+            <ul class="footer-tabs">
+                <li class="footer-tab active" data-tab="chat">Chat</li>
+                <li class="footer-tab" data-tab="agent">Agent</li>
+                <li class="footer-tab" data-tab="model">Model</li>
+            </ul>
+        </footer>
+    </div>
+
+    <script src="../js/sidepanel.js"></script>
+</body>
+</html>

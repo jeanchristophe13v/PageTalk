@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Pagetalk",
+  "version": "1.5.0",
+  "description": "一个可以读取页面内容，调用Gemini API进行问答的浏览器插件",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "action": {
+    "default_title": "Pagetalk",
+    "default_icon": "magic.png"
+  },
+  "icons": {
+    "128": "magic.png"
+  },
+  "background": {
+    "service_worker": "js/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/content.js"],
+      "css": ["css/content-panel.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["html/*", "css/*", "js/*", "*.png"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "打开 Pagetalk 面板"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

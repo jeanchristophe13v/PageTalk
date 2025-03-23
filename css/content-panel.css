@@ -1,0 +1,34 @@
+/* Pagetalk 面板样式 */
+#pagetalk-panel-container {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 350px; /* 初始宽度 */
+  z-index: 99999;
+  display: none; /* 初始隐藏 */
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+#pagetalk-panel-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 100000;
+}
+
+#pagetalk-panel-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: white;
+}
+
+/* 当面板打开时，给页面添加右侧边距 */
+body.pagetalk-panel-open {
+  margin-right: 350px; /* 初始值与面板宽度匹配 */
+  transition: margin-right 0.3s ease;
+}
