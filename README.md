@@ -6,6 +6,14 @@
 
 Pagetalk is a browser extension that allows you to read page content and use the Gemini API to ask questions. It allows you to customize multiple agents and select different models for conversation.
 
+## Note
+
+### Currently not supported:
+
+- Mermaid rendering
+- LaTeX rendering
+- Other model support
+
 ## Installation
 
 ### Edge
