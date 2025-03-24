@@ -331,7 +331,7 @@ function switchTab(tabId) {
 }
 
 /**
- * 向聊天区域添加消息 - 优化的 Markdown 渲染
+ * 向聊天区域添加消息 - 使用markdown-it渲染
  */
 function addMessageToChat(content, sender, isStreaming = false, images = []) {
     const messageElement = document.createElement('div');
@@ -366,19 +366,12 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
         messageElement.appendChild(imagesContainer);
     }
     
-    // 预处理内容，规范化换行符并清理不必要的空白字符
-    content = content.replace(/\r\n/g, '\n'); // 统一换行符为 \n
-    content = content.replace(/^[\s\uFEFF\xA0]+/gm, ''); // 删除行首空白
-    content = content.replace(/[ \t]+$/gm, ''); // 删除行尾空白
-    
-    // 处理连续三个以上的换行符，避免过多空白
-    content = content.replace(/\n{3,}/g, '\n\n');
-    
-    // 使用更先进的 Markdown 解析方法
-    const formattedContent = renderMarkdown(content);
-    
-    // 添加到消息元素
-    messageElement.innerHTML += formattedContent;
+    // 处理内容
+    if (content) {
+        // 使用我们的Markdown渲染器进行渲染
+        const formattedContent = window.MarkdownRenderer.render(content);
+        messageElement.innerHTML += formattedContent;
+    }
     
     // 为代码块添加复制按钮 - 使用DOM API而不是innerHTML
     const codeBlocks = messageElement.querySelectorAll('.code-block');
@@ -548,19 +541,11 @@ function copyMessageContent(messageElement, originalContent, buttonElement) {
 }
 
 /**
- * 更新流式消息 - 使用优化的 Markdown 渲染
+ * 更新流式消息 - 使用markdown-it渲染
  */
 function updateStreamingMessage(messageElement, content) {
-    // 预处理内容，规范化换行符并清理不必要的空白字符
-    content = content.replace(/\r\n/g, '\n'); // 统一换行符为 \n
-    content = content.replace(/^[\s\uFEFF\xA0]+/gm, ''); // 删除行首空白
-    content = content.replace(/[ \t]+$/gm, ''); // 删除行尾空白
-    
-    // 处理连续三个以上的换行符，避免过多空白
-    content = content.replace(/\n{3,}/g, '\n\n');
-    
-    // 使用更先进的 Markdown 解析方法
-    let formattedContent = renderMarkdown(content);
+    // 使用markdown-it渲染内容
+    let formattedContent = window.MarkdownRenderer.render(content);
     
     // 添加流式光标
     const streamingCursor = document.createElement('span');
@@ -615,301 +600,6 @@ function updateStreamingMessage(messageElement, content) {
     
     // 滚动到底部
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
-}
-
-/**
- * 优化的 Markdown 渲染函数
- * @param {string} content - 原始 Markdown 内容
- * @returns {string} 渲染后的 HTML
- */
-function renderMarkdown(content) {
-    // 第一步：预处理特殊情况
-    // 将连续的 Markdown 列表块识别并保护起来，避免段落处理干扰
-    let processedContent = content;
-    
-    // 识别并临时替换代码块，避免其内部内容被处理
-    const codeBlocks = [];
-    processedContent = processedContent.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, function(match, lang, code) {
-        const id = codeBlocks.length;
-        codeBlocks.push({lang, code});
-        return `__CODE_BLOCK_${id}__`;
-    });
-    
-    // 识别内联代码并保护
-    const inlineCodes = [];
-    processedContent = processedContent.replace(/`([^`]+)`/g, function(match, code) {
-        const id = inlineCodes.length;
-        inlineCodes.push(code);
-        return `__INLINE_CODE_${id}__`;
-    });
-    
-    // 识别并标记表格，确保表格前后有换行
-    const tables = [];
-    processedContent = processedContent.replace(/^\|(.+)\|\r?\n\|([-:| ]+)\|\r?\n(\|(?:.+)\|\r?\n?)+/gm, function(match) {
-        const id = tables.length;
-        tables.push(match);
-        return `\n\n__TABLE_${id}__\n\n`;
-    });
-    
-    // 识别并标记列表区块，确保列表前后有换行
-    const listBlocks = [];
-    processedContent = processedContent.replace(/((?:(?:^|\n)(?:\s*[-*+]|\s*\d+\.) [^\n]+)+)/g, function(match) {
-        const id = listBlocks.length;
-        listBlocks.push(match);
-        return `\n\n__LIST_BLOCK_${id}__\n\n`;
-    });
-    
-    // 第二步：处理常规 Markdown 元素
-    let html = processedContent
-        // 处理标题，确保标题前后有换行
-        .replace(/^### (.*$)/gim, '\n\n<h3>$1</h3>\n\n')
-        .replace(/^## (.*$)/gim, '\n\n<h2>$1</h2>\n\n')
-        .replace(/^# (.*$)/gim, '\n\n<h1>$1</h1>\n\n')
-        .replace(/^#### (.*$)/gim, '\n\n<h4>$1</h4>\n\n')
-        
-        // 处理分隔线
-        .replace(/^\-\-\-$/gim, '\n\n<hr>\n\n')
-        
-        // 处理粗体和斜体 - 在常规内容中应用
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // 第三步：处理段落分隔
-    // 将连续的两个或更多换行符识别为段落分隔
-    html = html.replace(/\n\n+/g, '</p><p>');
-    
-    // 优化单个换行符处理 - 保留列表、表格等特殊元素中的换行
-    // 只替换不在特殊标记前面的换行符
-    html = html.replace(/\n(?!(?:__TABLE_|__LIST_BLOCK_|__CODE_BLOCK_|<\/p><p>))/g, '<br>');
-    
-    // 第四步：还原特殊元素
-    // 还原表格
-    tables.forEach((tableContent, id) => {
-        // 将表格拆分为行
-        const rows = tableContent.trim().split(/\r?\n/);
-        let tableHtml = '<table class="markdown-table">';
-        
-        // 处理表头和内容
-        rows.forEach((row, rowIndex) => {
-            const cells = row.split('|').filter((cell, i, arr) => i > 0 && i < arr.length - 1).map(cell => cell.trim());
-            
-            if (rowIndex === 0) {
-                tableHtml += '<thead><tr>';
-                cells.forEach(cell => { 
-                    // 处理表头单元格中的行内Markdown格式
-                    const formattedCell = processInlineMarkdown(cell);
-                    tableHtml += `<th>${formattedCell}</th>`; 
-                });
-                tableHtml += '</tr></thead><tbody>';
-            } else if (rowIndex !== 1) { // 跳过分隔行
-                tableHtml += '<tr>';
-                cells.forEach(cell => { 
-                    // 处理表格内容单元格中的行内Markdown格式
-                    const formattedCell = processInlineMarkdown(cell);
-                    tableHtml += `<td>${formattedCell}</td>`; 
-                });
-                tableHtml += '</tr>';
-            }
-        });
-        
-        tableHtml += '</tbody></table>';
-        
-        // 替换表格占位符，确保表格前后有适当的空间
-        html = html.replace(`__TABLE_${id}__`, tableHtml);
-    });
-    
-    // 还原内联代码
-    inlineCodes.forEach((code, id) => {
-        html = html.replace(`__INLINE_CODE_${id}__`, `<code class="inline-code">${escapeHtml(code)}</code>`);
-    });
-    
-    // 还原代码块
-    codeBlocks.forEach((block, id) => {
-        const escapedCode = escapeHtml(block.code)
-            .replace(/\n/g, '<br>');
-        
-        html = html.replace(
-            `__CODE_BLOCK_${id}__`, 
-            `<pre class="code-block${block.lang ? ' language-' + block.lang : ' language-plaintext'}" data-code="${btoa(encodeURIComponent(block.code))}"><code>${escapedCode}</code></pre>`
-        );
-    });
-    
-    // 第五步：还原并处理列表块
-    listBlocks.forEach((block, id) => {
-        html = html.replace(`__LIST_BLOCK_${id}__`, processListBlock(block));
-    });
-    
-    // 第六步：修复剩余的结构问题
-    // 清理嵌套段落标签问题
-    html = html
-        .replace(/<\/p><p><\/p><p>/g, '</p><p>')
-        .replace(/<p><\/p>/g, '')
-        .replace(/<br><\/p>/g, '</p>')  // 移除段落末尾的<br>
-        .replace(/<p><br>/g, '<p>');    // 移除段落开头的<br>
-    
-    // 确保内容在段落内
-    if (!html.startsWith('<p>')) {
-        html = '<p>' + html;
-    }
-    if (!html.endsWith('</p>')) {
-        html = html + '</p>';
-    }
-    
-    return html;
-}
-
-/**
- * 处理列表块
- * @param {string} block - Markdown 列表块
- * @returns {string} 渲染成 HTML 的列表
- */
-function processListBlock(block) {
-    // 按行拆分
-    const lines = block.split('\n');
-    
-    // 跟踪列表状态
-    let html = '';
-    let inList = false;
-    let listType = '';
-    let listLevel = 0;
-    const listStack = [];
-    
-    // 处理每一行
-    lines.forEach(line => {
-        if (!line.trim()) return;
-        
-        // 检测列表类型和缩进
-        const unorderedMatch = line.match(/^(\s*)[-*+]\s+(.*)/);
-        const orderedMatch = line.match(/^(\s*)\d+\.\s+(.*)/);
-        
-        if (unorderedMatch || orderedMatch) {
-            const match = unorderedMatch || orderedMatch;
-            const indent = match[1].length;
-            let content = match[2];
-            const type = unorderedMatch ? 'ul' : 'ol';
-            
-            // 处理列表项内容中的Markdown格式
-            content = processInlineMarkdown(content);
-            
-            // 计算缩进级别 (每2个空格视为一级缩进)
-            const level = Math.floor(indent / 2);
-            
-            // 处理列表嵌套
-            if (!inList) {
-                // 开始新列表
-                html += `<${type}>`;
-                listStack.push({type, level});
-                inList = true;
-            } else if (level > listLevel) {
-                // 增加嵌套级别
-                html += `<${type}>`;
-                listStack.push({type, level});
-            } else if (level < listLevel) {
-                // 减少嵌套级别
-                while (listStack.length > 0 && listStack[listStack.length - 1].level > level) {
-                    const item = listStack.pop();
-                    html += `</${item.type}>`;
-                }
-                
-                // 如果当前级别的列表类型不同，关闭旧的并开始新的
-                if (listStack.length > 0 && listStack[listStack.length - 1].type !== type) {
-                    const item = listStack.pop();
-                    html += `</${item.type}><${type}>`;
-                    listStack.push({type, level});
-                }
-            } else if (listStack[listStack.length - 1].type !== type) {
-                // 同级别但类型不同
-                const item = listStack.pop();
-                html += `</${item.type}><${type}>`;
-                listStack.push({type, level});
-            }
-            
-            // 更新当前列表级别
-            listLevel = level;
-            
-            // 添加列表项
-            html += `<li>${content}</li>`;
-        }
-    });
-    
-    // 关闭所有打开的列表
-    while (listStack.length > 0) {
-        const item = listStack.pop();
-        html += `</${item.type}>`;
-    }
-    
-    return html;
-}
-
-/**
- * 处理行内Markdown格式
- * @param {string} text - 需要处理的文本
- * @returns {string} 处理后的HTML
- */
-function processInlineMarkdown(text) {
-    // 检查是否包含有序列表项（以数字. 开头）- 将有序列表检查移到前面优先处理
-    if (text.match(/^\s*\d+\.\s+/m)) {
-        // 处理简单的有序列表
-        const listItems = text.split(/\n/).map(line => {
-            // 处理列表项 - 修改正则表达式以匹配行首的空格
-            if (line.match(/^\s*\d+\.\s+/)) {
-                // 移除列表标记和任何行首空格，并处理剩余内容中的行内格式
-                const itemContent = line.replace(/^\s*\d+\.\s+/, '');
-                return `<li>${processInlineTextFormatting(itemContent)}</li>`;
-            }
-            return line;
-        }).filter(item => item.trim() !== '').join(''); // 过滤掉空行
-        
-        return `<ol>${listItems}</ol>`;
-    }
-    
-    // 检查是否包含无序列表项（以- 或* 开头）
-    if (text.match(/^\s*[-*]\s+/m)) {
-        // 处理简单的无序列表
-        const listItems = text.split(/\n/).map(line => {
-            // 处理列表项 - 修改正则表达式以匹配行首的空格
-            if (line.match(/^\s*[-*]\s+/)) {
-                // 移除列表标记和任何行首空格，并处理剩余内容中的行内格式
-                const itemContent = line.replace(/^\s*[-*]\s+/, '');
-                return `<li>${processInlineTextFormatting(itemContent)}</li>`;
-            }
-            return line;
-        }).filter(item => item.trim() !== '').join(''); // 过滤掉空行
-        
-        return `<ul>${listItems}</ul>`;
-    }
-    
-    // 如果不是列表，使用标准的行内格式处理
-    return processInlineTextFormatting(text);
-}
-
-/**
- * 只处理行内文本格式（粗体、斜体、代码），不处理列表
- * @param {string} text - 需要处理的文本
- * @returns {string} 处理后的HTML
- */
-function processInlineTextFormatting(text) {
-    return text
-        // 处理粗体
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // 处理斜体
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        // 处理内联代码
-        .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-}
-
-/**
- * 转义 HTML 特殊字符
- * @param {string} text - 需要转义的文本
- * @returns {string} 转义后的文本
- */
-function escapeHtml(text) {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
 }
 
 /**

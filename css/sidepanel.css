@@ -206,18 +206,17 @@ main {
     background-color: rgba(49, 123, 245, 0.15);
 }
 
+/* 消息气泡样式优化 - 减小上下内边距，自适应文本内容 */
 .message {
-    padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
-    border-radius: var(--radius-lg); /* 增加基础圆角 */
-    margin-bottom: var(--spacing-sm);
+    padding: 0;
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-md);
     word-wrap: break-word;
     overflow-wrap: break-word;
     position: relative;
     animation: fadeIn 0.3s ease;
-    line-height: 1.6;
+    max-width: 90%;
     width: fit-content;
-    max-width: clamp(200px, calc(100% - 20px), 95%); /* 增加最大宽度从90%到95% */
-    white-space: pre-wrap; /* 保留用户输入的换行和空格 */
 }
 
 @keyframes fadeIn {
@@ -238,6 +237,14 @@ main {
     max-width: 95%; /* 增加最大宽度从85%到95% */
     width: auto;
     overflow: visible; /* 确保内容不被截断 */
+    padding: var(--spacing-sm) var(--spacing-md); /* 减少上下内边距 */
+    text-align: left;
+}
+
+.user-message p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
 }
 
 .bot-message {
@@ -253,113 +260,87 @@ main {
     max-width: 95%; /* 增加最大宽度从90%到95% */
     overflow: visible; /* 确保内容不被截断 */
     /* 改进整体间距 */
-    line-height: 1.5;
-}
-
-/* 改进段落和文本排版 */
-.bot-message p {
-    margin-bottom: 1.5em; /* 将段落底部边距从1em增加到1.8em */
-    line-height: 1.6;
-}
-
-.bot-message p:last-child {
-    margin-bottom: 0;
-}
-
-/* 为大段落添加额外的视觉分隔 */
-.bot-message p + p {
+    line-height: 1.4; /* 减小行高 */
+    padding: var(--spacing-md);
+    padding-bottom: var(--spacing-lg);
     position: relative;
 }
 
-.bot-message p + p::before {
-    content: "";
-    display: block;
-    height: 0.4em;
-}
-
-/* 优化段落间距 */
 .bot-message p {
-    margin-bottom: 1em;
-    line-height: 1.6;
+    margin-top: 0;
+    margin-bottom: 0.6em;
+    line-height: 1.4;
 }
 
 .bot-message p:last-child {
     margin-bottom: 0;
+}
+
+.bot-message p + p::before {
+    content: none;
+    display: none;
+    height: 0;
 }
 
 /* 优化标题样式和间距 */
 .bot-message h1, 
 .bot-message h2, 
 .bot-message h3, 
-.bot-message h4 {
-    margin-top: 1.4em;
-    margin-bottom: 0.8em;
+.bot-message h4,
+.markdown-rendered h1,
+.markdown-rendered h2,
+.markdown-rendered h3,
+.markdown-rendered h4 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
     line-height: 1.3;
     color: #333;
 }
 
-.bot-message h1 {
-    font-size: 1.6em;
-    border-bottom: 1px solid #eaecef;
-    padding-bottom: 0.3em;
-}
-
-.bot-message h2 {
-    font-size: 1.4em;
-    border-bottom: 1px solid #eaecef;
-    padding-bottom: 0.2em;
-}
-
-.bot-message h3 {
-    font-size: 1.2em;
-}
-
-.bot-message h4 {
-    font-size: 1.1em;
-}
-
 /* 优化列表样式 */
 .bot-message ul,
-.bot-message ol {
-    margin-top: 0.5em;
-    margin-bottom: 1em;
-    padding-left: 2em;
+.bot-message ol,
+.markdown-rendered ul,
+.markdown-rendered ol {
+    margin: 0.5em 0;
+    padding-left: 1.8em;
 }
 
-.bot-message ul ul,
-.bot-message ul ol,
-.bot-message ol ul,
-.bot-message ol ol {
+.bot-message li,
+.markdown-rendered li {
+    margin-bottom: 0.3em; /* 减小列表项间距 */
+}
+
+.bot-message li p,
+.markdown-rendered li p {
     margin: 0.2em 0;
 }
 
-/* 修改列表项间距 - 顶级列表项加大间距 */
-.bot-message li {
-    margin-bottom: 0.5em;
-}
-
-/* 增加顶级列表项的间距 */
-.bot-message > ul > li,
-.bot-message > ol > li {
-    margin-bottom: 1em;
-    padding-bottom: 0.2em;
-}
-
-/* 保持现有最后一个列表项样式 */
-.bot-message li:last-child {
-    margin-bottom: 0;
-}
-
-/* 处理列表中的段落 */
-.bot-message li p {
+/* 改进段落和列表之间的间距 */
+.bot-message p + ul,
+.bot-message p + ol,
+.markdown-rendered p + ul,
+.markdown-rendered p + ol {
     margin-top: 0.3em;
-    margin-bottom: 0.3em;
 }
 
-/* 强化顶级列表项的编号/符号 */
-.bot-message > ul > li::marker,
-.bot-message > ol > li::marker {
-    font-weight: 600; /* 粗体标记，增强视觉区分 */
+.bot-message ul + p,
+.bot-message ol + p,
+.markdown-rendered ul + p,
+.markdown-rendered ol + p {
+    margin-top: 0.4em;
+}
+
+/* 确保标题和段落之间的间距合理 */
+.bot-message h1 + p,
+.bot-message h2 + p,
+.bot-message h3 + p,
+.bot-message h4 + p,
+.markdown-rendered h1 + p,
+.markdown-rendered h2 + p,
+.markdown-rendered h3 + p,
+.markdown-rendered h4 + p {
+    margin-top: 0.3em;
 }
 
 /* 优化代码块样式 */
@@ -473,13 +454,8 @@ main {
 
 /* 内联代码样式 */
 .inline-code {
-    background-color: rgba(27, 31, 35, 0.05);
-    border-radius: 3px;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: clamp(85%, 2.5vw, 90%);
-    padding: 0.2em 0.4em;
-    margin: 0 0.1em;
-    word-break: break-word;
+    /* 重置所有属性，依赖markdown-it的原生内联代码样式 */
+    all: revert;
 }
 
 /* 流式输出光标样式调整 */
@@ -1833,45 +1809,232 @@ button {
 
 /* 表格样式 */
 .markdown-table {
+    /* 重置所有属性，依赖markdown-it的原生表格样式 */
+    all: revert;
+}
+
+/* 优化内联代码块样式 - 适配markdown-it */
+.bot-message code:not(.code-block code),
+.markdown-rendered code:not(pre code) {
+    background-color: rgba(175, 184, 193, 0.2);
+    border-radius: 4px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.9em;
+    padding: 0.15em 0.3em;
+    margin: 0 0.1em;
+    border: 1px solid rgba(175, 184, 193, 0.2);
+    color: #24292e;
+    white-space: break-spaces;
+}
+
+/* 强化内联代码块可见性 */
+.user-message code {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 优化表格样式 - 适配markdown-it */
+.bot-message table,
+.markdown-rendered table {
     border-collapse: collapse;
     margin: 1em 0;
     width: 100%;
     font-size: 0.9em;
-    min-width: 250px;
     border-radius: var(--radius-sm);
     overflow: hidden;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.markdown-table thead tr {
+.bot-message table thead,
+.markdown-rendered thead {
     background-color: var(--primary-color);
     color: white;
     text-align: left;
-    font-weight: bold;
 }
 
-.markdown-table th,
-.markdown-table td {
+.bot-message table th,
+.markdown-rendered th {
+    font-weight: 600;
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+}
+
+.bot-message table td,
+.markdown-rendered td {
     padding: 8px 12px;
-    text-align: left;
-    border: 1px solid var(--border-color);
+    border: 1px solid #dee2e6;
 }
 
-.markdown-table tbody tr {
-    border-bottom: 1px solid var(--border-color);
+.bot-message table tr,
+.markdown-rendered tr {
+    border-bottom: 1px solid #dee2e6;
 }
 
-.markdown-table tbody tr:nth-of-type(even) {
+.bot-message table tr:nth-child(even),
+.markdown-rendered tr:nth-child(even) {
     background-color: rgba(0, 0, 0, 0.025);
 }
 
-.markdown-table tbody tr:last-of-type {
-    border-bottom: 2px solid var (--primary-color);
-}
-
 /* 确保表格在小屏幕上可滚动 */
-.message .markdown-table {
-    display: block;
+.bot-message table,
+.markdown-rendered table {
+    display: table;
     width: 100%;
     overflow-x: auto;
+}
+
+/* 优化无序和有序列表的样式 */
+.bot-message ul, 
+.bot-message ol,
+.markdown-rendered ul,
+.markdown-rendered ol {
+    margin: 0.8em 0;
+    padding-left: 2em;
+}
+
+.bot-message li,
+.markdown-rendered li {
+    margin-bottom: 0.4em; /* 减小列表项间距 */
+}
+
+.bot-message li p,
+.markdown-rendered li p {
+    margin: 0.3em 0;
+}
+
+/* 优化代码块样式 - 适配markdown-it */
+.bot-message pre,
+.markdown-rendered pre {
+    background-color: #f6f8fa;
+    border-radius: var(--radius-sm);
+    padding: 0.8em 1em;
+    margin: 0.8em 0;
+    overflow-x: auto;
+    border: 1px solid #e1e4e8;
+    position: relative;
+    border-left: 3px solid var(--primary-color);
+}
+
+.bot-message pre code,
+.markdown-rendered pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    border: none;
+    display: block;
+    line-height: 1.4;
+    color: #24292e;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+/* 优化引用样式 */
+.bot-message blockquote,
+.markdown-rendered blockquote {
+    border-left: 4px solid var(--primary-color);
+    margin: 0.7em 0;
+    padding: 0.4em 0.8em;
+    color: #6a737d;
+    background-color: rgba(175, 184, 193, 0.1);
+}
+
+.bot-message blockquote > :first-child,
+.markdown-rendered blockquote > :first-child {
+    margin-top: 0;
+}
+
+.bot-message blockquote > :last-child,
+.markdown-rendered blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+/* 水平线样式 */
+.bot-message hr,
+.markdown-rendered hr {
+    height: 1px;
+    padding: 0;
+    margin: 1em 0;
+    background-color: #e1e4e8;
+    border: 0;
+}
+
+/* 确保表格滚动容器工作正常 */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin: 0.8em 0;
+    border-radius: var(--radius-sm);
+}
+
+/* 修复表格样式 */
+.bot-message table,
+.markdown-rendered table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+.bot-message thead,
+.markdown-rendered thead {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.bot-message th,
+.markdown-rendered th {
+    font-weight: 600;
+    padding: 8px 10px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.bot-message td,
+.markdown-rendered td {
+    padding: 6px 10px;
+    border: 1px solid #dee2e6;
+}
+
+.bot-message tr:nth-child(even),
+.markdown-rendered tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* 修复列表间距 */
+.bot-message ul,
+.bot-message ol,
+.markdown-rendered ul,
+.markdown-rendered ol {
+    margin: 0.6em 0; /* 减小列表外边距 */
+    padding-left: 1.8em; /* 略微减小缩进 */
+}
+
+/* 为markdown-it修改表格包装器 */
+.markdown-rendered table {
+    width: 100%;
+    display: table;
+    border-collapse: collapse;
+}
+
+/* 自动为markdown-it渲染的表格添加包装容器 */
+.markdown-rendered table {
+    display: table;
+    width: 100%;
+}
+
+/* 列表和段落间距微调 */
+.bot-message p + ul,
+.bot-message p + ol,
+.markdown-rendered p + ul,
+.markdown-rendered p + ol {
+    margin-top: 0.4em; /* 紧跟段落的列表上边距减小 */
+}
+
+.bot-message ul + p,
+.bot-message ol + p,
+.markdown-rendered ul + p,
+.markdown-rendered ol + p {
+    margin-top: 0.6em; /* 列表后的段落上边距减小 */
 }
