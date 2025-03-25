@@ -126,6 +126,9 @@ function init() {
     // 初始化图片粘贴功能
     setupImagePaste();
     
+    // 设置输入框自适应高度
+    setupAutoresizeTextarea();
+    
     // 监听来自content script的消息
     window.addEventListener('message', handleContentScriptMessages);
     
@@ -337,6 +340,10 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
     
+    // 为每条消息添加唯一ID
+    const messageId = generateUniqueId();
+    messageElement.dataset.messageId = messageId;
+    
     if (isStreaming) {
         // 对于流式消息，先创建一个空的容器
         elements.chatMessages.appendChild(messageElement);
@@ -417,6 +424,73 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
         block.appendChild(copyButton);
     });
     
+    // 添加消息操作按钮容器
+    const messageActions = document.createElement('div');
+    messageActions.className = 'message-actions';
+    
+    // 添加删除按钮
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'message-action-btn delete-btn';
+    deleteButton.title = "删除消息";
+    
+    // 删除按钮SVG图标 (使用清空上下文的同款垃圾桶SVG)
+    const deleteSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    deleteSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg", "svg");
+    deleteSvg.setAttribute("width", "16");
+    deleteSvg.setAttribute("height", "16");
+    deleteSvg.setAttribute("fill", "currentColor");
+    deleteSvg.setAttribute("viewBox", "0 0 16 16");
+    
+    const deletePath1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    deletePath1.setAttribute("d", "M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z");
+    
+    const deletePath2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    deletePath2.setAttribute("fill-rule", "evenodd");
+    deletePath2.setAttribute("d", "M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z");
+    
+    deleteSvg.appendChild(deletePath1);
+    deleteSvg.appendChild(deletePath2);
+    deleteButton.appendChild(deleteSvg);
+    
+    // 添加删除消息的点击事件
+    deleteButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteMessage(messageId);
+    });
+    
+    // 添加重新生成按钮
+    const regenerateButton = document.createElement('button');
+    regenerateButton.className = 'message-action-btn regenerate-btn';
+    regenerateButton.title = "重新生成";
+    
+    // 重新生成按钮SVG图标 (循环箭头)
+    const regenerateSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    regenerateSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    regenerateSvg.setAttribute("width", "16");
+    regenerateSvg.setAttribute("height", "16");
+    regenerateSvg.setAttribute("fill", "currentColor");
+    regenerateSvg.setAttribute("viewBox", "0 0 16 16");
+    
+    const regeneratePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    regeneratePath.setAttribute("d", "M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z");
+    
+    const regeneratePath2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    regeneratePath2.setAttribute("d", "M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z");
+    
+    regenerateSvg.appendChild(regeneratePath);
+    regenerateSvg.appendChild(regeneratePath2);
+    regenerateButton.appendChild(regenerateSvg);
+    
+    // 添加重新生成的点击事件
+    regenerateButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        regenerateMessage(messageId);
+    });
+    
+    // 将按钮添加到操作容器
+    messageActions.appendChild(regenerateButton);
+    messageActions.appendChild(deleteButton);
+    
     // 只给机器人消息添加复制按钮
     if (sender === 'bot') {
         // 创建复制按钮 - 使用DOM API
@@ -457,6 +531,9 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
         messageElement.appendChild(copyButton);
     }
     
+    // 添加操作按钮
+    messageElement.appendChild(messageActions);
+    
     elements.chatMessages.appendChild(messageElement);
     
     // 滚动到底部
@@ -466,7 +543,8 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
     if (!isStreaming) {
         state.chatHistory.push({
             role: sender === 'user' ? 'user' : 'model',
-            content: content
+            content: content,
+            id: messageId // 存储消息ID
         });
     }
     
@@ -551,8 +629,12 @@ function updateStreamingMessage(messageElement, content) {
     const streamingCursor = document.createElement('span');
     streamingCursor.className = 'streaming-cursor';
     
-    // 先清空消息元素
+    // 先清空消息元素，但保留操作按钮
+    const messageActions = messageElement.querySelector('.message-actions');
     messageElement.innerHTML = formattedContent;
+    if (messageActions) {
+        messageElement.appendChild(messageActions);
+    }
     messageElement.appendChild(streamingCursor);
     
     // 为代码块添加复制按钮
@@ -699,9 +781,10 @@ function addThinkingAnimation() {
 /**
  * 调用Gemini API
  * @param {string} userMessage - 用户消息内容
+ * @param {Array} customHistory - 可选的自定义历史上下文
  * @returns {Promise<string>} AI的响应
  */
-async function callGeminiAPI(userMessage) {
+async function callGeminiAPI(userMessage, customHistory = null) {
     try {
         // 组合系统提示和页面上下文
         let systemContent = state.systemPrompt;
@@ -709,8 +792,8 @@ async function callGeminiAPI(userMessage) {
             systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${state.pageContext}`;
         }
         
-        // 构建消息历史，最多保留最近5轮对话
-        const recentHistory = state.chatHistory.slice(-20); // 保留最近5轮（10条消息，每轮2条）
+        // 使用自定义历史或默认历史
+        const recentHistory = customHistory || state.chatHistory.slice(-20);
         
         // 构建请求体
         const requestBody = {
@@ -1543,7 +1626,7 @@ function updateImagesPreview() {
         deleteBtn.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
             </svg>
         `;
         deleteBtn.addEventListener('click', (e) => {
@@ -2010,6 +2093,302 @@ function closePanel() {
     window.parent.postMessage({
         action: 'closePanel'
     }, '*');
+}
+
+/**
+ * 设置输入框自适应高度
+ */
+function setupAutoresizeTextarea() {
+    const textarea = elements.userInput;
+    
+    // 初始高度
+    const originalHeight = textarea.clientHeight;
+    
+    // 调整高度的函数
+    function resizeTextarea() {
+        // 重置高度，以便于正确计算
+        textarea.style.height = 'auto';
+        
+        // 获取内容高度
+        const scrollHeight = textarea.scrollHeight;
+        
+        // 计算最大高度（原高度的7倍）
+        const maxHeight = originalHeight * 7;
+        
+        // 设置新高度，但不超过最大高度
+        const newHeight = Math.min(scrollHeight, maxHeight);
+        textarea.style.height = newHeight + 'px';
+    }
+    
+    // 监听输入事件
+    textarea.addEventListener('input', resizeTextarea);
+    
+    // 在窗口大小变化时重新调整
+    window.addEventListener('resize', resizeTextarea);
+    
+    // 初始调整一次（如果有预填内容）
+    setTimeout(resizeTextarea, 10);
+}
+
+/**
+ * 删除消息
+ * @param {string} messageId - 要删除的消息ID
+ */
+function deleteMessage(messageId) {
+    // 查找要删除的消息元素
+    const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!messageElement) return;
+    
+    // 从历史记录中删除
+    const messageIndex = state.chatHistory.findIndex(msg => msg.id === messageId);
+    if (messageIndex !== -1) {
+        // 获取当前消息信息，用于判断类型
+        const currentMessage = state.chatHistory[messageIndex];
+        
+        // 删除此消息
+        state.chatHistory.splice(messageIndex, 1);
+        messageElement.remove();
+        
+        // 如果删除的是用户消息，同时删除其对应的AI回复（如果存在）
+        if (currentMessage.role === 'user' && messageIndex < state.chatHistory.length) {
+            const nextMessage = state.chatHistory[messageIndex]; // 下一条消息现在位于同一索引
+                        if (nextMessage && nextMessage.role === 'model') {
+                            // Add logic here if needed
+                        }
+                    }
+                }
+            }
+
+/**
+ * 重新生成消息
+ * @param {string} messageId - 要重新生成的消息ID
+ */
+function regenerateMessage(messageId) {
+    // 查找消息在历史记录中的位置
+    const messageIndex = state.chatHistory.findIndex(msg => msg.id === messageId);
+    if (messageIndex === -1) return;
+    
+    // 获取当前消息
+    const currentMessage = state.chatHistory[messageIndex];
+    
+    // 如果是用户消息
+    if (currentMessage.role === 'user') {
+        // 准备用户消息
+        const userMessage = currentMessage.content;
+        
+        // 如果这条用户消息后面有AI回复，则删除那条回复
+        if (messageIndex + 1 < state.chatHistory.length && 
+            state.chatHistory[messageIndex + 1].role === 'model') {
+            
+            // 移除下一条消息（AI回复）的DOM元素
+            const nextMessageId = state.chatHistory[messageIndex + 1].id;
+            const nextElement = document.querySelector(`.message[data-message-id="${nextMessageId}"]`);
+            if (nextElement) {
+                nextElement.remove();
+            }
+            
+            // 从聊天历史中删除该AI回复
+            state.chatHistory.splice(messageIndex + 1, 1);
+        }
+        
+        // 显示AI思考动画
+        const thinkingElement = addThinkingAnimation();
+        
+        // 创建一个自定义历史，截取到当前消息之前的所有消息
+        const customHistory = state.chatHistory.slice(0, messageIndex + 1);
+        
+        // 调用API获取新回复，只传递当前消息之前的历史
+        callGeminiAPI(userMessage, customHistory)
+            .then(response => {
+                // 移除思考动画
+                thinkingElement.remove();
+                
+                // 添加AI响应到聊天
+                if (response) {
+                    const newMessageId = generateUniqueId();
+                    const newMessageElement = addMessageToChat(response, 'bot');
+                    
+                    // 将AI回复添加到历史记录中正确的位置
+                    state.chatHistory.splice(messageIndex + 1, 0, {
+                        role: 'model',
+                        content: response,
+                        id: newMessageId
+                    });
+                }
+            })
+            .catch(error => {
+                // 移除思考动画
+                thinkingElement.remove();
+                
+                // 显示错误消息
+                addMessageToChat(`获取响应时出错: ${error.message}`, 'bot');
+                console.error('API调用错误:', error);
+            });
+    } 
+    // 如果是模型消息
+    else if (currentMessage.role === 'model') {
+        // 找到这条AI回复对应的用户消息
+        let userMessageIndex = messageIndex - 1;
+        while (userMessageIndex >= 0 && state.chatHistory[userMessageIndex].role !== 'user') {
+            userMessageIndex--;
+        }
+        
+        if (userMessageIndex >= 0) {
+            const userMessage = state.chatHistory[userMessageIndex].content;
+            
+            // 创建一个自定义历史，只包含到用户消息为止的历史
+            const customHistory = state.chatHistory.slice(0, userMessageIndex + 1);
+            
+            // 移除当前AI回复
+            const elementToRemove = document.querySelector(`.message[data-message-id="${messageId}"]`);
+            if (elementToRemove) {
+                elementToRemove.remove();
+            }
+            
+            // 从历史记录中删除当前AI回复
+            state.chatHistory.splice(messageIndex, 1);
+            
+            // 显示AI思考动画
+            const thinkingElement = addThinkingAnimation();
+            
+            // 调用API获取新回复，使用截断的历史上下文
+            callGeminiAPI(userMessage, customHistory)
+                .then(response => {
+                    // 移除思考动画
+                    thinkingElement.remove();
+                    
+                    // 添加AI响应到聊天
+                    if (response) {
+                        const newMessageId = generateUniqueId();
+                        addMessageToChat(response, 'bot');
+                        
+                        // 将AI回复添加到历史，插入到正确的位置
+                        state.chatHistory.splice(userMessageIndex + 1, 0, {
+                            role: 'model',
+                            content: response,
+                            id: newMessageId
+                        });
+                    }
+                })
+                .catch(error => {
+                    // 移除思考动画
+                    thinkingElement.remove();
+                    
+                    // 显示错误消息
+                    addMessageToChat(`获取响应时出错: ${error.message}`, 'bot');
+                    console.error('API调用错误:', error);
+                });
+        }
+    }
+}
+
+/**
+ * 调用Gemini API，允许自定义历史上下文
+ * @param {string} userMessage - 用户消息内容
+ * @param {Array} customHistory - 可选的自定义历史上下文
+ * @returns {Promise<string>} AI的响应
+ */
+async function callGeminiAPI(userMessage, customHistory = null) {
+    try {
+        // 组合系统提示和页面上下文
+        let systemContent = state.systemPrompt;
+        if (state.pageContext) {
+            systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${state.pageContext}`;
+        }
+        
+        // 使用自定义历史或默认历史
+        const recentHistory = customHistory || state.chatHistory.slice(-20);
+        
+        // 构建请求体
+        const requestBody = {
+            contents: [
+                // 首条消息包含系统提示
+                {
+                    role: 'user',
+                    parts: [{ text: systemContent }]
+                }
+            ],
+            generationConfig: {
+                temperature: parseFloat(state.temperature),
+                maxOutputTokens: parseInt(state.maxTokens),
+                topP: parseFloat(state.topP)
+            }
+        };
+
+        // 添加历史对话
+        recentHistory.forEach(msg => {
+            requestBody.contents.push({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            });
+        });
+
+        // 添加当前用户消息
+        requestBody.contents.push({
+            role: 'user',
+            parts: [{ text: userMessage }]
+        });
+
+        // API 基础 URL
+        const apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+        const endpoint = `${apiBaseUrl}/models/${state.model}:generateContent?key=${state.apiKey}`;
+
+        // 发送请求
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+        });
+
+        // 解析响应
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error?.message || '未知错误');
+        }
+
+        return data.candidates[0]?.content?.parts[0]?.text || '';
+    } catch (error) {
+        console.error('API调用失败:', error);
+        throw error;
+    }
+}
+
+/**
+ * 设置输入框自适应高度
+ */
+function setupAutoresizeTextarea() {
+    const textarea = elements.userInput;
+    
+    // 初始高度
+    const originalHeight = textarea.clientHeight;
+    
+    // 调整高度的函数
+    function resizeTextarea() {
+        // 重置高度，以便于正确计算
+        textarea.style.height = 'auto';
+        
+        // 获取内容高度
+        const scrollHeight = textarea.scrollHeight;
+        
+        // 计算最大高度（原高度的7倍）
+        const maxHeight = originalHeight * 7;
+        
+        // 设置新高度，但不超过最大高度
+        const newHeight = Math.min(scrollHeight, maxHeight);
+        textarea.style.height = newHeight + 'px';
+    }
+    
+    // 监听输入事件
+    textarea.addEventListener('input', resizeTextarea);
+    
+    // 在窗口大小变化时重新调整
+    window.addEventListener('resize', resizeTextarea);
+    
+    // 初始调整一次（如果有预填内容）
+    setTimeout(resizeTextarea, 10);
 }
 
 // 初始化应用

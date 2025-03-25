@@ -177,7 +177,7 @@ main {
     margin-bottom: var(--spacing-sm);
     font-size: clamp(12px, 3.5vw, 14px);
     line-height: 1.6;
-    color: var(--text-secondary);
+    color: var (--text-secondary);
 }
 
 /* 快捷操作按钮样式 */
@@ -224,21 +224,90 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 
+/* 用户消息气泡样式优化 - 恢复为自适应大小 */
 .user-message {
     align-self: flex-end;
     background-color: var(--primary-color);
     color: white;
-    border-top-left-radius: var(--radius-xl); /* 增加左上角圆角 */
-    border-top-right-radius: var(--radius-xl); /* 增加右上角圆角 */
-    border-bottom-left-radius: var(--radius-xl); /* 增加左下角圆角 */
-    border-bottom-right-radius: var(--spacing-sm); /* 微调右下角圆角 */
-    /* 用户消息气泡自适应文本宽度 */
+    border-top-left-radius: var(--radius-xl);
+    border-top-right-radius: var(--radius-xl);
+    border-bottom-left-radius: var(--radius-xl);
+    border-bottom-right-radius: var(--spacing-sm);
     display: inline-block;
-    max-width: 95%; /* 增加最大宽度从85%到95% */
+    max-width: 95%;
     width: auto;
-    overflow: visible; /* 确保内容不被截断 */
-    padding: var(--spacing-sm) var(--spacing-md); /* 减少上下内边距 */
+    overflow: visible;
+    padding: var(--spacing-sm) var(--spacing-md); /* 标准内边距，移除额外底部空间 */
     text-align: left;
+    position: relative;
+    margin-bottom: 26px; /* 为气泡下方按钮留出空间 */
+}
+
+/* 消息操作按钮样式修改 - 统一样式并放置到气泡下方 */
+.message-actions {
+    position: absolute;
+    display: flex;
+    gap: 6px; /* 增加按钮之间的间距 */
+    opacity: 0; /* 默认隐藏 */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+}
+
+/* 用户消息中按钮位置调整到气泡下方 */
+.user-message .message-actions {
+    bottom: -24px; /* 位于气泡下方 */
+    right: 0; /* 右对齐 */
+}
+
+/* 机器人消息中按钮位置保持在气泡内 */
+.bot-message .message-actions {
+    bottom: var(--spacing-xs);
+    right: var(--spacing-xs);
+}
+
+/* 统一悬停时显示按钮 */
+.message:hover .message-actions,
+.message-actions:hover {
+    opacity: 1;
+}
+
+/* 统一按钮样式 - 移除背景和边框 */
+.message-action-btn,
+.copy-button,
+.code-copy-button {
+    background: none; /* 移除背景色 */
+    border: none; /* 移除边框 */
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    color: #888;
+}
+
+/* 统一按钮悬停效果 */
+.message-action-btn:hover,
+.copy-button:hover,
+.code-copy-button:hover {
+    color: var(--primary-color) !important; /* 强制悬停蓝色 */
+    transform: scale(1.1); /* 轻微放大 */
+    background: none; /* 确保没有背景色 */
+}
+
+/* 修改AI消息中复制按钮的位置 */
+.copy-button {
+    bottom: var(--spacing-xs);
+    right: 58px; /* 为其他按钮留出空间 */
+}
+
+/* 修改代码块中复制按钮的位置 */
+.code-copy-button {
+    top: 5px;
+    right: 5px;
+    color:var(--primary-color); /* 与其他按钮颜色保持一致 */
 }
 
 .user-message p {
@@ -256,13 +325,13 @@ main {
     border-bottom-left-radius: var(--spacing-sm); /* 修复了变量引用中的空格 */
     border-bottom-right-radius: var(--radius-xl); /* 修复了变量引用中的空格 */
     padding-right: 30px;
-    padding-bottom: 30px;
+    padding-bottom: 30px; /* 确保底部有足够空间 */
     max-width: 95%; /* 增加最大宽度从90%到95% */
     overflow: visible; /* 确保内容不被截断 */
     /* 改进整体间距 */
     line-height: 1.4; /* 减小行高 */
     padding: var(--spacing-md);
-    padding-bottom: var(--spacing-lg);
+    padding-bottom: 30px; /* 增加底部空间 */
     position: relative;
 }
 
@@ -410,7 +479,7 @@ main {
     width: 24px;
     height: 24px;
     font-size: 13px;
-    color: var(--primary-color);
+    color: #888; /* 修改为灰色 */
     cursor: pointer;
     opacity: 0;
     transition: all 0.2s ease;
@@ -430,7 +499,8 @@ main {
 /* 整段文本复制按钮位于右下角 */
 .copy-button {
     bottom: var(--spacing-xs);
-    right: var(--spacing-xs);
+    right: 58px; /* 为两个新按钮留出空间 */
+    color: #888 !important; /* 强制灰色 */
 }
 
 .code-block:hover .code-copy-button,
@@ -443,6 +513,7 @@ main {
     opacity: 1 !important;
     background-color: white;
     transform: scale(1.05);
+    color: var(--primary-color); /* 悬停时变为蓝色 */
 }
 
 /* 复制图标 SVG 样式 */
@@ -535,7 +606,7 @@ main {
     width: 24px;
     height: 24px;
     font-size: 13px;
-    color: var(--primary-color);
+    /* color: var(--primary-color); */
     cursor: pointer;
     opacity: 0;
     transition: all 0.2s ease;
@@ -607,21 +678,41 @@ main {
 .chat-input textarea {
     flex: 1;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-full);
-    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-xs), 2vw, var(--spacing-md));
+    border-radius: 16px;
+    padding: 12px 14px; /* 增加垂直内边距使光标居中 */
     resize: none;
-    height: clamp(36px, 5vw, 40px);
-    max-height: 100px;
+    min-height: 40px; /* 固定值，减小初始高度 */
+    max-height: 160px; /* 固定最大高度，大约是原来的4倍 */
     font-size: clamp(12px, 3.5vw, 14px);
     transition: all 0.3s ease;
     outline: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     min-width: 0; /* 允许文本框在缩小时减少宽度 */
+    overflow-y: auto; /* 启用垂直滚动 */
+    line-height: 1.4; /* 确保行高合理 */
 }
 
 .chat-input textarea:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1);
+}
+
+/* 优化输入框滚动条 */
+.chat-input textarea::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chat-input textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.chat-input textarea::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-full);
+}
+
+.chat-input textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
 }
 
 .chat-input button {
@@ -849,7 +940,7 @@ main {
 .connection-status {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
-    border-radius: var(--radius-md);
+    border-radius: var (--radius-md);
     font-size: 13px;
     display: none;
     opacity: 0;
@@ -1901,6 +1992,206 @@ button {
 .bot-message li p,
 .markdown-rendered li p {
     margin: 0.3em 0;
+}
+
+/* 优化代码块样式 - 适配markdown-it */
+.bot-message pre,
+.markdown-rendered pre {
+    background-color: #f6f8fa;
+    border-radius: var(--radius-sm);
+    padding: 0.8em 1em;
+    margin: 0.8em 0;
+    overflow-x: auto;
+    border: 1px solid #e1e4e8;
+    position: relative;
+    border-left: 3px solid var(--primary-color);
+}
+
+.bot-message pre code,
+.markdown-rendered pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    border: none;
+    display: block;
+    line-height: 1.4;
+    color: #24292e;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+/* 优化引用样式 */
+.bot-message blockquote,
+.markdown-rendered blockquote {
+    border-left: 4px solid var(--primary-color);
+    margin: 0.7em 0;
+    padding: 0.4em 0.8em;
+    color: #6a737d;
+    background-color: rgba(175, 184, 193, 0.1);
+}
+
+.bot-message blockquote > :first-child,
+.markdown-rendered blockquote > :first-child {
+    margin-top: 0;
+}
+
+.bot-message blockquote > :last-child,
+.markdown-rendered blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+/* 水平线样式 */
+.bot-message hr,
+.markdown-rendered hr {
+    height: 1px;
+    padding: 0;
+    margin: 1em 0;
+    background-color: #e1e4e8;
+    border: 0;
+}
+
+/* 确保表格滚动容器工作正常 */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin: 0.8em 0;
+    border-radius: var(--radius-sm);
+}
+
+/* 修复表格样式 */
+.bot-message table,
+.markdown-rendered table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9em;
+    margin: 0;
+}
+
+.bot-message thead,
+.markdown-rendered thead {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.bot-message th,
+.markdown-rendered th {
+    font-weight: 600;
+    padding: 8px 10px;
+    border: 1px solid #dee2e6;
+    text-align: left;
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.bot-message td,
+.markdown-rendered td {
+    padding: 6px 10px;
+    border: 1px solid #dee2e6;
+}
+
+.bot-message tr:nth-child(even),
+.markdown-rendered tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* 修复列表间距 */
+.bot-message ul,
+.bot-message ol,
+.markdown-rendered ul,
+.markdown-rendered ol {
+    margin: 0.6em 0; /* 减小列表外边距 */
+    padding-left: 1.8em; /* 略微减小缩进 */
+}
+
+/* 为markdown-it修改表格包装器 */
+.markdown-rendered table {
+    width: 100%;
+    display: table;
+    border-collapse: collapse;
+}
+
+/* 自动为markdown-it渲染的表格添加包装容器 */
+.markdown-rendered table {
+    display: table;
+    width: 100%;
+}
+
+/* 列表和段落间距微调 */
+.bot-message p + ul,
+.bot-message p + ol,
+.markdown-rendered p + ul,
+.markdown-rendered p + ol {
+    margin-top: 0.4em; /* 紧跟段落的列表上边距减小 */
+}
+
+.bot-message ul + p,
+.bot-message ol + p,
+.markdown-rendered ul + p,
+.markdown-rendered ol + p {
+    margin-top: 0.6em; /* 列表后的段落上边距减小 */
+}
+
+/* 消息操作按钮样式 */
+.message-actions {
+    position: absolute;
+    bottom: var(--spacing-xs);
+    right: var(--spacing-xs);
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.message:hover .message-actions {
+    opacity: 1;
+}
+
+.message-action-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    color: #888; /* 默认灰色 */
+}
+
+.user-message .message-action-btn {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: rgba(104, 103, 103, 0.8); /* 用户消息中的按钮使用半透明白色 */
+}
+
+.message-action-btn:hover {
+    transform: scale(1.05);
+}
+
+.message-action-btn.delete-btn:hover {
+    /* background-color: rgba(234, 67, 53, 0.2); */
+    color: var(--primary-color);
+}
+
+.user-message .message-action-btn.delete-btn:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+    color: var(--primary-color);
+}
+
+.message-action-btn.regenerate-btn:hover {
+    /* background-color: rgba(52, 168, 83, 0.2); */
+    color: var(--primary-color);
+}
+
+.user-message .message-action-btn.regenerate-btn:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+    color: var(--primary-color);
+}
+
+/* 调整原有复制按钮的位置 */
+.copy-button {
+    right: 58px; /* 为两个新按钮留出空间 */
 }
 
 /* 优化代码块样式 - 适配markdown-it */

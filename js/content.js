@@ -5,7 +5,7 @@
 
 // 全局变量，跟踪面板状态
 let panelActive = false;
-let panelWidth = 470; 
+let panelWidth = 500; 
 let resizing = false;
 let startX, startWidth;
 
