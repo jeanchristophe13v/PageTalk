@@ -210,8 +210,8 @@ function extractPageContent() {
   let content = contentNode.textContent || '';
   content = content.replace(/\s+/g, ' ').trim();
   
-  // 截断过长的内容
-  const maxLength = 15000;
+  // 截断过长的内容 
+  const maxLength = 100000;
   if (content.length > maxLength) {
     content = content.substring(0, maxLength) + '...（内容已截断）';
   }
