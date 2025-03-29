@@ -19,6 +19,7 @@ function initPagetalkPanel() {
   // 创建面板容器
   const panelContainer = document.createElement('div');
   panelContainer.id = 'pagetalk-panel-container';
+  panelContainer.style.zIndex = '9999'; // 设置 z-index
   panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
   
   // 创建调整器
@@ -40,6 +41,12 @@ function initPagetalkPanel() {
   
   // 设置调整大小的事件监听
   setupResizeEvents(resizer, panelContainer);
+
+  // 遍历页面中的所有元素，并将它们的 z-index 值设置为 auto
+  const allElements = document.querySelectorAll('*');
+  allElements.forEach(element => {
+    element.style.zIndex = 'auto';
+  });
 }
 
 // 设置调整大小的事件监听器
@@ -211,7 +218,7 @@ function extractPageContent() {
   content = content.replace(/\s+/g, ' ').trim();
   
   // 截断过长的内容 
-  const maxLength = 300000;
+  const maxLength = 500000;
   if (content.length > maxLength) {
     content = content.substring(0, maxLength) + '...（内容已截断）';
   }

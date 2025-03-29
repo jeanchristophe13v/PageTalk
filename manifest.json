@@ -24,12 +24,13 @@
     "type": "module"
   },
   "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["js/content.js"],
-      "css": ["css/content-panel.css"]
-    }
-  ],
+      {
+        "matches": ["<all_urls>"],
+        "js": ["js/content.js"],
+        "css": ["css/content-panel.css"],
+        "run_at": "document_start"
+      }
+    ],
   "web_accessible_resources": [
     {
       "resources": ["html/*", "css/*", "js/*", "*.png"],
@@ -46,6 +47,6 @@
     }
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+      "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
