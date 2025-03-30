@@ -3,6 +3,9 @@
  * 实现标签页切换、聊天功能和设置管理
  */
 
+// API 基础 URL
+const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+
 // 全局状态管理
 const state = {
     apiKey: '',
@@ -140,9 +143,6 @@ function init() {
     if (closeButton) {
         closeButton.addEventListener('click', closePanel);
     }
-    
-    // 请求页面内容
-    setTimeout(requestPageContent, 500);
 }
 
 /**
@@ -381,49 +381,9 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
         messageElement.innerHTML += formattedContent;
     }
     
-    // 为代码块添加复制按钮 - 使用DOM API而不是innerHTML
+    // 为代码块添加复制按钮
     const codeBlocks = messageElement.querySelectorAll('.code-block');
-    codeBlocks.forEach(block => {
-        // 创建复制按钮元素
-        const copyButton = document.createElement('button');
-        copyButton.classList.add('code-copy-button');
-        copyButton.title = "复制代码";
-        
-        // 创建SVG元素
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("width", "14");
-        svg.setAttribute("height", "14");
-        svg.setAttribute("fill", "none");
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "2");
-        
-        const rectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        rectElement.setAttribute("x", "9");
-        rectElement.setAttribute("y", "9");
-        rectElement.setAttribute("width", "13");
-        rectElement.setAttribute("height", "13");
-        rectElement.setAttribute("rx", "2");
-        rectElement.setAttribute("ry", "2");
-        
-        const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        pathElement.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
-        
-        svg.appendChild(rectElement);
-        svg.appendChild(pathElement);
-        copyButton.appendChild(svg);
-        
-        // 添加点击事件
-        copyButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            // 从data属性获取原始代码
-            const encodedCode = block.getAttribute('data-code');
-            const originalCode = decodeURIComponent(atob(encodedCode));
-            copyCodeToClipboard(originalCode, copyButton);
-        });
-        
-        block.appendChild(copyButton);
-    });
+    codeBlocks.forEach(addCopyButtonToCodeBlock);
     
     // 添加消息操作按钮容器
     const messageActions = document.createElement('div');
@@ -578,6 +538,58 @@ function copyCodeToClipboard(code, buttonElement) {
 }
 
 /**
+ * 为代码块添加复制按钮
+ * @param {HTMLElement} block - 代码块元素 (&lt;pre&gt;)
+ */
+function addCopyButtonToCodeBlock(block) {
+    // 创建复制按钮元素
+    const copyButton = document.createElement('button');
+    copyButton.classList.add('code-copy-button');
+    copyButton.title = "复制代码";
+
+    // 创建SVG元素
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "14");
+    svg.setAttribute("height", "14");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+
+    const rectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rectElement.setAttribute("x", "9");
+    rectElement.setAttribute("y", "9");
+    rectElement.setAttribute("width", "13");
+    rectElement.setAttribute("height", "13");
+    rectElement.setAttribute("rx", "2");
+    rectElement.setAttribute("ry", "2");
+
+    const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    pathElement.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
+
+    svg.appendChild(rectElement);
+    svg.appendChild(pathElement);
+    copyButton.appendChild(svg);
+
+    // 添加点击事件
+    copyButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // 从data属性获取原始代码
+        const encodedCode = block.getAttribute('data-code');
+        if (encodedCode) { // Check if data-code exists
+            const originalCode = decodeURIComponent(atob(encodedCode));
+            copyCodeToClipboard(originalCode, copyButton);
+        } else {
+            console.warn('Code block missing data-code attribute.');
+            // Fallback: try to copy innerText, might not be accurate
+            copyCodeToClipboard(block.querySelector('code')?.innerText || '', copyButton);
+        }
+    });
+
+    block.appendChild(copyButton);
+}
+
+/**
  * 复制消息内容到剪贴板
  * @param {HTMLElement} messageElement - 消息元素
  * @param {string} originalContent - 原始消息内容 (未经HTML格式化的)
@@ -640,46 +652,7 @@ function updateStreamingMessage(messageElement, content) {
     
     // 为代码块添加复制按钮
     const codeBlocks = messageElement.querySelectorAll('.code-block');
-    codeBlocks.forEach(block => {
-        // 创建复制按钮元素
-        const copyButton = document.createElement('button');
-        copyButton.classList.add('code-copy-button');
-        copyButton.title = "复制代码";
-        
-        // 创建SVG元素
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("width", "14");
-        svg.setAttribute("height", "14");
-        svg.setAttribute("fill", "none");
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "2");
-        
-        const rectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        rectElement.setAttribute("x", "9");
-        rectElement.setAttribute("y", "9");
-        rectElement.setAttribute("width", "13");
-        rectElement.setAttribute("height", "13");
-        rectElement.setAttribute("rx", "2");
-        rectElement.setAttribute("ry", "2");
-        
-        const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        pathElement.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
-        
-        svg.appendChild(rectElement);
-        svg.appendChild(pathElement);
-        copyButton.appendChild(svg);
-        
-        // 添加点击事件处理
-        copyButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const encodedCode = block.getAttribute('data-code');
-            const originalCode = decodeURIComponent(atob(encodedCode));
-            copyCodeToClipboard(originalCode, copyButton);
-        });
-        
-        block.appendChild(copyButton);
-    });
+    codeBlocks.forEach(addCopyButtonToCodeBlock);
     
     // 滚动到底部
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
@@ -826,9 +799,8 @@ async function callGeminiAPI(userMessage, customHistory = null) {
             parts: [{ text: userMessage }]
         });
 
-        // API 基础 URL
-        const apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-        const endpoint = `${apiBaseUrl}/models/${state.model}:generateContent?key=${state.apiKey}`;
+        // API 端点
+        const endpoint = `${API_BASE_URL}/models/${state.model}:generateContent?key=${state.apiKey}`;
 
         // 发送请求
         const response = await fetch(endpoint, {
@@ -847,123 +819,6 @@ async function callGeminiAPI(userMessage, customHistory = null) {
         }
 
         return data.candidates[0]?.content?.parts[0]?.text || '';
-    } catch (error) {
-        console.error('API调用失败:', error);
-        throw error;
-    }
-}
-
-/**
- * 调用 Gemini API 的流式输出版本
- * @param {string} userMessage - 用户消息内容
- * @param {HTMLElement} messageElement - 用于显示流式输出的元素
- * @returns {Promise<void>}
- */
-async function callGeminiAPIStream(userMessage, messageElement) {
-    try {
-        // 组合系统提示和页面上下文成一个单一的系统消息
-        let systemContent = state.systemPrompt;
-        if (state.pageContext) {
-            systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${state.pageContext}`;
-        }
-        
-        // 构建符合 Gemini API 要求的请求体
-        const requestBody = {
-            contents: [
-                // 将系统提示和用户消息合并到 user 角色的消息中
-                {
-                    role: 'user',
-                    parts: [{ text: systemContent + '\n\n' + userMessage }]
-                }
-            ],
-            generationConfig: {
-                temperature: parseFloat(state.temperature),
-                maxOutputTokens: parseInt(state.maxTokens),
-                topP: parseFloat(state.topP)
-            }
-        };
-
-        // API 基础 URL
-
-        // 确定 API 端点
-        const endpoint = `${apiBaseUrl}/models/${state.model}:generateContent?key=${state.apiKey}`;
-
-        // 发送请求
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        // 解析响应
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let fullResponse = '';
-        
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            fullResponse += chunk;
-            updateStreamingMessage(messageElement, fullResponse);
-        }
-
-        if (!response.ok) {
-            throw new Error(data.error?.message || '未知错误');
-        }
-
-        // 流结束后，移除闪烁光标
-        const cursor = messageElement.querySelector('.streaming-cursor');
-        if(cursor) cursor.remove();
-        
-        // 流完成后添加复制按钮
-        const copyButton = document.createElement('button');
-        copyButton.classList.add('copy-button');
-        copyButton.title = "复制全部";
-        
-        // 创建SVG元素
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("width", "14");
-        svg.setAttribute("height", "14");
-        svg.setAttribute("fill", "none");
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "2");
-        svg.setAttribute("stroke-linecap", "round");
-        svg.setAttribute("stroke-linejoin", "round");
-        
-        const rectElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        rectElement.setAttribute("x", "9");
-        rectElement.setAttribute("y", "9");
-        rectElement.setAttribute("width", "13");
-        rectElement.setAttribute("height", "13");
-        rectElement.setAttribute("rx", "2");
-        rectElement.setAttribute("ry", "2");
-        
-        const pathElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        pathElement.setAttribute("d", "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1");
-        
-        svg.appendChild(rectElement);
-        svg.appendChild(pathElement);
-        copyButton.appendChild(svg);
-        
-        // 添加点击事件
-        copyButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            copyMessageContent(messageElement, fullResponse, copyButton);
-        });
-        
-        messageElement.appendChild(copyButton);
-        
-        // 将完整响应添加到聊天历史
-        state.chatHistory.push({
-            role: 'model',
-            content: fullResponse
-        });
-        
-        return fullResponse;
     } catch (error) {
         console.error('API调用失败:', error);
         throw error;
@@ -1057,7 +912,7 @@ async function callGeminiAPIWithImages(userMessage, images = []) {
             });
 
             // 使用临时模型发送请求
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${tempModel}:generateContent?key=${state.apiKey}`;
+            const endpoint = `${API_BASE_URL}/models/${tempModel}:generateContent?key=${state.apiKey}`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
@@ -1125,9 +980,8 @@ async function callGeminiAPIWithImages(userMessage, images = []) {
             parts: currentParts
         });
 
-        // API 基础 URL和端点
-        const apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-        const endpoint = `${apiBaseUrl}/models/${state.model}:generateContent?key=${state.apiKey}`;
+        // API 端点
+        const endpoint = `${API_BASE_URL}/models/${state.model}:generateContent?key=${state.apiKey}`;
 
         try {
             const response = await fetch(endpoint, {
@@ -2308,77 +2162,6 @@ function regenerateMessage(messageId) {
  * @param {string} userMessage - 用户消息内容
  * @param {Array} customHistory - 可选的自定义历史上下文
  * @returns {Promise<string>} AI的响应
- */
-async function callGeminiAPI(userMessage, customHistory = null) {
-    try {
-        // 组合系统提示和页面上下文
-        let systemContent = state.systemPrompt;
-        if (state.pageContext) {
-            systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${state.pageContext}`;
-        }
-        
-        // 使用自定义历史或默认历史
-        const recentHistory = customHistory || state.chatHistory.slice(-20);
-        
-        // 构建请求体
-        const requestBody = {
-            contents: [
-                // 首条消息包含系统提示
-                {
-                    role: 'user',
-                    parts: [{ text: systemContent }]
-                }
-            ],
-            generationConfig: {
-                temperature: parseFloat(state.temperature),
-                maxOutputTokens: parseInt(state.maxTokens),
-                topP: parseFloat(state.topP)
-            }
-        };
-
-        // 添加历史对话
-        recentHistory.forEach(msg => {
-            requestBody.contents.push({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }]
-            });
-        });
-
-        // 添加当前用户消息
-        requestBody.contents.push({
-            role: 'user',
-            parts: [{ text: userMessage }]
-        });
-
-        // API 基础 URL
-        const apiBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-        const endpoint = `${apiBaseUrl}/models/${state.model}:generateContent?key=${state.apiKey}`;
-
-        // 发送请求
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        // 解析响应
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error?.message || '未知错误');
-        }
-
-        return data.candidates[0]?.content?.parts[0]?.text || '';
-    } catch (error) {
-        console.error('API调用失败:', error);
-        throw error;
-    }
-}
-
-/**
- * 设置输入框自适应高度
  */
 
 // 初始化应用

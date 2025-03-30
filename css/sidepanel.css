@@ -1949,12 +1949,14 @@ button {
     font-weight: 600;
     padding: 10px 12px;
     border: 1px solid #dee2e6;
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message table td,
 .markdown-rendered td {
     padding: 8px 12px;
     border: 1px solid #dee2e6;
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message table tr,
@@ -2080,12 +2082,14 @@ button {
     text-align: left;
     background-color: var(--primary-color);
     color: white;
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message td,
 .markdown-rendered td {
     padding: 6px 10px;
     border: 1px solid #dee2e6;
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message tr:nth-child(even),
@@ -2280,12 +2284,14 @@ button {
     text-align: left;
     background-color: var(--primary-color);
     color: white;
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message td,
 .markdown-rendered td {
     padding: 6px 10px;
     border: 1px solid #dee2e6;
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message tr:nth-child(even),
