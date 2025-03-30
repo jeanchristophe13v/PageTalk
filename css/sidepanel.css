@@ -679,9 +679,9 @@ main {
     flex: 1;
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 12px 14px; /* 增加垂直内边距使光标居中 */
+    padding: 4px 14px; /* 增加垂直内边距使光标居中 */
     resize: none;
-    min-height: 40px; /* 固定值，减小初始高度 */
+    min-height: 36px; /* 进一步减小初始高度 */
     max-height: 160px; /* 固定最大高度，大约是原来的4倍 */
     font-size: clamp(12px, 3.5vw, 14px);
     transition: all 0.3s ease;
@@ -699,7 +699,7 @@ main {
 
 /* 优化输入框滚动条 */
 .chat-input textarea::-webkit-scrollbar {
-    width: 4px;
+    width: 5px;
 }
 
 .chat-input textarea::-webkit-scrollbar-track {

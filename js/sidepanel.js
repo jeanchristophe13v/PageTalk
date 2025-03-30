@@ -2121,7 +2121,7 @@ function resizeTextarea() {
     
     // 计算新高度，限制在 min-height 和 max-height 之间
     // 注意：这些值应该与 CSS 中的 .chat-input textarea 保持一致
-    const minHeight = 40; // 从 CSS 获取或硬编码
+    const minHeight = 36; // 与 CSS 中的 min-height 保持一致
     const maxHeight = 160; // 从 CSS 获取或硬编码 (或者使用 originalHeight * 7 ?) - 保持与 CSS 一致更可靠
     const scrollHeight = textarea.scrollHeight;
     
