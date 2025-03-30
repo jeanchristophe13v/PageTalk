@@ -982,7 +982,7 @@ async function callGeminiAPIWithImages(userMessage, images = []) {
         
         // 检查当前模型是否支持图像输入
         const supportedModels = [
-            'gemini-2.0-pro',
+            'gemini-2.5-pro-exp-03-25',
             'gemini-2.0-flash',
             'gemini-2.0-flash-thinking-exp-01-21',
             'gemini-2.0-pro-exp-02-05',
