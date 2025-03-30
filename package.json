@@ -2,7 +2,7 @@
     "name": "pagetalk",
     "displayName": "Pagetalk",
     "description": "一个可以读取页面内容，调用Gemini API进行问答的浏览器插件",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "engines": {
         "vscode": "^1.60.0"
     },

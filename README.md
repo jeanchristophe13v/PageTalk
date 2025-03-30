@@ -109,5 +109,4 @@ Pagetalk/
 
 *   Support for rendering Mermaid diagrams within chat responses.
 *   Support for rendering LaTeX mathematical formulas.
-*   Implementation of streaming API responses for a more interactive chat experience.
 *   Potential support for additional AI models or providers.
