@@ -78,10 +78,25 @@ function setupResizeEvents(resizer, panel) {
         
         // 限制最小宽度为200px，最大宽度为窗口的80%
         if (newWidth >= 200 && newWidth <= window.innerWidth * 0.8) {
-          // 更新面板宽度
-          panelWidth = newWidth;
-          panel.style.width = `${newWidth}px`;
-          document.body.style.marginRight = `${newWidth}px`;
+          // 检查宽度是否真的改变了
+          if (panelWidth !== newWidth) {
+            // 更新面板宽度
+            panelWidth = newWidth;
+            panel.style.width = `${newWidth}px`;
+            document.body.style.marginRight = `${newWidth}px`;
+
+            // 新增：通知 iframe 面板宽度已改变
+            const iframe = document.getElementById('pagetalk-panel-iframe');
+            if (iframe && iframe.contentWindow) {
+              // 使用 requestAnimationFrame 或 setTimeout 避免过于频繁地发送消息
+              requestAnimationFrame(() => {
+                iframe.contentWindow.postMessage({
+                  action: 'panelResized',
+                  width: panelWidth
+                }, '*');
+              });
+            }
+          }
         }
       }
     }
@@ -131,13 +146,21 @@ function showPanel() {
     document.body.style.marginRight = `${panelWidth}px`;
     panelActive = true;
     
-    // 通知面板内容提取页面内容
+    // 通知面板内容提取页面内容 (保留原有逻辑)
     setTimeout(() => {
       const iframe = document.getElementById('pagetalk-panel-iframe');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ action: 'pageContentLoaded' }, '*');
       }
     }, 500);
+
+    // 新增：通知 iframe 面板已显示，以便触发 resizeTextarea
+    setTimeout(() => {
+      const iframe = document.getElementById('pagetalk-panel-iframe');
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ action: 'panelShown' }, '*');
+      }
+    }, 10); // 稍微延迟确保 iframe 内脚本已准备好
   }
 }
 

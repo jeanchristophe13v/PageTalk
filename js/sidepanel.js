@@ -2063,7 +2063,20 @@ function handleContentScriptMessages(event) {
         requestPageContent();
     }
     else if (message.action === 'copySuccess') {
+        // 可以在这里显示一个短暂的成功提示，如果需要的话
+        // showToast('已复制到剪贴板', 'success');
         console.log('复制成功');
+    }
+    // 新增：处理面板显示事件
+    else if (message.action === 'panelShown') {
+        // 确保在面板显示时立即调整文本框大小
+        resizeTextarea();
+    }
+    // 新增：处理面板调整大小事件 (从 content.js 转发)
+    else if (message.action === 'panelResized') {
+        // 面板宽度变化时也可能需要调整textarea大小
+        resizeTextarea();
+        console.log('Panel resized event received in sidepanel');
     }
 }
 
@@ -2097,38 +2110,45 @@ function closePanel() {
 }
 
 /**
- * 设置输入框自适应高度
+ * 根据内容调整文本框高度
+ */
+function resizeTextarea() {
+    const textarea = elements.userInput;
+    if (!textarea) return;
+
+    // 重置高度以获取正确的 scrollHeight
+    textarea.style.height = 'auto';
+    
+    // 计算新高度，限制在 min-height 和 max-height 之间
+    // 注意：这些值应该与 CSS 中的 .chat-input textarea 保持一致
+    const minHeight = 40; // 从 CSS 获取或硬编码
+    const maxHeight = 160; // 从 CSS 获取或硬编码 (或者使用 originalHeight * 7 ?) - 保持与 CSS 一致更可靠
+    const scrollHeight = textarea.scrollHeight;
+    
+    let newHeight = Math.max(minHeight, scrollHeight);
+    newHeight = Math.min(newHeight, maxHeight);
+    
+    textarea.style.height = newHeight + 'px';
+    
+    // 如果内容超过最大高度，CSS overflow-y: auto 会处理滚动条
+}
+
+/**
+ * 设置输入框自适应高度的事件监听
  */
 function setupAutoresizeTextarea() {
     const textarea = elements.userInput;
-    
-    // 初始高度
-    const originalHeight = textarea.clientHeight;
-    
-    // 调整高度的函数
-    function resizeTextarea() {
-        // 重置高度，以便于正确计算
-        textarea.style.height = 'auto';
-        
-        // 获取内容高度
-        const scrollHeight = textarea.scrollHeight;
-        
-        // 计算最大高度（原高度的7倍）
-        const maxHeight = originalHeight * 7;
-        
-        // 设置新高度，但不超过最大高度
-        const newHeight = Math.min(scrollHeight, maxHeight);
-        textarea.style.height = newHeight + 'px';
-    }
-    
+    if (!textarea) return;
+
     // 监听输入事件
     textarea.addEventListener('input', resizeTextarea);
     
-    // 在窗口大小变化时重新调整
-    window.addEventListener('resize', resizeTextarea);
+    // 在窗口大小变化时重新调整 (可选，如果面板宽度变化需要调整)
+    // window.addEventListener('resize', resizeTextarea); // 暂时注释掉，看是否必要
     
-    // 初始调整一次（如果有预填内容）
-    setTimeout(resizeTextarea, 10);
+    // 初始调整一次高度
+    // 使用 setTimeout 确保在 DOM 完全渲染后执行
+    setTimeout(resizeTextarea, 0);
 }
 
 /**
@@ -2360,37 +2380,6 @@ async function callGeminiAPI(userMessage, customHistory = null) {
 /**
  * 设置输入框自适应高度
  */
-function setupAutoresizeTextarea() {
-    const textarea = elements.userInput;
-    
-    // 初始高度
-    const originalHeight = textarea.clientHeight;
-    
-    // 调整高度的函数
-    function resizeTextarea() {
-        // 重置高度，以便于正确计算
-        textarea.style.height = 'auto';
-        
-        // 获取内容高度
-        const scrollHeight = textarea.scrollHeight;
-        
-        // 计算最大高度（原高度的7倍）
-        const maxHeight = originalHeight * 7;
-        
-        // 设置新高度，但不超过最大高度
-        const newHeight = Math.min(scrollHeight, maxHeight);
-        textarea.style.height = newHeight + 'px';
-    }
-    
-    // 监听输入事件
-    textarea.addEventListener('input', resizeTextarea);
-    
-    // 在窗口大小变化时重新调整
-    window.addEventListener('resize', resizeTextarea);
-    
-    // 初始调整一次（如果有预填内容）
-    setTimeout(resizeTextarea, 10);
-}
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', init);
