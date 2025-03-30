@@ -344,13 +344,19 @@ function addMessageToChat(content, sender, isStreaming = false, images = []) {
     // 为每条消息添加唯一ID
     const messageId = generateUniqueId();
     messageElement.dataset.messageId = messageId;
-    
+
+    // 将消息添加到聊天区域
+    elements.chatMessages.appendChild(messageElement);
+    // 滚动到底部
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+
     if (isStreaming) {
-        // 对于流式消息，先创建一个空的容器
-        elements.chatMessages.appendChild(messageElement);
+        // 对于流式消息，只创建容器并返回引用
         return messageElement;
     }
-    
+
+    // --- 非流式消息或最终渲染逻辑 ---
+
     // 如果是用户消息并且有图片，添加图片预览
     if (sender === 'user' && images.length > 0) {
         const imagesContainer = document.createElement('div');
@@ -649,14 +655,107 @@ function updateStreamingMessage(messageElement, content) {
         messageElement.appendChild(messageActions);
     }
     messageElement.appendChild(streamingCursor);
-    
-    // 为代码块添加复制按钮
-    const codeBlocks = messageElement.querySelectorAll('.code-block');
-    codeBlocks.forEach(addCopyButtonToCodeBlock);
-    
+
     // 滚动到底部
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
+
+/**
+ * 完成机器人消息的最终渲染（流结束后调用）
+ * @param {HTMLElement} messageElement - 消息元素
+ * @param {string} finalContent - 最终的完整内容
+ */
+function finalizeBotMessage(messageElement, finalContent) {
+    // 移除流式光标
+    const streamingCursor = messageElement.querySelector('.streaming-cursor');
+    if (streamingCursor) {
+        streamingCursor.remove();
+    }
+
+    // 确保最终内容正确渲染 (可能 updateStreamingMessage 已完成大部分)
+    messageElement.innerHTML = window.MarkdownRenderer.render(finalContent);
+
+    // 为代码块添加复制按钮
+    const codeBlocks = messageElement.querySelectorAll('.code-block');
+    codeBlocks.forEach(addCopyButtonToCodeBlock);
+
+    // 添加消息操作按钮 (复制、删除、重新生成)
+    addMessageActionButtons(messageElement, finalContent); // 假设有这样一个函数
+
+    // 滚动到底部 (以防万一)
+    elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+}
+
+/**
+ * 添加消息操作按钮（复制、删除、重新生成）
+ * @param {HTMLElement} messageElement - 消息元素
+ * @param {string} content - 消息的原始文本内容
+ */
+function addMessageActionButtons(messageElement, content) {
+    const messageId = messageElement.dataset.messageId;
+    const sender = messageElement.classList.contains('user-message') ? 'user' : 'bot';
+
+    // 添加消息操作按钮容器
+    const messageActions = document.createElement('div');
+    messageActions.className = 'message-actions';
+
+    // 添加重新生成按钮 (仅对用户消息或模型消息)
+    const regenerateButton = document.createElement('button');
+    regenerateButton.className = 'message-action-btn regenerate-btn';
+    regenerateButton.title = "重新生成";
+    regenerateButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+        </svg>
+    `;
+    regenerateButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        regenerateMessage(messageId);
+    });
+    messageActions.appendChild(regenerateButton);
+
+
+    // 添加删除按钮
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'message-action-btn delete-btn';
+    deleteButton.title = "删除消息";
+    deleteButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+        </svg>
+    `;
+    deleteButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteMessage(messageId);
+    });
+    messageActions.appendChild(deleteButton);
+
+
+    // 只给机器人消息添加复制按钮
+    if (sender === 'bot') {
+        const copyButton = document.createElement('button');
+        copyButton.classList.add('copy-button'); // 使用与 addMessageToChat 中相同的类名
+        copyButton.title = "复制全部";
+        copyButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+        `;
+        copyButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyMessageContent(messageElement, content, copyButton);
+        });
+        // 将复制按钮添加到操作容器的最前面
+        messageActions.insertBefore(copyButton, messageActions.firstChild);
+    }
+
+    // 将操作容器添加到消息元素
+    messageElement.appendChild(messageActions);
+}
+
 
 /**
  * 发送用户消息并获取AI响应
@@ -684,45 +783,55 @@ async function sendUserMessage() {
     const thinkingElement = addThinkingAnimation();
     
     try {
-        // 准备用户消息
-        const userMessageObj = {
-            role: 'user',
-            content: userMessage
-        };
-        
-        // 将用户消息添加到历史（不含图片，只记录文本）
-        state.chatHistory.push(userMessageObj);
-        
-        // 调用Gemini API（带图片）
-        const response = await callGeminiAPIWithImages(userMessage, currentImages);
-        
-        // 移除思考动画
-        thinkingElement.remove();
-        
-        // 添加AI响应到聊天
-        if (response) {
-            addMessageToChat(response, 'bot');
-            
-            // 将AI回复添加到历史（只在UI上显示，不会发送到API）
-            state.chatHistory.push({
-                role: 'model',
-                content: response
-            });
-            
-            // 发送完成后清除图片
-            if (state.images.length > 0) {
-                clearImages();
-            }
-        } else {
-            throw new Error('未能获取有效响应');
+        // 构建当前用户消息的 parts 数组
+        const currentParts = [];
+        if (userMessage) {
+            currentParts.push({ text: userMessage });
         }
+        if (currentImages.length > 0) {
+            for (const image of currentImages) {
+                const base64data = image.dataUrl.split(',')[1];
+                currentParts.push({
+                    inlineData: {
+                        mimeType: image.mimeType,
+                        data: base64data
+                    }
+                });
+            }
+        }
+
+        // 将包含完整 parts 的用户消息添加到历史
+        // 确保至少有一个 part，否则不添加 (避免发送空消息历史)
+        if (currentParts.length > 0) {
+             // 获取刚刚添加的用户消息的 messageId，以便存入历史记录
+             const userMessageElement = elements.chatMessages.lastElementChild; // 获取最后添加的元素
+             const userMessageId = userMessageElement ? userMessageElement.dataset.messageId : generateUniqueId(); // 获取ID或生成新的
+
+             state.chatHistory.push({
+                 role: 'user',
+                 parts: currentParts,
+                 id: userMessageId // 添加ID
+             });
+        } else {
+             // 如果没有文本也没有图片，则不发送也不添加到历史
+             if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
+             return;
+        }
+
+        // 调用流式 Gemini API（带图片），并传入思考动画元素
+        // 这个函数现在内部处理UI更新和历史记录添加，不再返回响应字符串
+        await callGeminiAPIWithImages(userMessage, currentImages, thinkingElement);
+
+        // 注意：思考动画的移除、机器人消息的添加、历史记录的更新
+        // 以及图片的清除现在都在 callGeminiAPIWithImages 内部处理
+
     } catch (error) {
-        // 移除思考动画
-        thinkingElement.remove();
-        
-        // 显示错误消息
-        addMessageToChat(`获取响应时出错: ${error.message}`, 'bot');
-        console.error('API调用错误:', error);
+        // 如果 callGeminiAPIWithImages 抛出未捕获的错误
+        if (thinkingElement && !thinkingElement.parentNode) { // 检查动画是否已被移除
+             thinkingElement.remove();
+        }
+        // 不再在此处添加错误消息，让 callGeminiAPIWithImages 内部处理
+        console.error('Error caught in sendUserMessage:', error);
     }
 }
 
@@ -752,147 +861,135 @@ function addThinkingAnimation() {
     return thinkingElement;
 }
 
-/**
- * 调用Gemini API
- * @param {string} userMessage - 用户消息内容
- * @param {Array} customHistory - 可选的自定义历史上下文
- * @returns {Promise<string>} AI的响应
- */
-async function callGeminiAPI(userMessage, customHistory = null) {
-    try {
-        // 组合系统提示和页面上下文
-        let systemContent = state.systemPrompt;
-        if (state.pageContext) {
-            systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${state.pageContext}`;
-        }
-        
-        // 使用自定义历史或默认历史
-        const recentHistory = customHistory || state.chatHistory.slice(-20);
-        
-        // 构建请求体
-        const requestBody = {
-            contents: [
-                // 首条消息包含系统提示
-                {
-                    role: 'user',
-                    parts: [{ text: systemContent }]
-                }
-            ],
-            generationConfig: {
-                temperature: parseFloat(state.temperature),
-                maxOutputTokens: parseInt(state.maxTokens),
-                topP: parseFloat(state.topP)
-            }
-        };
-
-        // 添加历史对话
-        recentHistory.forEach(msg => {
-            requestBody.contents.push({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }]
-            });
-        });
-
-        // 添加当前用户消息
-        requestBody.contents.push({
-            role: 'user',
-            parts: [{ text: userMessage }]
-        });
-
-        // API 端点
-        const endpoint = `${API_BASE_URL}/models/${state.model}:generateContent?key=${state.apiKey}`;
-
-        // 发送请求
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        // 解析响应
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error?.message || '未知错误');
-        }
-
-        return data.candidates[0]?.content?.parts[0]?.text || '';
-    } catch (error) {
-        console.error('API调用失败:', error);
-        throw error;
-    }
-}
+// --- 移除旧的、非流式的 callGeminiAPI 函数 ---
+// async function callGeminiAPI(userMessage, customHistory = null) { ... }
+// --- 结束移除 ---
 
 /**
  * 调用Gemini API（带多图片支持）
  * @param {string} userMessage - 用户消息内容
  * @param {Array} images - 图片数组，包含dataUrl和mimeType
- * @returns {Promise<string>} AI的响应
+ * @param {HTMLElement} thinkingElement - 调用者创建的思考动画元素
+ * @returns {Promise<void>} 无返回值，直接更新UI和状态
  */
-async function callGeminiAPIWithImages(userMessage, images = []) {
-    try {
-        console.log(`使用模型 ${state.model} 处理带图片的请求`);
-        
-        // 检查当前模型是否支持图像输入
-        const supportedModels = [
-            'gemini-2.5-pro-exp-03-25',
-            'gemini-2.0-flash',
-            'gemini-2.0-flash-thinking-exp-01-21',
-            'gemini-2.0-pro-exp-02-05',
-            'gemini-exp-1206'
-        ];
+async function callGeminiAPIWithImages(userMessage, images = [], thinkingElement) {
+    // 注意：thinkingIndicator 变量现在由参数传入，不再在此处创建
+    let accumulatedText = '';
+    let messageElement = null;
+    let currentModel = state.model; // 保存当前模型，以便出错时恢复
 
-        // 构建消息历史，最多保留最近5轮对话
-        const recentHistory = state.chatHistory.slice(-10); // 保留最近5轮（10条消息）
-        
+    try {
+        console.log(`使用模型 ${currentModel} 处理带图片的流式请求`);
+
+        // 检查模型支持（如果需要，可以在这里添加备用逻辑，但流式调用本身不依赖模型支持检查）
+        // ... (可以保留之前的模型检查和切换逻辑，但要确保最终使用 streamGenerateContent)
+
+        // 构建消息历史
+        const recentHistory = state.chatHistory.slice(-10); // 保留最近5轮
+
         // 组合系统提示和页面上下文
         let systemContent = state.systemPrompt;
         if (state.pageContext) {
             systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${state.pageContext}`;
         }
-        
-        // 如果当前模型不在支持列表，给出警告并尝试切换到gemini-2.0-flash
-        if (!supportedModels.includes(state.model) && images.length > 0) {
-            console.warn(`当前模型 ${state.model} 可能不支持图像输入，尝试使用gemini-2.0-flash`);
-            showToast("当前模型可能不支持图像输入，已临时切换到gemini-2.0-flash模型", "warning");
-            
-            const tempModel = 'gemini-2.0-flash';
-            
-            // 构建请求体
-            const requestBody = {
-                contents: [],
-                generationConfig: {
-                    temperature: parseFloat(state.temperature),
-                    maxOutputTokens: parseInt(state.maxTokens),
-                    topP: parseFloat(state.topP)
+
+        // 构建请求体 (与 generateContent 类似)
+        const requestBody = {
+            contents: [],
+            generationConfig: {
+                temperature: parseFloat(state.temperature),
+                maxOutputTokens: parseInt(state.maxTokens), // 注意：流式输出时此参数可能行为不同或被忽略
+                topP: parseFloat(state.topP)
+            }
+        };
+
+        // --- 修改构建 contents 的逻辑 ---
+        if (recentHistory.length === 0) {
+            // 首次对话：合并系统提示、用户文本和图片到单个 user 消息中
+            const firstTurnParts = [];
+            // 合并系统提示和用户文本
+            let combinedText = systemContent;
+            if (userMessage) {
+                // 添加换行符分隔系统提示和用户消息（如果两者都存在）
+                if (combinedText) {
+                    combinedText += "\n\n" + userMessage;
+                } else {
+                    combinedText = userMessage;
                 }
-            };
+            }
+            // 添加合并后的文本 part (如果存在)
+            if (combinedText) {
+                 firstTurnParts.push({ text: combinedText });
+            }
 
-            // 添加系统提示作为第一条消息
-            requestBody.contents.push({
-                role: 'user',
-                parts: [{ text: systemContent }]
-            });
+            // 添加图片 parts
+            if (images.length > 0) {
+                for (const image of images) {
+                    const base64data = image.dataUrl.split(',')[1];
+                    firstTurnParts.push({
+                        inlineData: {
+                            mimeType: image.mimeType,
+                            data: base64data
+                        }
+                    });
+                }
+            }
+            // 添加这唯一的用户回合
+            if (firstTurnParts.length > 0) {
+                 requestBody.contents.push({
+                     role: 'user',
+                     parts: firstTurnParts
+                 });
+            } else {
+                 // 如果连合并文本和图片都没有，则可能不应该发送请求
+                 console.warn("Attempting to send empty first message.");
+                 // 可以选择抛出错误或提前返回
+                 if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
+                 addMessageToChat("无法发送空消息。", 'bot');
+                 return;
+            }
 
-            // 添加历史对话
+        } else {
+            // 后续对话：先添加系统提示，然后是历史记录，最后是当前用户输入
+
+            // 添加系统提示 (如果需要，Gemini 可能不需要每次都加)
+            // 考虑是否真的需要每次都加系统提示，如果不需要可以注释掉下面这块
+             requestBody.contents.push({
+                 role: 'user', // 或者 'system' 如果 API 支持
+                 parts: [{ text: systemContent }]
+             });
+             // 添加一个 model 角色的空回复，模拟多轮对话结构
+             requestBody.contents.push({
+                 role: 'model',
+                 parts: [{ text: "OK." }] // 或其他占位符
+             });
+
+
+            // 添加历史对话 (使用存储的 parts 数组)
             recentHistory.forEach(msg => {
-                requestBody.contents.push({
-                    role: msg.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.content }]
-                });
+                if (msg.parts && Array.isArray(msg.parts)) {
+                     requestBody.contents.push({
+                         role: msg.role,
+                         parts: msg.parts
+                     });
+                } else if (msg.content && typeof msg.content === 'string') {
+                     // 兼容旧格式：如果 parts 不存在但 content 存在，则转换
+                     console.log("Converting old history format:", msg);
+                     requestBody.contents.push({
+                         role: msg.role,
+                         parts: [{ text: msg.content }] // 将 content 包装在 parts 数组中
+                     });
+                } else {
+                     // 如果 parts 和 content 都不合法，则跳过并警告
+                     console.warn("Skipping history message due to missing or invalid parts/content:", msg);
+                }
             });
 
-            // 创建当前消息的parts
+            // 创建并添加当前用户消息的 parts
             const currentParts = [];
-            
-            // 添加用户文本消息
             if (userMessage) {
                 currentParts.push({ text: userMessage });
             }
-            
-            // 添加图片
             if (images.length > 0) {
                 for (const image of images) {
                     const base64data = image.dataUrl.split(',')[1];
@@ -904,150 +1001,157 @@ async function callGeminiAPIWithImages(userMessage, images = []) {
                     });
                 }
             }
-            
-            // 添加当前用户消息
-            requestBody.contents.push({
-                role: 'user',
-                parts: currentParts
-            });
-
-            // 使用临时模型发送请求
-            const endpoint = `${API_BASE_URL}/models/${tempModel}:generateContent?key=${state.apiKey}`;
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.error?.message || '未知错误');
-            }
-
-            return data.candidates[0]?.content?.parts[0]?.text || '';
+             if (currentParts.length > 0) {
+                 requestBody.contents.push({
+                     role: 'user',
+                     parts: currentParts
+                 });
+             } else {
+                  // 如果当前输入为空（例如只点了重新生成），可能不应该发送
+                  console.warn("Attempting to send empty current message in multi-turn.");
+                  if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
+                  // addMessageToChat("无法发送空消息。", 'bot'); // 或者静默失败
+                  return;
+             }
         }
+        // --- 结束构建 contents 的逻辑 ---
 
-        // 原始处理逻辑（当前模型支持图片输入的情况）
-        const requestBody = {
-            contents: [],
-            generationConfig: {
-                temperature: parseFloat(state.temperature),
-                maxOutputTokens: parseInt(state.maxTokens),
-                topP: parseFloat(state.topP)
-            }
-        };
 
-        // 添加系统提示作为第一条消息
-        requestBody.contents.push({
-            role: 'user',
-            parts: [{ text: systemContent }]
+        // API 端点 - 使用流式端点
+        const endpoint = `${API_BASE_URL}/models/${currentModel}:streamGenerateContent?key=${state.apiKey}&alt=sse`; // 使用 SSE
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
         });
 
-        // 添加历史对话
-        recentHistory.forEach(msg => {
-            requestBody.contents.push({
-                role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.content }]
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: { message: '无法解析错误响应' } }));
+            // 尝试模型切换逻辑（如果需要）
+            if (images.length > 0 && errorData.error?.message?.includes('does not support image input')) {
+                 console.warn(`模型 ${currentModel} 不支持图像输入，尝试使用 gemini-2.0-flash`);
+                 showToast("当前模型不支持图像输入，已临时切换到 gemini-2.0-flash 模型", "warning");
+                 state.model = 'gemini-2.0-flash'; // 更新全局状态
+                 if (elements.chatModelSelection) elements.chatModelSelection.value = state.model;
+                 if (elements.modelSelection) elements.modelSelection.value = state.model;
+                 if (thinkingIndicator) thinkingIndicator.remove(); // 移除旧动画
+                 return await callGeminiAPIWithImages(userMessage, images); // 递归调用
+            }
+            throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+        }
+
+        // 处理 SSE 流
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // 按行处理 SSE 数据
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // 保留可能不完整的最后一行
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const jsonString = line.substring(6).trim();
+                    if (jsonString) {
+                        try {
+                            const chunkData = JSON.parse(jsonString);
+                            const textChunk = chunkData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                            if (textChunk !== undefined && textChunk !== null) {
+                                // 使用传入的 thinkingElement 参数
+                                if (thinkingElement && thinkingElement.parentNode) {
+                                    thinkingElement.remove();
+                                    // thinkingElement = null; // 不需要将参数设为 null
+                                }
+                                if (!messageElement) {
+                                    messageElement = addMessageToChat(null, 'bot', true);
+                                }
+                                accumulatedText += textChunk;
+                                updateStreamingMessage(messageElement, accumulatedText);
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse JSON chunk:', jsonString, e);
+                            // 可以在这里添加更具体的错误处理
+                        }
+                    }
+                }
+            }
+        }
+
+        // 处理缓冲区中剩余的部分（理论上 SSE 应该以换行结束）
+        if (buffer.startsWith('data: ')) {
+             const jsonString = buffer.substring(6).trim();
+             if (jsonString) {
+                 try {
+                     const chunkData = JSON.parse(jsonString);
+                     const textChunk = chunkData.candidates?.[0]?.content?.parts?.[0]?.text;
+                     if (textChunk !== undefined && textChunk !== null) {
+                         // 使用传入的 thinkingElement 参数
+                         if (thinkingElement && thinkingElement.parentNode) {
+                             thinkingElement.remove();
+                             // thinkingElement = null;
+                         }
+                         if (!messageElement) {
+                             messageElement = addMessageToChat(null, 'bot', true);
+                         }
+                         accumulatedText += textChunk;
+                         updateStreamingMessage(messageElement, accumulatedText);
+                     }
+                 } catch (e) {
+                     console.error('Failed to parse final JSON chunk:', jsonString, e);
+                 }
+             }
+        }
+
+
+        // 流结束
+        if (messageElement) {
+            finalizeBotMessage(messageElement, accumulatedText);
+            // 更新聊天历史，存储 parts 数组
+            state.chatHistory.push({
+                role: 'model',
+                parts: [{ text: accumulatedText }], // 存储为 parts 数组
+                id: messageElement.dataset.messageId // 使用消息元素的ID
             });
-        });
-
-        // 创建当前消息的parts
-        const currentParts = [];
-        
-        // 添加用户文本消息
-        if (userMessage) {
-            currentParts.push({ text: userMessage });
+            // saveChatHistory(); // 如果需要保存历史记录
+        } else if (thinkingElement && thinkingElement.parentNode) { // 使用传入的 thinkingElement
+            // 如果没有收到任何内容，移除动画并显示提示
+            thinkingElement.remove();
+            addMessageToChat("未能生成回复。", 'bot');
         }
-        
-        // 添加图片
-        if (images.length > 0) {
-            for (const image of images) {
-                const base64data = image.dataUrl.split(',')[1];
-                currentParts.push({
-                    inlineData: {
-                        mimeType: image.mimeType,
-                        data: base64data
-                    }
-                });
-            }
+
+        // 清除图片（如果成功发送）
+        if (state.images.length > 0) {
+             clearImages();
         }
-        
-        // 添加当前用户消息
-        requestBody.contents.push({
-            role: 'user',
-            parts: currentParts
-        });
 
-        // API 端点
-        const endpoint = `${API_BASE_URL}/models/${state.model}:generateContent?key=${state.apiKey}`;
-
-        try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            const data = await response.json();
-            if (!response.ok) {
-                if (images.length > 0 && data.error?.message?.includes('not supported')) {
-                    console.warn(`模型 ${state.model} 不支持图像输入，尝试使用gemini-2.0-flash`);
-                    showToast("当前模型不支持图像输入，已临时切换到gemini-2.0-flash模型", "warning");
-                    
-                    state.model = 'gemini-2.0-flash';
-                    if (elements.chatModelSelection) {
-                        elements.chatModelSelection.value = state.model;
-                    }
-                    if (elements.modelSelection) {
-                        elements.modelSelection.value = state.model;
-                    }
-                    return await callGeminiAPIWithImages(userMessage, images);
-                }
-                throw new Error(data.error?.message || '未知错误');
-            }
-
-            return data.candidates[0]?.content?.parts[0]?.text || '';
-        } catch (error) {
-            if (images.length > 0) {
-                console.warn(`使用模型 ${state.model} 处理图片请求时出错: ${error.message}，尝试使用备用模型`);
-                
-                const backupModel = 'gemini-2.0-flash';
-                const prevModel = state.model;
-                state.model = backupModel;
-                
-                if (elements.chatModelSelection) {
-                    elements.chatModelSelection.value = state.model;
-                }
-                if (elements.modelSelection) {
-                    elements.modelSelection.value = state.model;
-                }
-                
-                showToast(`模型切换至 ${backupModel} 以支持图片处理`, "warning");
-                
-                try {
-                    const result = await callGeminiAPIWithImages(userMessage, images);
-                    return result;
-                } catch (secondError) {
-                    state.model = prevModel;
-                    if (elements.chatModelSelection) {
-                        elements.chatModelSelection.value = state.model;
-                    }
-                    if (elements.modelSelection) {
-                        elements.modelSelection.value = state.model;
-                    }
-                    throw secondError;
-                }
-            } else {
-                throw error;
-            }
-        }
     } catch (error) {
-        console.error('API调用失败:', error);
-        throw error;
+        console.error('流式 API 调用失败:', error);
+        // 使用传入的 thinkingElement 参数
+        if (thinkingElement && thinkingElement.parentNode) {
+            thinkingElement.remove();
+        }
+        // 修改错误处理逻辑：检查 messageElement 是否已创建
+        if (messageElement) {
+            // 如果流已经开始，更新现有的消息气泡以显示错误
+            const errorText = `\n\n--- 获取响应时出错: ${error.message} ---`;
+            accumulatedText += errorText; // 将错误信息附加到部分响应后
+            finalizeBotMessage(messageElement, accumulatedText); // 使用 finalize 来确保格式正确并添加按钮
+        } else {
+            // 如果流还未开始（messageElement 为 null），创建一个新的错误消息气泡
+            addMessageToChat(`获取响应时出错: ${error.message}`, 'bot');
+        }
+        // 可以在这里恢复之前的模型状态（如果切换了）
+        // state.model = prevModel; ...
     }
 }
 
@@ -2048,9 +2152,10 @@ function regenerateMessage(messageId) {
     
     // 如果是用户消息
     if (currentMessage.role === 'user') {
-        // 准备用户消息
-        const userMessage = currentMessage.content;
-        
+        // 从 parts 数组提取用户消息文本 (假设文本在第一个 part)
+        const userMessagePart = currentMessage.parts?.find(part => part.text);
+        const userMessage = userMessagePart ? userMessagePart.text : ''; // 如果找不到文本 part，则为空字符串
+
         // 如果这条用户消息后面有AI回复，则删除那条回复
         if (messageIndex + 1 < state.chatHistory.length && 
             state.chatHistory[messageIndex + 1].role === 'model') {
@@ -2072,34 +2177,20 @@ function regenerateMessage(messageId) {
         // 创建一个自定义历史，截取到当前消息之前的所有消息
         const customHistory = state.chatHistory.slice(0, messageIndex + 1);
         
-        // 调用API获取新回复，只传递当前消息之前的历史
-        callGeminiAPI(userMessage, customHistory)
-            .then(response => {
-                // 移除思考动画
-                thinkingElement.remove();
-                
-                // 添加AI响应到聊天
-                if (response) {
-                    const newMessageId = generateUniqueId();
-                    const newMessageElement = addMessageToChat(response, 'bot');
-                    
-                    // 将AI回复添加到历史记录中正确的位置
-                    state.chatHistory.splice(messageIndex + 1, 0, {
-                        role: 'model',
-                        content: response,
-                        id: newMessageId
-                    });
-                }
-            })
+        // 调用流式 API 获取新回复，并传入思考动画元素
+        // callGeminiAPIWithImages 会处理思考动画移除、UI更新和历史添加
+        callGeminiAPIWithImages(userMessage, [], thinkingElement, customHistory) // 传递空图片数组和 thinkingElement
             .catch(error => {
-                // 移除思考动画
-                thinkingElement.remove();
-                
-                // 显示错误消息
-                addMessageToChat(`获取响应时出错: ${error.message}`, 'bot');
-                console.error('API调用错误:', error);
+                // 主要错误处理在 callGeminiAPIWithImages 内部，这里只记录
+                console.error('Regenerate (user message) failed:', error);
+                // 如果 thinkingElement 仍然存在（表示流未开始或早期失败），则移除
+                if (thinkingElement && thinkingElement.parentNode) {
+                    thinkingElement.remove();
+                }
+                // 可以选择性地添加一个通用的重新生成失败消息
+                // addMessageToChat(`重新生成响应时出错: ${error.message}`, 'bot');
             });
-    } 
+    }
     // 如果是模型消息
     else if (currentMessage.role === 'model') {
         // 找到这条AI回复对应的用户消息
@@ -2107,55 +2198,42 @@ function regenerateMessage(messageId) {
         while (userMessageIndex >= 0 && state.chatHistory[userMessageIndex].role !== 'user') {
             userMessageIndex--;
         }
-        
+
         if (userMessageIndex >= 0) {
-            const userMessage = state.chatHistory[userMessageIndex].content;
-            
+            // 从 parts 数组提取用户消息文本 (假设文本在第一个 part)
+            const userMessagePart = state.chatHistory[userMessageIndex].parts?.find(part => part.text);
+            const userMessageContent = userMessagePart ? userMessagePart.text : ''; // 如果找不到文本 part，则为空字符串
+
             // 创建一个自定义历史，只包含到用户消息为止的历史
             const customHistory = state.chatHistory.slice(0, userMessageIndex + 1);
-            
-            // 移除当前AI回复
+
+            // 移除当前AI回复的DOM元素
             const elementToRemove = document.querySelector(`.message[data-message-id="${messageId}"]`);
             if (elementToRemove) {
                 elementToRemove.remove();
             }
-            
+
             // 从历史记录中删除当前AI回复
             state.chatHistory.splice(messageIndex, 1);
-            
-            // 显示AI思考动画
+
+            // 显示AI思考动画 (callGeminiAPIWithImages 会处理移除)
             const thinkingElement = addThinkingAnimation();
-            
-            // 调用API获取新回复，使用截断的历史上下文
-            callGeminiAPI(userMessage, customHistory)
-                .then(response => {
-                    // 移除思考动画
-                    thinkingElement.remove();
-                    
-                    // 添加AI响应到聊天
-                    if (response) {
-                        const newMessageId = generateUniqueId();
-                        addMessageToChat(response, 'bot');
-                        
-                        // 将AI回复添加到历史，插入到正确的位置
-                        state.chatHistory.splice(userMessageIndex + 1, 0, {
-                            role: 'model',
-                            content: response,
-                            id: newMessageId
-                        });
-                    }
-                })
+
+            // 调用流式 API 获取新回复，并传入思考动画元素
+            callGeminiAPIWithImages(userMessageContent, [], thinkingElement, customHistory) // 传递用户消息文本、空图片数组和 thinkingElement
                 .catch(error => {
-                    // 移除思考动画
-                    thinkingElement.remove();
-                    
-                    // 显示错误消息
-                    addMessageToChat(`获取响应时出错: ${error.message}`, 'bot');
-                    console.error('API调用错误:', error);
+                    // 主要错误处理在 callGeminiAPIWithImages 内部
+                    console.error('Regenerate (model message) failed:', error);
+                     if (thinkingElement && thinkingElement.parentNode) {
+                        thinkingElement.remove();
+                    }
+                    // 可以选择性地添加一个通用的重新生成失败消息
+                    // addMessageToChat(`重新生成响应时出错: ${error.message}`, 'bot');
                 });
         }
     }
 }
+
 
 /**
  * 调用Gemini API，允许自定义历史上下文
