@@ -157,9 +157,9 @@ main {
 .welcome-message {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: clamp(var(--spacing-md), 3vw, var(--spacing-lg));
-    margin: var(--spacing-lg) auto;
-    width: clamp(200px, 95%, 40%);
+    padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md)); /* 缩小内边距 */
+    margin: var(--spacing-md) auto; /* 缩小外边距 */
+    width: clamp(180px, 90%, 35%); /* 缩小宽度 */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     text-align: center;
     border: 1px solid var(--border-color);
@@ -167,17 +167,17 @@ main {
 
 .welcome-message h2 {
     color: var(--primary-color);
-    margin-bottom: var(--spacing-sm);
-    font-size: clamp(16px, 4vw, 18px);
+    margin-bottom: var(--spacing-xs); /* 缩小边距 */
+    font-size: clamp(14px, 3.5vw, 16px); /* 缩小字体 */
     font-weight: 600;
     letter-spacing: -0.5px;
 }
 
 .welcome-message p {
-    margin-bottom: var(--spacing-sm);
-    font-size: clamp(12px, 3.5vw, 14px);
-    line-height: 1.6;
-    color: var (--text-secondary);
+    margin-bottom: var(--spacing-xs); /* 缩小边距 */
+    font-size: clamp(11px, 3vw, 13px); /* 缩小字体 */
+    line-height: 1.5; /* 稍微减小行高 */
+    color: var(--text-secondary);
 }
 
 /* 快捷操作按钮样式 */
