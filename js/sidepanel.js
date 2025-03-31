@@ -681,6 +681,7 @@ async function sendUserMessage() {
     const userMessageId = userMessageElement.dataset.messageId; // 获取刚创建的消息ID
 
     elements.userInput.value = '';
+    resizeTextarea(); // 手动触发高度重新计算
 
     // 显示AI思考动画
     const thinkingElement = addThinkingAnimation();
