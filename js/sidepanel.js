@@ -1724,7 +1724,7 @@ function switchAgent(agentId) {
     saveCurrentAgentId();
 
     // 显示提示
-    showToast(`已切换到助手: ${agent.name}`, 'success');
+//     showToast(`已切换到助手: ${agent.name}`, 'success');
 }
 
 /**
