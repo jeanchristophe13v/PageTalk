@@ -532,17 +532,21 @@ main {
 /* 流式输出光标样式调整 */
 .streaming-cursor {
     display: inline-block;
-    width: 6px;
-    height: 16px;
+    /* 修改宽度，使其更细 */
+    width: 2px;
+    /* 高度使用 em 单位，使其与字体大小关联 */
+    height: 1em;
     background-color: var(--primary-color);
-    margin-left: 2px;
-    animation: blink 1s infinite;
-    vertical-align: middle;
+    margin-left: 1px; /* 稍微调整间距 */
+    /* 使用新的呼吸动画 */
+    animation: breathing 1.5s infinite ease-in-out;
+    vertical-align: text-bottom; /* 调整垂直对齐方式 */
 }
 
-@keyframes blink {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 1; }
+/* 定义呼吸动画 */
+@keyframes breathing {
+    0%, 100% { opacity: 1; } /* 完全可见 */
+    50% { opacity: 0.3; } /* 部分可见，模拟呼吸的“呼” */
 }
 
 /* AI思考动画样式 */
