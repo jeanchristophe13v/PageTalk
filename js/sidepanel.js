@@ -251,7 +251,7 @@ function setupEventListeners() {
             // 同步更新模型设置中的选择器
             elements.modelSelection.value = state.model;
             // 保存设置
-            saveModelSettings(false);
+            saveModelSettings(false); // 传入 false，不在聊天页切换模型时显示提示
         });
     }
 
@@ -1205,8 +1205,9 @@ async function _testAndVerifyApiKey(apiKey, model) {
 
 /**
  * Saves model settings after testing the API key.
+ * @param {boolean} [showToastNotification=true] - Whether to show the 'Saved' toast notification.
  */
-async function saveModelSettings() {
+async function saveModelSettings(showToastNotification = true) {
     const apiKey = elements.apiKey.value.trim();
     const model = elements.modelSelection.value;
 
@@ -1244,7 +1245,9 @@ async function saveModelSettings() {
                 state.isConnected = false; // Revert connection status if save failed
             } else {
                 // Show success message AFTER saving is confirmed using toast
-                showToast('Saved', 'success'); // 改为使用 showToast
+                if (showToastNotification) {
+                    showToast('Saved', 'success'); // 根据参数决定是否显示 Toast
+                }
             }
             updateConnectionStatus(); // Update indicator based on the final connection status
 
