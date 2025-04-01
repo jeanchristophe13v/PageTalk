@@ -46,7 +46,7 @@
                     </div>
                     <div class="chat-messages" id="chat-messages">
                         <div class="welcome-message">
-                            <h2>欢迎使用 Pagetalk</h2>
+                            <h2>欢迎使用 Pagetalk :) </h2>
                             <div class="quick-actions">
                                 <button id="summarize-page" class="quick-action-btn">总结一下</button>
                             </div>
@@ -61,8 +61,10 @@
                     <!-- 图片全屏预览模态框 -->
                     <div id="image-modal" class="image-modal">
                         <span class="close-modal">&times;</span>
-                        <img id="modal-image" class="modal-content">
+                        <img id="modal-image" class="modal-content" alt="Full size image preview">
                     </div>
+                    <!-- 新增：聊天界面状态消息区域 -->
+                    <div id="chat-status-message" class="chat-status"></div>
                     <div class="chat-input">
                         <!-- 添加图片上传按钮 -->
                         <button id="upload-image" title="上传图片" class="upload-image-button">
@@ -86,8 +88,15 @@
             <!-- Agent 设置界面 -->
             <section id="agent" class="tab-content">
                 <div class="settings-container">
-                    <h2>Agent Settings</h2>
-                    
+                    <!-- 添加 Agent 设置页面的标题栏和关闭按钮 -->
+                    <div class="settings-header">
+                        <h2>Agent Settings</h2>
+                        <button id="close-panel-agent" title="关闭面板" class="action-button close-panel-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                        </button>
+                    </div>
                     <!-- 助手列表区域 -->
                     <div class="agents-list-container">
                         <div class="agents-list-header">
@@ -105,44 +114,7 @@
                         </div>
                     </div>
                     
-                    <!-- 助手编辑区域 -->
-                    <div class="agent-edit-container">
-                        <div class="setting-group">
-                            <label for="agent-name">Agent:</label>
-                            <input type="text" id="agent-name" placeholder="输入助手名称" value="默认助手">
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label for="system-prompt">System Prompt:</label>
-                            <textarea id="system-prompt" placeholder="设置系统提示词">你是一个万能助手</textarea>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label for="temperature">Temperature:</label>
-                            <div class="slider-container">
-                                <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" class="color-slider">
-                                <span id="temperature-value">0.7</span>
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label for="max-tokens">Max Output Length:</label>
-                            <input type="number" id="max-tokens" value="1024" min="50" max="8192">
-                        </div>
-                        
-                        <div class="setting-group">
-                            <label for="top-p">Top P:</label>
-                            <div class="slider-container">
-                                <input type="range" id="top-p" min="0" max="1" step="0.05" value="0.95" class="color-slider">
-                                <span id="top-p-value">0.95</span>
-                        </div>
-                        
-                        <div class="agent-actions">
-                            <button id="save-agent-settings" class="save-btn">Save</button>
-                        </div>
-                        
-                        <!-- 为Agent设置页面添加专用的状态反馈区 -->
-                        <div id="agent-connection-status" class="connection-status"></div>
-                    </div>
+                    <!-- 助手编辑区域 (已移除，功能合并到助手列表项中) -->
                     
                     <!-- 删除确认对话框 -->
                     <div id="delete-confirm-dialog" class="dialog-overlay" style="display:none;">
@@ -156,47 +128,71 @@
                         </div>
                     </div>
                 </div>
+                <!-- 移除 Agent 设置页面的按钮 -->
             </section>
 
             <!-- 模型设置界面 -->
             <section id="model" class="tab-content">
                 <div class="settings-container">
-                    <h2>Model Settings</h2>
-                    <div class="setting-group">
-                        <label for="api-key">Gemini API Key:</label>
-                                                <div class="api-key-input-container">
-                                                    <input type="password" id="api-key" placeholder="输入您的API Key">
-                                                    <button id="toggle-api-key" class="toggle-api-key-button" type="button">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                                          <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
-                                                          <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                                <p class="hint">Get Your API Key <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a></p>
+                    <!-- 添加 Model 设置页面的标题栏和关闭按钮 -->
+                    <div class="settings-header">
+                        <h2>Model Settings</h2>
+                        <button id="close-panel-model" title="关闭面板" class="action-button close-panel-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                            </svg>
+                        </button>
                     </div>
-                    <div class="setting-group">
-                        <label for="model-selection">Model:</label>
-                        <select id="model-selection">
-                            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                            <option value="gemini-2.0-flash-thinking-exp-0121">Gemini 2.0 Flash Thinking</option>
-                            <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro</option>
-                            <option value="gemini-exp-1206">Gemini exp 1206</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label>Context:</label>
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="auto-extract" checked>
-                            <label for="auto-extract">打开页面时自动提取内容</label>
+                    <div class="model-settings-group-box"> <!-- 新增的包裹 div -->
+                        <div class="setting-group">
+                            <label for="api-key">Gemini API Key:</label>
+                                                    <div class="api-key-input-container">
+                                                        <input type="password" id="api-key" placeholder="输入您的API Key">
+                                                        <button id="toggle-api-key" class="toggle-api-key-button" type="button" title="Toggle API Key visibility">
+                                                            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                                            </svg>
+                                                            <svg id="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash" viewBox="0 0 16 16" style="display: none;">
+                                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                    <p class="hint">   Get Your API Key <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
                         </div>
-                    </div>
-                    <button id="test-connection" class="test-btn">Test Connection</button>
-                    <button id="save-model-settings" class="save-btn">Save</button>
-                    <div id="connection-status" class="connection-status"></div>
+                        <div class="setting-group">
+                            <label for="model-selection">Model:</label>
+                            <select id="model-selection">
+                                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                                <option value="gemini-2.0-flash-thinking-exp-0121">Gemini 2.0 Flash Thinking</option>
+                                <option value="gemini-2.0-pro-exp-02-05">Gemini 2.0 Pro</option>
+                                <option value="gemini-exp-1206">Gemini exp 1206</option>
+                                <option value="gemini-2.5-pro-exp-03-25">Gemini 2.5 Pro</option>
+                            </select>
+                        </div>
+                    </div> <!-- 结束新增的包裹 div -->
+                    <div class="model-save-area"> <!-- 新增包裹 div -->
+                        <button id="save-model-settings" class="save-btn">Save</button>
+                        <div id="connection-status" class="connection-status"></div>
+                    </div> <!-- 结束包裹 div -->
+                    <!-- 移除 Model 设置页面的按钮 -->
                 </div>
             </section>
         </main>
+
+        <!-- 全局主题切换按钮 -->
+        <button id="global-theme-toggle-btn" class="icon-btn theme-toggle-btn" title="切换深色/浅色模式">
+            <!-- Moon Icon (Default) -->
+            <svg id="global-moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162h1.212a.217.217 0 0 1 .154.371l-.98.752.387 1.162a.217.217 0 0 1-.316.228l-.98-.752-.98.752a.217.217 0 0 1-.316-.228l.387-1.162-.98-.752a.217.217 0 0 1 .154-.371h1.212l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+            </svg>
+            <!-- Sun Icon (Hidden initially) -->
+            <svg id="global-sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+            </svg>
+        </button>
 
         <footer>
             <div class="status-bar">
@@ -209,6 +205,7 @@
                 <li class="footer-tab" data-tab="agent">Agent</li>
                 <li class="footer-tab" data-tab="model">Model</li>
             </ul>
+            <!-- 主题切换按钮已移至 Agent 和 Model 设置区域 -->
         </footer>
     </div>
 

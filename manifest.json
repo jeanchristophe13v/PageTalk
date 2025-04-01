@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pagetalk - 你的gemini浏览器问答助手",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "description": "一个可以读取页面内容，调用Gemini API进行问答的浏览器插件",
   "permissions": [
     "activeTab",
@@ -40,8 +40,8 @@
   "commands": {
     "_execute_action": {
       "suggested_key": {
-        "default": "Ctrl+Shift+P",
-        "mac": "Command+Shift+P"
+        "default": "Alt+P",
+        "mac": "Alt+P"
       },
       "description": "打开 Pagetalk 面板"
     }

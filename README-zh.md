@@ -38,6 +38,7 @@ Pagetalk 是一款旨在通过集成 Google Gemini API 的强大功能来增强�
 ## 使用说明
 
 1.  安装成功后，点击浏览器工具栏上的 Pagetalk 图标（通常是一个拼图图标），打开侧边栏面板。
+    提示：您也可以使用快捷键 `Alt+P` (可在 `chrome://extensions/shortcuts` 自定义) 来快速打开/关闭面板。
 2.  侧边栏包含三个主要标签页：**聊天 (Chat)**、**助手 (Agents)** 和 **模型 (Model)**。
 
     *   **聊天 (Chat) 标签页:**

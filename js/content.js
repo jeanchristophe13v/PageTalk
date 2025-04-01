@@ -5,9 +5,10 @@
 
 // 全局变量，跟踪面板状态
 let panelActive = false;
-let panelWidth = 500; 
+let panelWidth = 520; 
 let resizing = false;
 let startX, startWidth;
+let messageShownForThisPageView = false; // 新增：跟踪当前页面视图是否已显示过提取成功消息
 
 // 初始化函数 - 创建面板DOM
 function initPagetalkPanel() {
@@ -21,6 +22,8 @@ function initPagetalkPanel() {
   panelContainer.id = 'pagetalk-panel-container';
   panelContainer.style.zIndex = '9999'; // 设置 z-index
   panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
+  panelContainer.style.borderRadius = '16px'; // 添加圆角
+  panelContainer.style.overflow = 'hidden'; // 防止 iframe 内容溢出圆角
   
   // 创建调整器
   const resizer = document.createElement('div');
@@ -33,6 +36,8 @@ function initPagetalkPanel() {
   // 设置iframe源为插件中的HTML文件
   const extensionURL = chrome.runtime.getURL('html/sidepanel.html');
   iframe.src = extensionURL;
+  iframe.style.borderRadius = '16px'; // 为 iframe 添加圆角
+  iframe.style.overflow = 'hidden';   // 确保 iframe 内容也被裁剪
   
   // 组装DOM结构
   panelContainer.appendChild(resizer);
@@ -257,13 +262,21 @@ window.addEventListener('message', (event) => {
   }
   else if (event.data.action === 'requestPageContent') {
     const content = extractPageContent();
-    
-    // 将内容发送回iframe
+    let showSuccess = false;
+
+    // 检查是否是当前页面视图的第一次提取
+    if (!messageShownForThisPageView) {
+        showSuccess = true;
+        messageShownForThisPageView = true; // 标记为已显示
+    }
+
+    // 将内容和显示标志发送回iframe
     const iframe = document.getElementById('pagetalk-panel-iframe');
     if (iframe && iframe.contentWindow) {
-      iframe.contentWindow.postMessage({ 
-        action: 'pageContentExtracted', 
-        content 
+      iframe.contentWindow.postMessage({
+        action: 'pageContentExtracted',
+        content: content,
+        showSuccessMessage: showSuccess // 添加标志
       }, '*');
     }
   }

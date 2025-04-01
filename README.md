@@ -38,6 +38,7 @@ Pagetalk is a browser extension designed to enhance your web browsing experience
 ## Usage
 
 1.  After installation, click the Pagetalk icon (puzzle piece icon) in your browser toolbar to open the side panel.
+    Tip: You can also use the shortcut `Alt+P` (customizable at `chrome://extensions/shortcuts`) to quickly open/close the panel.
 2.  The side panel has three main tabs: **Chat**, **Agents**, and **Model**.
 
     *   **Chat Tab:**

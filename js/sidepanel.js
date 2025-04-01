@@ -18,12 +18,13 @@ const state = {
     temperature: 0.7,
     maxTokens: 8192,
     topP: 0.95,
-    autoExtract: true,
     pageContext: '',
     chatHistory: [], // 存储格式: { role: 'user'|'model', parts: Array<{text: string}|{inlineData: {mimeType: string, data: string}}>, id: string }
     isConnected: false,
     // 修改图片相关状态，支持多图片
     images: [], // 存储多个图片对象 { file, mimeType, dataUrl, id }
+    // 移除 pageContentExtractedMessageShown，逻辑移至 content.js
+    darkMode: false, // 新增：深色模式状态
 };
 
 // 默认设置，当存储中没有对应值时使用
@@ -32,7 +33,6 @@ const defaultSettings = {
     temperature: 0.7,
     maxTokens: 8192,
     topP: 0.95,
-    autoExtract: true
 };
 
 // 默认助手
@@ -61,16 +61,16 @@ const elements = {
     chatModelSelection: document.getElementById('chat-model-selection'),
     chatAgentSelection: document.getElementById('chat-agent-selection'),
 
-    // Agent 设置
-    agentName: document.getElementById('agent-name'),
-    systemPrompt: document.getElementById('system-prompt'),
-    temperature: document.getElementById('temperature'),
-    temperatureValue: document.getElementById('temperature-value'),
-    maxTokens: document.getElementById('max-tokens'),
-    topP: document.getElementById('top-p'),
-    topPValue: document.getElementById('top-p-value'),
-    saveAgentSettings: document.getElementById('save-agent-settings'),
-    agentConnectionStatus: document.getElementById('agent-connection-status'),
+    // Agent 设置 (旧编辑区域元素，将被移除或在新结构中重新获取)
+    // agentName: document.getElementById('agent-name'), // 移除
+    // systemPrompt: document.getElementById('system-prompt'), // 移除
+    // temperature: document.getElementById('temperature'), // 移除
+    // temperatureValue: document.getElementById('temperature-value'), // 移除
+    // maxTokens: document.getElementById('max-tokens'), // 移除
+    // topP: document.getElementById('top-p'), // 移除
+    // topPValue: document.getElementById('top-p-value'), // 移除
+    // saveAgentSettings: document.getElementById('save-agent-settings'), // 移除
+    // agentConnectionStatus: document.getElementById('agent-connection-status'), // 移除
 
     // 助手列表
     agentsList: document.getElementById('agents-list'),
@@ -85,8 +85,6 @@ const elements = {
     // 模型设置
     apiKey: document.getElementById('api-key'),
     modelSelection: document.getElementById('model-selection'),
-    autoExtract: document.getElementById('auto-extract'),
-    testConnection: document.getElementById('test-connection'),
     saveModelSettings: document.getElementById('save-model-settings'),
     connectionStatus: document.getElementById('connection-status'),
     toggleApiKey: document.getElementById('toggle-api-key'),
@@ -99,15 +97,23 @@ const elements = {
     imagesGrid: document.getElementById('images-grid'),
     imageModal: document.getElementById('image-modal'),
     modalImage: document.getElementById('modal-image'),
-    closeModal: document.querySelector('.close-modal')
+    closeModal: document.querySelector('.close-modal'),
+    // 新增：聊天界面状态消息元素
+    chatStatusMessage: document.getElementById('chat-status-message'),
+    // 新增：全局主题切换元素
+    themeToggleBtn: document.getElementById('global-theme-toggle-btn'), // 使用新的唯一 ID
+    moonIcon: document.getElementById('global-moon-icon'), // 使用新的唯一 ID
+    sunIcon: document.getElementById('global-sun-icon'),   // 使用新的唯一 ID
 };
 
 /**
  * 初始化应用
  */
 function init() {
-    // 加载存储的设置
+    // 移除 pageContentExtractedMessageShown 重置
+    // 加载存储的设置 (包括主题和按钮位置)
     loadSettings();
+    loadButtonPosition(); // 新增：加载按钮位置
 
     // 初始化事件监听器
     setupEventListeners();
@@ -121,10 +127,8 @@ function init() {
     // 检查API连接状态
     updateConnectionStatus();
 
-    // 检查是否需要自动提取页面内容
-    if (state.autoExtract) {
-        extractPageContent();
-    }
+    // 插件初始化时总是请求页面内容
+    // requestPageContent(); // 已在 init 末尾调用
 
     // 初始化图片粘贴功能
     setupImagePaste();
@@ -143,6 +147,24 @@ function init() {
     if (closeButton) {
         closeButton.addEventListener('click', closePanel);
     }
+    // 添加 Agent 和 Model 设置页面的关闭按钮事件
+    const closeButtonAgent = document.getElementById('close-panel-agent');
+    if (closeButtonAgent) {
+        closeButtonAgent.addEventListener('click', closePanel);
+    }
+    const closeButtonModel = document.getElementById('close-panel-model');
+    if (closeButtonModel) {
+        closeButtonModel.addEventListener('click', closePanel);
+    }
+
+    // 使主题切换按钮可拖动
+    if (elements.themeToggleBtn) {
+        makeDraggable(elements.themeToggleBtn); // 调用拖动函数
+    }
+
+    // 根据初始标签页设置按钮可见性
+    const initialTab = document.querySelector('.footer-tab.active')?.dataset.tab || 'chat';
+    setToggleButtonVisibility(initialTab); // 设置初始可见性
 }
 
 /**
@@ -244,14 +266,14 @@ function setupEventListeners() {
     // 清除上下文按钮
     document.getElementById('clear-context').addEventListener('click', clearContext);
 
-    // 代理设置
-    elements.temperature.addEventListener('input', () => {
-        elements.temperatureValue.textContent = elements.temperature.value;
-    });
-    elements.topP.addEventListener('input', () => {
-        elements.topPValue.textContent = elements.topP.value;
-    });
-    elements.saveAgentSettings.addEventListener('click', saveAgentSettings);
+    // 代理设置 (旧编辑区域事件，将被移除)
+    // elements.temperature.addEventListener('input', () => {
+    //     elements.temperatureValue.textContent = elements.temperature.value;
+    // });
+    // elements.topP.addEventListener('input', () => {
+    //     elements.topPValue.textContent = elements.topP.value;
+    // });
+    // elements.saveAgentSettings.addEventListener('click', saveAgentSettings); // 移除
 
     // 助手列表操作
     if (elements.addNewAgent) {
@@ -277,7 +299,6 @@ function setupEventListeners() {
     });
 
     // 模型设置
-    elements.testConnection.addEventListener('click', testApiConnection);
     elements.saveModelSettings.addEventListener('click', () => saveModelSettings(true));
     elements.modelSelection.addEventListener('change', () => {
         state.model = elements.modelSelection.value;
@@ -308,9 +329,21 @@ function setupEventListeners() {
         elements.toggleApiKey.addEventListener('click', () => {
             const type = elements.apiKeyInput.type === 'password' ? 'text' : 'password';
             elements.apiKeyInput.type = type;
-            // 根据类型切换眼睛图标
-            elements.toggleApiKey.querySelector('svg').classList.toggle('bi-eye-slash', elements.apiKeyInput.type === 'password');
-            elements.toggleApiKey.querySelector('svg').classList.toggle('bi-eye', elements.apiKeyInput.type === 'text');
+
+            // 获取图标元素
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeSlashIcon = document.getElementById('eye-slash-icon');
+
+            // 根据输入框类型显示/隐藏正确的图标
+            if (eyeIcon && eyeSlashIcon) {
+                if (type === 'text') { // 密码可见，显示斜杠眼
+                    eyeIcon.style.display = 'none';
+                    eyeSlashIcon.style.display = 'inline-block';
+                } else { // 密码隐藏，显示普通眼
+                    eyeIcon.style.display = 'inline-block';
+                    eyeSlashIcon.style.display = 'none';
+                }
+            }
         });
     }
 
@@ -320,6 +353,11 @@ function setupEventListeners() {
             hideImageModal();
         }
     });
+
+    // 新增：全局主题切换按钮事件 (拖动逻辑中处理点击)
+    // if (elements.themeToggleBtn) {
+    //     elements.themeToggleBtn.addEventListener('click', toggleTheme); // 移除独立的 click 监听器
+    // }
 }
 
 /**
@@ -332,6 +370,23 @@ function switchTab(tabId) {
 
     // 更新内容区域
     elements.tabContents.forEach(content => content.classList.toggle('active', content.id === tabId));
+
+    // 更新主题切换按钮的可见性
+    setToggleButtonVisibility(tabId); // 调用可见性控制函数
+}
+
+/**
+ * 设置主题切换按钮的可见性
+ * @param {string} currentTabId - 当前激活的标签页 ID
+ */
+function setToggleButtonVisibility(currentTabId) {
+    if (elements.themeToggleBtn) {
+        if (currentTabId === 'agent' || currentTabId === 'model') {
+            elements.themeToggleBtn.style.display = 'flex'; // 在设置页面显示
+        } else {
+            elements.themeToggleBtn.style.display = 'none'; // 在其他页面隐藏
+        }
+    }
 }
 
 /**
@@ -600,7 +655,25 @@ function addMessageActionButtons(messageElement, content) {
     const messageActions = document.createElement('div');
     messageActions.className = 'message-actions';
 
-    // 添加重新生成按钮 (仅对用户消息或模型消息)
+    const buttonsToAppend = [];
+
+    // 1. 创建复制按钮 (对所有消息类型)
+    const copyButton = document.createElement('button');
+    copyButton.classList.add('copy-button'); // 使用基础类名
+    copyButton.title = "复制全部";
+    copyButton.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+    `;
+    copyButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyMessageContent(messageElement, content, copyButton);
+    });
+    buttonsToAppend.push(copyButton);
+
+    // 2. 创建重新生成按钮
     const regenerateButton = document.createElement('button');
     regenerateButton.className = 'message-action-btn regenerate-btn';
     regenerateButton.title = "重新生成";
@@ -614,10 +687,9 @@ function addMessageActionButtons(messageElement, content) {
         e.stopPropagation();
         regenerateMessage(messageId);
     });
-    messageActions.appendChild(regenerateButton);
+    buttonsToAppend.push(regenerateButton);
 
-
-    // 添加删除按钮
+    // 3. 创建删除按钮
     const deleteButton = document.createElement('button');
     deleteButton.className = 'message-action-btn delete-btn';
     deleteButton.title = "删除消息";
@@ -631,27 +703,10 @@ function addMessageActionButtons(messageElement, content) {
         e.stopPropagation();
         deleteMessage(messageId);
     });
-    messageActions.appendChild(deleteButton);
+    buttonsToAppend.push(deleteButton);
 
-
-    // 只给机器人消息添加复制按钮
-    if (sender === 'bot') {
-        const copyButton = document.createElement('button');
-        copyButton.classList.add('copy-button'); // 使用与 addMessageToChat 中相同的类名
-        copyButton.title = "复制全部";
-        copyButton.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-        `;
-        copyButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            copyMessageContent(messageElement, content, copyButton);
-        });
-        // 将复制按钮添加到操作容器的最前面
-        messageActions.insertBefore(copyButton, messageActions.firstChild);
-    }
+    // 4. 按照期望的视觉顺序 (Copy, Regenerate, Delete) 添加按钮
+    buttonsToAppend.forEach(button => messageActions.appendChild(button));
 
     // 将操作容器添加到消息元素
     messageElement.appendChild(messageActions);
@@ -983,8 +1038,8 @@ async function extractPageContent() {
                         state.pageContext = content;
                         elements.contextStatus.textContent = `上下文: ${content.length} 字符`;
 
-                        // 显示成功消息
-                        showConnectionStatus('成功提取页面内容', 'success');
+                        // 此处不再需要检查和设置 pageContentExtractedMessageShown
+                        // 显示逻辑移至 handleContentScriptMessages
                     } else {
                         elements.contextStatus.textContent = '上下文: 提取失败';
                     }
@@ -996,60 +1051,6 @@ async function extractPageContent() {
     } catch (error) {
         console.error('提取页面内容时出错:', error);
         elements.contextStatus.textContent = '上下文: 提取失败';
-    }
-}
-
-/**
- * 测试API连接
- */
-async function testApiConnection() {
-    const apiKey = elements.apiKey.value.trim();
-    const model = elements.modelSelection.value;
-
-    if (!apiKey) {
-        showConnectionStatus('请输入API密钥', 'error');
-        return;
-    }
-
-    elements.testConnection.disabled = true;
-    elements.testConnection.textContent = 'Testing...';
-
-    try {
-        // 构建简单的测试请求
-        const requestBody = {
-            contents: [
-                {
-                    role: 'user',
-                    parts: [{ text: '你好' }]
-                }
-            ]
-        };
-
-        // 发送请求
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-
-        // 检查响应
-        if (response.ok) {
-            showConnectionStatus('Connection established ! API Key verified.', 'success');
-            state.isConnected = true;
-        } else {
-            const error = await response.json();
-            showConnectionStatus(`Connection failed: ${error.error?.message || '未知错误'}`, 'error');
-            state.isConnected = false;
-        }
-    } catch (error) {
-        showConnectionStatus(`Connection failed: ${error.message}`, 'error');
-        state.isConnected = false;
-    } finally {
-        elements.testConnection.disabled = false;
-        elements.testConnection.textContent = 'Test Connection';
-        updateConnectionStatus();
     }
 }
 
@@ -1122,39 +1123,146 @@ function showAgentStatusMessage(message, type) {
                 agentStatus.style.display = 'none';
             }, 3000);
         }
+        
     }
 }
 
 /**
- * 保存模型设置
- * @param {boolean} showMessage - 是否显示保存成功的消息
+ * 在聊天界面显示状态消息 (例如内容提取成功)
+ * @param {string} message - 要显示的消息
+ * @param {string} type - 消息类型 ('success' 或 'error')
  */
-function saveModelSettings(showMessage = true) {
-    // 如果从模型设置页面保存，则从页面元素获取值
-    if (showMessage) {
-        state.apiKey = elements.apiKey.value;
-        state.model = elements.modelSelection.value;
-        state.autoExtract = elements.autoExtract.checked;
+function showChatStatusMessage(message, type) {
+    if (!elements.chatStatusMessage) return; // 确保元素存在
+
+    elements.chatStatusMessage.textContent = message;
+    elements.chatStatusMessage.className = 'chat-status ' + type; // 应用基础和类型类
+
+    // 显示消息
+    elements.chatStatusMessage.style.display = 'block';
+    elements.chatStatusMessage.style.opacity = '1';
+    elements.chatStatusMessage.style.transform = 'translateY(0)';
+
+
+    // 2秒后自动隐藏成功消息
+    if (type === 'success') {
+        setTimeout(() => {
+            elements.chatStatusMessage.style.opacity = '0';
+            elements.chatStatusMessage.style.transform = 'translateY(5px)';
+            // 在动画结束后彻底隐藏
+            setTimeout(() => {
+                 if (elements.chatStatusMessage.textContent === message) { // 避免隐藏后续消息
+                     elements.chatStatusMessage.style.display = 'none';
+                 }
+            }, 300); // 匹配 CSS transition duration
+        }, 2000);
+    }
+    // 错误消息通常需要用户手动处理，所以不自动隐藏
+}
+
+/**
+ * Internal helper to test API key and model validity.
+ * @param {string} apiKey - The API key to test.
+ * @param {string} model - The model to test against.
+ * @returns {Promise<{success: boolean, message: string}>} - Object indicating success and a message.
+ */
+async function _testAndVerifyApiKey(apiKey, model) {
+    try {
+        const requestBody = {
+            contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
+        };
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+            return { success: true, message: 'Connection established ! API Key verified.' };
+        } else {
+            // Try to parse error, provide fallback message
+            const error = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
+            const errorMessage = error.error?.message || `HTTP error ${response.status}`;
+            // Check for specific API key related errors if possible (example)
+            if (errorMessage.includes('API key not valid')) {
+                 return { success: false, message: 'Connection failed: API key not valid. Please check your key.' };
+            }
+            return { success: false, message: `Connection failed: ${errorMessage}` };
+        }
+    } catch (error) {
+        console.error('API Test Error:', error);
+        // Provide a more user-friendly network error message
+        let friendlyMessage = 'Connection failed: Network error or server unreachable.';
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+             friendlyMessage = 'Connection failed: Could not reach the server. Check your internet connection.';
+        } else if (error.message) {
+             friendlyMessage = `Connection failed: ${error.message}`;
+        }
+        return { success: false, message: friendlyMessage };
+    }
+}
+
+
+/**
+ * Saves model settings after testing the API key.
+ */
+async function saveModelSettings() {
+    const apiKey = elements.apiKey.value.trim();
+    const model = elements.modelSelection.value;
+
+    if (!apiKey) {
+        showConnectionStatus('请输入API密钥', 'error');
+        return;
     }
 
-    // 保存到存储
-    chrome.storage.sync.set({
-        apiKey: state.apiKey,
-        model: state.model,
-        autoExtract: state.autoExtract
-    }, () => {
-        if (showMessage) {
-			// 立即显示消息，无需等待3秒
-            elements.connectionStatus.style.display = 'block';
-            showConnectionStatus('Saved', 'success');
-        }
-        updateConnectionStatus();
+    // Disable button and show saving state
+    elements.saveModelSettings.disabled = true;
+    elements.saveModelSettings.textContent = 'Saving...';
+    // Show a neutral status while testing
+    elements.connectionStatus.textContent = 'Testing connection...';
+    elements.connectionStatus.className = 'connection-status info'; // Use 'info' or a similar neutral class if defined, otherwise just text
+    elements.connectionStatus.style.display = 'block';
 
-        // 如果开启了自动提取，并且当前没有页面上下文，则尝试提取
-        if (state.autoExtract && !state.pageContext) {
-            extractPageContent();
-        }
-    });
+
+    const testResult = await _testAndVerifyApiKey(apiKey, model);
+
+    if (testResult.success) {
+        // Update state
+        state.apiKey = apiKey;
+        state.model = model;
+        state.isConnected = true;
+
+        // Save to storage
+        chrome.storage.sync.set({
+            apiKey: state.apiKey,
+            model: state.model
+        }, () => {
+            // Check for runtime errors after setting storage
+            if (chrome.runtime.lastError) {
+                console.error("Error saving settings:", chrome.runtime.lastError);
+                showConnectionStatus(`Error saving settings: ${chrome.runtime.lastError.message}`, 'error');
+                state.isConnected = false; // Revert connection status if save failed
+            } else {
+                // Show success message AFTER saving is confirmed using toast
+                showToast('Saved', 'success'); // 改为使用 showToast
+            }
+            updateConnectionStatus(); // Update indicator based on the final connection status
+
+            // Sync chat model selector if it exists
+             if (elements.chatModelSelection) {
+                 elements.chatModelSelection.value = state.model;
+             }
+        });
+    } else {
+        // Test failed
+        state.isConnected = false;
+        showConnectionStatus(testResult.message, 'error'); // Show the specific error from the test
+        updateConnectionStatus(); // Update indicator based on failed test
+    }
+
+    // Re-enable button and restore text regardless of success/failure
+    elements.saveModelSettings.disabled = false;
+    elements.saveModelSettings.textContent = 'Save';
 }
 
 /**
@@ -1164,43 +1272,43 @@ function loadSettings() {
     chrome.storage.sync.get([
         'apiKey',
         'model',
-        'systemPrompt',
-        'temperature',
-        'maxTokens',
-        'topP',
-        'autoExtract',
+        'systemPrompt', // Note: systemPrompt is now part of agent settings
+        'temperature',  // Note: temperature is now part of agent settings
+        'maxTokens',    // Note: maxTokens is now part of agent settings
+        'topP',         // Note: topP is now part of agent settings
+        'darkMode',     // 新增：加载深色模式设置
         ],
-        (result) => {
-            // 更新状态
-            if (result.apiKey) state.apiKey = result.apiKey;
-            if (result.model) state.model = result.model;
-            // 修改系统提示词的处理逻辑，确保正确处理undefined和空字符串的情况
-            state.systemPrompt = result.systemPrompt !== undefined ? result.systemPrompt : defaultSettings.systemPrompt;
-            if (result.temperature) state.temperature = result.temperature;
-            if (result.maxTokens) state.maxTokens = result.maxTokens;
-            if (result.topP) state.topP = result.topP;
-            if (result.autoExtract !== undefined)
-                state.autoExtract = result.autoExtract;
+        (syncResult) => {
+            // 更新模型和API Key状态
+            if (syncResult.apiKey) state.apiKey = syncResult.apiKey;
+            if (syncResult.model) state.model = syncResult.model;
 
-            // 更新UI元素
+            // 更新模型设置UI
             elements.apiKey.value = state.apiKey;
             elements.modelSelection.value = state.model;
             if (elements.chatModelSelection) {
                 elements.chatModelSelection.value = state.model;
             }
-            elements.systemPrompt.value = state.systemPrompt;
-            elements.temperature.value = state.temperature;
-            elements.temperatureValue.textContent = state.temperature;
-            elements.maxTokens.value = state.maxTokens;
-            elements.topP.value = state.topP;
-            elements.topPValue.textContent = state.topP;
-            elements.autoExtract.checked = state.autoExtract;
 
-            // 检查API连接状态
-            if (state.apiKey) {
-                state.isConnected = true;
-                updateConnectionStatus();
+            // 加载深色模式设置
+            if (syncResult.darkMode !== undefined) {
+                state.darkMode = syncResult.darkMode;
+            } else {
+                // 如果存储中没有，则默认设置为浅色模式
+                state.darkMode = false;
             }
+            // 应用加载的主题
+            applyTheme(state.darkMode);
+
+            // 检查API连接状态 (现在只依赖API Key)
+            if (state.apiKey) {
+                state.isConnected = true; // 假设有key就是连接状态，实际连接在save时测试
+            } else {
+                state.isConnected = false;
+            }
+            updateConnectionStatus();
+
+            // 注意：Agent相关的设置 (systemPrompt, temperature等) 现在由 loadAgentsList 处理
         }
     );
 }
@@ -1220,7 +1328,7 @@ function clearContext() {
     welcomeMessage.className = 'welcome-message';
 
     const welcomeTitle = document.createElement('h2');
-    welcomeTitle.textContent = '欢迎使用 Pagetalk!';
+    welcomeTitle.textContent = '欢迎使用 Pagetalk :)';
     welcomeMessage.appendChild(welcomeTitle);
 
     // 添加快捷操作
@@ -1245,6 +1353,7 @@ function clearContext() {
     // 清除上传的图片
     clearImages();
 
+    // 移除 pageContentExtractedMessageShown 相关逻辑
     // 显示清除成功的消息
     showConnectionStatus('聊天记录和上下文已清除', 'success');
 }
@@ -1475,13 +1584,36 @@ function loadAgentsList() {
 
         // 更新界面
         updateAgentsList();
-        loadCurrentAgentSettings();
+        // loadCurrentAgentSettings(); // 移除
         updateAgentSelectionInChat();
+
+        // *** 新增：加载当前选中助手的设置到全局 state ***
+        const currentAgent = state.agents.find(a => a.id === state.currentAgentId);
+        if (currentAgent) {
+            state.systemPrompt = currentAgent.systemPrompt;
+            state.temperature = currentAgent.temperature;
+            state.maxTokens = currentAgent.maxTokens;
+            state.topP = currentAgent.topP;
+            console.log(`Initial global state updated for agent: ${state.currentAgentId}`);
+        } else {
+            console.warn(`Initial currentAgentId (${state.currentAgentId}) not found in loaded agents. Global state might be incorrect.`);
+            // Optionally reset global state to defaults or first agent's settings
+            if (state.agents.length > 0) {
+                 const firstAgent = state.agents[0];
+                 state.systemPrompt = firstAgent.systemPrompt;
+                 state.temperature = firstAgent.temperature;
+                 state.maxTokens = firstAgent.maxTokens;
+                 state.topP = firstAgent.topP;
+                 state.currentAgentId = firstAgent.id; // Ensure currentAgentId is valid
+                 saveCurrentAgentId(); // Save the corrected ID
+                 updateAgentSelectionInChat(); // Update dropdown again if ID changed
+            }
+        }
     });
 }
 
 /**
- * 更新助手列表UI
+ * 更新助手列表UI (重构版 - 可折叠，实时保存)
  */
 function updateAgentsList() {
     if (!elements.agentsList) return;
@@ -1500,23 +1632,29 @@ function updateAgentsList() {
 
     // 添加每个助手项
     state.agents.forEach(agent => {
+        const originalAgentId = agent.id; // 保存原始ID用于查找和事件处理
         const agentItem = document.createElement('div');
         agentItem.className = 'agent-item';
-        agentItem.dataset.id = agent.id;
-        if (agent.id === state.currentAgentId) {
-            agentItem.classList.add('active');
-        }
+        agentItem.dataset.originalId = originalAgentId; // 存储原始ID
 
-        // 助手名称
+        // --- 创建头部 ---
+        const header = document.createElement('div');
+        header.className = 'agent-item-header';
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-item-name';
-        nameSpan.textContent = agent.name;
+        nameSpan.textContent = agent.name; // 只读名称
 
-        // 操作按钮组
+        const expandIcon = document.createElement('span');
+        expandIcon.className = 'expand-icon';
+        expandIcon.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+        `; // 初始为向右箭头
+
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'agent-item-actions';
-
-        // 删除按钮 - 使用更明显的垃圾桶图标
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.title = '删除';
@@ -1526,47 +1664,222 @@ function updateAgentsList() {
             </svg>
         `;
         deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showDeleteConfirmDialog(agent.id);
+            e.stopPropagation(); // 防止触发展开/折叠
+            showDeleteConfirmDialog(originalAgentId); // 使用原始ID
         });
-
         actionsDiv.appendChild(deleteBtn);
 
-        // 点击整个助手项切换到该助手
-        agentItem.addEventListener('click', () => {
-            editAgent(agent.id);
+        header.appendChild(nameSpan);
+        header.appendChild(expandIcon);
+        header.appendChild(actionsDiv);
+
+        // --- 创建主体 (可折叠内容) ---
+        const body = document.createElement('div');
+        body.className = 'agent-item-body';
+
+        // Agent Name (Editable) - Moved from header to body
+        const nameGroup = document.createElement('div');
+        nameGroup.className = 'setting-group';
+        nameGroup.innerHTML = `
+            <label for="agent-name-${originalAgentId}">Name:</label>
+            <input type="text" id="agent-name-${originalAgentId}" value="${agent.name}">
+        `;
+        nameGroup.querySelector('input').addEventListener('input', (e) => {
+             // Simple debounce for saving
+             clearTimeout(agentItem._saveTimeout);
+             agentItem._saveTimeout = setTimeout(() => autoSaveAgentSettings(originalAgentId, agentItem), 500);
+        });
+        body.appendChild(nameGroup);
+
+        // Agent ID (Read-only, optional display - kept for reference but not editable)
+        // const idDisplayGroup = document.createElement('div');
+        // idDisplayGroup.className = 'setting-group setting-group-readonly'; // Add a class for styling if needed
+        // idDisplayGroup.innerHTML = `
+        //     <label>Internal ID:</label>
+        //     <span class="readonly-value">${agent.id}</span>
+        // `;
+        // body.appendChild(idDisplayGroup);
+
+        // System Prompt
+        const promptGroup = document.createElement('div');
+        promptGroup.className = 'setting-group';
+        promptGroup.innerHTML = `
+            <label for="system-prompt-${originalAgentId}">System Prompt:</label>
+            <textarea id="system-prompt-${originalAgentId}">${agent.systemPrompt}</textarea>
+        `;
+        promptGroup.querySelector('textarea').addEventListener('input', (e) => {
+             clearTimeout(agentItem._saveTimeout);
+             agentItem._saveTimeout = setTimeout(() => autoSaveAgentSettings(originalAgentId, agentItem), 500);
+        });
+        body.appendChild(promptGroup);
+
+        // Temperature
+        const tempGroup = document.createElement('div');
+        tempGroup.className = 'setting-group';
+        tempGroup.innerHTML = `
+            <label for="temperature-${originalAgentId}">Temperature:</label>
+            <div class="slider-container">
+                <input type="range" id="temperature-${originalAgentId}" min="0" max="1" step="0.1" value="${agent.temperature}" class="color-slider">
+                <span id="temperature-value-${originalAgentId}">${agent.temperature}</span>
+            </div>
+        `;
+        const tempInput = tempGroup.querySelector('input[type="range"]');
+        const tempValueSpan = tempGroup.querySelector(`#temperature-value-${originalAgentId}`);
+        tempInput.addEventListener('input', (e) => {
+            tempValueSpan.textContent = e.target.value;
+            clearTimeout(agentItem._saveTimeout);
+            agentItem._saveTimeout = setTimeout(() => autoSaveAgentSettings(originalAgentId, agentItem), 300); // 滑块可以稍微快点
+        });
+        body.appendChild(tempGroup);
+
+        // Top P
+        const topPGroup = document.createElement('div');
+        topPGroup.className = 'setting-group';
+        topPGroup.innerHTML = `
+            <label for="top-p-${originalAgentId}">Top P:</label>
+            <div class="slider-container">
+                <input type="range" id="top-p-${originalAgentId}" min="0" max="1" step="0.05" value="${agent.topP}" class="color-slider">
+                <span id="top-p-value-${originalAgentId}">${agent.topP}</span>
+            </div>
+        `;
+        const topPInput = topPGroup.querySelector('input[type="range"]');
+        const topPValueSpan = topPGroup.querySelector(`#top-p-value-${originalAgentId}`);
+        topPInput.addEventListener('input', (e) => {
+            topPValueSpan.textContent = e.target.value;
+            clearTimeout(agentItem._saveTimeout);
+            agentItem._saveTimeout = setTimeout(() => autoSaveAgentSettings(originalAgentId, agentItem), 300);
+        });
+        body.appendChild(topPGroup);
+
+        // Max Output Length
+        const maxTokensGroup = document.createElement('div');
+        maxTokensGroup.className = 'setting-group';
+        maxTokensGroup.innerHTML = `
+            <label for="max-tokens-${originalAgentId}">Max Output Length:</label>
+            <input type="number" id="max-tokens-${originalAgentId}" value="${agent.maxTokens}" min="50" max="8192">
+        `;
+         maxTokensGroup.querySelector('input').addEventListener('input', (e) => {
+             clearTimeout(agentItem._saveTimeout);
+             agentItem._saveTimeout = setTimeout(() => autoSaveAgentSettings(originalAgentId, agentItem), 500);
+        });
+        body.appendChild(maxTokensGroup);
+
+        // --- 组装和添加事件 ---
+        agentItem.appendChild(header);
+        agentItem.appendChild(body);
+        elements.agentsList.appendChild(agentItem);
+
+        // 添加展开/折叠事件监听器到头部
+        header.addEventListener('click', () => {
+            const isExpanded = agentItem.classList.contains('expanded');
+
+            // 折叠所有其他的项
+            elements.agentsList.querySelectorAll('.agent-item.expanded').forEach(item => {
+                if (item !== agentItem) {
+                    item.classList.remove('expanded');
+                }
+            });
+
+            // 切换当前项
+            agentItem.classList.toggle('expanded', !isExpanded);
+
+            // 更新当前选中的 Agent ID (如果展开)
+            if (!isExpanded) {
+                 state.currentAgentId = originalAgentId; // 更新 state 中的当前 ID
+                 saveCurrentAgentId(); // 保存到存储
+                 updateAgentSelectionInChat(); // 更新聊天界面的下拉框
+            }
         });
 
-        agentItem.appendChild(nameSpan);
-        agentItem.appendChild(actionsDiv);
-        elements.agentsList.appendChild(agentItem);
+        // 如果是当前选中的 Agent，默认展开 (根据 single-expand 逻辑，可能不需要)
+        // if (originalAgentId === state.currentAgentId) {
+        //     agentItem.classList.add('expanded');
+        // }
     });
 }
 
 /**
- * 加载并显示当前选中助手的设置
+ * (新) 自动保存助手设置
+ * @param {string} originalAgentId - 触发保存时该助手的原始ID
+ * @param {HTMLElement} agentItemElement - 触发保存的助手项DOM元素
  */
-function loadCurrentAgentSettings() {
-    // 找到当前选中的助手
-    const agent = state.agents.find(a => a.id === state.currentAgentId) || defaultAgent;
+function autoSaveAgentSettings(originalAgentId, agentItemElement) {
+    console.log(`Attempting to auto-save agent with original ID: ${originalAgentId}`);
 
-    // 更新状态
-    state.systemPrompt = agent.systemPrompt;
-    state.temperature = agent.temperature;
-    state.maxTokens = agent.maxTokens;
-    state.topP = agent.topP;
-
-    // 更新界面
-    if (elements.agentName) {
-        elements.agentName.value = agent.name;
+    // 1. 查找助手在 state.agents 中的索引
+    const agentIndex = state.agents.findIndex(a => a.id === originalAgentId);
+    if (agentIndex === -1) {
+        console.error(`Auto-save failed: Agent with original ID ${originalAgentId} not found in state.`);
+        showToast('保存失败：找不到助手', 'error');
+        return;
     }
-    elements.systemPrompt.value = agent.systemPrompt;
-    elements.temperature.value = agent.temperature;
-    elements.temperatureValue.textContent = agent.temperature;
-    elements.maxTokens.value = agent.maxTokens;
-    elements.topP.value = agent.topP;
-    elements.topPValue.textContent = agent.topP;
+
+    // 2. 从 DOM 读取当前值 (ID is now internal, read Name instead)
+    const nameInput = agentItemElement.querySelector(`#agent-name-${originalAgentId}`);
+    const systemPromptInput = agentItemElement.querySelector(`#system-prompt-${originalAgentId}`);
+    const temperatureInput = agentItemElement.querySelector(`#temperature-${originalAgentId}`);
+    const topPInput = agentItemElement.querySelector(`#top-p-${originalAgentId}`);
+    const maxTokensInput = agentItemElement.querySelector(`#max-tokens-${originalAgentId}`);
+
+    // Use originalAgentId for lookup, don't read/change ID from input
+    const newName = nameInput ? nameInput.value.trim() : state.agents[agentIndex].name;
+    const newSystemPrompt = systemPromptInput ? systemPromptInput.value : state.agents[agentIndex].systemPrompt;
+    const newTemperature = temperatureInput ? temperatureInput.value : state.agents[agentIndex].temperature;
+    const newTopP = topPInput ? topPInput.value : state.agents[agentIndex].topP;
+    const newMaxTokens = maxTokensInput ? maxTokensInput.value : state.agents[agentIndex].maxTokens;
+
+    // 3. Validate Name (cannot be empty)
+    if (!newName) {
+        console.error("Auto-save failed: Agent Name cannot be empty.");
+        showToast('保存失败：Agent 名称不能为空', 'error');
+        // Optional: revert input value
+        if (nameInput) nameInput.value = state.agents[agentIndex].name;
+        return;
+    }
+
+    // ID conflict check is removed as internal ID doesn't change
+
+    // 4. 更新 state.agents 中的助手对象 (Keep original ID)
+    const agentToUpdate = state.agents[agentIndex];
+    // agentToUpdate.id = newId; // DO NOT UPDATE ID
+    agentToUpdate.name = newName; // Update Name
+    agentToUpdate.systemPrompt = newSystemPrompt;
+    agentToUpdate.temperature = newTemperature;
+    agentToUpdate.topP = newTopP;
+    agentToUpdate.maxTokens = newMaxTokens;
+console.log(`Agent ${originalAgentId} updated in state (Name: ${newName}):`, agentToUpdate);
+
+// *** 新增：如果修改的是当前聊天选中的助手，则同步更新全局 state ***
+// Note: Since ID is not editable anymore, we only need to check originalAgentId
+if (originalAgentId === state.currentAgentId) {
+     state.systemPrompt = newSystemPrompt;
+     state.temperature = newTemperature;
+     state.maxTokens = newMaxTokens;
+     state.topP = newTopP;
+     console.log(`Global state synced for currently active agent: ${originalAgentId}`);
 }
+
+    // 5. 保存整个列表到存储
+    saveAgentsList(); // 这个函数会保存 state.agents 和 state.currentAgentId
+
+    // 6. 更新聊天界面的下拉框 (if Name changed)
+    // Also update the header display name in the list item itself
+    const nameSpanInHeader = agentItemElement.querySelector('.agent-item-header .agent-item-name');
+    if (nameSpanInHeader) {
+        nameSpanInHeader.textContent = newName;
+    }
+    updateAgentSelectionInChat(); // Update dropdown in chat tab
+
+    // 7. (可选) 提供保存反馈
+    // 可以考虑在 agentItemElement 内部短暂显示一个“已保存”图标或消息
+    showToast('Saved', 'success'); // 修改提示文字
+}
+
+/*
+ * (已移除) 加载并显示当前选中助手的设置
+ * 功能合并到 updateAgentsList 中
+ */
+// function loadCurrentAgentSettings() { ... }
 
 /**
  * 创建新助手
@@ -1590,7 +1903,7 @@ function createNewAgent() {
 
     // 更新界面
     updateAgentsList();
-    loadCurrentAgentSettings();
+    // loadCurrentAgentSettings(); // 移除
     updateAgentSelectionInChat();
 
     // 提示用户
@@ -1600,54 +1913,17 @@ function createNewAgent() {
     saveAgentsList();
 }
 
-/**
- * 编辑助手
- * @param {string} agentId - 要编辑的助手ID
+/*
+ * (已移除) 编辑助手
+ * 点击列表项头部的逻辑将在 updateAgentsList 中处理
  */
-function editAgent(agentId) {
-    // 设置当前选中的助手
-    state.currentAgentId = agentId;
+// function editAgent(agentId) { ... }
 
-    // 更新界面
-    updateAgentsList();
-    loadCurrentAgentSettings();
-    updateAgentSelectionInChat();
-
-    // 保存到存储
-    saveCurrentAgentId();
-}
-
-/**
- * 保存当前助手设置
+/*
+ * (已移除) 保存当前助手设置
+ * 将由新的 autoSaveAgentSettings 函数替代
  */
-function saveAgentSettings() {
-    // 获取当前编辑的助手
-    const agent = state.agents.find(a => a.id === state.currentAgentId);
-    if (!agent) return;
-
-    // 更新助手信息
-    agent.name = elements.agentName.value || '未命名助手';
-    agent.systemPrompt = elements.systemPrompt.value;
-    agent.temperature = elements.temperature.value;
-    agent.maxTokens = elements.maxTokens.value;
-    agent.topP = elements.topP.value;
-
-    // 更新状态
-    state.systemPrompt = agent.systemPrompt;
-    state.temperature = agent.temperature;
-    state.maxTokens = agent.maxTokens;
-    state.topP = agent.topP;
-
-    // 更新界面
-    updateAgentsList();
-    updateAgentSelectionInChat();
-
-    // 保存到存储
-    saveAgentsList();
-
-    // 显示成功消息
-    showAgentStatusMessage('Saved', 'success');
-}
+// function saveAgentSettings() { ... }
 
 /**
  * 显示删除确认对话框
@@ -1685,7 +1961,7 @@ function confirmDeleteAgent() {
     // 如果删除的是当前选中的助手，则切换到第一个助手
     if (state.currentAgentId === agentId) {
         state.currentAgentId = state.agents[0].id;
-        loadCurrentAgentSettings();
+        // loadCurrentAgentSettings(); // 移除
     }
 
     // 更新界面
@@ -1810,8 +2086,10 @@ function handleContentScriptMessages(event) {
             elements.contextStatus.textContent = `上下文: ${message.content.length} 字符`;
         }
 
-        // 显示成功消息
-        showConnectionStatus('成功提取页面内容', 'success');
+        // 根据 content.js 发送的标志决定是否显示成功消息
+        if (message.showSuccessMessage) {
+            showChatStatusMessage('成功提取页面内容', 'success');
+        }
 
         // 如果设置了自动提取，继续处理
         if (state.autoExtract) {
@@ -1880,7 +2158,7 @@ function resizeTextarea() {
     textarea.style.height = 'auto';
 
     // 计算新高度，限制在 min-height 和 max-height 之间
-    const minHeight = 36;
+    const minHeight = 32; // 与 CSS 中的 min-height 保持一致
     const maxHeight = 160;
     const scrollHeight = textarea.scrollHeight;
 
@@ -1905,61 +2183,31 @@ function setupAutoresizeTextarea() {
 }
 
 /**
- * 删除消息及其后续消息 (根据用户反馈调整，现在只删除目标轮次)
+ * 删除指定的消息 (新逻辑：只删除目标消息)
  * @param {string} messageId - 要删除的消息ID
  */
 function deleteMessage(messageId) {
-    // 查找要删除的消息在历史记录中的索引
+    // 1. 查找要删除的消息在历史记录中的索引
     const messageIndex = state.chatHistory.findIndex(msg => msg.id === messageId);
-    if (messageIndex === -1) return;
-
-    const currentMessage = state.chatHistory[messageIndex];
-    let userIndex = -1;
-    let aiIndex = -1;
-
-    if (currentMessage.role === 'user') {
-        userIndex = messageIndex;
-        // 查找紧随其后的 AI 消息
-        if (messageIndex + 1 < state.chatHistory.length && state.chatHistory[messageIndex + 1].role === 'model') {
-            aiIndex = messageIndex + 1;
-        }
-    } else if (currentMessage.role === 'model') {
-        aiIndex = messageIndex;
-        // 查找之前的用户消息
-        let prevIndex = messageIndex - 1;
-        while (prevIndex >= 0 && state.chatHistory[prevIndex].role !== 'user') {
-            prevIndex--;
-        }
-        if (prevIndex >= 0) {
-            userIndex = prevIndex;
-        }
+    if (messageIndex === -1) {
+        console.warn(`Delete failed: Message with ID ${messageId} not found in history.`);
+        return; // 找不到消息，直接返回
     }
 
-    // 如果找到了用户消息，则删除这一轮
-    if (userIndex !== -1) {
-        // 删除用户消息的 DOM
-        const userElement = document.querySelector(`.message[data-message-id="${state.chatHistory[userIndex].id}"]`);
-        if (userElement) userElement.remove();
-
-        // 删除 AI 消息的 DOM (如果存在)
-        if (aiIndex !== -1) {
-            const aiElement = document.querySelector(`.message[data-message-id="${state.chatHistory[aiIndex].id}"]`);
-            if (aiElement) aiElement.remove();
-            // 从历史记录中删除 AI 和 User (注意顺序，先删后面的)
-            state.chatHistory.splice(aiIndex, 1);
-            state.chatHistory.splice(userIndex, 1);
-        } else {
-            // 只删除用户消息 (如果后面没有 AI 回复)
-            state.chatHistory.splice(userIndex, 1);
-        }
-    } else if (aiIndex !== -1) {
-        // 如果只找到了 AI 消息（理论上不应发生，但作为保险），只删除 AI 消息
-        const aiElement = document.querySelector(`.message[data-message-id="${state.chatHistory[aiIndex].id}"]`);
-        if (aiElement) aiElement.remove();
-        state.chatHistory.splice(aiIndex, 1);
+    // 2. 删除对应的 DOM 元素
+    const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (messageElement) {
+        messageElement.remove();
+    } else {
+        console.warn(`Delete failed: DOM element for message ID ${messageId} not found.`);
     }
 
-    // saveChatHistory(); // 如果需要保存
+    // 3. 从历史记录中移除该消息
+    state.chatHistory.splice(messageIndex, 1);
+
+    console.log(`Message with ID ${messageId} deleted.`);
+    // 可选：如果需要持久化历史记录，可以在这里调用保存函数
+    // saveChatHistory();
 }
 
 
@@ -2111,6 +2359,201 @@ function addThinkingAnimation(insertAfterElement = null) {
  * @param {Array} customHistory - 可选的自定义历史上下文
  * @returns {Promise<string>} AI的响应
  */
+
+// --- 新增：主题切换相关函数 ---
+
+/**
+ * 应用当前主题 (浅色/深色)
+ * @param {boolean} isDarkMode - 是否应用深色模式
+ */
+function applyTheme(isDarkMode) {
+    if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+        // 更新全局按钮图标
+        if (elements.moonIcon) elements.moonIcon.style.display = 'none';
+        if (elements.sunIcon) elements.sunIcon.style.display = 'inline-block';
+    } else {
+        document.body.classList.remove('dark-mode');
+        // 更新全局按钮图标
+        if (elements.moonIcon) elements.moonIcon.style.display = 'inline-block';
+        if (elements.sunIcon) elements.sunIcon.style.display = 'none';
+    }
+}
+
+/**
+ * 切换主题
+ */
+function toggleTheme() {
+    state.darkMode = !state.darkMode;
+    applyTheme(state.darkMode);
+    saveThemeSetting();
+}
+
+/**
+ * 保存主题设置到存储
+ */
+function saveThemeSetting() {
+    chrome.storage.sync.set({ darkMode: state.darkMode });
+}
+
+// --- 结束：主题切换相关函数 ---
+
+// --- 新增：按钮拖动相关函数 ---
+
+/**
+ * 使元素可拖动
+ * @param {HTMLElement} element - 要使其可拖动的元素
+ */
+function makeDraggable(element) {
+    let offsetX, offsetY, isDragging = false;
+    let startX, startY, mousedownTime; // 新增：记录起始位置和时间
+    let hasDragged = false; // 新增：标记是否发生拖动
+    const dragThreshold = 5; // 拖动阈值（像素）
+    const container = document.querySelector('.container') || document.body; // 获取容器
+
+    element.addEventListener('mousedown', (e) => {
+        // 仅当点击的是按钮本身而不是内部的 SVG 时开始拖动
+        if (e.target !== element) return;
+
+        e.preventDefault(); // 阻止默认拖动行为
+        isDragging = true;
+        hasDragged = false; // 重置拖动标记
+        mousedownTime = Date.now(); // 记录按下时间
+        startX = e.clientX; // 记录按下位置 X
+        startY = e.clientY; // 记录按下位置 Y
+
+        // 计算鼠标相对于元素左上角的偏移
+        offsetX = e.clientX - element.getBoundingClientRect().left;
+        offsetY = e.clientY - element.getBoundingClientRect().top;
+        element.style.cursor = 'grabbing'; // 改变鼠标样式
+        element.style.transition = 'none'; // 拖动时移除过渡效果
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+        if (!isDragging) return;
+
+        // 检查是否超过拖动阈值
+        if (!hasDragged && (Math.abs(e.clientX - startX) > dragThreshold || Math.abs(e.clientY - startY) > dragThreshold)) {
+            hasDragged = true;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        // 计算按钮的新理论位置 (相对于视口)
+        let newX = e.clientX - offsetX;
+        let newY = e.clientY - offsetY;
+
+        // 边界检查 (相对于视口)
+        const maxX = window.innerWidth - element.offsetWidth;
+        const maxY = window.innerHeight - element.offsetHeight;
+
+        newX = Math.max(0, Math.min(newX, maxX));
+        newY = Math.max(0, Math.min(newY, maxY));
+
+        // 更新按钮位置 (只更新 top，保持 right 固定)
+        // element.style.left = `${newX}px`; // 移除 left 更新
+        element.style.top = `${newY}px`;
+        element.style.right = 'var(--spacing-lg)'; // 固定右边距
+        element.style.left = 'auto'; // 确保 left 不干扰
+        element.style.bottom = 'auto';
+    }
+
+    function onMouseUp(e) {
+        if (!isDragging) return;
+
+        const wasDragging = isDragging; // Record initial drag state
+        const didDragOccur = hasDragged; // Record if mousemove exceeded threshold *before* resetting
+
+        isDragging = false; // End dragging state
+
+        // --- Core logic: Differentiate click and drag ---
+        if (wasDragging && !didDragOccur) { // Check if dragging started but didn't exceed threshold
+            toggleTheme(); // Treat as click
+        }
+        // ---------------------------------
+
+        // Restore styles and remove listeners (moved earlier for clarity)
+        element.style.cursor = 'grab';
+        element.style.transition = 'background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // Save position only if a drag actually occurred (moved later)
+        if (didDragOccur && Math.abs(e.clientY - startY) > 0) { // Check if drag occurred AND there was vertical movement
+             saveButtonPosition(element.style.top);
+        }
+
+        hasDragged = false; // Reset the flag *after* checking it
+
+        element.style.cursor = 'grab'; // 恢复鼠标样式
+        element.style.transition = 'background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease'; // 恢复过渡效果
+
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // 只有在实际拖动后才保存位置（可选，避免每次点击都保存）
+        if (Math.abs(e.clientY - startY) > 0) { // 检查是否有垂直移动
+             saveButtonPosition(element.style.top); // 只保存 top
+        }
+    }
+}
+
+/**
+ * 保存按钮位置到 localStorage
+ * @param {string} top - 按钮的 top 样式值
+ */
+function saveButtonPosition(top) {
+    // 只存储 top，right 是固定的
+    localStorage.setItem('themeButtonPosition', JSON.stringify({ top }));
+}
+
+/**
+ * 从 localStorage 加载并应用按钮位置
+ */
+function loadButtonPosition() {
+    const savedPosition = localStorage.getItem('themeButtonPosition');
+    if (savedPosition && elements.themeToggleBtn) {
+        try {
+            const { top } = JSON.parse(savedPosition); // 只解析 top
+            if (top) {
+                // 确保按钮是 absolute 定位
+                elements.themeToggleBtn.style.position = 'absolute';
+                elements.themeToggleBtn.style.top = top; // 应用 top
+                elements.themeToggleBtn.style.right = 'var(--spacing-lg)'; // 应用固定的 right
+                // 清除可能存在的 bottom/left
+                elements.themeToggleBtn.style.bottom = 'auto';
+                elements.themeToggleBtn.style.left = 'auto';
+                console.log(`Button position loaded: top=${top}, right=fixed`);
+            } else {
+                 setDefaultButtonPosition(); // 如果解析出的值无效，使用默认值
+            }
+        } catch (e) {
+            console.error("Failed to load button position:", e);
+            setDefaultButtonPosition(); // 解析失败，使用默认值
+        }
+    } else if (elements.themeToggleBtn) {
+         setDefaultButtonPosition(); // 没有保存的位置，使用默认值
+    }
+}
+
+/**
+ * 设置按钮的默认右下角位置
+ */
+function setDefaultButtonPosition() {
+     if (!elements.themeToggleBtn) return;
+     console.log("Setting default button position.");
+     elements.themeToggleBtn.style.position = 'absolute'; // 确保是 absolute
+     elements.themeToggleBtn.style.left = 'auto';
+     elements.themeToggleBtn.style.top = 'auto';
+     elements.themeToggleBtn.style.bottom = '100px'; // 更新默认 bottom 值
+     elements.themeToggleBtn.style.right = 'var(--spacing-lg)'; // 使用 CSS 变量
+}
+
+
+// --- 结束：按钮拖动相关函数 ---
+
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', init);
