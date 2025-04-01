@@ -22,7 +22,7 @@ function initPagetalkPanel() {
   panelContainer.id = 'pagetalk-panel-container';
   panelContainer.style.zIndex = '9999'; // 设置 z-index
   panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
-  panelContainer.style.borderRadius = '16px'; // 添加圆角
+  panelContainer.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
   panelContainer.style.overflow = 'hidden'; // 防止 iframe 内容溢出圆角
   
   // 创建调整器
@@ -36,7 +36,7 @@ function initPagetalkPanel() {
   // 设置iframe源为插件中的HTML文件
   const extensionURL = chrome.runtime.getURL('html/sidepanel.html');
   iframe.src = extensionURL;
-  iframe.style.borderRadius = '16px'; // 为 iframe 添加圆角
+  iframe.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
   iframe.style.overflow = 'hidden';   // 确保 iframe 内容也被裁剪
   
   // 组装DOM结构
