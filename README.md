@@ -5,7 +5,7 @@
 
 
 <p align="center">
-  <a href="https://github.com/your-repo/pagetalk">
+  <a href="https://github.com/jeanchristophe13v/PageTalk">
     <img src="magic.png?raw=true" alt="Pagetalk Icon" title="Pagetalk Icon" width="250">
   </a>
 </p>
