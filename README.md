@@ -1,4 +1,8 @@
-# Pagetalk - Your Gemini Sidekick for the Web
+<h1 align="center">
+  <strong>PageTalk - A beautiful browser extension with Gemini ✨</strong>
+</h1>
+
+
 
 <p align="center">
   <a href="https://github.com/your-repo/pagetalk">
