@@ -1,6 +1,8 @@
 # Pagetalk - Your Gemini Sidekick for the Web
 
-[![Extension Icon](magic.png?raw=true "Pagetalk Icon")](https://github.com/your-repo/pagetalk) <!-- Replace with actual repo link if available -->
+<a href="https://github.com/your-repo/pagetalk">
+  <img src="magic.png?raw=true" alt="Pagetalk Icon" title="Pagetalk Icon" width="300">
+</a>
 
 #### [中文/Chinese](README-zh.md)
 
