@@ -1,8 +1,11 @@
 # Pagetalk - Your Gemini Sidekick for the Web
 
-<a href="https://github.com/your-repo/pagetalk">
-  <img src="magic.png?raw=true" alt="Pagetalk Icon" title="Pagetalk Icon" width="300">
-</a>
+<p align="center">
+  <a href="https://github.com/your-repo/pagetalk">
+    <img src="magic.png?raw=true" alt="Pagetalk Icon" title="Pagetalk Icon" width="250">
+  </a>
+</p>
+
 
 #### [中文/Chinese](README-zh.md)
 
