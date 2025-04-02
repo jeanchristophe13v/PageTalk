@@ -1875,7 +1875,7 @@ if (originalAgentId === state.currentAgentId) {
 
     // 7. (可选) 提供保存反馈
     // 可以考虑在 agentItemElement 内部短暂显示一个“已保存”图标或消息
-    showToast('Saved', 'success'); // 修改提示文字
+    // showToast('Saved', 'success'); // 修改提示文字 (根据用户要求移除)
 }
 
 /*
