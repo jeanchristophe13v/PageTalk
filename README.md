@@ -1,6 +1,15 @@
-# Pagetalk - Your Gemini Sidekick for the Web
+<h1 align="center">
+  <strong>PageTalk - A beautiful browser extension with Gemini ✨</strong>
+</h1>
 
-[![Extension Icon](magic.png?raw=true "Pagetalk Icon")](https://github.com/your-repo/pagetalk) <!-- Replace with actual repo link if available -->
+
+
+<p align="center">
+  <a href="https://github.com/jeanchristophe13v/PageTalk">
+    <img src="magic.png?raw=true" alt="Pagetalk Icon" title="Pagetalk Icon" width="250">
+  </a>
+</p>
+
 
 #### [中文/Chinese](README-zh.md)
 
