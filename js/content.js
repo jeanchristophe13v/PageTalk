@@ -20,7 +20,7 @@ function initPagetalkPanel() {
   // 创建面板容器
   const panelContainer = document.createElement('div');
   panelContainer.id = 'pagetalk-panel-container';
-  panelContainer.style.zIndex = '9999'; // 设置 z-index
+  panelContainer.style.zIndex = '99999999'; // 设置 z-index
   panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
   panelContainer.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
   panelContainer.style.overflow = 'hidden'; // 防止 iframe 内容溢出圆角
@@ -47,11 +47,7 @@ function initPagetalkPanel() {
   // 设置调整大小的事件监听
   setupResizeEvents(resizer, panelContainer);
 
-  // 遍历页面中的所有元素，并将它们的 z-index 值设置为 auto
-  const allElements = document.querySelectorAll('*');
-  allElements.forEach(element => {
-    element.style.zIndex = 'auto';
-  });
+  // 移除：遍历页面中的所有元素，并将它们的 z-index 值设置为 auto (可能破坏页面布局)
 }
 
 // 设置调整大小的事件监听器
@@ -219,39 +215,49 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-// 提取页面的主要内容
+// 提取页面的主要内容 (使用 Readability.js)
 function extractPageContent() {
-  // 创建一个包含页面内容的副本
-  const contentNode = document.body.cloneNode(true);
-  
-  // 尝试删除不必要的元素
   try {
-    const elementsToRemove = contentNode.querySelectorAll(
-      'script, style, noscript, iframe, img, svg, canvas, video, audio, [aria-hidden="true"], ' +
-      '.hidden, [hidden], nav, footer, header, aside, [role="banner"], [role="navigation"], ' + 
-      '[role="complementary"]'
-    );
-    
-    elementsToRemove.forEach(el => {
-      try {
-        el.parentNode.removeChild(el);
-      } catch (e) {}
-    });
-  } catch (e) {
-    console.warn('清理DOM时出错', e);
+    // 确保 Readability 库已加载
+    if (typeof Readability === 'undefined') {
+      console.error('Readability library not loaded.');
+      return '错误：无法加载页面内容提取库。';
+    }
+
+    // 克隆文档以避免修改原始页面
+    const documentClone = document.cloneNode(true);
+    const reader = new Readability(documentClone);
+    const article = reader.parse();
+
+    let content = '';
+    if (article && article.textContent) {
+      // 获取提取到的文本内容
+      content = article.textContent;
+      // 清理空白字符
+      content = content.replace(/\s+/g, ' ').trim();
+    } else {
+      console.warn('Readability could not parse the page content.');
+      // Fallback: 尝试获取 body 的 textContent (可能包含很多噪音)
+      content = document.body.textContent || '';
+      content = content.replace(/\s+/g, ' ').trim();
+      if (!content) {
+          return '无法提取页面内容。';
+      }
+      content = '(Fallback) ' + content; // 标记为后备提取
+    }
+
+    // 截断过长的内容
+    const maxLength = 500000; // 保持与之前一致的最大长度
+    if (content.length > maxLength) {
+      content = content.substring(0, maxLength) + '...（内容已截断）';
+    }
+
+    return content;
+
+  } catch (error) {
+    console.error('Error extracting page content with Readability:', error);
+    return `提取页面内容时出错: ${error.message}`;
   }
-  
-  // 获取文本内容并清理
-  let content = contentNode.textContent || '';
-  content = content.replace(/\s+/g, ' ').trim();
-  
-  // 截断过长的内容
-  const maxLength = 500000;
-  if (content.length > maxLength) {
-    content = content.substring(0, maxLength) + '...（内容已截断）';
-  }
-  
-  return content;
 }
 
 // 监听iframe内部的消息

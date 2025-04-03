@@ -5,7 +5,7 @@
   right: 0;
   height: 100vh;
   width: 350px; /* 初始宽度 */
-  z-index: 99999;
+  z-index: 2147483647 !important; /* Attempt to ensure top-level stacking */
   display: none; /* 初始隐藏 */
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
 }

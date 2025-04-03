@@ -21,12 +21,35 @@ function initMarkdownRenderer() {
         linkify: true,      // 自动转换URL为链接
         typographer: true,  // 启用一些语言中性的替换和引号美化
         highlight: function(str, lang) {
-            // 高亮处理
-            const code = str;
-            const encodedCode = btoa(encodeURIComponent(code));
-            
-            // 返回我们自定义的代码块HTML结构
-            return `<pre class="code-block${lang ? ' language-' + lang : ' language-plaintext'}" data-code="${encodedCode}"><code>${escapeHtml(code)}</code></pre>`;
+            const code = str; // Keep original code reference
+            const encodedCode = btoa(encodeURIComponent(code)); // Encode for data-code
+
+            // Determine language class first, default to plaintext
+            const langClass = lang ? `language-${lang}` : 'language-plaintext';
+            let highlightedCode = escapeHtml(code); // Default to escaped code
+
+            // Attempt highlighting only if hljs is available AND language is supported
+            if (lang && typeof window.hljs !== 'undefined' && hljs.getLanguage(lang)) {
+                try {
+                    highlightedCode = hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
+                } catch (e) {
+                    console.error(`Highlight.js error for language ${lang}:`, e);
+                    // highlightedCode remains the escaped version
+                }
+            } else if (lang && typeof window.hljs !== 'undefined' && !hljs.getLanguage(lang)) {
+                 // hljs is loaded, but language is not supported (like mermaid)
+                 // Keep highlightedCode as escaped version, langClass is already set correctly
+                 // console.warn(`Highlight.js language "${lang}" not loaded or supported. Rendering as plain text within language block.`);
+            } else if (typeof window.hljs === 'undefined') {
+                 // hljs not loaded at all
+                 // console.warn('Highlight.js not loaded. Rendering code blocks as plain text.');
+                 // highlightedCode remains escaped, langClass is set based on lang presence
+            }
+
+            // Return the structure with data-code and highlighted (or escaped) code
+            // Ensure the class includes 'hljs' for potential styling hooks if needed,
+            // and keep the original 'code-block' for existing styles/JS.
+            return `<pre class="code-block hljs ${langClass}" data-code="${encodedCode}"><code>${highlightedCode}</code></pre>`;
         }
     });
 

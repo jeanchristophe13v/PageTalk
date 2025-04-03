@@ -514,19 +514,30 @@ header h1 {
 /* 主要内容区域 */
 main {
     flex: 1;
-    overflow-y: auto;
+    /* overflow-y: auto; */ /* Removed to allow child elements to scroll independently */
+    overflow: hidden; /* Prevent main itself from scrolling */
     position: relative;
     min-height: 0; /* 确保内容区域可以缩小 */
 }
 
 .tab-content {
     display: none;
-    height: 100%;
+    /* position: absolute; */ /* Reverted absolute positioning */
+    /* top: 0; */
+    /* left: 0; */
+    /* right: 0; */
+    /* bottom: 0; */
+    height: 100%; /* Restore height */
     width: 100%;
+    /* overflow-y: auto; */ /* Removed: Let active tab handle overflow */
+    overflow-x: hidden;
 }
 
 .tab-content.active {
-    display: block;
+    display: flex; /* Use flex for layout */
+    flex-direction: column; /* Stack content vertically */
+    height: 100%; /* Ensure it takes full height of main */
+    overflow: hidden; /* Prevent the section itself from scrolling */
 }
 
 /* 聊天界面样式 */
@@ -535,6 +546,7 @@ main {
     flex-direction: column;
     height: 100%;
     width: 100%;
+    overflow: hidden; /* 确保聊天容器本身不溢出 */
 }
 
 .chat-messages {
@@ -737,18 +749,22 @@ main {
 }
 
 /* 优化标题样式和间距 */
-.bot-message h1, 
-.bot-message h2, 
-.bot-message h3, 
+.bot-message h1,
+.bot-message h2,
+.bot-message h3,
 .bot-message h4,
+.bot-message h5, /* 添加 h5, h6 */
+.bot-message h6,
 .markdown-rendered h1,
 .markdown-rendered h2,
 .markdown-rendered h3,
-.markdown-rendered h4 {
+.markdown-rendered h4,
+.markdown-rendered h5, /* 添加 h5, h6 */
+.markdown-rendered h6 {
     margin-top: 1em;
     margin-bottom: 0.5em;
     line-height: 1.3;
-    color: #333;
+    color: var(--text-color); /* 使用 CSS 变量，适配浅色和深色模式 */
 }
 
 /* 优化列表样式 */
@@ -1140,56 +1156,191 @@ main {
 }
 
 /* 设置界面样式 - 改进布局和空间感 */
-.settings-container {
+/* Note: .settings-container is now the *inner* container within #settings */
+#settings .settings-container { /* Target specifically within #settings */
     background-color: var(--background-color);
-    border-radius: var(--radius-md);
-    padding: clamp(var(--spacing-md), 4vw, var(--spacing-xl));
-    /* margin: clamp(var(--spacing-md), 3vw, var(--spacing-lg)) clamp(var(--spacing-sm), 3vw, var(--spacing-lg)); */ /* Removed margin to allow full width */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    /* border-radius: var(--radius-md); /* Radius applied to #settings */
+    padding: 0; /* Remove padding, handled by sub-content */
+    /* margin: clamp(var(--spacing-md), 3vw, var(--spacing-lg)) clamp(var(--spacing-sm), 3vw, var(--spacing-lg)); */ /* Removed margin */
+    box-shadow: none; /* Remove shadow, applied to #settings */
     max-width: 100%;
     width: 100%; /* Ensure it takes full width */
     overflow-x: hidden;
-    /* Removed flexbox styles added previously */
-    /* position: relative; /* 移除相对定位，不再需要 */
-    /* padding-bottom: calc(clamp(var(--spacing-md), 4vw, var(--spacing-xl)) + 40px); /* 移除额外内边距 */
+    flex: 1; /* Allow container to grow */
+    display: flex; /* Use flex for sub-content layout */
+    flex-direction: column;
 }
 
-.settings-container h2 {
-    font-size: clamp(19px, 4.2vw, 22px); /* 稍微增大字号 */
-    /* margin-top: -var(--spacing-sm); Removed */
-    margin-bottom: 0; /* Removed bottom margin, header handles spacing */
-    color: var(--primary-color); /* 保持颜色 */
-    /* padding-bottom: var(--spacing-sm); Moved to header */
-    /* border-bottom: 1px solid var(--border-color); Moved to header */
-    font-weight: 700; /* 设置为 bold */
-    /* Add flex-grow to allow title to take space */
-    flex-grow: 1;
-    /* Add margin-right to separate from button */
-    margin-right: var(--spacing-md);
-}
-
-/* 新增：设置页面标题栏样式 */
-.settings-header {
+/* Style for the main #settings section */
+#settings {
+    padding: clamp(var(--spacing-md), 4vw, var(--spacing-xl));
+    box-sizing: border-box;
+    height: 100%;
     display: flex;
-    justify-content: space-between; /* Title left, button right */
-    align-items: center;
-    margin-bottom: var(--spacing-lg); /* Increased margin below header */
-    /* height: 28px; Removed fixed height */
-    padding-bottom: var(--spacing-sm); /* Added padding below */
-    border-bottom: 1px solid var(--border-color); /* Added border below */
+    flex-direction: column;
 }
 
-.setting-group {
+/* Style for H2 inside sub-content */
+.settings-sub-content h2 {
+    font-size: clamp(16px, 4vw, 18px); /* Adjust size */
+    margin-bottom: var(--spacing-lg); /* Space below title */
+    color: var(--text-color); /* Standard text color */
+    font-weight: 600;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+body.dark-mode .settings-sub-content h2 {
+    color: var(--text-color);
+    border-bottom-color: var(--border-color);
+}
+
+/* --- Settings Internal Navigation --- */
+.settings-nav {
+    display: flex;
+    gap: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
-    /* Keep padding for spacing within groups */
-    padding-bottom: var(--spacing-md);
-    /* Apply border only if NOT inside the new box */
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+    flex-shrink: 0; /* Prevent nav from shrinking */
+    align-items: center; /* Align items vertically */
 }
 
-/* Remove bottom border for the last group globally (might affect Agent settings too, check later if needed) */
-.setting-group:last-of-type {
-     border-bottom: none;
-     padding-bottom: 0;
+.settings-nav-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+
+.settings-nav-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+
+.settings-nav-btn.active {
+    color: var(--primary-color);
+    font-weight: 600;
+    background-color: rgba(76, 110, 245, 0.15); /* Slightly darker active background */
+}
+
+/* Push close button to the right */
+#close-panel-settings {
+    margin-left: auto;
+}
+
+/* Dark mode for settings nav */
+body.dark-mode .settings-nav {
+    border-bottom-color: var(--border-color);
+}
+body.dark-mode .settings-nav-btn {
+    color: var(--text-secondary);
+}
+body.dark-mode .settings-nav-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+body.dark-mode .settings-nav-btn.active {
+    color: var(--primary-color);
+    background-color: rgba(116, 143, 252, 0.2); /* Darker active background for dark mode */
+}
+
+/* --- Settings Sub-Content --- */
+.settings-sub-content {
+    display: none;
+    flex: 1; /* Allow sub-content to fill remaining space */
+    overflow-y: auto; /* Allow scrolling within sub-content */
+    overflow-x: hidden;
+    padding: var(--spacing-sm) 0; /* Add some vertical padding */
+    min-height: 0; /* Ensure it can shrink */
+}
+
+.settings-sub-content.active {
+    display: block;
+}
+
+/* Adjustments for content migrated into sub-content */
+#settings-agent .agents-list-container,
+#settings-model .model-settings-group-box {
+    margin-bottom: 0; /* Remove bottom margin as sub-content handles spacing */
+}
+
+#settings-model .model-save-area {
+    margin-top: var(--spacing-md); /* Adjust spacing */
+}
+
+/* General Settings Specific Styles */
+#settings-general .setting-group {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color); /* Add border back for general settings */
+}
+
+#settings-general .setting-group:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.theme-setting {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.theme-setting label {
+    margin-bottom: 0; /* Remove bottom margin for label */
+}
+
+
+
+.export-setting label {
+    margin-bottom: var(--spacing-sm); /* Add margin below label */
+}
+
+.export-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.export-controls select {
+    flex: 1; /* Allow select to take space */
+    max-width: 150px; /* Limit select width */
+}
+
+.export-controls .action-button {
+    /* Use existing action-button styles */
+    background-color: var(--primary-color); /* Make export button prominent */
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    width: auto; /* Allow button to fit content */
+    height: auto;
+    font-size: clamp(12px, 3vw, 13px);
+    transition: all 0.2s ease; /* Add transition */
+}
+
+.export-controls .action-button:hover {
+    background-color: var(--secondary-color);
+    color: white; /* Ensure text is white on hover */
+}
+
+body.dark-mode #settings-general .setting-group {
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .export-controls .action-button {
+    background-color: var(--primary-color);
+    color: white;
+}
+body.dark-mode .export-controls .action-button:hover {
+    background-color: var(--secondary-color);
+    color: white; /* Ensure text is white on hover in dark mode */
 }
 
 /* --- New Style for Model Settings Box --- */
@@ -1440,90 +1591,53 @@ footer {
 .footer-tabs {
     display: flex;
     list-style: none;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-md); /* Reduced gap */
     margin-left: auto;
 }
 
 .footer-tab {
-    padding: var(--spacing-xs) var(--spacing-md); /* 增加内边距 */
+    padding: var(--spacing-xs) var(--spacing-sm); /* Adjusted padding */
     cursor: pointer;
     position: relative;
-    color: var (--text-secondary);
-    transition: all 0.3s ease;
+    color: var(--text-secondary);
+    transition: all 0.2s ease; /* Faster transition */
     font-weight: 500;
     font-size: 11px;
-    border-radius: var(--radius-md); /* 增加圆角 */
-    background-color: rgba(49, 123, 245, 0.05); /* 增加背景色 */
+    border-radius: var(--radius-md);
+    background-color: transparent; /* Default transparent */
+    border: 1px solid transparent; /* Add transparent border for layout consistency */
 }
 
 .footer-tab:hover {
     color: var(--primary-color);
-    background-color: rgba(49, 123, 245, 0.15); /* 增加悬停背景色 */
+    background-color: var(--button-hover-bg); /* Use standard hover */
 }
 
 .footer-tab.active {
     color: var(--primary-color);
     font-weight: 600;
-    background-color: rgba(49, 123, 245, 0.15); /* 增加激活状态背景色 */
+    background-color: rgba(76, 110, 245, 0.15); /* Use slightly darker active background */
+    border-color: rgba(76, 110, 245, 0.2); /* Add subtle border when active */
 }
 
-/* --- 新增：全局主题切换按钮样式 (可拖动) --- */
-#global-theme-toggle-btn {
-    /* position: fixed; /* 移除 fixed 定位 */
-    position: absolute; /* 使用 absolute 以便 JS 控制位置 */
-    bottom: 100px; /* 再次调整初始位置，使其更高 */
-    right: var(--spacing-lg);  /* 初始位置 */
-    width: 36px;  /* 增大按钮尺寸 */
-    height: 36px;
-    border-radius: 50%; /* 保持圆形 */
-    background-color: var(--card-background); /* 添加背景色以便可见 */
-    border: 1px solid var(--border-color); /* 添加边框 */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 添加阴影 */
-    z-index: 100; /* 确保在页脚之上 */
-    display: none; /* 默认隐藏，由 JS 控制 */
-    align-items: center;
-    justify-content: center;
-    cursor: grab; /* 初始为抓取手势 */
-    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; /* 移除 transform 过渡 */
+/* Dark mode footer tabs */
+body.dark-mode .footer-tab {
     color: var(--text-secondary);
-    -webkit-user-select: none; /* Safari 兼容性 */
-    user-select: none; /* 防止拖动时选中文本 */
+    background-color: transparent;
+    border-color: transparent;
 }
-
-#global-theme-toggle-btn:active {
-    cursor: grabbing; /* 拖动时变为抓紧手势 */
-    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2); /* 拖动时阴影变深 */
-}
-
-#global-theme-toggle-btn:hover {
-    /* transform: scale(1.1); /* 移除缩放效果 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+body.dark-mode .footer-tab:hover {
     color: var(--primary-color);
     background-color: var(--button-hover-bg);
 }
-
-#global-theme-toggle-btn svg {
-    width: 20px; /* 增大图标尺寸 */
-    height: 20px;
-    pointer-events: none; /* 防止 SVG 干扰拖动事件 */
-}
-
-/* 深色模式下的全局切换按钮 */
-body.dark-mode #global-theme-toggle-btn {
-    background-color: var(--card-background);
-    border-color: var(--border-color);
-    color: var(--text-secondary);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* 深色阴影 */
-}
-body.dark-mode #global-theme-toggle-btn:hover {
-    background-color: var(--button-hover-bg);
+body.dark-mode .footer-tab.active {
     color: var(--primary-color);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    background-color: rgba(116, 143, 252, 0.2); /* Darker active background */
+    border-color: rgba(116, 143, 252, 0.3);
 }
-body.dark-mode #global-theme-toggle-btn:active {
-     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5); /* 深色拖动阴影 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-}
+
+/* Remove global theme toggle button styles as it's moved to General Settings */
+/* #global-theme-toggle-btn { ... } */
 
 #connection-indicator {
     padding: 1px 6px;
@@ -2420,7 +2534,7 @@ body.dark-mode #global-theme-toggle-btn:active {
 
 .toggle-api-key-button {
     position: absolute;
-    right: 5px;
+    right: 8px; /* Increased value to move slightly left */
     top: 50%;
     transform: translateY(-50%);
     background: none;
@@ -3016,6 +3130,45 @@ input[type=number] {
 /* 深色模式 */
 body.dark-mode .agent-item {
     border-color: #495057; /* 恢复 Agent 项边框 */
+}
+
+/* --- Theme Toggle Button (Draggable) --- */
+#theme-toggle-btn {
+    display: none; /* Hide by default */
+    position: absolute; /* Enable absolute positioning */
+    right: var(--spacing-lg); /* Fixed right position */
+    bottom: 80px; /* Adjusted initial bottom position */
+    left: auto; /* Ensure left doesn't interfere */
+    top: auto; /* Ensure top doesn't interfere */
+    cursor: grab; /* Indicate draggability */
+    z-index: 99; /* Ensure it's above other elements */
+    /* Increased size */
+    width: 48px; /* Increased from default */
+    height: 48px; /* Increased from default */
+    padding: 12px; /* Increased padding */
+    /* Add transitions for smooth visual feedback when not dragging */
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    /* Optional: Add a subtle shadow for better visibility */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#theme-toggle-btn:active {
+    cursor: grabbing; /* Cursor when dragging */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly larger shadow when active */
+}
+
+/* Adjust dark mode styles if needed */
+body.dark-mode #theme-toggle-btn {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Show button only when settings tab is active */
+#settings.active #theme-toggle-btn {
+    display: flex; /* Or 'inline-flex' if preferred */
+}
+
+body.dark-mode #theme-toggle-btn:active {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 body.dark-mode .agent-item-body {
     border-top-color: #495057; /* 恢复 Body 顶部边框 */
