@@ -73,10 +73,11 @@ const translations = {
     'agentTemperatureLabel': 'Temperature:',
     'agentTopPLabel': 'Top P:',
     'agentMaxOutputLabel': 'Max Output Length:',
-    'defaultAgentName': '默认助手', // Added for default agent
+    'defaultAgentName': '默认', // Added for default agent
     'imageAlt': '图片 {index}', // Placeholder for image index
     'viewImageTitle': '查看原图',
     'deleteImageTitle': '删除图片',
+    'newAgentBaseName': '助手', // 新增：用于新助手命名的基础词
 
     // --- JS Dynamic Messages ---
     'apiKeyMissingError': '请先在"模型"选项卡中设置API密钥',
@@ -93,6 +94,17 @@ const translations = {
     'agentSaveFailedNotFound': '保存失败：找不到助手',
     'agentSaveFailedNameEmpty': '保存失败：Agent 名称不能为空',
     'minOneAgentError': '至少保留一个助手',
+    // Agent Import/Export
+    importAgentConfigTitle: '导入助手配置 (.json)',
+    exportAgentConfigTitle: '导出助手配置 (.json)',
+    agentExportEmptyError: '没有助手可导出。',
+    agentExportSuccess: '助手配置已导出。',
+    agentExportError: '导出助手配置时出错: {error}',
+    agentImportErrorInvalidFormatArray: '导入失败：文件格式无效，需要 JSON 数组。',
+    agentImportErrorInvalidAgentData: '导入失败：第 {index} 个助手数据无效或不完整。',
+    agentImportSuccess: '导入完成：新增 {imported} 个，更新 {updated} 个助手。',
+    agentImportError: '导入助手配置时出错: {error}',
+    agentImportErrorFileRead: '读取导入文件时出错。',
     'chatExportEmptyError': '没有聊天记录可导出',
     'chatExportSuccess': '聊天记录已导出',
     'regenerateError': '重新生成响应时出错: {error}',
@@ -186,10 +198,11 @@ const translations = {
     'agentTemperatureLabel': 'Temperature:',
     'agentTopPLabel': 'Top P:',
     'agentMaxOutputLabel': 'Max Output Length:',
-    'defaultAgentName': 'Default Agent', // Added for default agent
+    'defaultAgentName': 'Default', // Added for default agent
     'imageAlt': 'Image {index}',
     'viewImageTitle': 'View Original',
     'deleteImageTitle': 'Delete Image',
+    'newAgentBaseName': 'Agent', // Added: Base word for new agent naming
 
     // --- JS Dynamic Messages ---
     'apiKeyMissingError': 'Please set your API key in the "Model" tab first',
@@ -202,6 +215,17 @@ const translations = {
     'pageContentExtractedSuccess': 'Successfully extracted page content',
     'newAgentCreatedToast': 'New agent created',
     'agentDeletedToast': 'Agent deleted',
+    // Agent Import/Export
+    importAgentConfigTitle: 'Import Agent Configuration (.json)',
+    exportAgentConfigTitle: 'Export Agent Configuration (.json)',
+    agentExportEmptyError: 'No agents to export.',
+    agentExportSuccess: 'Agent configuration exported.',
+    agentExportError: 'Error exporting agent configuration: {error}',
+    agentImportErrorInvalidFormatArray: 'Import failed: Invalid file format, JSON array required.',
+    agentImportErrorInvalidAgentData: 'Import failed: Invalid or incomplete agent data at index {index}.',
+    agentImportSuccess: 'Import complete: Added {imported}, Updated {updated} agents.',
+    agentImportError: 'Error importing agent configuration: {error}',
+    agentImportErrorFileRead: 'Error reading import file.',
     'agentSaveFailedNameConflict': 'Save failed: Agent ID "{agentId}" already exists',
     'agentSaveFailedNotFound': 'Save failed: Agent not found',
     'agentSaveFailedNameEmpty': 'Save failed: Agent Name cannot be empty',

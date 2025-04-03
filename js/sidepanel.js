@@ -16,7 +16,7 @@ const state = {
     // 单个助手属性 (这些会根据当前助手动态更新)
     systemPrompt: '',
     temperature: 0.7,
-    maxTokens: 8192,
+    maxTokens: 65536,
     topP: 0.95,
     pageContext: '',
     chatHistory: [], // 存储格式: { role: 'user'|'model', parts: Array<{text: string}|{inlineData: {mimeType: string, data: string}}>, id: string }
@@ -30,13 +30,15 @@ const state = {
 
 // 翻译相关
 let currentTranslations = {}; // 存储当前语言的翻译
+let currentPanzoomInstance = null; // 存储当前 Mermaid 模态框的 Panzoom 实例
+let mermaidWheelListener = null; // 存储 wheel 事件监听器的引用
 
 // Mermaid related variables removed
 // 默认设置，当存储中没有对应值时使用
 const defaultSettings = {
     systemPrompt: '',
     temperature: 0.7,
-    maxTokens: 8192,
+    maxTokens: 65536, // 更新默认 maxTokens
     topP: 0.95,
 };
 
@@ -46,7 +48,7 @@ const defaultAgent = {
     name: '默认助手', // This will be translated when added to state if needed
     systemPrompt: defaultSettings.systemPrompt,
     temperature: defaultSettings.temperature,
-    maxTokens: defaultSettings.maxTokens,
+    maxTokens: defaultSettings.maxTokens, // 确保使用更新后的默认值
     topP: defaultSettings.topP
 };
 
@@ -72,6 +74,10 @@ const elements = {
     imageModal: document.getElementById('image-modal'),
     modalImage: document.getElementById('modal-image'),
     closeModal: document.querySelector('.close-modal'),
+    // 新增：Mermaid 模态框元素
+    mermaidModal: document.getElementById('mermaid-modal'),
+    mermaidModalContent: document.getElementById('mermaid-modal-content'),
+    mermaidCloseModal: document.querySelector('.mermaid-close-modal'),
     chatStatusMessage: document.getElementById('chat-status-message'),
 
     // --- 设置界面 (主容器和导航) ---
@@ -95,6 +101,10 @@ const elements = {
     deleteAgentName: document.getElementById('delete-agent-name'), // (ID未变)
     confirmDelete: document.getElementById('confirm-delete'), // (ID未变)
     cancelDelete: document.getElementById('cancel-delete'), // (ID未变)
+    // 新增：导入/导出按钮和文件输入
+    importAgentsBtn: document.getElementById('import-agents'),
+    exportAgentsBtn: document.getElementById('export-agents'),
+    importAgentInput: document.getElementById('import-agent-input'),
     // 注意: Agent的具体设置输入框现在是动态生成的，通过父元素查找
 
     // --- 设置 - 模型 ---
@@ -189,6 +199,8 @@ function init() {
     // 移除全局主题按钮拖动和可见性逻辑
     // if (elements.themeToggleBtn) { ... }
     // setToggleButtonVisibility(initialTab);
+
+    // Mermaid initialization moved to loadSettings callback
 }
 
 /**
@@ -379,6 +391,19 @@ function setupEventListeners() {
         }
     });
 
+    // 新增：关闭 Mermaid 模态框的事件监听器
+    if (elements.mermaidCloseModal) {
+        elements.mermaidCloseModal.addEventListener('click', hideMermaidModal);
+    }
+    if (elements.mermaidModal) {
+        elements.mermaidModal.addEventListener('click', (e) => {
+            // 如果点击的是模态框背景本身，而不是内容区域
+            if (e.target === elements.mermaidModal) {
+                hideMermaidModal();
+            }
+        });
+    }
+
     // --- 新增：通用设置事件监听器 ---
     if (elements.languageSelect) {
         elements.languageSelect.addEventListener('change', handleLanguageChange);
@@ -390,6 +415,36 @@ function setupEventListeners() {
     if (elements.exportChatHistoryBtn) {
         elements.exportChatHistoryBtn.addEventListener('click', handleExportChat);
     }
+
+    // --- 新增：Agent 导入/导出事件监听器 ---
+    if (elements.importAgentsBtn) {
+        elements.importAgentsBtn.addEventListener('click', () => {
+            elements.importAgentInput.click(); // 触发隐藏的文件输入框
+        });
+    }
+    if (elements.importAgentInput) {
+        elements.importAgentInput.addEventListener('change', handleAgentImport);
+    }
+    if (elements.exportAgentsBtn) {
+        elements.exportAgentsBtn.addEventListener('click', handleAgentExport);
+    }
+
+    // --- 新增：使用事件委托处理 Mermaid 图表点击 ---
+    if (elements.chatMessages) {
+        elements.chatMessages.addEventListener('click', (event) => {
+            // 查找被点击元素或其父元素中最近的 Mermaid SVG
+            const mermaidSvg = event.target.closest('.mermaid > svg');
+            if (mermaidSvg) {
+                console.log('Delegated Mermaid click detected on SVG.'); // 调试日志
+                // 阻止可能的默认行为或事件冒泡（虽然对SVG影响不大）
+                event.preventDefault();
+                event.stopPropagation();
+                // 显示模态框
+                showMermaidModal(mermaidSvg.outerHTML);
+            }
+        });
+    }
+    // --- 结束：使用事件委托处理 Mermaid 图表点击 ---
 }
 
 /**
@@ -657,7 +712,7 @@ function updateStreamingMessage(messageElement, content) {
     }
 
     // --- Render KaTeX and Mermaid (before adding cursor) ---
-    renderDynamicContent(messageElement);
+    // renderDynamicContent(messageElement); // 在流式更新期间移除，防止 Mermaid 报错
     // --- End Render KaTeX and Mermaid ---
 
     messageElement.appendChild(streamingCursor);
@@ -1107,6 +1162,25 @@ function loadSettings() { // Now also loads and applies language
             state.darkMode = syncResult.darkMode === true; // 确保是布尔值
             applyTheme(state.darkMode);
 
+            // --- Mermaid 初始化 (Moved Here) ---
+            if (typeof mermaid !== 'undefined') {
+                try {
+                    mermaid.initialize({
+                        startOnLoad: false, // 我们将手动渲染
+                        theme: state.darkMode ? 'dark' : 'default', // 使用已加载的主题设置
+                        // 可选：添加其他 Mermaid 配置
+                        // securityLevel: 'strict', // 推荐，但可能需要调整 CSP
+                        logLevel: 'error' // 只记录错误
+                    });
+                    console.log('Mermaid initialized with theme:', state.darkMode ? 'dark' : 'default'); // Keep logs English
+                } catch (error) {
+                    console.error('Mermaid initialization failed:', error);
+                }
+            } else {
+                console.warn('Mermaid library not found during settings load.');
+            }
+            // --- 结束 Mermaid 初始化 ---
+
             // 加载语言设置
             if (syncResult.language && elements.languageSelect) {
                 elements.languageSelect.value = syncResult.language;
@@ -1371,6 +1445,98 @@ function hideImageModal() {
 }
 
 /**
+ * 显示 Mermaid 图表放大预览模态框
+ * @param {string} svgContent - 要显示的 SVG 图表内容 (outerHTML)
+ */
+function showMermaidModal(svgContent) {
+    console.log('showMermaidModal called. SVG content length:', svgContent?.length); // 调试日志
+    if (!elements.mermaidModal || !elements.mermaidModalContent) return;
+
+    // 销毁可能存在的旧 Panzoom 实例
+    if (currentPanzoomInstance) {
+        currentPanzoomInstance.destroy();
+        currentPanzoomInstance = null;
+        console.log('Previous Panzoom instance destroyed.');
+    }
+
+    // 清空旧内容并注入新的 SVG
+    elements.mermaidModalContent.innerHTML = svgContent;
+
+    // 找到新注入的 SVG 元素
+    const svgElement = elements.mermaidModalContent.querySelector('svg');
+
+    if (svgElement) {
+        // 初始化 Panzoom
+        try {
+            // 配置 Panzoom，允许滚轮缩放和拖动
+            currentPanzoomInstance = Panzoom(svgElement, { // Corrected: Use uppercase 'P'
+                maxZoom: 5, // 限制最大缩放倍数
+                minZoom: 0.5, // 限制最小缩放倍数
+                bounds: true, // 防止拖出边界
+                boundsPadding: 0.1 // 边界留白
+                // 可以在这里添加更多配置选项
+            });
+            console.log('Panzoom initialized on Mermaid SVG.');
+
+            // --- 新增：为模态框内容添加滚轮缩放事件监听器 ---
+            if (elements.mermaidModalContent) {
+                // 定义监听器函数并存储引用
+                mermaidWheelListener = (event) => {
+                    if (currentPanzoomInstance) {
+                        // 阻止页面滚动
+                        event.preventDefault();
+                        // 调用 Panzoom 的滚轮缩放方法
+                        currentPanzoomInstance.zoomWithWheel(event);
+                        // console.log('Panzoom zoomWithWheel called.'); // 可选的调试日志
+                    }
+                };
+                // 添加事件监听器
+                elements.mermaidModalContent.addEventListener('wheel', mermaidWheelListener, { passive: false }); // passive: false 允许 preventDefault
+                console.log('Wheel listener added to mermaid modal content.');
+            }
+            // --- 结束：添加滚轮缩放事件监听器 ---
+
+        } catch (error) {
+            console.error('Failed to initialize Panzoom:', error);
+            currentPanzoomInstance = null; // 确保实例为空
+        }
+    } else {
+        console.warn('Could not find SVG element in Mermaid modal to initialize Panzoom.');
+    }
+
+    // 显示模态框
+    elements.mermaidModal.style.display = 'block';
+}
+
+/**
+ * 隐藏 Mermaid 图表预览模态框
+ */
+function hideMermaidModal() {
+    // --- 新增：移除滚轮事件监听器 ---
+    if (mermaidWheelListener && elements.mermaidModalContent) {
+        elements.mermaidModalContent.removeEventListener('wheel', mermaidWheelListener);
+        mermaidWheelListener = null; // 清除引用
+        console.log('Wheel listener removed from mermaid modal content.');
+    }
+    // --- 结束：移除滚轮事件监听器 ---
+
+    if (!elements.mermaidModal) return;
+
+    // 销毁 Panzoom 实例
+    if (currentPanzoomInstance) {
+        currentPanzoomInstance.destroy();
+        currentPanzoomInstance = null;
+        console.log('Panzoom instance destroyed.');
+    }
+
+    elements.mermaidModal.style.display = 'none';
+    // 清空内容，避免旧图表残留
+    if (elements.mermaidModalContent) {
+        elements.mermaidModalContent.innerHTML = '';
+    }
+}
+
+/**
  * 生成唯一ID
  * @returns {string} 唯一ID
  */
@@ -1578,7 +1744,7 @@ function updateAgentsList() {
         maxTokensGroup.className = 'setting-group';
         maxTokensGroup.innerHTML = `
             <label for="max-tokens-${originalAgentId}">${_('agentMaxOutputLabel')}</label>
-            <input type="number" id="max-tokens-${originalAgentId}" value="${agent.maxTokens}" min="50" max="8192">
+            <input type="number" id="max-tokens-${originalAgentId}" value="${agent.maxTokens}" min="50" max="65536">
         `;
          maxTokensGroup.querySelector('input').addEventListener('input', (e) => {
              clearTimeout(agentItem._saveTimeout);
@@ -1646,9 +1812,10 @@ function autoSaveAgentSettings(originalAgentId, agentItemElement) {
     // Use originalAgentId for lookup, don't read/change ID from input
     const newName = nameInput ? nameInput.value.trim() : state.agents[agentIndex].name;
     const newSystemPrompt = systemPromptInput ? systemPromptInput.value : state.agents[agentIndex].systemPrompt;
-    const newTemperature = temperatureInput ? temperatureInput.value : state.agents[agentIndex].temperature;
-    const newTopP = topPInput ? topPInput.value : state.agents[agentIndex].topP;
-    const newMaxTokens = maxTokensInput ? maxTokensInput.value : state.agents[agentIndex].maxTokens;
+    // 使用 parseFloat 和 parseInt 确保数字类型正确
+    const newTemperature = temperatureInput ? parseFloat(temperatureInput.value) : state.agents[agentIndex].temperature;
+    const newTopP = topPInput ? parseFloat(topPInput.value) : state.agents[agentIndex].topP;
+    const newMaxTokens = maxTokensInput ? parseInt(maxTokensInput.value, 10) : state.agents[agentIndex].maxTokens;
 
     // 3. Validate Name (cannot be empty)
     if (!newName) {
@@ -1707,13 +1874,24 @@ if (originalAgentId === state.currentAgentId) {
  * 创建新助手
  */
 function createNewAgent() {
+    // --- 生成唯一的助手名称 ---
+    const baseName = _('newAgentBaseName'); // 使用新的翻译键获取 "助手" 或 "Agent"
+    let counter = 1;
+    let newAgentName = `${baseName} ${counter}`;
+    // 循环查找直到找到一个不存在的名称
+    while (state.agents.some(agent => agent.name === newAgentName)) {
+        counter++;
+        newAgentName = `${baseName} ${counter}`;
+    }
+    // --- 结束：生成唯一的助手名称 ---
+
     // 创建新助手
     const newAgent = {
         id: generateUniqueId(),
-        name: `${_('agentLabel')} ${state.agents.length + 1}`, // Use translated 'Agent'
+        name: newAgentName, // 使用生成的唯一名称
         systemPrompt: defaultSettings.systemPrompt,
         temperature: defaultSettings.temperature,
-        maxTokens: defaultSettings.maxTokens,
+        maxTokens: defaultSettings.maxTokens, // 使用默认值或调整后的值
         topP: defaultSettings.topP
     };
 
@@ -1867,6 +2045,161 @@ function saveCurrentAgentId() {
     chrome.storage.sync.set({
         currentAgentId: state.currentAgentId
     });
+}
+
+/**
+ * 处理 Agent 配置导出
+ */
+function handleAgentExport() {
+    if (!state.agents || state.agents.length === 0) {
+        showToast(_('agentExportEmptyError', 'error')); // 需要添加翻译键
+        return;
+    }
+
+    try {
+        // 准备要导出的数据 (可以只包含必要字段，避免导出内部状态如 id)
+        const agentsToExport = state.agents.map(agent => ({
+            name: agent.name,
+            systemPrompt: agent.systemPrompt,
+            temperature: agent.temperature,
+            maxTokens: agent.maxTokens,
+            topP: agent.topP
+            // 不导出 id
+        }));
+
+        const jsonString = JSON.stringify(agentsToExport, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `pagetalk_agents_${timestamp}.json`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast(_('agentExportSuccess'), 'success'); // 需要添加翻译键
+    } catch (error) {
+        console.error('Error exporting agents:', error);
+        showToast(_('agentExportError', { error: error.message }), 'error'); // 需要添加翻译键
+    }
+}
+
+/**
+ * 处理 Agent 配置文件导入
+ * @param {Event} event - 文件输入框的 change 事件
+ */
+function handleAgentImport(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+
+            // 1. 验证顶层结构是否为数组
+            if (!Array.isArray(importedData)) {
+                throw new Error(_('agentImportErrorInvalidFormatArray')); // 需要添加翻译键
+            }
+
+            let importedCount = 0;
+            let updatedCount = 0;
+
+            // 2. 遍历导入的 Agent
+            importedData.forEach((importedAgent, index) => {
+                // --- 详细验证每个 Agent 对象的结构和类型 ---
+                let validationError = null;
+
+                if (typeof importedAgent !== 'object' || importedAgent === null) {
+                    validationError = 'Agent data is not an object.';
+                } else if (typeof importedAgent.name !== 'string' || !importedAgent.name.trim()) {
+                    validationError = `Field 'name': Invalid type or empty. Value: ${importedAgent.name}, Type: ${typeof importedAgent.name}, Expected: non-empty string.`;
+                } else if (typeof importedAgent.systemPrompt !== 'string') {
+                    validationError = `Field 'systemPrompt': Invalid type. Value: ${importedAgent.systemPrompt}, Type: ${typeof importedAgent.systemPrompt}, Expected: string.`;
+                } else if (typeof importedAgent.temperature !== 'number' || isNaN(importedAgent.temperature) || importedAgent.temperature < 0 || importedAgent.temperature > 1) {
+                    validationError = `Field 'temperature': Invalid type or range (0-1). Value: ${importedAgent.temperature}, Type: ${typeof importedAgent.temperature}, Expected: number between 0 and 1.`;
+                } else if (typeof importedAgent.maxTokens !== 'number' || !Number.isInteger(importedAgent.maxTokens) || importedAgent.maxTokens < 50 || importedAgent.maxTokens > 65536) { // Updated max value
+                    validationError = `Field 'maxTokens': Invalid type or range (50-65536). Value: ${importedAgent.maxTokens}, Type: ${typeof importedAgent.maxTokens}, Expected: integer between 50 and 65536.`; // Updated message
+                } else if (typeof importedAgent.topP !== 'number' || isNaN(importedAgent.topP) || importedAgent.topP < 0 || importedAgent.topP > 1) {
+                    validationError = `Field 'topP': Invalid type or range (0-1). Value: ${importedAgent.topP}, Type: ${typeof importedAgent.topP}, Expected: number between 0 and 1.`;
+                }
+
+                if (validationError) {
+                    console.error(`Validation failed for agent at index ${index}: ${validationError}`, 'Agent Data:', importedAgent);
+                    throw new Error(_('agentImportErrorInvalidAgentData', { index: index + 1 }));
+                }
+                // --- 验证结束 ---
+
+                const existingAgentIndex = state.agents.findIndex(a => a.name === importedAgent.name.trim());
+
+                if (existingAgentIndex !== -1) {
+                    // 更新现有 Agent (保留 ID)
+                    const agentToUpdate = state.agents[existingAgentIndex];
+                    agentToUpdate.systemPrompt = importedAgent.systemPrompt;
+                    agentToUpdate.temperature = importedAgent.temperature;
+                    agentToUpdate.maxTokens = importedAgent.maxTokens;
+                    agentToUpdate.topP = importedAgent.topP;
+                    updatedCount++;
+                    console.log(`Updated agent: ${agentToUpdate.name}`);
+                } else {
+                    // 添加新 Agent (生成新 ID)
+                    const newAgent = {
+                        id: generateUniqueId(),
+                        name: importedAgent.name.trim(),
+                        systemPrompt: importedAgent.systemPrompt,
+                        temperature: importedAgent.temperature,
+                        maxTokens: importedAgent.maxTokens,
+                        topP: importedAgent.topP
+                    };
+                    state.agents.push(newAgent);
+                    importedCount++;
+                    console.log(`Added new agent: ${newAgent.name}`);
+                }
+            });
+
+            // 3. 更新状态和 UI
+            saveAgentsList(); // 保存更新后的列表
+            updateAgentsList(); // 刷新设置界面列表
+            updateAgentSelectionInChat(); // 刷新聊天界面下拉框
+
+            // 确保 currentAgentId 仍然有效，如果无效则选择第一个
+            if (!state.agents.find(a => a.id === state.currentAgentId)) {
+                if (state.agents.length > 0) {
+                    state.currentAgentId = state.agents[0].id;
+                    saveCurrentAgentId();
+                    updateAgentSelectionInChat(); // 再次更新下拉框
+                } else {
+                    // 如果导入后列表为空（理论上不太可能，除非导入空数组且原列表为空）
+                    // 可能需要处理这种情况，例如创建一个默认助手
+                }
+            }
+
+            showToast(_('agentImportSuccess', { imported: importedCount, updated: updatedCount }), 'success'); // 需要添加翻译键
+
+        } catch (error) {
+            console.error('Error importing agents:', error);
+            showToast(_('agentImportError', { error: error.message }), 'error'); // 需要添加翻译键
+        } finally {
+            // 重置文件输入框，以便可以再次选择相同的文件
+            event.target.value = null;
+        }
+    };
+
+    reader.onerror = (e) => {
+        console.error('Error reading agent import file:', e);
+        showToast(_('agentImportErrorFileRead'), 'error'); // 需要添加翻译键
+        // 重置文件输入框
+        event.target.value = null;
+    };
+
+    reader.readAsText(file);
 }
 
 /**
@@ -2221,12 +2554,113 @@ function renderDynamicContent(element) {
         // console.warn('KaTeX renderMathInElement function not found.');
     }
 
-    // Mermaid rendering logic removed
+    // --- Render Mermaid (Manual Iteration) ---
+    if (typeof mermaid !== 'undefined') {
+        const mermaidPreElements = element.querySelectorAll('pre.mermaid');
+        if (mermaidPreElements.length > 0) {
+            console.log(`Found ${mermaidPreElements.length} Mermaid <pre> elements to render.`);
+            mermaidPreElements.forEach(async (preElement, index) => {
+                const definition = preElement.textContent || '';
+                if (!definition.trim()) {
+                    console.warn(`Skipping empty Mermaid <pre> element at index ${index}.`);
+                    return; // Skip empty definitions
+                }
+
+                const renderId = `mermaid-render-${Date.now()}-${index}`;
+                // Create a new container div that will replace the <pre> element
+                const container = document.createElement('div');
+                container.className = 'mermaid'; // Add the standard mermaid class
+                container.id = `${renderId}-container`; // Give it a unique ID based on renderId
+                container.dataset.mermaidDefinition = definition; // Store the definition
+
+                // Replace the <pre> element with the new container *before* rendering
+                if (preElement.parentNode) {
+                    preElement.parentNode.replaceChild(container, preElement);
+                } else {
+                    console.error('Cannot replace Mermaid <pre> element: parentNode is null.');
+                    return; // Cannot proceed without a parent
+                }
+
+                try {
+                    // Render the diagram using mermaid.render
+                    const { svg } = await mermaid.render(renderId, definition);
+                    container.innerHTML = svg; // Insert the rendered SVG into the container
+                    console.log(`Successfully rendered Mermaid chart ${index + 1} into container ${container.id}.`);
+
+                    // Click listener is handled by delegation in setupEventListeners, no need to add here.
+
+                } catch (error) {
+                    console.error(`Error rendering Mermaid chart ${index + 1} (ID: ${renderId}):`, error, 'Definition:', definition);
+                    // Display error message inside the container
+                    container.innerHTML = `<div class="mermaid-error">Mermaid Render Error: ${error.message}</div>`;
+                }
+            });
+        }
+    } else {
+        // console.warn('Mermaid library not found during renderDynamicContent.');
+    }
+    // --- End Render Mermaid ---
 }
 
 
-// --- 主题切换相关函数 (更新以使用设置内的按钮) ---
 
+    // --- 主题切换相关函数 (更新以使用设置内的按钮) ---
+
+/**
+ * 重新渲染页面上所有已存在的 Mermaid 图表
+ */
+async function rerenderAllMermaidCharts() {
+    if (typeof mermaid === 'undefined') {
+        console.warn('Mermaid library not available for re-rendering.');
+        return;
+    }
+
+    // Find all containers that have a stored definition
+    const containersToRerender = document.querySelectorAll('.mermaid[data-mermaid-definition]');
+    console.log(`Found ${containersToRerender.length} Mermaid charts with definitions to re-render.`);
+
+    if (containersToRerender.length === 0) {
+        return; // Nothing to re-render
+    }
+
+    // Use Promise.all to handle asynchronous rendering if needed, although mermaid.render is often synchronous
+    const renderPromises = Array.from(containersToRerender).map(async (container, index) => {
+        const definition = container.dataset.mermaidDefinition;
+        if (!definition) {
+            console.warn('Container found without definition, skipping re-render.', container);
+            return; // Skip if definition is missing for some reason
+        }
+
+        // Generate a unique ID for rendering, if the container doesn't have one
+        const renderId = `mermaid-rerender-${Date.now()}-${index}`;
+        container.innerHTML = ''; // Clear the old SVG content
+
+        try {
+            // mermaid.render is synchronous in standard usage
+            const { svg } = await mermaid.render(renderId, definition);
+            container.innerHTML = svg; // Insert the newly rendered SVG
+            console.log(`Successfully re-rendered Mermaid chart ${index + 1}.`);
+
+            // Re-attach click listener if needed (though delegation should handle this)
+            // const newSvgElement = container.querySelector('svg');
+            // if (newSvgElement) {
+            //     newSvgElement.addEventListener('click', handleMermaidClick);
+            // }
+
+        } catch (error) {
+            console.error(`Error re-rendering Mermaid chart ${index + 1}:`, error, 'Definition:', definition);
+            // Display error message inside the container
+            container.innerHTML = `<div class="mermaid-error">Re-render Error: ${error.message}</div>`;
+        }
+    });
+
+    try {
+        await Promise.all(renderPromises);
+        console.log('Finished re-rendering all Mermaid charts.');
+    } catch (error) {
+        console.error('An error occurred during the batch re-rendering process:', error);
+    }
+}
 /**
  * 应用当前主题 (浅色/深色)
  * @param {boolean} isDarkMode - 是否应用深色模式
@@ -2256,7 +2690,26 @@ function toggleTheme() {
     state.darkMode = !state.darkMode;
     applyTheme(state.darkMode);
     saveThemeSetting();
-    // Mermaid theme update notification removed
+
+    // --- 更新 Mermaid 主题 ---
+    if (typeof mermaid !== 'undefined') {
+        try {
+            // Re-initialize with the new theme
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: state.darkMode ? 'dark' : 'default',
+                logLevel: 'error'
+            });
+            console.log(`Mermaid theme updated to: ${state.darkMode ? 'dark' : 'default'}`);
+            // Attempt to re-render existing charts with the new theme
+            // Note: Mermaid's standard API doesn't directly support easy re-theming of existing SVGs.
+            // Re-initializing might affect future renders, but existing ones might need full re-render.
+            rerenderAllMermaidCharts();
+        } catch (error) {
+            console.error('Failed to update Mermaid theme:', error);
+        }
+    }
+    // --- 结束 Mermaid 主题更新 ---
 }
 
 /**
@@ -2360,6 +2813,8 @@ function updateUIElements() {
     setElementText('#settings-agent h2', 'agentSettingsHeading');
     setElementText('.agents-list-header h3', 'agentsListHeading');
     setElementAttribute('#add-new-agent', 'title', 'addNewAgentTitle');
+    setElementAttribute('#import-agents', 'title', 'importAgentConfigTitle'); // Add title update for import button
+    setElementAttribute('#export-agents', 'title', 'exportAgentConfigTitle'); // Add title update for export button
     // Agent list items (labels like Name, System Prompt etc.) are updated in updateAgentsList()
     setElementText('#delete-confirm-dialog h3', 'deleteConfirmHeading');
     // Delete confirm prompt is updated dynamically in showDeleteConfirmDialog()

@@ -101,9 +101,9 @@
                 <div class="settings-container">
                     <!-- 设置内部导航 -->
                     <div class="settings-nav">
-                        <button class="settings-nav-btn active" data-subtab="general">General</button>
                         <button class="settings-nav-btn" data-subtab="agent">Agent</button>
                         <button class="settings-nav-btn" data-subtab="model">Model</button>
+                        <button class="settings-nav-btn active" data-subtab="general">General</button>
                         <!-- 添加关闭按钮 -->
                          <button id="close-panel-settings" title="关闭面板" class="action-button close-panel-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -141,11 +141,31 @@
                         <div class="agents-list-container">
                             <div class="agents-list-header">
                                 <h3>Agents</h3>
-                                <button id="add-new-agent" class="icon-btn add-btn" title="添加新助手">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                    </svg>
-                                </button>
+                                <!-- 隐藏的文件输入框 (保留) -->
+                                <input type="file" id="import-agent-input" accept=".json" style="display: none;">
+                            </div>
+
+                            <!-- 新增: Agent 操作按钮栏 -->
+                            <div class="agent-actions-bar">
+                                <div class="agent-actions-left">
+                                    <button id="import-agents" class="icon-btn import-btn" title="导入助手配置">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-down-short" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"/>
+                                        </svg>
+                                    </button>
+                                    <button id="export-agents" class="icon-btn export-btn" title="导出助手配置">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="agent-actions-right">
+                                    <button id="add-new-agent" class="icon-btn add-btn" title="添加新助手">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
                             
                             <!-- 助手列表 -->
@@ -232,6 +252,13 @@
             </ul>
         </footer>
     </div>
+    <!-- 新增：Mermaid 图表放大预览模态框 -->
+    <div id="mermaid-modal" class="mermaid-modal">
+        <span class="close-modal mermaid-close-modal">&times;</span>
+        <div id="mermaid-modal-content" class="modal-content mermaid-modal-content">
+            <!-- 放大的 Mermaid SVG 将被注入这里 -->
+        </div>
+    </div>
 
     <!-- Day.js Core & Locales -->
     <script src="../js/lib/dayjs.min.js"></script>
@@ -248,6 +275,10 @@
 <script src="../js/api.js"></script>
 <!-- Add the translations script -->
 <script src="../js/translations.js"></script>
+<!-- Mermaid JS -->
+<script src="../js/lib/mermaid.min.js"></script>
+<!-- 新增：加载 Panzoom 库 -->
+<script src="../js/lib/panzoom.min.js"></script>
 <script src="../js/sidepanel.js"></script>
 </body>
 </html>

@@ -21,6 +21,15 @@ function initMarkdownRenderer() {
         linkify: true,      // 自动转换URL为链接
         typographer: true,  // 启用一些语言中性的替换和引号美化
         highlight: function(str, lang) {
+            // --- Mermaid ---
+            if (lang && lang.toLowerCase() === 'mermaid') {
+                // Don't highlight mermaid code blocks, just wrap them for Mermaid library
+                // We still escape the content just in case, though Mermaid might handle it.
+                // Let's return the raw string as Mermaid expects it.
+                return `<pre class="mermaid">${str}</pre>`;
+            }
+            // --- End Mermaid ---
+
             const code = str; // Keep original code reference
             const encodedCode = btoa(encodeURIComponent(code)); // Encode for data-code
 
