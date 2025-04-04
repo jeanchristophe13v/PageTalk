@@ -34,6 +34,8 @@ let currentPanzoomInstance = null; // 存储当前 Mermaid 模态框的 Panzoom 
 let mermaidWheelListener = null; // 存储 wheel 事件监听器的引用
 
 // Mermaid related variables removed
+let isUserNearBottom = true; // 新增：跟踪用户是否滚动到底部附近
+const SCROLL_THRESHOLD = 20; // 新增：滚动到底部的阈值（像素）
 // 默认设置，当存储中没有对应值时使用
 const defaultSettings = {
     systemPrompt: '',
@@ -445,6 +447,17 @@ function setupEventListeners() {
         });
     }
     // --- 结束：使用事件委托处理 Mermaid 图表点击 ---
+
+    // --- 新增：监听聊天区域滚动事件 ---
+    if (elements.chatMessages) {
+        elements.chatMessages.addEventListener('scroll', () => {
+            const el = elements.chatMessages;
+            // 判断滚动条是否接近底部
+            isUserNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD;
+            // console.log('isUserNearBottom:', isUserNearBottom); // 调试日志
+        });
+    }
+    // --- 结束：监听聊天区域滚动事件 ---
 }
 
 /**
@@ -717,8 +730,10 @@ function updateStreamingMessage(messageElement, content) {
 
     messageElement.appendChild(streamingCursor);
 
-    // 滚动到新消息可见
-    messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // 滚动到新消息可见 (仅当用户在底部时)
+    if (isUserNearBottom) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
 }
 
 /**
@@ -927,8 +942,10 @@ function addThinkingAnimation(insertAfterElement = null) {
         elements.chatMessages.appendChild(thinkingElement);
     }
 
-    // 滚动到可见
-    thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // 滚动到可见 (仅当用户在底部时)
+    if (isUserNearBottom) {
+        thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
 
     return thinkingElement;
 }
@@ -2516,8 +2533,10 @@ function addThinkingAnimation(insertAfterElement = null) {
         elements.chatMessages.appendChild(thinkingElement);
     }
 
-    // 滚动到可见
-    thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // 滚动到可见 (仅当用户在底部时)
+    if (isUserNearBottom) {
+        thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
 
     return thinkingElement;
 }
