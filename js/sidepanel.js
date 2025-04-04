@@ -527,9 +527,10 @@ function addMessageToChat(content, sender, isStreaming = false, images = [], ins
         elements.chatMessages.appendChild(messageElement);
     }
 
-    // 滚动到新消息可见
-    messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
+    // 滚动到新消息可见 (仅当用户在底部时)
+    if (isUserNearBottom) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
     if (isStreaming) {
         // 对于流式消息，只创建容器并返回引用
         return messageElement;
@@ -574,9 +575,10 @@ function addMessageToChat(content, sender, isStreaming = false, images = [], ins
     // 添加消息操作按钮 (复制、删除、重新生成)
     addMessageActionButtons(messageElement, content || ''); // 确保 content 不为 null
 
-    // 再次滚动确保完全可见
-    messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
+    // 再次滚动确保完全可见 (仅当用户在底部时)
+    if (isUserNearBottom) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
     // --- Render KaTeX and Mermaid ---
     renderDynamicContent(messageElement);
     // --- End Render KaTeX and Mermaid ---
@@ -762,8 +764,10 @@ function finalizeBotMessage(messageElement, finalContent) {
     renderDynamicContent(messageElement);
     // --- End Render KaTeX and Mermaid ---
 
-    // 再次滚动确保完全可见
-    messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // 再次滚动确保完全可见 (仅当用户在底部时)
+    if (isUserNearBottom) {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
 }
 
 /**
