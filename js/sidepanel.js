@@ -507,12 +507,15 @@ function switchSettingsSubTab(subTabId) {
  * 向聊天区域添加消息 - 使用markdown-it渲染
  * @param {string|null} content - 文本内容，可以为null
  * @param {'user'|'bot'} sender - 发送者
- * @param {boolean} [isStreaming=false] - 是否为流式消息
- * @param {Array<{dataUrl: string, mimeType: string}>} [images=[]] - 图片数组 (用于用户消息预览)
- * @param {HTMLElement|null} [insertAfterElement=null] - 可选，如果提供，则将消息插入此元素之后，否则追加到末尾
+ * @param {object} [options={}] - 选项对象
+ * @param {boolean} [options.isStreaming=false] - 是否为流式消息
+ * @param {Array<{dataUrl: string, mimeType: string}>} [options.images=[]] - 图片数组 (用于用户消息预览)
+ * @param {HTMLElement|null} [options.insertAfterElement=null] - 可选，如果提供，则将消息插入此元素之后，否则追加到末尾
+ * @param {boolean} [options.forceScroll=false] - 是否强制滚动到底部
  * @returns {HTMLElement} 创建的消息元素
  */
-function addMessageToChat(content, sender, isStreaming = false, images = [], insertAfterElement = null) {
+function addMessageToChat(content, sender, options = {}) {
+    const { isStreaming = false, images = [], insertAfterElement = null, forceScroll = false } = options;
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
 
@@ -527,10 +530,7 @@ function addMessageToChat(content, sender, isStreaming = false, images = [], ins
         elements.chatMessages.appendChild(messageElement);
     }
 
-    // 滚动到新消息可见 (仅当用户在底部时)
-    if (isUserNearBottom) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
+    // 移除此处的滚动逻辑，将由调用者控制
     if (isStreaming) {
         // 对于流式消息，只创建容器并返回引用
         return messageElement;
@@ -575,10 +575,7 @@ function addMessageToChat(content, sender, isStreaming = false, images = [], ins
     // 添加消息操作按钮 (复制、删除、重新生成)
     addMessageActionButtons(messageElement, content || ''); // 确保 content 不为 null
 
-    // 再次滚动确保完全可见 (仅当用户在底部时)
-    if (isUserNearBottom) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
+    // 移除此处的滚动逻辑，将由调用者控制
     // --- Render KaTeX and Mermaid ---
     renderDynamicContent(messageElement);
     // --- End Render KaTeX and Mermaid ---
@@ -734,6 +731,7 @@ function updateStreamingMessage(messageElement, content) {
 
     // 滚动到新消息可见 (仅当用户在底部时)
     if (isUserNearBottom) {
+        // 确保滚动的是消息元素本身
         messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 }
@@ -766,6 +764,7 @@ function finalizeBotMessage(messageElement, finalContent) {
 
     // 再次滚动确保完全可见 (仅当用户在底部时)
     if (isUserNearBottom) {
+        // 确保滚动的是消息元素本身
         messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
 }
@@ -864,15 +863,18 @@ async function sendUserMessage() {
     // 复制当前图片数组，避免后续操作影响
     const currentImages = [...state.images];
 
-    // 添加用户消息到聊天（包含图片）
-    const userMessageElement = addMessageToChat(userMessage, 'user', false, currentImages);
+    // 1. 添加用户消息到聊天（包含图片），但不滚动
+    const userMessageElement = addMessageToChat(userMessage, 'user', { images: currentImages });
     const userMessageId = userMessageElement.dataset.messageId; // 获取刚创建的消息ID
 
     elements.userInput.value = '';
     resizeTextarea(); // 手动触发高度重新计算
 
-    // 显示AI思考动画
+    // 2. 显示AI思考动画，但不滚动
     const thinkingElement = addThinkingAnimation();
+
+    // 3. 在添加完思考动画后，强制滚动到底部，确保思考动画可见
+    thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
     try {
         // 构建当前用户消息的 parts 数组
@@ -946,10 +948,7 @@ function addThinkingAnimation(insertAfterElement = null) {
         elements.chatMessages.appendChild(thinkingElement);
     }
 
-    // 滚动到可见 (仅当用户在底部时)
-    if (isUserNearBottom) {
-        thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
+    // 移除此处的滚动逻辑，将由调用者控制
 
     return thinkingElement;
 }
@@ -2482,8 +2481,13 @@ async function regenerateMessage(messageId) {
     }
 
     // 5. 调用 API 并插入新回复
-    // 显示思考动画，插入到用户消息之后
+    // 显示思考动画，插入到用户消息之后 (不滚动)
     const thinkingElement = addThinkingAnimation(userMessageElement); // 传递参考元素
+
+    // 在重新生成时，根据用户是否在底部决定是否滚动思考动画
+    if (isUserNearBottom) {
+        thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
 
     try {
         // 调用新的 API 模块函数
@@ -2508,8 +2512,8 @@ async function regenerateMessage(messageId) {
         if (thinkingElement && thinkingElement.parentNode) {
             thinkingElement.remove();
         }
-        // 可以在用户消息后插入错误提示
-        addMessageToChat(_('regenerateError', { error: error.message }), 'bot', false, [], userMessageElement);
+        // 可以在用户消息后插入错误提示 (不强制滚动)
+        addMessageToChat(_('regenerateError', { error: error.message }), 'bot', { insertAfterElement: userMessageElement });
     }
 }
 
