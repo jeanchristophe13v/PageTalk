@@ -210,11 +210,12 @@ function init() {
  */
 function initModelSelection() {
     const modelOptions = [
-        { value: 'gemini-2.0-flash', text: 'Gemini 2.0 Flash' },
-        { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'Gemini 2.0 Flash Thinking Exp 01-21' },
-        { value: 'gemini-2.0-pro-exp-02-05', text: 'Gemini 2.0 Pro Exp 02-05' },
-        { value: 'gemini-exp-1206', text: 'Gemini Exp 1206' },
-        { value: 'gemini-2.5-pro-exp-03-25', text: 'Gemini 2.5 Pro Exp 03-25' }
+        { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
+        { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking-exp-01-21' },
+        { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
+        { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
+        { value: 'gemini-2.5-pro-exp-03-25', text: 'gemini-2.5-pro-exp-03-25' },
+        { value: 'gemini-2.5-pro-preview-03-25', text: 'gemini-2.5-pro-preview-03-25' }
     ];
 
     // 更新模型设置Tab中的选择器
