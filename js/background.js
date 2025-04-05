@@ -36,31 +36,53 @@ chrome.action.onClicked.addListener((tab) => {
 // 切换面板显示
 async function togglePagetalkPanel(tabId) {
     try {
-        // 尝试切换面板，tabId:
-        
-        // 向content script发送消息，切换面板显示
-        const response = await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
-    } catch (error) {
-        console.error('切换面板失败:', error);
-        
-        // 如果出错可能是因为content script还未加载，尝试注入脚本
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                files: ['js/content.js']
-            });
-            
-            // 再次尝试发送消息
-            setTimeout(async () => {
-                try {
-                    await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
-                } catch (e) {
-                    console.error('重试切换面板失败:', e);
-                }
-            }, 100);
-        } catch (e) {
-            console.error('注入脚本失败:', e);
+        // --- 新增代码 开始 ---
+        // 1. 获取标签页信息
+        const tab = await chrome.tabs.get(tabId);
+
+        // 2. 检查 URL 协议是否受支持
+        //    只允许在 http, https (以及可选的 file) 页面执行
+        if (!tab || !tab.url || !(
+            tab.url.startsWith('http:') ||
+            tab.url.startsWith('https:') // ||
+            // tab.url.startsWith('file:') // 如果需要支持本地文件，取消此行注释
+        )) {
+            console.debug(`Pagetalk: 不在受支持的页面 (${tab ? tab.url : 'N/A'}) 上执行操作，跳过。`);
+            return; // 直接退出，不执行后续操作
         }
+        // --- 新增代码 结束 ---
+
+        // --- 原有代码（稍作调整，仅在受支持页面执行）---
+        try {
+            // 尝试切换面板
+            await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
+        } catch (error) {
+            // console.warn('初次 sendMessage 失败，尝试注入脚本:', error); // 改为 warn 或 debug
+
+            // 如果出错可能是因为content script还未加载，尝试注入脚本
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    files: ['js/content.js']
+                });
+
+                // 再次尝试发送消息
+                setTimeout(async () => {
+                    try {
+                        await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
+                    } catch (e) {
+                        console.error('重试切换面板失败:', e);
+                    }
+                }, 100); // 注入后稍作等待
+            } catch (e) {
+                 // 理论上，因为前面的URL检查，这里不应该再捕捉到 'Cannot access a chrome:// URL' 错误了
+                 // 如果还出错，可能是其他注入问题
+                console.error('注入脚本失败 (非URL访问权限问题):', e);
+            }
+        }
+    } catch (outerError) {
+        // 捕获获取 tab 信息或其他意外错误
+        console.error('togglePagetalkPanel 函数出错:', outerError);
     }
 }
 
