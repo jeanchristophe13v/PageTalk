@@ -78,6 +78,7 @@ const translations = {
     'viewImageTitle': '查看原图',
     'deleteImageTitle': '删除图片',
     'newAgentBaseName': '助手', // 新增：用于新助手命名的基础词
+    'stopStreamingTitle': '终止输出', // 新增：终止按钮标题
 
     // --- JS Dynamic Messages ---
     'apiKeyMissingError': '请先在"模型"选项卡中设置API密钥',
@@ -92,7 +93,6 @@ const translations = {
     'agentDeletedToast': '助手已删除',
     'agentSaveFailedNameConflict': '保存失败：助手 ID "{agentId}" 已存在',
     'agentSaveFailedNotFound': '保存失败：找不到助手',
-    'agentSaveFailedNameEmpty': '保存失败：Agent 名称不能为空',
     'minOneAgentError': '至少保留一个助手',
     // Agent Import/Export
     importAgentConfigTitle: '导入助手配置 (.json)',
@@ -203,6 +203,7 @@ const translations = {
     'viewImageTitle': 'View Original',
     'deleteImageTitle': 'Delete Image',
     'newAgentBaseName': 'Agent', // Added: Base word for new agent naming
+    'stopStreamingTitle': 'Stop Generating', // Added: Stop button title
 
     // --- JS Dynamic Messages ---
     'apiKeyMissingError': 'Please set your API key in the "Model" tab first',
@@ -228,7 +229,6 @@ const translations = {
     agentImportErrorFileRead: 'Error reading import file.',
     'agentSaveFailedNameConflict': 'Save failed: Agent ID "{agentId}" already exists',
     'agentSaveFailedNotFound': 'Save failed: Agent not found',
-    'agentSaveFailedNameEmpty': 'Save failed: Agent Name cannot be empty',
     'minOneAgentError': 'Keep at least one agent',
     'chatExportEmptyError': 'No chat history to export',
     'chatExportSuccess': 'Chat history exported',

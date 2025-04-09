@@ -65,7 +65,8 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
     let messageElement = null;
     let currentModel = stateRef.model; // Use stateRef
     let botMessageId = null;
-
+    const controller = new AbortController(); // Create AbortController
+    window.GeminiAPI.currentAbortController = controller; // Store controller globally
     try {
         console.log(`使用模型 ${currentModel} 处理请求 (Insert: ${insertResponse})`);
 
@@ -123,6 +124,7 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
+            signal: controller.signal // Pass signal to fetch
         });
 
         if (!response.ok) {
@@ -161,8 +163,22 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
                                 }
                                 if (!messageElement) {
                                     // 创建流式消息元素，插入或追加
-                                    messageElement = uiCallbacks.addMessageToChat(null, 'bot', true, [], insertResponse ? insertAfterElement : null); // Use callback
+                                    messageElement = uiCallbacks.addMessageToChat(null, 'bot', { isStreaming: true, insertAfterElement: insertResponse ? insertAfterElement : null }); // Use callback with options object
                                     botMessageId = messageElement.dataset.messageId;
+                                    // --- 新增：立即添加占位符到历史记录 ---
+                                    const botResponsePlaceholder = {
+                                        role: 'model',
+                                        parts: [{ text: '' }], // Start with empty text
+                                        id: botMessageId
+                                    };
+                                    if (insertResponse && targetInsertionIndex !== null) {
+                                        stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
+                                        console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
+                                    } else {
+                                        stateRef.chatHistory.push(botResponsePlaceholder);
+                                        console.log(`Appended bot placeholder`);
+                                    }
+                                    // --- 结束：新增 ---
                                 }
                                 accumulatedText += textChunk;
                                 uiCallbacks.updateStreamingMessage(messageElement, accumulatedText); // Use callback
@@ -182,8 +198,23 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
                      if (textChunk !== undefined && textChunk !== null) {
                          if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
                          if (!messageElement) {
-                             messageElement = uiCallbacks.addMessageToChat(null, 'bot', true, [], insertResponse ? insertAfterElement : null); // Use callback
+                             // 创建流式消息元素，插入或追加 (与上面逻辑相同)
+                             messageElement = uiCallbacks.addMessageToChat(null, 'bot', { isStreaming: true, insertAfterElement: insertResponse ? insertAfterElement : null }); // Use callback with options object
                              botMessageId = messageElement.dataset.messageId;
+                             // --- 新增：立即添加占位符到历史记录 (与上面逻辑相同) ---
+                             const botResponsePlaceholder = {
+                                 role: 'model',
+                                 parts: [{ text: '' }], // Start with empty text
+                                 id: botMessageId
+                             };
+                             if (insertResponse && targetInsertionIndex !== null) {
+                                 stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
+                                 console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
+                             } else {
+                                 stateRef.chatHistory.push(botResponsePlaceholder);
+                                 console.log(`Appended bot placeholder`);
+                             }
+                             // --- 结束：新增 ---
                          }
                          accumulatedText += textChunk;
                          uiCallbacks.updateStreamingMessage(messageElement, accumulatedText); // Use callback
@@ -193,20 +224,24 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
         }
 
         // 流结束
-        if (messageElement) {
+        if (messageElement && botMessageId) { // Ensure we have the ID
             uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
-            const newAiResponseObject = {
-                role: 'model',
-                parts: [{ text: accumulatedText }],
-                id: botMessageId
-            };
-            if (insertResponse && targetInsertionIndex !== null) {
-                // 插入到历史记录的指定位置
-                stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject); // Use stateRef
+            // --- 修改：更新历史记录中的占位符 ---
+            const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
+            if (historyIndex !== -1) {
+                stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
+                console.log(`Updated bot message in history at index ${historyIndex}`);
             } else {
-                // 追加到历史记录末尾
-                stateRef.chatHistory.push(newAiResponseObject); // Use stateRef
+                console.error(`Could not find bot message with ID ${botMessageId} in history to finalize.`);
+                // Fallback: Add if not found (should not happen ideally)
+                const newAiResponseObject = { role: 'model', parts: [{ text: accumulatedText }], id: botMessageId };
+                 if (insertResponse && targetInsertionIndex !== null) {
+                     stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
+                 } else {
+                     stateRef.chatHistory.push(newAiResponseObject);
+                 }
             }
+            // --- 结束：修改 ---
         } else if (thinkingElement && thinkingElement.parentNode) {
             thinkingElement.remove();
             uiCallbacks.addMessageToChat("未能生成回复。", 'bot', false, [], insertResponse ? insertAfterElement : null); // Use callback
@@ -218,16 +253,42 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
         }
 
     } catch (error) {
-        console.error('API 调用失败:', error);
-        if (thinkingElement && thinkingElement.parentNode) {
-            thinkingElement.remove();
-        }
-        if (messageElement) {
-            const errorText = `\n\n--- 获取响应时出错: ${error.message} ---`;
-            accumulatedText += errorText;
-            uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
+        if (error.name === 'AbortError') {
+            console.log('API call aborted by user.'); // Log abortion
+            // If aborted, ensure the partial message is finalized and history is updated
+            if (messageElement && botMessageId) {
+                 uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Finalize potentially partial message
+                 // --- 新增：更新历史记录中的占位符 (即使中止) ---
+                 const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
+                 if (historyIndex !== -1) {
+                     stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
+                     console.log(`Updated aborted bot message in history at index ${historyIndex}`);
+                 } else {
+                      console.error(`Could not find bot message with ID ${botMessageId} in history to finalize after abort.`);
+                 }
+                 // --- 结束：新增 ---
+            } else if (thinkingElement && thinkingElement.parentNode) {
+                 thinkingElement.remove(); // Remove thinking animation if no message started
+            }
+            // No error message needed for user-initiated abort
         } else {
-            uiCallbacks.addMessageToChat(`获取响应时出错: ${error.message}`, 'bot', false, [], insertResponse ? insertAfterElement : null); // Use callback
+            console.error('API 调用失败:', error);
+            if (thinkingElement && thinkingElement.parentNode) {
+                thinkingElement.remove();
+            }
+            if (messageElement) {
+                const errorText = `\n\n--- 获取响应时出错: ${error.message} ---`;
+                accumulatedText += errorText;
+                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
+            } else {
+                uiCallbacks.addMessageToChat(`获取响应时出错: ${error.message}`, 'bot', false, [], insertResponse ? insertAfterElement : null); // Use callback
+            }
+        }
+    } finally {
+        // Ensure the controller is cleared regardless of success, error, or abort
+        if (window.GeminiAPI.currentAbortController === controller) { // Check if it's still the same controller
+             window.GeminiAPI.currentAbortController = null;
+             console.log('Cleared currentAbortController.');
         }
     }
 }
@@ -250,5 +311,6 @@ async function callApiAndInsertResponse(userMessage, images = [], thinkingElemen
 window.GeminiAPI = {
     testAndVerifyApiKey: _testAndVerifyApiKey,
     callGeminiAPIWithImages: callGeminiAPIWithImages,
-    callApiAndInsertResponse: callApiAndInsertResponse
+    callApiAndInsertResponse: callApiAndInsertResponse,
+    currentAbortController: null // Initialize the controller holder
 };

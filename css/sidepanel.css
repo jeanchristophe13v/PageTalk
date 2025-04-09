@@ -3288,3 +3288,30 @@ body.dark-mode .agent-item-body textarea:focus {
     transform: scale(1.02); /* Slight zoom effect on hover */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+/* --- Stop Streaming Button Style --- */
+#send-message.stop-streaming {
+    /* background-color: var(--text-secondary); /* REMOVED: Keep original background */
+    /* border-radius: var(--radius-sm); /* REMOVED: Keep original border-radius (50%) */
+    /* Ensure width/height match the original for consistency */
+    width: clamp(26px, 6.5vw, 30px);
+    height: clamp(26px, 6.5vw, 30px);
+    transform: none; /* Reset hover transform */
+    /* Keep original background and border-radius, only change icon via JS */
+}
+
+#send-message.stop-streaming:hover {
+    background-color: var(--error-color); /* Hover becomes red */
+    color: white;
+    transform: scale(1.05); /* Keep hover scale effect */
+}
+
+/* Dark mode adjustments for stop button - REMOVED background override */
+/* body.dark-mode #send-message.stop-streaming { */
+    /* background-color: var(--text-secondary); /* Keep gray background */
+/* } */
+
+body.dark-mode #send-message.stop-streaming:hover {
+    background-color: var(--error-color); /* Hover becomes red */
+    color: white;
+}

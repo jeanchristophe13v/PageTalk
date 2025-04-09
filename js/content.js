@@ -22,7 +22,7 @@ function initPagetalkPanel() {
   panelContainer.id = 'pagetalk-panel-container';
   panelContainer.style.zIndex = '9999'; // 设置 z-index
   panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
-  panelContainer.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
+  // panelContainer.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
   panelContainer.style.overflow = 'hidden'; // 防止 iframe 内容溢出圆角
   
   // 创建调整器
@@ -36,7 +36,7 @@ function initPagetalkPanel() {
   // 设置iframe源为插件中的HTML文件
   const extensionURL = chrome.runtime.getURL('html/sidepanel.html');
   iframe.src = extensionURL;
-  iframe.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
+  // iframe.style.borderRadius = '16px 0 0 16px'; // 左上、右上、右下、左下
   iframe.style.overflow = 'hidden';   // 确保 iframe 内容也被裁剪
   
   // 组装DOM结构
@@ -162,6 +162,9 @@ function showPanel() {
         iframe.contentWindow.postMessage({ action: 'panelShown' }, '*');
       }
     }, 10); // 稍微延迟确保 iframe 内脚本已准备好
+
+    // 新增：面板显示时，立即检测并发送当前主题
+    setTimeout(detectAndSendTheme, 100); // 稍长延迟确保 iframe 内监听器已设置
   }
 }
 
@@ -259,6 +262,38 @@ function extractPageContent() {
     return `提取页面内容时出错: ${error.message}`;
   }
 }
+
+// --- 新增：主题检测与发送 ---
+/**
+ * 检测当前网页的颜色模式偏好并发送给侧边栏 iframe
+ */
+function detectAndSendTheme() {
+  const iframe = document.getElementById('pagetalk-panel-iframe');
+  if (!iframe || !iframe.contentWindow) {
+    // console.log('Sidepanel iframe not ready for theme update.');
+    return; // 如果 iframe 不存在或未加载完成，则不发送
+  }
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = prefersDark ? 'dark' : 'light';
+  // console.log(`[content.js] Detected theme: ${theme}. Sending to sidepanel.`); // 调试日志
+
+  iframe.contentWindow.postMessage({
+    action: 'updateTheme',
+    theme: theme
+  }, '*'); // 使用 '*' 允许发送到任何来源的 iframe，对于插件内部 iframe 是安全的
+}
+
+// 监听系统/浏览器主题变化
+const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+// 使用 addEventListener 替代旧的 addListener
+if (mediaQuery.addEventListener) {
+    mediaQuery.addEventListener('change', detectAndSendTheme);
+} else if (mediaQuery.addListener) { // 兼容旧版浏览器
+    mediaQuery.addListener(detectAndSendTheme);
+}
+// --- 结束：主题检测与发送 ---
+
 
 // 监听iframe内部的消息
 window.addEventListener('message', (event) => {

@@ -26,6 +26,7 @@ const state = {
     // 移除 pageContentExtractedMessageShown，逻辑移至 content.js
     darkMode: false, // 新增：深色模式状态
     language: 'zh-CN', // 新增：语言状态，默认为中文
+    isStreaming: false, // 新增：跟踪流式输出状态
 };
 
 // 翻译相关
@@ -264,11 +265,15 @@ function setupEventListeners() {
     });
 
     // 聊天功能
+    // 初始设置发送按钮监听器
     elements.sendMessage.addEventListener('click', sendUserMessage);
     elements.userInput.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            sendUserMessage();
+            // 只有在非流式状态下才允许 Enter 发送
+            if (!state.isStreaming) {
+                sendUserMessage();
+            }
         }
     });
 
@@ -768,6 +773,9 @@ function finalizeBotMessage(messageElement, finalContent) {
         // 确保滚动的是消息元素本身
         messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
+
+    // 流式输出正常结束，恢复按钮状态
+    restoreSendButtonAndInput();
 }
 
 /**
@@ -847,10 +855,61 @@ function addMessageActionButtons(messageElement, content) {
 
 
 /**
+ * 中断当前正在进行的流式 API 请求
+ */
+function abortStreaming() {
+    if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {
+        console.log("Aborting API request...");
+        window.GeminiAPI.currentAbortController.abort();
+        // AbortController 清理将在 api.js 的 finally 块中进行
+    } else {
+        console.warn("No active AbortController found to abort.");
+    }
+    // 无论是否成功中止，都尝试恢复按钮状态
+    restoreSendButtonAndInput();
+}
+
+/**
+ * 恢复发送按钮和输入框到正常状态
+ */
+function restoreSendButtonAndInput() {
+    if (!state.isStreaming) return; // 如果不是流式状态，则无需恢复
+
+    console.log("Restoring send button and input state...");
+    state.isStreaming = false;
+
+    // 恢复按钮样式和图标
+    elements.sendMessage.classList.remove('stop-streaming');
+    elements.sendMessage.title = _('sendMessageTitle');
+    // 恢复原始发送图标
+    elements.sendMessage.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+        </svg>
+    `;
+
+    // 移除终止监听器，重新添加发送监听器
+    elements.sendMessage.removeEventListener('click', abortStreaming);
+    elements.sendMessage.addEventListener('click', sendUserMessage);
+
+    // 确保 AbortController 被清理 (虽然 api.js 的 finally 也会做)
+    if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {
+        window.GeminiAPI.currentAbortController = null;
+    }
+}
+
+
+/**
  * 发送用户消息并获取AI响应
  */
 async function sendUserMessage() {
     const userMessage = elements.userInput.value.trim();
+
+    // 如果正在流式传输，则不允许发送
+    if (state.isStreaming) {
+        console.warn("Cannot send message while streaming.");
+        return;
+    }
 
     if (!userMessage && state.images.length === 0) return;
 
@@ -860,6 +919,21 @@ async function sendUserMessage() {
         switchTab('model');
         return;
     }
+
+    // --- 开始流式状态 ---
+    state.isStreaming = true;
+    elements.sendMessage.classList.add('stop-streaming');
+    elements.sendMessage.title = _('stopStreamingTitle'); // 需要添加翻译键 'stopStreamingTitle'
+    // 更改按钮图标为停止图标 (例如一个方形)
+    elements.sendMessage.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+        </svg>
+    `;
+    // 切换事件监听器
+    elements.sendMessage.removeEventListener('click', sendUserMessage);
+    elements.sendMessage.addEventListener('click', abortStreaming);
+    // --- 结束流式状态设置 ---
 
     // 复制当前图片数组，避免后续操作影响
     const currentImages = [...state.images];
@@ -906,6 +980,7 @@ async function sendUserMessage() {
              // 如果没有文本也没有图片，则不发送也不添加到历史
              if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
              if (userMessageElement && userMessageElement.parentNode) userMessageElement.remove();
+             restoreSendButtonAndInput(); // 恢复按钮状态
              return;
         }
 
@@ -917,12 +992,17 @@ async function sendUserMessage() {
             clearImages: clearImages,
             showToast: showToast // Pass showToast if needed by API module for errors
         });
+        // 注意：finalizeBotMessage 会在成功时调用 restoreSendButtonAndInput
     } catch (error) {
+        // API 调用出错（非用户中止）
         if (thinkingElement && thinkingElement.parentNode) {
              thinkingElement.remove();
         }
         console.error('Error caught in sendUserMessage:', error);
+        // 即使出错也要恢复按钮状态
+        restoreSendButtonAndInput();
     }
+    // finally 块不再需要，因为 restore 在 finalizeBotMessage 和 catch 中处理
 }
 
 /**
@@ -1839,13 +1919,6 @@ function autoSaveAgentSettings(originalAgentId, agentItemElement) {
     const newMaxTokens = maxTokensInput ? parseInt(maxTokensInput.value, 10) : state.agents[agentIndex].maxTokens;
 
     // 3. Validate Name (cannot be empty)
-    if (!newName) {
-        console.error("Auto-save failed: Agent Name cannot be empty.");
-        showToast(_('agentSaveFailedNameEmpty'), 'error');
-        // Optional: revert input value
-        if (nameInput) nameInput.value = state.agents[agentIndex].name;
-        return;
-    }
 
     // ID conflict check is removed as internal ID doesn't change
 
@@ -2298,6 +2371,14 @@ function handleContentScriptMessages(event) { // Renamed back from handleWindowM
         resizeTextarea();
         console.log('Panel resized event received in sidepanel');
     }
+    // --- 新增：处理来自 content.js 的主题更新 ---
+    else if (message.action === 'updateTheme') {
+        const isDarkMode = message.theme === 'dark';
+        console.log(`[sidepanel.js] Received theme update from content script: ${message.theme}`); // 调试日志
+        applyTheme(isDarkMode); // 应用主题，但不保存
+        // 注意：这里不调用 saveThemeSetting()
+    }
+    // --- 结束：处理主题更新 ---
 }
 
 /**
@@ -2482,6 +2563,19 @@ async function regenerateMessage(messageId) {
     }
 
     // 5. 调用 API 并插入新回复
+    // --- 开始流式状态 (与 sendUserMessage 类似) ---
+    state.isStreaming = true;
+    elements.sendMessage.classList.add('stop-streaming');
+    elements.sendMessage.title = _('stopStreamingTitle');
+    elements.sendMessage.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+        </svg>
+    `;
+    elements.sendMessage.removeEventListener('click', sendUserMessage);
+    elements.sendMessage.addEventListener('click', abortStreaming);
+    // --- 结束流式状态设置 ---
+
     // 显示思考动画，插入到用户消息之后 (不滚动)
     const thinkingElement = addThinkingAnimation(userMessageElement); // 传递参考元素
 
@@ -2515,6 +2609,8 @@ async function regenerateMessage(messageId) {
         }
         // 可以在用户消息后插入错误提示 (不强制滚动)
         addMessageToChat(_('regenerateError', { error: error.message }), 'bot', { insertAfterElement: userMessageElement });
+        // 即使重新生成出错也要恢复按钮
+        restoreSendButtonAndInput();
     }
 }
 
