@@ -362,3 +362,5 @@ window.addEventListener('message', (event) => {
 });
 
 // 初始运行
+// 在页面加载完成后立即发送主题更新消息
+window.addEventListener('load', detectAndSendTheme);
