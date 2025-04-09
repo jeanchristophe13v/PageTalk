@@ -280,8 +280,37 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
                 const errorText = `\n\n--- 获取响应时出错: ${error.message} ---`;
                 accumulatedText += errorText;
                 uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
-            } else {
-                uiCallbacks.addMessageToChat(`获取响应时出错: ${error.message}`, 'bot', false, [], insertResponse ? insertAfterElement : null); // Use callback
+            } else { // If error happened before streaming started
+                // Create a proper error message object and add it to history and DOM
+                const errorMessageText = `获取响应时出错: ${error.message}`;
+
+                // Add to DOM using addMessageToChat and capture the element
+                const errorElement = uiCallbacks.addMessageToChat(errorMessageText, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
+
+                if (errorElement && errorElement.dataset.messageId) {
+                    const errorMessageId = errorElement.dataset.messageId; // Get ID from the created element
+                    errorElement.classList.add('error-message'); // Optionally add a class for styling
+
+                    const errorMessageObject = {
+                        role: 'model', // Treat API errors as 'model' role for history consistency
+                        parts: [{ text: errorMessageText }],
+                        id: errorMessageId
+                    };
+
+                    // Add to history at the correct position
+                    if (insertResponse && targetInsertionIndex !== null) {
+                        stateRef.chatHistory.splice(targetInsertionIndex, 0, errorMessageObject);
+                        console.log(`Inserted error message object into history at index ${targetInsertionIndex}`);
+                    } else {
+                        stateRef.chatHistory.push(errorMessageObject);
+                        console.log(`Appended error message object to history`);
+                    }
+                } else {
+                     // Fallback if element creation or ID retrieval failed
+                     console.error("Failed to create or get ID for error message element. History might be inconsistent.");
+                     // Still show a basic error message
+                     uiCallbacks.addMessageToChat(errorMessageText, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
+                }
             }
         }
     } finally {

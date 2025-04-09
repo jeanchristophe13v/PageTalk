@@ -2450,25 +2450,34 @@ function setupAutoresizeTextarea() {
  * @param {string} messageId - 要删除的消息ID
  */
 function deleteMessage(messageId) {
-    // 1. 查找要删除的消息在历史记录中的索引
-    const messageIndex = state.chatHistory.findIndex(msg => msg.id === messageId);
-    if (messageIndex === -1) {
-        console.warn(`Delete failed: Message with ID ${messageId} not found in history.`);
-        return; // 找不到消息，直接返回
-    }
-
-    // 2. 删除对应的 DOM 元素
+    // 1. 查找并删除对应的 DOM 元素
     const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    let domRemoved = false;
     if (messageElement) {
         messageElement.remove();
+        domRemoved = true;
+        console.log(`DOM element for message ID ${messageId} removed.`);
     } else {
-        console.warn(`Delete failed: DOM element for message ID ${messageId} not found.`);
+        console.warn(`Delete action: DOM element for message ID ${messageId} not found.`);
     }
 
-    // 3. 从历史记录中移除该消息
-    state.chatHistory.splice(messageIndex, 1);
+    // 2. 尝试从历史记录中移除该消息
+    const messageIndex = state.chatHistory.findIndex(msg => msg.id === messageId);
+    let historyRemoved = false;
+    if (messageIndex !== -1) {
+        state.chatHistory.splice(messageIndex, 1);
+        historyRemoved = true;
+        console.log(`Message with ID ${messageId} removed from history.`);
+    } else {
+        // 即使历史记录中没有，如果DOM元素存在且被删除了，也认为操作部分成功
+        if (domRemoved) {
+             console.warn(`Message with ID ${messageId} not found in history, but corresponding DOM element was removed.`);
+        } else {
+             console.warn(`Delete failed: Message with ID ${messageId} not found in history and DOM.`);
+             return; // 如果 DOM 和 history 都没有，则彻底失败
+        }
+    }
 
-    console.log(`Message with ID ${messageId} deleted.`); // Keep logs in English
     // 可选：如果需要持久化历史记录，可以在这里调用保存函数
     // saveChatHistory();
 }
