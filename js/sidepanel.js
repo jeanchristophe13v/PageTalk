@@ -157,7 +157,10 @@ function init() {
     // loadButtonPosition(); // 移除：不再需要加载按钮位置
     loadButtonPosition(); // 加载按钮位置
     if (elements.themeToggleBtnSettings) { // 确保按钮存在
-        makeDraggable(elements.themeToggleBtnSettings); // 为主题按钮启用拖动
+        // 延迟 makeDraggable 的调用，确保按钮完全渲染并可交互
+        setTimeout(() => {
+            makeDraggable(elements.themeToggleBtnSettings); // 为主题按钮启用拖动
+        }, 100); // 延迟 100 毫秒
     }
 
     // 初始化事件监听器 (将在 setupEventListeners 中更新)
@@ -3161,8 +3164,8 @@ function makeDraggable(element) {
     const container = document.querySelector('.container') || document.body; // 获取容器
 
     element.addEventListener('mousedown', (e) => {
-        // 仅当点击的是按钮本身而不是内部的 SVG 时开始拖动
-        if (e.target !== element && e.target.tagName !== 'svg' && e.target.tagName !== 'path') return;
+        // 检查点击事件是否发生在按钮元素或其子元素上
+        if (!element.contains(e.target)) return;
 
         e.preventDefault(); // 阻止默认拖动行为
         isDragging = true;

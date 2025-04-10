@@ -3315,3 +3315,8 @@ body.dark-mode #send-message.stop-streaming:hover {
     background-color: var(--error-color); /* Hover becomes red */
     color: white;
 }
+
+/* Improve JSON punctuation visibility in dark mode */
+body.dark-mode .code-block.language-json .hljs-punctuation {
+    color: var(--text-secondary); /* Use secondary text color for better contrast */
+}
