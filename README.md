@@ -14,15 +14,6 @@
 
 Pagetalk is a browser extension that enhances your web browsing by integrating Google's Gemini API. Summarize pages, chat contextually, and manage custom AI agents effortlessly.
 
-## What's New in 2.2.0 🎉
-
-*   Add LaTeX support !
-*   Add Mermaid support ! (still have some bugs tho, I'll fix it soon, nvm)
-*   Add Agent settings export / import
-*   Add current chat history export
-*   Add Chinese / English language support
-*   Add Dark-mode
-*   Optimize UI again
 
 ## Features
 
