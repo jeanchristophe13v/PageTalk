@@ -274,34 +274,60 @@ function detectAndSendTheme() {
         return; // 如果 iframe 不存在或未加载完成，则不发送
     }
 
-    let detectedTheme = 'system'; // 默认为 'system'，表示未检测到明确主题
+    let detectedTheme = 'system'; // 默认为 'system'，表示未检测到明确主题或依赖系统
 
-    // 1. 检查 HTML data-theme 属性
-    const dataTheme = document.documentElement.getAttribute('data-theme');
-    if (dataTheme) {
-        if (dataTheme.toLowerCase().includes('dark')) {
+    // 1. 检查 HTML data-color-mode 属性 (GitHub 使用) - 最高优先级
+    const dataColorMode = document.documentElement.getAttribute('data-color-mode');
+    if (dataColorMode) {
+        const mode = dataColorMode.toLowerCase();
+        if (mode.includes('dark')) {
             detectedTheme = 'dark';
-        } else if (dataTheme.toLowerCase().includes('light')) {
+        } else if (mode.includes('light')) {
             detectedTheme = 'light';
         }
+        console.log(`[content.js] Detected theme via data-color-mode: ${detectedTheme}`);
     }
 
-    // 2. 如果 data-theme 未明确指定，检查 body class (更灵活的匹配)
+    // 2. 如果 data-color-mode 未明确指定，检查 HTML data-theme 属性
     if (detectedTheme === 'system') {
-        const bodyClasses = document.body.classList;
-        if (bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark')) {
-             detectedTheme = 'dark';
-        } else if (bodyClasses.contains('light-mode') || bodyClasses.contains('theme-light')) {
-             detectedTheme = 'light';
+        const dataTheme = document.documentElement.getAttribute('data-theme');
+        if (dataTheme) {
+            const theme = dataTheme.toLowerCase();
+            if (theme.includes('dark')) {
+                detectedTheme = 'dark';
+            } else if (theme.includes('light')) {
+                detectedTheme = 'light';
+            }
+            console.log(`[content.js] Detected theme via data-theme: ${detectedTheme}`);
         }
     }
 
-    // 3. 如果 HTML 标记未明确指定，回退到 prefers-color-scheme
+    // 3. 如果以上属性都未明确指定，检查 body class (更灵活的匹配)
     if (detectedTheme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const bodyClasses = document.body.classList;
+        // 检查常见的深色模式类名
+        if (bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark') || bodyClasses.contains('dark')) {
+             detectedTheme = 'dark';
+        // 检查常见的浅色模式类名
+        } else if (bodyClasses.contains('light-mode') || bodyClasses.contains('theme-light') || bodyClasses.contains('light')) {
+             detectedTheme = 'light';
+        }
+        if (detectedTheme !== 'system') {
+            console.log(`[content.js] Detected theme via body class: ${detectedTheme}`);
+        }
+    }
+
+    // 4. 如果 HTML 标记和类名都未明确指定，最后回退到 prefers-color-scheme
+    if (detectedTheme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         // 只有在系统偏好明确时才覆盖 'system'
-        if (window.matchMedia('(prefers-color-scheme: dark)').media !== 'not all') { // 检查媒体查询是否有效
-             detectedTheme = prefersDark ? 'dark' : 'light';
+        if (prefersDark.media !== 'not all') { // 检查媒体查询是否有效
+             detectedTheme = prefersDark.matches ? 'dark' : 'light';
+             console.log(`[content.js] Detected theme via prefers-color-scheme: ${detectedTheme}`);
+        } else {
+             console.log('[content.js] prefers-color-scheme media query is not valid, keeping theme as system/default.');
+             // 在这种情况下，保持 detectedTheme 为 'system' 或 'light' (取决于你的默认偏好)
+             detectedTheme = 'light'; // 明确设置为浅色作为最终回退
         }
     }
 
@@ -315,18 +341,10 @@ function detectAndSendTheme() {
 
 // 监听系统/浏览器主题变化 (仅当未检测到 HTML 显式主题时，系统变化才有意义)
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-function handleSystemThemeChange() {
-    // 只有在未通过 HTML 属性/类检测到主题时，才重新检测并发送
-    const dataTheme = document.documentElement.getAttribute('data-theme');
-    const bodyClasses = document.body.classList;
-    const hasExplicitTheme = dataTheme || bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark') || bodyClasses.contains('light-mode') || bodyClasses.contains('theme-light');
-
-    if (!hasExplicitTheme) {
-        console.log("[content.js] System theme changed, re-detecting and sending.");
-        detectAndSendTheme();
-    } else {
-        console.log("[content.js] System theme changed, but explicit HTML theme detected. Ignoring system change.");
-    }
+function handleSystemThemeChange(event) {
+    console.log(`[content.js] System theme changed event detected. prefersDark: ${event.matches}`);
+    // 重新运行检测逻辑，它会优先检查 HTML 属性/类，只有在没有显式设置时才会使用系统偏好
+    detectAndSendTheme();
 }
 
 // 使用 addEventListener 替代旧的 addListener

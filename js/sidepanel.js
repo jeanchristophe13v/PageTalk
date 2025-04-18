@@ -1249,7 +1249,7 @@ function loadSettings() { // Now also loads and applies language
         'temperature',  // Note: temperature is now part of agent settings
         'maxTokens',    // Note: maxTokens is now part of agent settings
         'topP',         // Note: topP is now part of agent settings
-        'darkMode',     // 新增：加载深色模式设置
+        // 'darkMode', // 移除：不再持久化主题偏好
         'language', // 新增：加载语言设置
         ],
         (syncResult) => {
@@ -1264,20 +1264,10 @@ function loadSettings() { // Now also loads and applies language
                 elements.chatModelSelection.value = state.model;
             }
 
-            // 加载深色模式设置并确定用户偏好
-            if (syncResult.darkMode !== undefined && syncResult.darkMode !== null) {
-                // 如果存储中有设置，则用户已设置偏好
-                state.userHasSetPreference = true;
-                state.darkMode = syncResult.darkMode === true;
-                console.log(`Loaded user theme preference: ${state.darkMode ? 'dark' : 'light'}`);
-            } else {
-                // 如果存储中没有设置，用户未设置偏好，默认为浅色
-                state.userHasSetPreference = false;
-                state.darkMode = false; // 默认浅色
-                console.log('No user theme preference found, defaulting to light mode.');
-            }
-            // 应用初始主题
-            applyTheme(state.darkMode);
+            // 移除：不再加载或设置用户主题偏好
+            // state.userHasSetPreference = false; // 移除
+            state.darkMode = false; // 默认浅色，会被网页检测覆盖
+            applyTheme(state.darkMode); // 应用默认浅色主题
 
             // --- Mermaid 初始化 (Moved Here) ---
             if (typeof mermaid !== 'undefined') {
@@ -2390,14 +2380,16 @@ function handleContentScriptMessages(event) { // Renamed back from handleWindowM
     // --- 修改：处理来自 content.js 的网页主题检测结果 ---
     else if (message.action === 'webpageThemeDetected') {
         console.log(`[sidepanel.js] Received webpage theme: ${message.theme}`);
-        // 只有在用户未设置偏好，且检测到明确主题时才应用
-        if (!state.userHasSetPreference && (message.theme === 'dark' || message.theme === 'light')) {
+        // 始终应用检测到的明确主题 ('dark' 或 'light')
+        if (message.theme === 'dark' || message.theme === 'light') {
             const isWebpageDark = message.theme === 'dark';
-            console.log(`Applying webpage theme (${message.theme}) as user has no preference.`);
-            applyTheme(isWebpageDark); // 应用网页主题，但不保存或更新 state.darkMode
+            console.log(`Applying webpage theme: ${message.theme}`);
+            state.darkMode = isWebpageDark; // 更新当前状态以反映网页主题
+            applyTheme(isWebpageDark); // 应用网页主题
             updateMermaidTheme(isWebpageDark); // 更新 Mermaid 主题
         } else {
-             console.log(`Ignoring webpage theme because user preference is set (${state.userHasSetPreference}) or theme is '${message.theme}'.`);
+             // 如果主题是 'system' 或其他值，则不改变当前主题
+             console.log(`Ignoring webpage theme because it's not explicit 'dark' or 'light' (received: ${message.theme}). Current theme remains: ${state.darkMode ? 'dark' : 'light'}`);
         }
     }
     // --- 结束：处理网页主题 ---
@@ -2862,39 +2854,28 @@ function applyTheme(isDarkMode) {
 }
 
 /**
- * 切换主题
+ * 切换主题 (临时切换，不保存)
  */
 function toggleTheme() {
-    // 用户手动切换主题，标记已设置偏好
-    state.userHasSetPreference = true;
-    console.log('User manually toggled theme, preference set.');
+    // 移除：不再标记用户偏好
+    // state.userHasSetPreference = true;
+    console.log('User manually toggled theme (temporary).');
 
-    // 切换状态
+    // 切换当前状态
     state.darkMode = !state.darkMode;
 
     // 应用新主题 (CSS 和图标)
     applyTheme(state.darkMode);
 
-    // 保存用户偏好
-    saveThemeSetting();
+    // 移除：不再保存主题设置
+    // saveThemeSetting();
 
     // 更新 Mermaid 主题
     updateMermaidTheme(state.darkMode);
 }
 
-/**
- * 保存主题设置到存储
- */
-function saveThemeSetting() {
-    // 只保存 darkMode 状态，偏好状态由 loadSettings 决定
-    chrome.storage.sync.set({ darkMode: state.darkMode }, () => {
-         if (chrome.runtime.lastError) {
-             console.error("Error saving theme setting:", chrome.runtime.lastError);
-         } else {
-             console.log(`User theme preference saved: ${state.darkMode ? 'dark' : 'light'}`);
-         }
-    });
-}
+// 移除：不再需要保存主题设置
+// function saveThemeSetting() { ... }
 
 // --- 结束：主题切换相关函数 ---
 
