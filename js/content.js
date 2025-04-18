@@ -265,32 +265,75 @@ function extractPageContent() {
 
 // --- 新增：主题检测与发送 ---
 /**
- * 检测当前网页的颜色模式偏好并发送给侧边栏 iframe
+ * 检测当前网页的显式或系统颜色模式偏好，并发送给侧边栏 iframe
  */
 function detectAndSendTheme() {
-  const iframe = document.getElementById('pagetalk-panel-iframe');
-  if (!iframe || !iframe.contentWindow) {
-    // console.log('Sidepanel iframe not ready for theme update.');
-    return; // 如果 iframe 不存在或未加载完成，则不发送
-  }
+    const iframe = document.getElementById('pagetalk-panel-iframe');
+    if (!iframe || !iframe.contentWindow) {
+        // console.log('Sidepanel iframe not ready for theme update.');
+        return; // 如果 iframe 不存在或未加载完成，则不发送
+    }
 
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = prefersDark ? 'dark' : 'light';
-  // console.log(`[content.js] Detected theme: ${theme}. Sending to sidepanel.`); // 调试日志
+    let detectedTheme = 'system'; // 默认为 'system'，表示未检测到明确主题
 
-  iframe.contentWindow.postMessage({
-    action: 'updateTheme',
-    theme: theme
-  }, '*'); // 使用 '*' 允许发送到任何来源的 iframe，对于插件内部 iframe 是安全的
+    // 1. 检查 HTML data-theme 属性
+    const dataTheme = document.documentElement.getAttribute('data-theme');
+    if (dataTheme) {
+        if (dataTheme.toLowerCase().includes('dark')) {
+            detectedTheme = 'dark';
+        } else if (dataTheme.toLowerCase().includes('light')) {
+            detectedTheme = 'light';
+        }
+    }
+
+    // 2. 如果 data-theme 未明确指定，检查 body class (更灵活的匹配)
+    if (detectedTheme === 'system') {
+        const bodyClasses = document.body.classList;
+        if (bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark')) {
+             detectedTheme = 'dark';
+        } else if (bodyClasses.contains('light-mode') || bodyClasses.contains('theme-light')) {
+             detectedTheme = 'light';
+        }
+    }
+
+    // 3. 如果 HTML 标记未明确指定，回退到 prefers-color-scheme
+    if (detectedTheme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        // 只有在系统偏好明确时才覆盖 'system'
+        if (window.matchMedia('(prefers-color-scheme: dark)').media !== 'not all') { // 检查媒体查询是否有效
+             detectedTheme = prefersDark ? 'dark' : 'light';
+        }
+    }
+
+    console.log(`[content.js] Detected theme: ${detectedTheme}. Sending to sidepanel.`); // 调试日志
+
+    iframe.contentWindow.postMessage({
+        action: 'webpageThemeDetected', // 更改 action 名称
+        theme: detectedTheme // 发送检测到的主题 ('dark', 'light', 'system')
+    }, '*');
 }
 
-// 监听系统/浏览器主题变化
+// 监听系统/浏览器主题变化 (仅当未检测到 HTML 显式主题时，系统变化才有意义)
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+function handleSystemThemeChange() {
+    // 只有在未通过 HTML 属性/类检测到主题时，才重新检测并发送
+    const dataTheme = document.documentElement.getAttribute('data-theme');
+    const bodyClasses = document.body.classList;
+    const hasExplicitTheme = dataTheme || bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark') || bodyClasses.contains('light-mode') || bodyClasses.contains('theme-light');
+
+    if (!hasExplicitTheme) {
+        console.log("[content.js] System theme changed, re-detecting and sending.");
+        detectAndSendTheme();
+    } else {
+        console.log("[content.js] System theme changed, but explicit HTML theme detected. Ignoring system change.");
+    }
+}
+
 // 使用 addEventListener 替代旧的 addListener
 if (mediaQuery.addEventListener) {
-    mediaQuery.addEventListener('change', detectAndSendTheme);
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
 } else if (mediaQuery.addListener) { // 兼容旧版浏览器
-    mediaQuery.addListener(detectAndSendTheme);
+    mediaQuery.addListener(handleSystemThemeChange);
 }
 // --- 结束：主题检测与发送 ---
 

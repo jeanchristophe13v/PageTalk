@@ -27,6 +27,7 @@ const state = {
     darkMode: false, // 新增：深色模式状态
     language: 'zh-CN', // 新增：语言状态，默认为中文
     isStreaming: false, // 新增：跟踪流式输出状态
+    userHasSetPreference: false, // 新增：跟踪用户是否手动设置过主题
 };
 
 // 翻译相关
@@ -215,6 +216,7 @@ function init() {
 function initModelSelection() {
     const modelOptions = [
         { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
+        { value: 'gemini-2.5-flash-preview-04-17', text: 'gemini-2.5-flash-preview-04-17' },
         { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking-exp-01-21' },
         { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
         { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
@@ -1262,8 +1264,19 @@ function loadSettings() { // Now also loads and applies language
                 elements.chatModelSelection.value = state.model;
             }
 
-            // 加载深色模式设置
-            state.darkMode = syncResult.darkMode === true; // 确保是布尔值
+            // 加载深色模式设置并确定用户偏好
+            if (syncResult.darkMode !== undefined && syncResult.darkMode !== null) {
+                // 如果存储中有设置，则用户已设置偏好
+                state.userHasSetPreference = true;
+                state.darkMode = syncResult.darkMode === true;
+                console.log(`Loaded user theme preference: ${state.darkMode ? 'dark' : 'light'}`);
+            } else {
+                // 如果存储中没有设置，用户未设置偏好，默认为浅色
+                state.userHasSetPreference = false;
+                state.darkMode = false; // 默认浅色
+                console.log('No user theme preference found, defaulting to light mode.');
+            }
+            // 应用初始主题
             applyTheme(state.darkMode);
 
             // --- Mermaid 初始化 (Moved Here) ---
@@ -1271,7 +1284,7 @@ function loadSettings() { // Now also loads and applies language
                 try {
                     mermaid.initialize({
                         startOnLoad: false, // 我们将手动渲染
-                        theme: state.darkMode ? 'dark' : 'default', // 使用已加载的主题设置
+                        theme: state.darkMode ? 'dark' : 'default', // 使用初始确定的主题设置
                         // 可选：添加其他 Mermaid 配置
                         // securityLevel: 'strict', // 推荐，但可能需要调整 CSP
                         logLevel: 'error' // 只记录错误
@@ -2374,14 +2387,20 @@ function handleContentScriptMessages(event) { // Renamed back from handleWindowM
         resizeTextarea();
         console.log('Panel resized event received in sidepanel');
     }
-    // --- 新增：处理来自 content.js 的主题更新 ---
-    else if (message.action === 'updateTheme') {
-        const isDarkMode = message.theme === 'dark';
-        console.log(`[sidepanel.js] Received theme update from content script: ${message.theme}`); // 调试日志
-        applyTheme(isDarkMode); // 应用主题，但不保存
-        // 注意：这里不调用 saveThemeSetting()
+    // --- 修改：处理来自 content.js 的网页主题检测结果 ---
+    else if (message.action === 'webpageThemeDetected') {
+        console.log(`[sidepanel.js] Received webpage theme: ${message.theme}`);
+        // 只有在用户未设置偏好，且检测到明确主题时才应用
+        if (!state.userHasSetPreference && (message.theme === 'dark' || message.theme === 'light')) {
+            const isWebpageDark = message.theme === 'dark';
+            console.log(`Applying webpage theme (${message.theme}) as user has no preference.`);
+            applyTheme(isWebpageDark); // 应用网页主题，但不保存或更新 state.darkMode
+            updateMermaidTheme(isWebpageDark); // 更新 Mermaid 主题
+        } else {
+             console.log(`Ignoring webpage theme because user preference is set (${state.userHasSetPreference}) or theme is '${message.theme}'.`);
+        }
     }
-    // --- 结束：处理主题更新 ---
+    // --- 结束：处理网页主题 ---
 }
 
 /**
@@ -2797,8 +2816,31 @@ async function rerenderAllMermaidCharts() {
         console.error('An error occurred during the batch re-rendering process:', error);
     }
 }
+
 /**
- * 应用当前主题 (浅色/深色)
+ * 更新 Mermaid 图表的主题并重新渲染
+ * @param {boolean} isDarkMode - 是否应用深色模式
+ */
+async function updateMermaidTheme(isDarkMode) {
+    if (typeof mermaid !== 'undefined') {
+        try {
+            // Re-initialize with the new theme
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: isDarkMode ? 'dark' : 'default',
+                logLevel: 'error'
+            });
+            console.log(`Mermaid theme updated to: ${isDarkMode ? 'dark' : 'default'}`);
+            // Attempt to re-render existing charts with the new theme
+            await rerenderAllMermaidCharts();
+        } catch (error) {
+            console.error('Failed to update Mermaid theme:', error);
+        }
+    }
+}
+
+/**
+ * 应用当前主题 (浅色/深色) - 只更新 CSS 和图标
  * @param {boolean} isDarkMode - 是否应用深色模式
  */
 function applyTheme(isDarkMode) {
@@ -2823,36 +2865,35 @@ function applyTheme(isDarkMode) {
  * 切换主题
  */
 function toggleTheme() {
+    // 用户手动切换主题，标记已设置偏好
+    state.userHasSetPreference = true;
+    console.log('User manually toggled theme, preference set.');
+
+    // 切换状态
     state.darkMode = !state.darkMode;
+
+    // 应用新主题 (CSS 和图标)
     applyTheme(state.darkMode);
+
+    // 保存用户偏好
     saveThemeSetting();
 
-    // --- 更新 Mermaid 主题 ---
-    if (typeof mermaid !== 'undefined') {
-        try {
-            // Re-initialize with the new theme
-            mermaid.initialize({
-                startOnLoad: false,
-                theme: state.darkMode ? 'dark' : 'default',
-                logLevel: 'error'
-            });
-            console.log(`Mermaid theme updated to: ${state.darkMode ? 'dark' : 'default'}`);
-            // Attempt to re-render existing charts with the new theme
-            // Note: Mermaid's standard API doesn't directly support easy re-theming of existing SVGs.
-            // Re-initializing might affect future renders, but existing ones might need full re-render.
-            rerenderAllMermaidCharts();
-        } catch (error) {
-            console.error('Failed to update Mermaid theme:', error);
-        }
-    }
-    // --- 结束 Mermaid 主题更新 ---
+    // 更新 Mermaid 主题
+    updateMermaidTheme(state.darkMode);
 }
 
 /**
  * 保存主题设置到存储
  */
 function saveThemeSetting() {
-    chrome.storage.sync.set({ darkMode: state.darkMode });
+    // 只保存 darkMode 状态，偏好状态由 loadSettings 决定
+    chrome.storage.sync.set({ darkMode: state.darkMode }, () => {
+         if (chrome.runtime.lastError) {
+             console.error("Error saving theme setting:", chrome.runtime.lastError);
+         } else {
+             console.log(`User theme preference saved: ${state.darkMode ? 'dark' : 'light'}`);
+         }
+    });
 }
 
 // --- 结束：主题切换相关函数 ---
