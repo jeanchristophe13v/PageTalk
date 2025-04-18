@@ -79,7 +79,10 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
             generationConfig: {
                 temperature: parseFloat(stateRef.temperature), // Use stateRef
                 maxOutputTokens: parseInt(stateRef.maxTokens), // Use stateRef
-                topP: parseFloat(stateRef.topP) // Use stateRef
+                topP: parseFloat(stateRef.topP), // Use stateRef
+                thinkingConfig: {
+                    thinkingBudget: 0 // 关闭 thinking 功能
+                }
             }
         };
 
