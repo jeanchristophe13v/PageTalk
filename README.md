@@ -10,6 +10,12 @@
 
 #### [中文/Chinese](README-zh.md)
 
+### Version 2.5.0 - The Smart Leap! 🎉🎉🎉
+
+*   **Smart Budget for Gemini 2.5 Flash:** Automatically adjusts the `thinking_budget` based on query complexity when using `gemini-2.5-flash-preview-04-17` – no manual tuning needed!
+*   **Enhanced Theme Adaptation:** Further improvements to automatic light/dark theme switching.
+*   *(Why 2.5.0 and not 2.4.0? Well, someone might have mistyped the version number... and 2.5.0 just looked cooler! 😉)*
+
 ## Introduction
 
 Pagetalk is a browser extension that enhances your web browsing by integrating Google's Gemini API. Summarize pages, chat contextually, and manage custom AI agents effortlessly.
