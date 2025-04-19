@@ -48,6 +48,70 @@ async function _testAndVerifyApiKey(apiKey, model) {
 
 
 /**
+ * 复杂度评估：调用 gemini-2.0-flash 返回 thinkingBudget
+ * @param {string} userMessage - 用户消息内容
+ * @param {object} stateRef - 状态对象
+ * @returns {Promise<number>} - 推荐的 thinkingBudget
+ */
+async function getThinkingBudgetFromGemini20(userMessage, stateRef, uiCallbacks) {
+    const prompt = `
+You are an AI assistant acting as a highly precise query complexity evaluator. Your critical task is to analyze a user's query about web page content and determine the *minimum necessary* 'thinking budget' (an integer between 0 and 24576) for a subsequent, more powerful AI call (gemini-2.5-flash). The goal is maximum efficiency: assign 0 budget whenever possible for simple tasks, and only increase the budget proportionally to the *demonstrable complexity* of the query.
+
+**Evaluation Principles:**
+
+1.  **Default to Zero:** Start with the assumption that the budget is 0. Only increase it if the query *clearly* requires deeper processing based on the factors below. Your primary goal is to identify queries solvable with 0 budget.
+2.  **Identify Core Task Intent:**
+    *   **Direct Extraction / Fact Retrieval / Simple Summary:** Queries asking for readily available, explicit facts (e.g., author, date, title, specific numbers mentioned), a very high-level summary ("summarize", "main points", "TL;DR"), or simple listing ("list the key topics"). **Target Budget: 0.** These tasks require minimal interpretation or synthesis.
+    *   **Specific Information Location & Basic Interpretation:** Queries asking for specific details that might require reading a section carefully but involve little analysis ("What does the text say about topic X?", "Find the definition of term Y provided in the text"). **Target Budget: Low (e.g., 1000-5000).** Requires locating and possibly slightly rephrasing information.
+    *   **Explanation & Elaboration:** Queries requiring understanding and explaining concepts, relationships between ideas presented, or the meaning/purpose of specific sections ("Explain the concept of Z as described here", "What is the relationship between A and B according to the author?", "Why does the author include this example?"). **Target Budget: Medium (e.g., 5001-12000).** Requires understanding beyond literal extraction.
+    *   **Analysis, Comparison & Evaluation:** Queries involving breaking down arguments, comparing/contrasting different points or perspectives within the text, identifying bias, evaluating the strength of evidence presented, or analyzing structure/tone ("Analyze the main argument", "Compare the pros and cons listed", "Evaluate the evidence for claim X", "What is the author's tone?"). **Target Budget: Medium-High (e.g., 12001-18000).** Requires critical thinking about the content.
+    *   **Synthesis, Inference, Prediction & Creation:** Queries requiring combining information from multiple parts to form new conclusions, inferring information not explicitly stated, predicting future outcomes based *solely* on the text's information, generating creative summaries/critiques, or following complex multi-step instructions derived from the text ("Synthesize the findings from sections A and B", "What can be inferred about the author's background?", "Based *only* on this text, what is a likely next step?", "Write a short critique"). **Target Budget: High (e.g., 18001-24576).** Requires significant cognitive load and information integration.
+3.  **Analyze Query Structure & Keywords:**
+    *   **Simplicity Indicators:** "List", "Who", "What is", "When", "Where", "Find", "Summarize", "TL;DR". Strongly suggest low or 0 budget unless combined with complexity indicators.
+    *   **Complexity Indicators:** "Analyze", "Compare", "Contrast", "Evaluate", "Explain why/how", "Synthesize", "Infer", "Predict", "Critique", "Discuss the implications", "In detail". Suggest higher budgets.
+    *   **Specificity vs. Abstraction:** Is the query concrete ("Find the date") or abstract ("Discuss the philosophical implications")? Abstraction usually requires more budget.
+    *   **Number of Implicit Steps:** Does answering the query require multiple logical steps (e.g., find X, then find Y, then compare them)? More steps generally mean more budget.
+4.  **Budget Allocation Logic:**
+    *   If the Core Task Intent is clearly Direct Extraction/Fact Retrieval/Simple Summary, assign **0**. Be strict about this.
+    *   Otherwise, identify the primary Core Task Intent and start with the lower end of its suggested budget range.
+    *   Increment the budget based *only* on the presence of clear Complexity Indicators, abstraction, or multiple implicit steps. Each significant complexity factor might warrant a moderate increase.
+    *   Always aim for the *lowest possible budget* that allows the subsequent AI to reasonably address the query's complexity. Avoid generosity.
+
+**Output Constraint:**
+Your ONLY output MUST be a single integer between 0 and 24576. Do not include explanations, units, or any other text.
+
+Now, evaluate the following user query:
+${userMessage}
+`;
+
+    const endpoint = `${API_BASE_URL}/models/gemini-2.0-flash:generateContent?key=${stateRef.apiKey}`;
+    const requestBody = {
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 10,
+            topP: 1
+        }
+    };
+    try {
+        const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        if (!resp.ok) throw new Error(`Gemini 2.0 Flash 预算评估失败: HTTP ${resp.status}`);
+        const data = await resp.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        const num = parseInt(text, 10);
+        if (isNaN(num) || num < 0 || num > 24576) return 8000; // fallback
+        return num;
+    } catch (e) {
+        console.error('Gemini 2.0 Flash 预算评估异常:', e);
+        return 8000;
+    }
+}
+
+/**
  * 核心 API 调用逻辑，支持插入或追加响应
  * @param {string} userMessage - 用户消息内容
  * @param {Array<{dataUrl: string, mimeType: string}>} images - 图片数组
@@ -85,6 +149,11 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
                 }
             }
         };
+
+        // 若为 gemini-2.5-flash-preview-04-17，自动评估 thinkingBudget
+        if (currentModel === 'gemini-2.5-flash-preview-04-17') {
+            requestBody.generationConfig.thinkingConfig.thinkingBudget = await getThinkingBudgetFromGemini20(userMessage, stateRef, uiCallbacks);
+        }
 
         // --- 构建 contents 的逻辑 ---
         let systemContent = stateRef.systemPrompt; // Use stateRef

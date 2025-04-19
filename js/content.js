@@ -190,6 +190,12 @@ function togglePanel() {
 
 // 监听来自background或面板的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // 主动响应主题请求
+  if (message.action === "requestTheme") {
+    detectAndSendTheme();
+    sendResponse && sendResponse({success: true});
+    return true;
+  }
   // 处理提取内容的请求
   if (message.action === "extractContent") {
     try {

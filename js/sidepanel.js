@@ -151,7 +151,16 @@ function _(key, replacements = {}) {
  * 初始化应用
  */
 function init() {
-    // 移除 pageContentExtractedMessageShown 重置
+    // 主动请求页面主题，尽早自适应
+    try {
+        chrome.tabs && chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            if (tabs && tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, {action: "requestTheme"});
+            }
+        });
+    } catch (e) {
+        // 容错：部分环境下可能无 chrome.tabs
+    }
     // 加载存储的设置 (包括主题和语言)
     // loadSettings 会异步加载并应用翻译
     loadSettings();
