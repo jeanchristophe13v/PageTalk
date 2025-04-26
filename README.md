@@ -34,6 +34,16 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 *   **Chat Export:** Save conversations as Markdown or Text files.
 *   **Resizable Panel:** Adjust the side panel width.
 
+## Examples
+![image](https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158)
+
+![image](https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238)
+
+![image](https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24)
+
+
+
+
 ## Installation
 
 **Note:** Load as an unpacked extension in developer mode.
