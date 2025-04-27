@@ -34,6 +34,14 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 *   **聊天导出:** 将对话保存为 Markdown 或纯文本文件。
 *   **可调整面板:** 调整侧边栏宽度。
 
+## 用例
+![image](https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158)
+
+![image](https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238)
+
+![image](https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24)
+
+
 ## 安装
 
 **注意:** 需要在开发者模式下以“加载已解压的扩展程序”方式安装。
