@@ -37,6 +37,7 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 ## Installation
 
 **Note:** Load as an unpacked extension in developer mode.
+**Get API Key:** Before using the extension, please obtain your Gemini API key from [Google AI Studio](https://aistudio.google.com).
 
 1.  **Edge:** Go to `edge://extensions/`, enable "Developer mode", click "Load unpacked", select the project folder.
 2.  **Chrome:** Go to `chrome://extensions/`, enable "Developer mode", click "Load unpacked", select the project folder.
