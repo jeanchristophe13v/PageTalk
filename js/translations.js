@@ -24,7 +24,7 @@ const translations = {
     'modelSelectLabel': '选择模型',
     'agentLabel': 'Agent：',
     'agentSelectLabel': '选择助手',
-    'clearContextTitle': '清除上下文和聊天记录',
+    'clearContextTitle': '清除聊天记录',
     'closePanelTitle': '关闭面板',
     'welcomeHeading': '欢迎使用 Pagetalk :)',
     'summarizeAction': '总结一下',
@@ -87,7 +87,7 @@ const translations = {
     'settingsSaved': 'Saved', // Used in showConnectionStatus for success
     'connectionTestSuccess': '连接成功', // Used in showConnectionStatus for success
     'connectionTestFailed': '连接失败: {error}', // Placeholder for error message
-    'contextClearedSuccess': '聊天记录和上下文已清除',
+    'contextClearedSuccess': '聊天记录已清除',
     'pageContentExtractedSuccess': '成功提取页面内容',
     'newAgentCreatedToast': '新助手已创建',
     'agentDeletedToast': '助手已删除',
@@ -149,7 +149,7 @@ const translations = {
     'modelSelectLabel': 'Select Model',
     'agentLabel': 'Agent:',
     'agentSelectLabel': 'Select Agent',
-    'clearContextTitle': 'Clear context and chat history',
+    'clearContextTitle': 'Clear chat history',
     'closePanelTitle': 'Close Panel',
     'welcomeHeading': 'Welcome to Pagetalk :)',
     'summarizeAction': 'Summarize',
@@ -212,7 +212,7 @@ const translations = {
     'settingsSaved': 'Saved',
     'connectionTestSuccess': 'Connection successful',
     'connectionTestFailed': 'Connection failed: {error}',
-    'contextClearedSuccess': 'Chat history and context cleared',
+    'contextClearedSuccess': 'Chat history cleared',
     'pageContentExtractedSuccess': 'Successfully extracted page content',
     'newAgentCreatedToast': 'New agent created',
     'agentDeletedToast': 'Agent deleted',
