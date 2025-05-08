@@ -158,7 +158,7 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
         // --- 构建 contents 的逻辑 ---
         let systemContent = stateRef.systemPrompt; // Use stateRef
         if (stateRef.pageContext) { // Use stateRef
-            systemContent += `\n\n以下是网页的内容，请根据这些内容回答用户问题：\n\n${stateRef.pageContext}`; // Use stateRef
+            systemContent += `\n\n以下是作为你回答的网页参考内容：\n\n${stateRef.pageContext}`; // Use stateRef
         }
         if (systemContent) {
             requestBody.contents.push({ role: 'user', parts: [{ text: systemContent }] });

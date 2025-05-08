@@ -112,7 +112,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
     if (sender === 'user' && images.length > 0) {
         messageElement.querySelectorAll('.message-image').forEach(img => {
             img.addEventListener('click', () => {
-                showFullSizeImage(img.dataset.url); // Use data-url
+                showFullSizeImage(img.dataset.url, elements); // Use data-url
             });
         });
     }
