@@ -67,35 +67,38 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     elements.userInput.value = '';
     resizeTextareaCallback(); // Adjust textarea height
 
-    // Add thinking animation (will scroll if user is near bottom)
+    // Build message parts
+    const currentParts = [];
+    if (userMessage) currentParts.push({ text: userMessage });
+    currentImages.forEach(image => {
+        const base64data = image.dataUrl.split(',')[1];
+        currentParts.push({ inlineData: { mimeType: image.mimeType, data: base64data } });
+    });
+
+    // Add user message to history *before* API call
+    if (currentParts.length > 0) {
+        state.chatHistory.push({ role: 'user', parts: currentParts, id: userMessageId });
+    } else {
+        // Should not happen due to initial check, but as a safeguard:
+        if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
+        if (userMessageElement && userMessageElement.parentNode) userMessageElement.remove();
+        restoreSendButtonAndInputCallback(); // Restore button if nothing was sent
+        return;
+    }
+
+    if (currentImages.length > 0) {
+        clearImagesCallback(); // This callback clears state.images and updates the UI
+    }
+
     const thinkingElement = addThinkingAnimationCallback(null, elements, isUserNearBottom); // Add to end
 
     try {
-        // Build message parts
-        const currentParts = [];
-        if (userMessage) currentParts.push({ text: userMessage });
-        currentImages.forEach(image => {
-            const base64data = image.dataUrl.split(',')[1];
-            currentParts.push({ inlineData: { mimeType: image.mimeType, data: base64data } });
-        });
-
-        // Add user message to history *before* API call
-        if (currentParts.length > 0) {
-            state.chatHistory.push({ role: 'user', parts: currentParts, id: userMessageId });
-        } else {
-            // Should not happen due to initial check, but as a safeguard:
-            if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
-            if (userMessageElement && userMessageElement.parentNode) userMessageElement.remove();
-            restoreSendButtonAndInputCallback(); // Restore button if nothing was sent
-            return;
-        }
-
         // Prepare API callbacks object
         const apiUiCallbacks = {
             addMessageToChat: (content, sender, options) => addMessageToChatCallback(content, sender, options, state, elements, currentTranslations, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, isUserNearBottom), // Need to bind or pass required args
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content, isUserNearBottom, elements), // Assuming these are globally accessible or passed differently
             finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, restoreSendButtonAndInputCallback, isUserNearBottom, elements),
-            clearImages: () => clearImagesCallback(state, window.updateImagesPreview), // Assuming updateImagesPreview is accessible
+            // clearImages: () => clearImagesCallback(state, window.updateImagesPreview), // This line can be kept or removed as images are cleared above.
             showToast: showToastCallback
         };
 
@@ -103,7 +106,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // Call API
         await window.GeminiAPI.callGeminiAPIWithImages(
             userMessage,
-            currentImages,
+            currentImages, // Use the copied currentImages
             thinkingElement,
             state, // Pass full state reference
             apiUiCallbacks // Pass callbacks object
