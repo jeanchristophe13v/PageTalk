@@ -71,27 +71,51 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 
 ```
 Pagetalk/
-├── magic.png             # 图标
-├── manifest.json         # 插件清单文件
-├── README.md             # 英文说明
-├── README-zh.md          # 中文说明
-├── css/                  # 样式文件
-│   ├── code-highlight.css
+
+├── magic.png             # Extension icon
+├── manifest.json         # Extension manifest
+├── README.md             # English Readme
+├── README-zh.md          # Chinese Readme
+├── css/                  # Stylesheets
 │   ├── content-panel.css
+│   ├── github-dark-dimmed.min.css # GitHub dark theme code highlight style
+│   ├── github.min.css    # GitHub light theme code highlight style
+│   ├── katex.min.css     # LaTeX rendering style
 │   └── sidepanel.css
-├── html/                 # HTML 文件
-│   └── sidepanel.html
-└── js/                   # JavaScript 逻辑
+├── html/                 # HTML files
+│   └── sidepanel.html    # Side panel HTML
+└── js/                   # JavaScript logic
+    ├── agent.js          # Agent management logic
+    ├── api.js            # API interaction logic
     ├── background.js     # Service Worker
-    ├── content.js        # 内容脚本
-    ├── markdown-renderer.js # Markdown 渲染逻辑
-    ├── sidepanel.js      # 侧边栏 UI 核心逻辑
-    ├── api.js            # Gemini API 交互逻辑
-    ├── translations.js   # UI 字符串翻译
-    └── lib/              # 第三方库
-        ├── markdown-it.min.js
-        ├── katex.min.js      # LaTeX 渲染
-        ├── mermaid.min.js    # Mermaid 图表渲染
-        ├── dayjs.min.js      # 日期时间库
-        ├── panzoom.min.js    # Mermaid 缩放/平移库
-        └── ...             # 其他库 (highlight.js 等)
+    ├── chat.js           # Chat logic
+    ├── content.js        # Content script
+    ├── image.js          # Image processing logic
+    ├── main.js           # Main entry file
+    ├── markdown-renderer.js # Markdown rendering logic
+    ├── render.js         # Rendering related logic
+    ├── settings.js       # Settings logic
+    ├── theme.js          # Theme logic
+    ├── translations.js   # UI string translations
+    ├── ui.js             # UI interaction logic
+    ├── utils.js          # Utility functions
+    └── lib/              # Third-party libraries
+        ├── auto-render.min.js # LaTeX auto-rendering
+        ├── dayjs.min.js      # Date/time utility
+        ├── en.min.js         # dayjs English locale
+        ├── highlight.min.js  # Code highlight core
+        ├── java.min.js       # highlight.js Java language
+        ├── javascript.min.js # highlight.js JavaScript language
+        ├── json.min.js       # highlight.js JSON language
+        ├── katex.min.js      # LaTeX rendering
+        ├── markdown-it.min.js # Markdown parsing
+        ├── mathtex-script-type.min.js # KaTeX script type support
+        ├── mermaid.min.js    # Mermaid diagram rendering
+        ├── mhchem.min.js     # KaTeX chemical formula support
+        ├── panzoom.min.js    # Zoom/pan utility (for Mermaid)
+        ├── python.min.js     # highlight.js Python language
+        ├── r.min.js          # highlight.js R language
+        ├── Readability.js    # Web page content extraction
+        ├── render-a11y-string.min.js # KaTeX accessibility string rendering
+        ├── sql.min.js        # highlight.js SQL language
+        └── zh-cn.min.js      # dayjs Chinese locale

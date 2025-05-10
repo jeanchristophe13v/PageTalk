@@ -73,27 +73,51 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 
 ```
 Pagetalk/
-├── magic.png             # Icon
+
+├── magic.png             # Extension icon
 ├── manifest.json         # Extension manifest
 ├── README.md             # English Readme
 ├── README-zh.md          # Chinese Readme
 ├── css/                  # Stylesheets
-│   ├── code-highlight.css
 │   ├── content-panel.css
+│   ├── github-dark-dimmed.min.css # GitHub dark theme code highlight style
+│   ├── github.min.css    # GitHub light theme code highlight style
+│   ├── katex.min.css     # LaTeX rendering style
 │   └── sidepanel.css
 ├── html/                 # HTML files
-│   └── sidepanel.html
+│   └── sidepanel.html    # Side panel HTML
 └── js/                   # JavaScript logic
-    ├── background.js     # Service worker
+    ├── agent.js          # Agent management logic
+    ├── api.js            # API interaction logic
+    ├── background.js     # Service Worker
+    ├── chat.js           # Chat logic
     ├── content.js        # Content script
+    ├── image.js          # Image processing logic
+    ├── main.js           # Main entry file
     ├── markdown-renderer.js # Markdown rendering logic
-    ├── sidepanel.js      # Side panel UI core logic
-    ├── api.js            # Gemini API interaction logic
+    ├── render.js         # Rendering related logic
+    ├── settings.js       # Settings logic
+    ├── theme.js          # Theme logic
     ├── translations.js   # UI string translations
+    ├── ui.js             # UI interaction logic
+    ├── utils.js          # Utility functions
     └── lib/              # Third-party libraries
-        ├── markdown-it.min.js
-        ├── katex.min.js      # LaTeX rendering
-        ├── mermaid.min.js    # Mermaid diagram rendering
+        ├── auto-render.min.js # LaTeX auto-rendering
         ├── dayjs.min.js      # Date/time utility
+        ├── en.min.js         # dayjs English locale
+        ├── highlight.min.js  # Code highlight core
+        ├── java.min.js       # highlight.js Java language
+        ├── javascript.min.js # highlight.js JavaScript language
+        ├── json.min.js       # highlight.js JSON language
+        ├── katex.min.js      # LaTeX rendering
+        ├── markdown-it.min.js # Markdown parsing
+        ├── mathtex-script-type.min.js # KaTeX script type support
+        ├── mermaid.min.js    # Mermaid diagram rendering
+        ├── mhchem.min.js     # KaTeX chemical formula support
         ├── panzoom.min.js    # Zoom/pan utility (for Mermaid)
-        └── ...             # Other libraries (highlight.js, etc.)
+        ├── python.min.js     # highlight.js Python language
+        ├── r.min.js          # highlight.js R language
+        ├── Readability.js    # Web page content extraction
+        ├── render-a11y-string.min.js # KaTeX accessibility string rendering
+        ├── sql.min.js        # highlight.js SQL language
+        └── zh-cn.min.js      # dayjs Chinese locale
