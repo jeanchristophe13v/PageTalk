@@ -25,7 +25,28 @@ import {
 } from './agent.js';
 import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection } from './settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction } from './chat.js';
-import { switchTab, switchSettingsSubTab, addMessageToChat, updateStreamingMessage, finalizeBotMessage, addThinkingAnimation, showConnectionStatus, updateConnectionIndicator, updateContextStatus, showToast, resizeTextarea, setupAutoresizeTextarea, updateUIElementsWithTranslations, restoreSendButtonAndInput, toggleApiKeyVisibility, showChatStatusMessage, addCopyButtonToCodeBlock, addMessageActionButtons, showCopyCodeFeedback, showCopyMessageFeedback } from './ui.js';
+import {
+    switchTab,
+    switchSettingsSubTab,
+    addMessageToChat,
+    updateStreamingMessage as uiUpdateStreamingMessage, // Renamed import
+    finalizeBotMessage as uiFinalizeBotMessage,       // Renamed import
+    addThinkingAnimation as uiAddThinkingAnimation,     // Renamed import for clarity
+    showConnectionStatus,
+    updateConnectionIndicator,
+    updateContextStatus,
+    showToast,
+    resizeTextarea,
+    setupAutoresizeTextarea,
+    updateUIElementsWithTranslations,
+    restoreSendButtonAndInput,
+    toggleApiKeyVisibility,
+    showChatStatusMessage,
+    addCopyButtonToCodeBlock,
+    addMessageActionButtons,
+    showCopyCodeFeedback,
+    showCopyMessageFeedback
+} from './ui.js';
 
 // --- State Management ---
 const state = {
@@ -133,7 +154,7 @@ function _(key, replacements = {}) {
 }
 
 // --- Scroll Tracking ---
-let isUserNearBottom = true;
+let isUserNearBottom = true; // This remains the live state
 const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 
 
@@ -199,6 +220,23 @@ function init() {
     // Set initial visibility for theme button
     const initialTab = document.querySelector('.footer-tab.active')?.dataset.tab || 'chat';
     setThemeButtonVisibility(initialTab, elements);
+
+    // Global Exposures for API module callbacks
+    // These wrappers ensure that the live `isUserNearBottom` from main.js is used.
+
+    // Wrapper for ui.js's updateStreamingMessage
+    window.updateStreamingMessage = (messageElement, content) => {
+        // `isUserNearBottom` and `elements` are live from main.js's scope
+        uiUpdateStreamingMessage(messageElement, content, isUserNearBottom, elements);
+    };
+
+    // Wrapper for ui.js's finalizeBotMessage
+    window.finalizeBotMessage = (messageElement, finalContent) => {
+        // `isUserNearBottom`, `elements`, `addCopyButtonToCodeBlockUI`,
+        // `addMessageActionButtonsUI`, `restoreSendButtonAndInputUI`
+        // are all live from main.js's scope
+        uiFinalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlockUI, addMessageActionButtonsUI, restoreSendButtonAndInputUI, isUserNearBottom, elements);
+    };
 
     console.log("Pagetalk Initialized.");
 }
@@ -297,13 +335,14 @@ function sendUserMessageTrigger() {
         state, elements, currentTranslations,
         (msg, type) => showConnectionStatus(msg, type, elements), // showConnectionStatusCallback
         addMessageToChatUI, // addMessageToChatCallback
-        (afterEl) => addThinkingAnimation(afterEl, elements, isUserNearBottom), // addThinkingAnimationCallback
+        // addThinkingAnimationCallback: uses live isUserNearBottom due to closure
+        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), // Pass the original ui.js function
         () => resizeTextarea(elements), // resizeTextareaCallback
         clearImagesUI, // clearImagesCallback
         showToastUI, // showToastCallback
         restoreSendButtonAndInputUI, // restoreSendButtonAndInputCallback
-        abortStreamingUI, // abortStreamingCallback
-        isUserNearBottom
+        abortStreamingUI // abortStreamingCallback
+        // No longer passing isUserNearBottom directly to sendUserMessageAction
     );
 }
 
@@ -400,10 +439,11 @@ function regenerateMessageUI(messageId) {
     regenerateMessageAction(
         messageId, state, elements, currentTranslations,
         addMessageToChatUI,
-        (afterEl) => addThinkingAnimation(afterEl, elements, isUserNearBottom),
+        // addThinkingAnimationCallback: uses live isUserNearBottom due to closure
+        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), // Pass the original ui.js function
         restoreSendButtonAndInputUI,
-        abortStreamingUI,
-        isUserNearBottom
+        abortStreamingUI
+        // No longer passing isUserNearBottom directly to regenerateMessageAction
     );
 }
 
@@ -577,8 +617,7 @@ function loadAndApplyTranslations(language) {
 window.sendUserMessageTrigger = sendUserMessageTrigger;
 window.addCopyButtonToCodeBlock = addCopyButtonToCodeBlockUI; // Expose wrappers if needed elsewhere
 window.addMessageActionButtons = addMessageActionButtonsUI;
-window.updateStreamingMessage = updateStreamingMessage;
-window.finalizeBotMessage = finalizeBotMessage;
+// window.updateStreamingMessage and window.finalizeBotMessage are set in init()
 window.showToast = showToastUI; // Expose toast globally if needed
 
 // --- Start Application ---

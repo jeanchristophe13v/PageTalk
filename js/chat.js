@@ -5,11 +5,11 @@ import { generateUniqueId } from './utils.js';
 
 /** Helper function to get translation string */
 function _(key, replacements = {}, translations) {
-  let translation = translations[key] || key;
-  for (const placeholder in replacements) {
-    translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-  }
-  return translation;
+    let translation = translations[key] || key;
+    for (const placeholder in replacements) {
+        translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
+    }
+    return translation;
 }
 
 /**
@@ -18,16 +18,15 @@ function _(key, replacements = {}, translations) {
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
  * @param {function} showConnectionStatusCallback - Callback for model settings status
- * @param {function} addMessageToChatCallback - Callback
- * @param {function} addThinkingAnimationCallback - Callback
+ * @param {function} addMessageToChatCallback - Callback (this is main.js#addMessageToChatUI)
+ * @param {function} addThinkingAnimationCallback - Callback (this is a lambda from main.js calling ui.js#addThinkingAnimation with live isUserNearBottom)
  * @param {function} resizeTextareaCallback - Callback
  * @param {function} clearImagesCallback - Callback
  * @param {function} showToastCallback - Callback
  * @param {function} restoreSendButtonAndInputCallback - Callback
  * @param {function} abortStreamingCallback - Callback
- * @param {boolean} isUserNearBottom - Whether user is scrolled near bottom
  */
-export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, isUserNearBottom) {
+export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback) {
     const userMessage = elements.userInput.value.trim();
 
     if (state.isStreaming) {
@@ -61,6 +60,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     const currentImages = [...state.images]; // Copy images for this message
 
     // Add user message UI (force scroll ensures it's visible before thinking anim)
+    // addMessageToChatCallback (main.js#addMessageToChatUI) handles isUserNearBottom internally
     const userMessageElement = addMessageToChatCallback(userMessage, 'user', { images: currentImages, forceScroll: true });
     const userMessageId = userMessageElement.dataset.messageId;
 
@@ -80,7 +80,9 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         state.chatHistory.push({ role: 'user', parts: currentParts, id: userMessageId });
     } else {
         // Should not happen due to initial check, but as a safeguard:
-        if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
+        // Check if thinkingElement exists before trying to remove it
+        // This block is before thinkingElement is defined, so this check is not needed here.
+        // It's more relevant in the catch block.
         if (userMessageElement && userMessageElement.parentNode) userMessageElement.remove();
         restoreSendButtonAndInputCallback(); // Restore button if nothing was sent
         return;
@@ -90,18 +92,21 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         clearImagesCallback(); // This callback clears state.images and updates the UI
     }
 
-    const thinkingElement = addThinkingAnimationCallback(null, elements, isUserNearBottom); // Add to end
+    // Call the addThinkingAnimationCallback passed from main.js.
+    // It uses elements from main.js's scope and captures the live isUserNearBottom.
+    // It expects only the element to insert after (or null).
+    const thinkingElement = addThinkingAnimationCallback(null);
 
     try {
         // Prepare API callbacks object
         const apiUiCallbacks = {
-            addMessageToChat: (content, sender, options) => addMessageToChatCallback(content, sender, options, state, elements, currentTranslations, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, isUserNearBottom), // Need to bind or pass required args
-            updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content, isUserNearBottom, elements), // Assuming these are globally accessible or passed differently
-            finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, restoreSendButtonAndInputCallback, isUserNearBottom, elements),
-            // clearImages: () => clearImagesCallback(state, window.updateImagesPreview), // This line can be kept or removed as images are cleared above.
+            // addMessageToChatCallback is main.js#addMessageToChatUI, which correctly uses live isUserNearBottom
+            addMessageToChat: addMessageToChatCallback,
+            // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
+            updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
+            finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content),
             showToast: showToastCallback
         };
-
 
         // Call API
         await window.GeminiAPI.callGeminiAPIWithImages(
@@ -117,7 +122,8 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         console.error('Error during sendUserMessage API call:', error);
         if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
         // Add error message to chat (don't force scroll)
-        addMessageToChatCallback(_('apiCallFailed', { error: error.message }, currentTranslations), 'bot', {}, state, elements, currentTranslations, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, isUserNearBottom); // Need translation key
+        // addMessageToChatCallback already handles isUserNearBottom correctly
+        addMessageToChatCallback(_('apiCallFailed', { error: error.message }, currentTranslations), 'bot', {});
         restoreSendButtonAndInputCallback(); // Restore button on error
     }
 }
@@ -130,15 +136,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
  * @param {function} clearImagesCallback - Callback
  * @param {function} showToastCallback - Callback
  * @param {object} currentTranslations - Translations object
- */
-/**
- * 清除聊天上下文和历史记录
- * @param {object} state - 全局状态
- * @param {object} elements - DOM 元素引用
- * @param {function} clearImagesCallback - 清除图片回调
- * @param {function} showToastCallback - Toast 回调
- * @param {object} currentTranslations - 语言包
- * @param {boolean} [showToast=true] - 是否显示“已清除”提示
+ * @param {boolean} [showToast=true] - Whether to show the "Cleared" toast
  */
 export function clearContext(state, elements, clearImagesCallback, showToastCallback, currentTranslations, showToast = true) {
     state.chatHistory = [];
@@ -159,6 +157,7 @@ export function clearContext(state, elements, clearImagesCallback, showToastCall
         summarizeBtn.addEventListener('click', () => {
             elements.userInput.value = _('summarizeAction', {}, currentTranslations);
             elements.userInput.focus();
+            // Assuming sendUserMessageTrigger is a global function or passed in main.js
             if (window.sendUserMessageTrigger) {
                 window.sendUserMessageTrigger();
             } else {
@@ -208,13 +207,12 @@ export function deleteMessage(messageId, state) {
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
- * @param {function} addMessageToChatCallback - Callback
- * @param {function} addThinkingAnimationCallback - Callback
+ * @param {function} addMessageToChatCallback - Callback (main.js#addMessageToChatUI)
+ * @param {function} addThinkingAnimationCallback - Callback (lambda from main.js for ui.js#addThinkingAnimation)
  * @param {function} restoreSendButtonAndInputCallback - Callback
  * @param {function} abortStreamingCallback - Callback
- * @param {boolean} isUserNearBottom - Whether user is scrolled near bottom
  */
-export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, isUserNearBottom) {
+export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback) {
     if (state.isStreaming) {
         console.warn("Cannot regenerate while streaming.");
         return;
@@ -285,16 +283,20 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
     // --- End Streaming State ---
 
     // Add thinking animation after the user message
-    const thinkingElement = addThinkingAnimationCallback(userMessageElement, elements, isUserNearBottom);
+    // The callback `addThinkingAnimationCallback` (defined in main.js) will use the live `isUserNearBottom`.
+    // It expects `afterEl` as its first argument.
+    const thinkingElement = addThinkingAnimationCallback(userMessageElement);
 
     try {
         // Prepare API callbacks object (similar to sendUserMessage)
-         const apiUiCallbacks = {
-            addMessageToChat: (content, sender, options) => addMessageToChatCallback(content, sender, options, state, elements, currentTranslations, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, isUserNearBottom),
-            updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content, isUserNearBottom, elements),
-            finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, restoreSendButtonAndInputCallback, isUserNearBottom, elements),
-            clearImages: () => {}, // Don't clear images on regenerate
-            showToast: window.showToast // Assuming showToast is globally accessible or passed
+        const apiUiCallbacks = {
+            // addMessageToChatCallback is main.js#addMessageToChatUI, which correctly uses live isUserNearBottom
+            addMessageToChat: addMessageToChatCallback,
+            // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
+            updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
+            finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content),
+            clearImages: () => { }, // Don't clear images on regenerate
+            showToast: showToastCallback // Assuming showToast is passed correctly
         };
 
         // Call API to insert response
@@ -302,7 +304,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
             userMessageText,
             userImages,
             thinkingElement,
-            historyForApi, // History *before* the user message
+            historyForApi,
             userIndex + 1, // Insert *after* the user message index
             userMessageElement, // Insert *after* this DOM element
             state,
@@ -314,7 +316,8 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
         console.error(`Regenerate failed:`, error);
         if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
         // Add error message after the user message
-        addMessageToChatCallback(_('regenerateError', { error: error.message }, currentTranslations), 'bot', { insertAfterElement: userMessageElement }, state, elements, currentTranslations, window.addCopyButtonToCodeBlock, window.addMessageActionButtons, isUserNearBottom);
+        // addMessageToChatCallback already handles isUserNearBottom correctly
+        addMessageToChatCallback(_('regenerateError', { error: error.message }, currentTranslations), 'bot', { insertAfterElement: userMessageElement });
         restoreSendButtonAndInputCallback(); // Restore button on error
     }
 }
