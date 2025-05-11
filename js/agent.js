@@ -13,11 +13,11 @@ const defaultAgentSettings = {
 
 /** Helper function to get translation string */
 function _(key, replacements = {}, translations) {
-  let translation = translations[key] || key;
-  for (const placeholder in replacements) {
-    translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-  }
-  return translation;
+    let translation = translations[key] || key;
+    for (const placeholder in replacements) {
+        translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
+    }
+    return translation;
 }
 
 /**
@@ -59,14 +59,12 @@ export function loadAgents(state, updateAgentsListCallback, updateAgentSelection
     });
 }
 
-// Continuation of js/agent.js
-
 /**
  * 更新助手列表UI (可折叠，实时保存)
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
- * @param {function} autoSaveAgentSettingsCallback - Callback
+ * @param {function} autoSaveAgentSettingsCallback - Callback. This is the wrapper from main.js
  * @param {function} showDeleteConfirmDialogCallback - Callback
  * @param {function} switchAgentCallback - Callback
  */
@@ -230,9 +228,9 @@ function createSliderGroup(agentId, settingName, labelText, value, min, max, ste
  * @param {string} agentId - 助手的ID
  * @param {HTMLElement} agentItemElement - 助手项DOM元素
  * @param {object} state - Global state reference
- * @param {function} saveAgentsListCallback - Callback to save the list
- * @param {function} updateAgentSelectionInChatCallback - Callback
- * @param {function} showToastCallback - Callback
+ * @param {function} saveAgentsListCallback - Callback to save the list (this is saveAgentsListState from main.js)
+ * @param {function} updateAgentSelectionInChatCallback - Callback (this is updateAgentSelectionInChatUI from main.js)
+ * @param {function} showToastCallback - Callback (this is showToastUI from main.js)
  * @param {object} currentTranslations - Translations object
  */
 export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgentsListCallback, updateAgentSelectionInChatCallback, showToastCallback, currentTranslations) {
@@ -280,16 +278,17 @@ export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgen
     agentToUpdate.temperature = newTemperature;
     agentToUpdate.topP = newTopP;
     agentToUpdate.maxTokens = newMaxTokens;
-    console.log(`Agent ${agentId} updated in state (Name: ${newName}):`, agentToUpdate);
+    console.log(`Agent ${agentId} updated in state (Name: ${newName}, Prompt: "${newSystemPrompt}"):`, agentToUpdate);
+
 
     // Sync global state if this is the current agent
     if (agentId === state.currentAgentId) {
         loadCurrentAgentSettingsIntoState(state); // Reload settings from the updated agent
-        console.log(`Global state synced for currently active agent: ${agentId}`);
+        console.log(`Global state synced for currently active agent: ${agentId} (New prompt: "${state.systemPrompt}")`);
     }
 
     // Save the entire list
-    saveAgentsListCallback();
+    saveAgentsListCallback(); // This will eventually call chrome.storage.sync.set
 
     // Update UI elements
     const nameSpanInHeader = agentItemElement.querySelector('.agent-item-header .agent-item-name');
@@ -339,7 +338,7 @@ export function createNewAgent(state, updateAgentsListCallback, updateAgentSelec
 
 /**
  * 显示删除确认对话框
- * @param {string} agentId - 要删除的助手ID
+ * @param {string} agentId - 要删除���助手ID
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
@@ -357,7 +356,7 @@ export function showDeleteConfirmDialog(agentId, state, elements, currentTransla
 }
 
 /**
- * 确认删除助手
+ * 确认���除助手
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {function} updateAgentsListCallback - Callback
@@ -391,7 +390,7 @@ export function confirmDeleteAgent(state, elements, updateAgentsListCallback, up
 }
 
 /**
- * 切换当前使用的助手
+ * �����������使用的助手
  * @param {string} agentId - 要切换到的助手ID
  * @param {object} state - Global state reference
  * @param {function} saveCurrentAgentIdCallback - Callback
@@ -406,7 +405,7 @@ export function switchAgent(agentId, state, saveCurrentAgentIdCallback) {
 
     // Optional: Show toast feedback
     // showToastCallback(_('agentSwitchedToast', { agentName: agent.name }, currentTranslations), 'success');
-    console.log(`Switched to agent: ${agent.name} (ID: ${agentId})`);
+    console.log(`Switched to agent: ${agent.name} (ID: ${agentId}) (Prompt: "${state.systemPrompt}")`);
 }
 
 /**
@@ -447,7 +446,7 @@ export function saveAgentsList(state) {
             console.error("Error saving agents list:", chrome.runtime.lastError);
             // Optionally show an error toast
         } else {
-            // console.log("Agents list saved.");
+            console.log("Agents list saved to storage.", state.agents);
         }
     });
 }
@@ -458,7 +457,7 @@ export function saveAgentsList(state) {
  */
 export function saveCurrentAgentId(state) {
     chrome.storage.sync.set({ currentAgentId: state.currentAgentId }, () => {
-         if (chrome.runtime.lastError) {
+        if (chrome.runtime.lastError) {
             console.error("Error saving current agent ID:", chrome.runtime.lastError);
         } else {
             // console.log("Current agent ID saved.");
@@ -506,7 +505,7 @@ export function handleAgentExport(state, showToastCallback, currentTranslations)
 
 /**
  * 处理 Agent 配置文件导入
- * @param {Event} event - 文件输入框的 change 事件
+ * @param {Event} event - 文件输入���的 change ���件
  * @param {object} state - Global state reference
  * @param {function} saveAgentsListCallback - Callback
  * @param {function} updateAgentsListCallback - Callback
@@ -585,8 +584,8 @@ export function handleAgentImport(event, state, saveAgentsListCallback, updateAg
                     // Maybe create a default agent here?
                 }
             } else {
-                 // If current agent still exists, reload its settings in case it was updated
-                 loadCurrentAgentSettingsIntoState(state);
+                // If current agent still exists, reload its settings in case it was updated
+                loadCurrentAgentSettingsIntoState(state);
             }
 
             showToastCallback(_('agentImportSuccess', { imported: importedCount, updated: updatedCount }, currentTranslations), 'success');
@@ -628,7 +627,7 @@ function validateImportedAgent(agent, index, currentTranslations) {
     }
     // Validate System Prompt
     if (typeof agent.systemPrompt !== 'string') {
-         // Allow empty string for systemPrompt
+        // Allow empty string for systemPrompt
         // errors.push(`${prefix} ${_('importValidationErrorInvalidPrompt', {}, currentTranslations)}`); // Need translation
     }
     // Validate Temperature
@@ -659,7 +658,7 @@ export function loadCurrentAgentSettingsIntoState(state) {
         state.temperature = currentAgent.temperature;
         state.maxTokens = currentAgent.maxTokens;
         state.topP = currentAgent.topP;
-        console.log(`Loaded settings for agent ${state.currentAgentId} into global state.`);
+        console.log(`Loaded settings for agent ${state.currentAgentId} (Prompt: "${currentAgent.systemPrompt}") into global state.`);
     } else if (state.agents.length > 0) {
         // Fallback: if currentAgentId is somehow invalid, load the first agent's settings
         console.warn(`Current agent ID ${state.currentAgentId} not found. Loading settings from the first agent.`);
@@ -670,6 +669,7 @@ export function loadCurrentAgentSettingsIntoState(state) {
         state.maxTokens = firstAgent.maxTokens;
         state.topP = firstAgent.topP;
         saveCurrentAgentId(state); // Save the corrected ID
+        console.log(`Loaded settings for agent ${state.currentAgentId} (Prompt: "${state.systemPrompt}") into global state.`);
     } else {
         // No agents exist, reset to defaults
         console.warn("No agents found. Resetting global settings to defaults.");

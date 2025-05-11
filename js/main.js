@@ -7,7 +7,22 @@ import { generateUniqueId } from './utils.js';
 import { renderDynamicContent, rerenderAllMermaidCharts, showMermaidModal, hideMermaidModal } from './render.js';
 import { applyTheme, updateMermaidTheme, toggleTheme, makeDraggable, loadButtonPosition, setThemeButtonVisibility } from './theme.js';
 import { setupImagePaste, handleImageSelect, handleImageFile, updateImagesPreview, removeImageById, clearImages, showFullSizeImage, hideImageModal } from './image.js';
-import { loadAgents, updateAgentsListUI, createNewAgent, showDeleteConfirmDialog, confirmDeleteAgent, switchAgent, updateAgentSelectionInChat, saveAgentsList, saveCurrentAgentId, handleAgentExport, handleAgentImport, loadCurrentAgentSettingsIntoState } from './agent.js';
+// Correctly import autoSaveAgentSettings with an alias
+import {
+    loadAgents,
+    updateAgentsListUI,
+    createNewAgent,
+    showDeleteConfirmDialog,
+    confirmDeleteAgent,
+    switchAgent,
+    updateAgentSelectionInChat,
+    saveAgentsList,
+    saveCurrentAgentId,
+    handleAgentExport,
+    handleAgentImport,
+    loadCurrentAgentSettingsIntoState,
+    autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
+} from './agent.js';
 import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection } from './settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction } from './chat.js';
 import { switchTab, switchSettingsSubTab, addMessageToChat, updateStreamingMessage, finalizeBotMessage, addThinkingAnimation, showConnectionStatus, updateConnectionIndicator, updateContextStatus, showToast, resizeTextarea, setupAutoresizeTextarea, updateUIElementsWithTranslations, restoreSendButtonAndInput, toggleApiKeyVisibility, showChatStatusMessage, addCopyButtonToCodeBlock, addMessageActionButtons, showCopyCodeFeedback, showCopyMessageFeedback } from './ui.js';
@@ -121,6 +136,7 @@ function _(key, replacements = {}) {
 let isUserNearBottom = true;
 const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 
+
 // --- Initialization ---
 function init() {
     console.log("Pagetalk Initializing...");
@@ -137,7 +153,7 @@ function init() {
     );
     loadAgents(
         state,
-        () => updateAgentsListUI(state, elements, currentTranslations, autoSaveAgentSettings, showDeleteConfirmDialogUI, switchAgentAndUpdateState), // Pass agent UI update
+        () => updateAgentsListUI(state, elements, currentTranslations, autoSaveAgentSettings, showDeleteConfirmDialogUI, switchAgentAndUpdateState), // Pass agent UI update. autoSaveAgentSettings here is the main.js wrapper.
         () => updateAgentSelectionInChat(state, elements), // Pass chat dropdown update
         () => saveCurrentAgentId(state), // Pass save current ID
         currentTranslations // Pass translations for default agent name
@@ -316,9 +332,11 @@ function updateAgentsListUIAllArgs() {
     updateAgentsListUI(state, elements, currentTranslations, autoSaveAgentSettings, showDeleteConfirmDialogUI, switchAgentAndUpdateState);
 }
 
-// Wrapper function for autoSaveAgentSettings
+// Wrapper function for autoSaveAgentSettings in main.js
+// This function is passed as a callback when updateAgentsListUI is called.
 function autoSaveAgentSettings(agentId, agentItemElement) {
-    autoSaveAgentSettings(agentId, agentItemElement, state, saveAgentsListState, updateAgentSelectionInChatUI, showToastUI, currentTranslations);
+    // Call the aliased imported function from agent.js
+    autoSaveAgentSettingsFromAgent(agentId, agentItemElement, state, saveAgentsListState, updateAgentSelectionInChatUI, showToastUI, currentTranslations);
 }
 
 // Wrapper function for showDeleteConfirmDialog
@@ -329,7 +347,8 @@ function showDeleteConfirmDialogUI(agentId) {
 // Wrapper function for switchAgent that also saves ID and updates state
 function switchAgentAndUpdateState(agentId) {
     switchAgent(agentId, state, saveCurrentAgentIdState);
-    // No need to call loadCurrentAgentSettingsIntoState here, switchAgent handles it.
+    // No need to explicitly call loadCurrentAgentSettingsIntoState here,
+    // switchAgent internally calls it.
 }
 
 // Wrapper function for updateAgentSelectionInChat
@@ -460,10 +479,10 @@ function requestPageContent() {
 }
 
 function requestThemeFromContentScript() {
-     try {
-        chrome.tabs && chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    try {
+        chrome.tabs && chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
             if (tabs && tabs[0] && tabs[0].id) {
-                chrome.tabs.sendMessage(tabs[0].id, {action: "requestTheme"}, (response) => {
+                chrome.tabs.sendMessage(tabs[0].id, { action: "requestTheme" }, (response) => {
                     if (chrome.runtime.lastError) {
                         // console.warn("Could not request theme from content script:", chrome.runtime.lastError.message);
                         // Apply default theme based on system preference if request fails
@@ -478,12 +497,12 @@ function requestThemeFromContentScript() {
                     }
                 });
             } else {
-                 console.warn("Could not get active tab ID to request theme.");
-                 // Apply default theme based on system preference
-                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                 state.darkMode = prefersDark;
-                 applyTheme(state.darkMode, elements);
-                 updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+                console.warn("Could not get active tab ID to request theme.");
+                // Apply default theme based on system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                state.darkMode = prefersDark;
+                applyTheme(state.darkMode, elements);
+                updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
             }
         });
     } catch (e) {
