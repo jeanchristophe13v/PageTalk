@@ -16,9 +16,9 @@ ul ul, ol ol, ul ol, ol ul {
 }
 
 :root {
-    /* 全新浅色模式 - 低调沉稳，靛蓝+灰色系 */
+    /* 全新���色模式 - 低调沉稳，靛蓝+灰色系 */
     --primary-color: #4C6EF5;       /* 主色调 - 靛蓝 5 */
-    --secondary-color: #748FFC;      /* 辅助色 - 靛蓝 3 */
+    --secondary-color: #748FFC;      /* ������色 - 靛蓝 3 */
     --background-color: #F8F9FA;    /* 背景色 - 灰色 0 */
     --card-background: #FFFFFF;     /* 卡片背景 - 白色 */
     --text-color: #343A40;          /* 主要文字 - 灰色 8 */
@@ -31,13 +31,13 @@ ul ul, ol ol, ul ol, ol ul {
     --code-background: #F1F3F5;     /* 代码块背景 - 灰色 1 */
     --code-text-color: #343A40;     /* 代码文字 - 灰色 8 */
     --code-border: #DEE2E6;         /* 代码块边框 - 灰色 3 */
-    --table-header-bg: #F1F3F5;     /* 表格头背景 - 灰色 1 */
+    --table-header-bg: #F1F3F5;     /* 表���头背景 - 灰色 1 */
     --table-even-row-bg: #F8F9FA;   /* 表格偶数行背景 - 灰色 0 */
     --button-hover-bg: rgba(76, 110, 245, 0.1); /* 主色调透明悬停 */
     --scrollbar-thumb: rgba(0, 0, 0, 0.15); /* 滚动条滑块 */
     --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25); /* 滚动条滑块悬停 */
 
-    /* 间距变量 - 缩小整体缩放 */
+    /* ���������量 - 缩小整体缩放 */
     --spacing-xs: 3px;
     --spacing-sm: 6px;
     --spacing-md: 12px;
@@ -52,14 +52,14 @@ ul ul, ol ol, ul ol, ol ul {
     --radius-full: 9999px;
 }
 
-/* --- 全新深色模式 - 低调沉稳，靛蓝+灰色系 --- */
+/* --- 全新���色模式 - 低调沉稳，靛蓝+灰色系 --- */
 body.dark-mode {
     --primary-color: #748FFC;       /* 主色调 - 靛蓝 3 */
     --secondary-color: #91A7FF;      /* 辅助色 - 靛蓝 2 */
     --background-color: #212529;    /* 背景色 - 灰色 9 */
     --card-background: #2C2E33;     /* 卡片背景 - 稍亮深灰 */
     --text-color: #e9ecefdb;          /* 主要文字 - 灰色 1 */
-    --text-secondary: #ADB5BD;      /* 次要文字 - 灰色 5 */ 
+    --text-secondary: #ADB5BD;      /* 次要文字 - 灰色 5 */
     --border-color: #343A40;        /* 边框色 - 灰色 8 (淡化) */
     --success-color: #1b9d33;       /* 成功色 - 绿色 4 */
     --error-color: #FF8787;         /* 错误色 - 红色 3 */
@@ -72,10 +72,10 @@ body.dark-mode {
     --table-even-row-bg: rgba(255, 255, 255, 0.04); /* 深色表格偶数行背景 (保持) */
     --button-hover-bg: rgba(116, 143, 252, 0.15); /* 主色调透明悬停 */
     --scrollbar-thumb: rgba(255, 255, 255, 0.2); /* 滚动条滑块 */
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3); /* 滚动条滑块悬停 */
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3); /* 滚动条滑块���停 */
 }
 
-/* --- 深色模式特定组件调整 --- */
+/* --- 深色模式���������件调整 --- */
 
 /* 输入框和选择框 */
 body.dark-mode .setting-group input[type="text"],
@@ -101,7 +101,7 @@ body.dark-mode .chat-agent-selector select:focus {
     box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2); /* 调整阴影颜色 */
 }
 body.dark-mode .chat-input textarea {
-    color: var(--text-color); /* 确保输入文本颜色正确 */
+    color: var(--text-color); /* ���保输入文本颜色正确 */
 }
 body.dark-mode .chat-input textarea::placeholder {
     color: var(--text-secondary);
@@ -168,7 +168,7 @@ body.dark-mode .user-message code {
 
 /* 消息气泡 */
 body.dark-mode .user-message {
-    background-color: var(--primary-color); /* 保持用户消息蓝色 */
+    background-color: var(--primary-color); /* 保持用户消息���色 */
     color: #FFFFFF; /* 确保文字白色 */
 }
 body.dark-mode .bot-message {
@@ -187,7 +187,7 @@ body.dark-mode .welcome-message p {
      color: var(--text-secondary);
 }
 
-/* 按钮 */
+/* ���钮 */
 body.dark-mode .quick-action-btn {
     background-color: rgba(88, 166, 255, 0.15); /* 调整透明度 */
     color: var(--primary-color);
@@ -233,28 +233,31 @@ body.dark-mode .test-btn:hover {
 /* 消息操作按钮 */
 body.dark-mode .message-action-btn,
 body.dark-mode .copy-button { /* 统一处理 */
-     background-color: rgba(70, 76, 86, 0.9); /* 深色背景 */
+     background-color: transparent; /* 深色模式默认背景透明 */
      color: var(--text-secondary);
+     border-radius: var(--radius-full); /* 确保���圆角���便悬停背景显示 */
 }
  body.dark-mode .message-action-btn:hover,
  body.dark-mode .copy-button:hover {
-     background-color: rgba(85, 93, 102, 1); /* 悬停时更深 */
+     background-color: rgba(85, 93, 102, 0.5); /* 深色模式悬停时半透明背景 */
      color: var(--primary-color);
  }
  body.dark-mode .user-message .message-action-btn,
  body.dark-mode .user-message .copy-button {
-     background-color: rgba(88, 166, 255, 0.2); /* 用户消息按钮背景 */
-     color: #C9D1D9; /* 用户消息按钮颜色 */
+     background-color: transparent; /* 深色模式用户消息按钮默认背景透明 */
+     color: #C9D1D9; /* 深色模式用户消息按钮颜色 */
+     border-radius: var(--radius-full);
  }
  body.dark-mode .user-message .message-action-btn:hover,
  body.dark-mode .user-message .copy-button:hover {
-     background-color: rgba(88, 166, 255, 0.3);
-     color: #FFFFFF; /* 悬停时更亮 */
+     background-color: rgba(88, 166, 255, 0.2); /* 深色模式用户消息按钮悬停背景 */
+     color: #FFFFFF; /* ���停时���亮 */
  }
 
 /* 滚动条 */
 body.dark-mode ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
+    border: 2px solid var(--background-color); /* Add border for dark mode too */
 }
 body.dark-mode ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
@@ -274,8 +277,8 @@ body.dark-mode .thinking-dots span {
 /* 连接状态 */
 body.dark-mode .connection-status.success {
     background-color: rgba(52, 125, 57, 0.2); /* 调整背景 */
-    border-color: rgba(52, 125, 57, 0.4); /* 调整边框 */
-    color: #46954A; /* 调整文字颜色 */
+    border-color: rgba(52, 125, 57, 0.4); /* 调整���框 */
+    color: #46954A; /* 调整���字颜色 */
 }
 body.dark-mode .connection-status.error {
     background-color: rgba(164, 14, 38, 0.2);
@@ -291,7 +294,7 @@ body.dark-mode #connection-indicator.disconnected {
     color: #BD2C3A;
 }
 
-/* 页脚标签 */
+/* ������标签 */
 body.dark-mode .footer-tab {
     background-color: rgba(88, 166, 255, 0.1);
     color: var(--text-secondary);
@@ -327,7 +330,7 @@ body.dark-mode .dialog-actions .delete-btn:hover {
     background-color: rgba(164, 14, 38, 0.3);
 }
 
-/* Toast 提示 */
+/* Toast ���示 */
 body.dark-mode .toast {
     background-color: #373E47; /* 稍亮的卡片背景 */
     color: var(--text-color);
@@ -342,22 +345,22 @@ body.dark-mode .toast.error {
     color: #FFFFFF;
 }
 
-/* 引用 */
+/* ���用 */
 body.dark-mode .bot-message blockquote,
 body.dark-mode .markdown-rendered blockquote {
     border-left-color: var(--primary-color);
     color: var(--text-secondary);
-    background-color: rgba(116, 143, 252, 0.1); /* 使用主色调的透明背景 (更新为新主色) */
+    background-color: rgba(116, 143, 252, 0.1); /* ���用主色调的透明背景 (更新为新主色) */
 }
 
-/* 深色模式下 AI 消息链接颜色 */
+/* ���色模式��� AI 消息链接颜色 */
 body.dark-mode .bot-message a {
     color: var(--primary-color); /* 使用深色模式主色调 */
-    text-decoration: underline; /* 添加下划线以便识别 */
+    text-decoration: underline; /* ��加下划线以便识别 */
 }
 body.dark-mode .bot-message a:hover {
     color: var(--secondary-color); /* 悬停时使用辅助色 */
-    text-decoration: none; /* 悬停时移除下划线 */
+    text-decoration: none; /* ���停时移除下划线 */
 }
 
 /* 水平线 */
@@ -388,9 +391,9 @@ body.dark-mode .toggle-api-key-button:hover {
     color: var(--text-color);
 }
 
-/* 滑块 */
+/* ���块 */
 body.dark-mode .slider-container input[type="range"]::-webkit-slider-thumb {
-    background-color: var(--card-background); /* 使用卡片背景色 */
+    background-color: var(--card-background); /* 使用卡���背景色 */
     border-color: var(--primary-color);
 }
 body.dark-mode .slider-container input[type="range"]::-webkit-slider-thumb:hover,
@@ -399,7 +402,7 @@ body.dark-mode .slider-container input[type="range"]:active::-webkit-slider-thum
     border-color: var(--primary-color);
 }
 
-/* 助手列表项 */
+/* 助���列表��� */
 body.dark-mode .agent-item-body {
     background-color: #282E34; /* 比卡片背景稍暗一点 */
     border-top-color: var(--border-color);
@@ -415,7 +418,7 @@ body.dark-mode .agent-item-actions .delete-btn:hover {
      background-color: rgba(164, 14, 38, 0.2);
 }
 
-/* 模型设置框 */
+/* ������������框 */
 body.dark-mode .model-settings-group-box {
     background-color: var(--background-color);
     border-color: var(--border-color);
@@ -453,7 +456,7 @@ body {
     margin: 0 auto;
 }
 
-/* 头部样式 */
+/* ���������式 */
 header {
     background-color: var(--card-background);
     color: var(--text-color);
@@ -557,7 +560,7 @@ main {
     flex-direction: column;
     gap: var(--spacing-md);
     width: 100%;
-    min-height: 0; /* 确保可以缩小 */
+    min-height: 0; /* 确保���以缩小 */
 }
 
 .welcome-message {
@@ -586,7 +589,7 @@ main {
     color: var(--text-secondary);
 }
 
-/* 快捷操作按钮样式 */
+/* ������操作按钮样式 */
 .quick-actions {
     display: flex;
     justify-content: center;
@@ -612,7 +615,7 @@ main {
     background-color: rgba(49, 123, 245, 0.15);
 }
 
-/* 消息气泡样式优化 - 减小上下内边距，自适应文本内容 */
+/* 消息气泡样式优化 - 减小上下内边距������适应文本内容 */
 .message {
     padding: 0;
     border-radius: var(--radius-lg);
@@ -630,7 +633,7 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 用户消息气泡样式优化 - 恢复为自适应大小 */
+/* 用户消息���泡样式优化 - ���复为自适应大小 */
 .user-message {
     align-self: flex-end;
     background-color: var(--primary-color);
@@ -643,7 +646,7 @@ main {
     padding: var(--spacing-sm) var(--spacing-md); /* 标准内边距，移除额外底部空间 */
     text-align: left;
     position: relative;
-    margin-bottom: 26px; /* 为气泡下方按钮留出空间 */
+    margin-bottom: 26px; /* ���气泡下方按钮留出空间 */
 }
 
 /* 消息操作按钮样式修改 - 统一样式并放置到气泡下方 */
@@ -658,7 +661,7 @@ main {
 
 /* 用户消息中按钮位置调整到气泡下方 */
 .user-message .message-actions {
-    bottom: -24px; /* 位于气泡下方 */
+    bottom: -24px; /* �����气泡下方 */
     right: 0; /* 右对齐 */
 }
 
@@ -674,7 +677,7 @@ main {
     opacity: 1;
 }
 
-/* 统一按钮样式 - 移除背景和边框 */
+/* 统一���钮样式 - 移除背景和边框 */
 .message-action-btn,
 .copy-button,
 .code-copy-button {
@@ -691,16 +694,16 @@ main {
     color: #888;
 }
 
-/* 统一按钮悬停效果 */
+/* 统一按钮���停������ */
 .message-action-btn:hover,
 .copy-button:hover,
 .code-copy-button:hover {
-    color: var(--primary-color) !important; /* 强制悬停蓝色 */
+    color: var(--primary-color) !important; /* ������悬停蓝色 */
     transform: scale(1.1); /* 轻微放大 */
     background: none; /* 确保没有背景色 */
 }
 
-/* 修改AI消息中复制按钮的位置 */
+/* 修改AI消息中复制按钮���位置 */
 /* Removed conflicting copy-button positioning rule (was lines 301-304) */
 
 /* 修改代码块中复制按钮的位置 */
@@ -724,7 +727,7 @@ main {
     padding-right: 30px;
     padding-bottom: 30px; /* 确保底部有足够空间 */
     max-width: 95%; /* 增加最大宽度从90%到95% */
-    overflow: visible; /* 确保内容不被截断 */
+    overflow: visible; /* 确保���容不被截断 */
     /* 改进整体间距 */
     line-height: 1.4; /* 减小行高 */
     padding: var(--spacing-md);
@@ -764,7 +767,7 @@ main {
     margin-top: 1em;
     margin-bottom: 0.5em;
     line-height: 1.3;
-    color: var(--text-color); /* 使用 CSS 变量，适配浅色和深色模式 */
+    color: var(--text-color); /* 使用 CSS 变量，适配浅���和深色模式 */
 }
 
 /* 优化列表样式 */
@@ -866,7 +869,7 @@ main {
 /* 修复代码块内换行符的显示 */
 .code-block code br {
     display: block; /* 确保换行符被显示为新行 */
-    content: ""; /* 必须有content属性才能正常工作 */
+    content: ""; /* ���������content属性才能正常工作 */
     margin-bottom: 0.5em; /* 行间距 */
 }
 
@@ -891,13 +894,13 @@ main {
     padding: 0;
 }
 
-/* 代码块复制按钮位于右上角 */
+/* 代码块���制按钮位于右上角 */
 .code-copy-button {
     top: 5px;
     right: 5px;
 }
 
-/* 整段文本复制按钮位于右下角 */
+/* 整���文本���制按钮位于右��角 */
 /* Removed conflicting copy-button positioning rule (was lines 500-504) */
 
 .code-block:hover .code-copy-button,
@@ -929,7 +932,7 @@ main {
 /* 流式输出光标样式调整 */
 .streaming-cursor {
     display: inline-block;
-    /* 修改宽度，使其更细 */
+    /* 修改宽度，������更细 */
     width: 2px;
     /* 高度使用 em 单位，使其与字体大小关联 */
     height: 1em;
@@ -937,7 +940,7 @@ main {
     margin-left: 1px; /* 稍微调整间距 */
     /* 使用新的呼吸动画 */
     animation: breathing 1.5s infinite ease-in-out;
-    vertical-align: text-bottom; /* 调整垂直对齐方式 */
+    vertical-align: text-bottom; /* ���整垂直对齐方式 */
 }
 
 /* 定义呼吸动画 */
@@ -996,7 +999,7 @@ main {
     }
 }
 
-/* 复制按钮样式 */
+/* ���制按钮样式 */
 /* Removed conflicting copy-button positioning rule (was lines 603-622) */
 
 .copy-button:hover {
@@ -1010,7 +1013,7 @@ main {
     height: 14px;
 }
 
-/* 仅在消息上悬停时显示复制按钮 */
+/* ���在���息上悬停时显示复制按钮 */
 .message:hover .copy-button {
     opacity: 0.7;
 }
@@ -1075,17 +1078,17 @@ main {
     flex: 1;
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 2px 14px; /* 减少垂直内边距 */
+    padding: 2px 14px; /* 减��垂直内边距 */
     resize: none;
     min-height: 20px; /* 减少默认高度 */
-    max-height: 150px; /* 固定最大高度，大约是原来的4倍 */
+    max-height: 150px; /* ���定最大高度，大约是原来的4倍 */
     font-size: clamp(12px, 3.5vw, 14px);
     transition: all 0.3s ease;
     outline: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     min-width: 0; /* 允许文本框在缩小时减少宽度 */
     overflow-y: auto; /* 启用垂直滚动 */
-    line-height: 1.4; /* 确保行高合理 */
+    line-height: 1.4; /* 确保行高���理 */
 }
 
 .chat-input textarea:focus {
@@ -1095,7 +1098,7 @@ main {
 
 /* 优化输入框滚动条 */
 .chat-input textarea::-webkit-scrollbar {
-    width: 5px;
+    width: 6px; /* Increased from 5px */
 }
 
 .chat-input textarea::-webkit-scrollbar-track {
@@ -1103,12 +1106,12 @@ main {
 }
 
 .chat-input textarea::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--scrollbar-thumb); /* Use existing variable from dark/light mode */
     border-radius: var(--radius-full);
 }
 
 .chat-input textarea::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--scrollbar-thumb-hover); /* Use existing variable */
 }
 
 .chat-input button {
@@ -1143,7 +1146,7 @@ main {
     /* 稍微增大按钮宽度和高度 */
     width: clamp(26px, 6.5vw, 30px);
     height: clamp(26px, 6.5vw, 30px);
-    /* 稍微增大按钮内图标大小 */
+    /* 稍微增大按钮内���标���小 */
     svg {
         width: clamp(13px, 3.5vw, 15px);
         height: clamp(13px, 3.5vw, 15px);
@@ -1347,7 +1350,7 @@ body.dark-mode .export-controls .action-button:hover {
 /* 移除特定背景色，使其继承 .settings-container 的背景 */
 .model-settings-group-box {
     /* background-color: var(--background-color); */ /* 确认移除 */
-    border-radius: var(--radius-lg); /* 改为 16px 圆角 */
+    border-radius: var(--radius-lg); /* ������ 16px ���角 */
     margin-bottom: var(--spacing-lg); /* Space before save button */
     padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
     border: 1px solid var(--border-color);
@@ -1416,7 +1419,7 @@ body.dark-mode .export-controls .action-button:hover {
     margin: var(--spacing-sm) 0;
 }
 
-/* 基础进度条样式，移除颜色渐变 */
+/* ������进度条样式，移除颜色渐变 */
 .slider-container input[type="range"] {
     flex: 1;
     height: 4px;
@@ -1451,7 +1454,7 @@ body.dark-mode .export-controls .action-button:hover {
     border-color: var(--primary-color);
 }
 
-/* 移除颜色滑块样式 */
+/* 移除颜色���块���式 */
 .color-slider::-webkit-slider-runnable-track {
     background: var(--border-color);
     height: 4px;
@@ -1540,7 +1543,7 @@ body.dark-mode .export-controls .action-button:hover {
      text-align: right; /* Align text right */
 }
 
-/* Agent 设置的保存按钮状态显示 (Keep original connection-status styles) */
+/* Agent 设置���������按钮状态显示 (Keep original connection-status styles) */
 .connection-status {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
@@ -1583,7 +1586,7 @@ footer {
 
 .status-bar {
     display: flex;
-    gap: var(--spacing-md); 
+    gap: var(--spacing-md);
     align-items: center;
     color: var(--text-secondary);
 }
@@ -1662,32 +1665,34 @@ body.dark-mode .footer-tab.active {
         padding: var(--spacing-xs);
         font-size: 12px;
     }
-    
+
     .message {
         max-width: 98%; /* 在窄屏上进一步增加最大宽度 */
     }
-    
+
     .user-message, .bot-message {
         max-width: 98%; /* 在窄屏上进一步增加最大宽度 */
     }
 }
 
-/* 滚动条样式 */
+/* �����条样式 */
 ::-webkit-scrollbar {
-    width: 4px;
+    width: 10px; /* Increased from 8px */
+    height: 10px; /* Increased from 8px */
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: transparent; /* Keep track transparent */
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--scrollbar-thumb); /* Use existing variable */
     border-radius: var(--radius-full);
+    border: 2px solid var(--background-color); /* Add a border to make it look slightly thinner than 8px but easier to grab */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--scrollbar-thumb-hover); /* Use existing variable */
 }
 
 /* 加载动画 */
@@ -1742,8 +1747,8 @@ body.dark-mode .footer-tab.active {
     /* flex-wrap: wrap; */ /* Temporarily remove to test layout stability */
 }
 
-/* 修复选择框样式 */
-.chat-model-selector, 
+/* ���复选择框样式 */
+.chat-model-selector,
 .chat-agent-selector {
     display: flex;
     align-items: center;
@@ -1755,17 +1760,17 @@ body.dark-mode .footer-tab.active {
 
 /* 调整模型选择框宽度 - 增加宽度 */
 .chat-model-selector {
-    max-width: 55%; /* 从45%增加到60% */
+    max-width: 55%; /* ���45%增加到60% */
     flex: 3; /* 增加弹性比例 */
 }
 
 /* 调整代理选择框宽度 - 减少宽度 */
 .chat-agent-selector {
     max-width: 30%; /* 从45%减少到35% */
-    flex: 1; /* 减少弹性比例 */
+    flex: 1; /* 减少弹性���例 */
 }
 
-.chat-model-selector label, 
+.chat-model-selector label,
 .chat-agent-selector label {
     font-size: clamp(11px, 3vw, 12px);
     color: var(--text-secondary);
@@ -1773,7 +1778,7 @@ body.dark-mode .footer-tab.active {
     flex-shrink: 0; /* 防止标签被压缩 */
 }
 
-.chat-model-selector select, 
+.chat-model-selector select,
 .chat-agent-selector select {
     padding: clamp(2px, 1vw, var(--spacing-xs)) clamp(4px, 1.5vw, var(--spacing-sm));
     border-radius: var(--radius-md);
@@ -1823,7 +1828,7 @@ body.dark-mode .footer-tab.active {
     /* stroke-width 和 transition 已移除 */
 }
 
-/* 助手列表样式 */
+/* �����������样式 */
 .agents-list-container {
     background-color: var(--background-color);
     border-radius: var(--radius-lg); /* 改为 16px 圆角 */
@@ -1852,10 +1857,10 @@ body.dark-mode .footer-tab.active {
 /* --- Agent 操作按钮栏 --- */
 .agent-actions-bar {
     display: flex;
-    justify-content: space-between; /* 将左右两组按钮分开 */
+    justify-content: space-between; /* ���������两组按钮分开 */
     align-items: center;
     padding: var(--spacing-sm) 0; /* 上下间距，左右无 */
-    margin-bottom: var(--spacing-md); /* 与下方列表的间距 */
+    margin-bottom: var(--spacing-md); /* ���下���列表的间距 */
     /* border-bottom: 1px solid var(--border-color); */ /* Optional: Add separator line if needed */
 }
 
@@ -1916,8 +1921,8 @@ body.dark-mode .footer-tab.active {
 
 /* 加粗添加按钮的图标 */
 .icon-btn.add-btn svg {
-    stroke-width: 2; /* 加粗线条 */
-    width: clamp(18px, 5vw, 20px); /* 再次增大添加按钮图标尺寸 */
+    stroke-width: 2; /* ���粗线条 */
+    width: clamp(18px, 5vw, 20px); /* 再次增大添加���钮���标尺寸 */
     height: clamp(18px, 5vw, 20px); /* 再次增大添加按钮图标尺寸 */
 }
 
@@ -2099,7 +2104,7 @@ body.dark-mode .footer-tab.active {
 /* .agent-edit-container { ... } */
 /* .agent-actions { ... } */
 
-/* 删除确认对话框 */
+/* 删除确认对话��� */
 .dialog-overlay {
     position: fixed;
     top: 0;
@@ -2175,7 +2180,7 @@ body.dark-mode .footer-tab.active {
     background-color: rgba(234, 67, 53, 0.2);
 }
 
-/* 状态提示样式 */
+/* ���态提示样式 */
 .toast {
     position: fixed;
     bottom: 60px; /* 调整位置，使其更高 */
@@ -2208,16 +2213,16 @@ body.dark-mode .footer-tab.active {
     color: white;
 }
 
-/* 响应式样式调整 */
+/* ������式样式调整 */
 @media (max-width: 400px) {
     .chat-header {
         flex-wrap: wrap;
     }
-    
+
     .chat-model-selector, .chat-agent-selector {
         flex: 1;
     }
-    
+
     .chat-model-selector select, .chat-agent-selector select {
         width: 100%;
     }
@@ -2235,7 +2240,7 @@ body.dark-mode .footer-tab.active {
     font-size: 13px;
 }
 
-/* 剩余的现有样式保持不变 */
+/* 剩余的现有样式保持������ */
 .image-preview-container {
     margin: var(--spacing-xs) var(--spacing-md);
     border-radius: var(--radius-md);
@@ -2301,7 +2306,7 @@ body.dark-mode .footer-tab.active {
     height: 16px;
 }
 
-/* 多图片布局样式 */
+/* 多������������样式 */
 .images-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -2337,7 +2342,7 @@ body.dark-mode .footer-tab.active {
     opacity: 1;
 }
 
-/* 用户消息中的图片样式 */
+/* ���������息中的图片样式 */
 .user-message .message-images {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -2415,7 +2420,7 @@ body.dark-mode .footer-tab.active {
     text-decoration: none;
 }
 
-/* 图片全屏预览模态框样式优化 */
+/* 图片全屏预览模态框样式���化 */
 .image-modal {
     display: none;
     position: fixed;
@@ -2469,28 +2474,28 @@ body.dark-mode .footer-tab.active {
 
 /* 新增响应式调整 - 根据宽度自适应 */
 @media (max-width: 250px) {
-    /* 极窄侧边栏时的调整 */
+    /* ������侧边栏时的调整 */
     .tabs, .footer-tabs {
         gap: var(--spacing-xs);
     }
-    
+
     .tab, .footer-tab {
         padding: 2px 4px;
         font-size: 11px;
     }
-    
+
     .message {
         max-width: 95%;
     }
-    
+
     .chat-input {
         flex-wrap: wrap;
     }
-    
+
     .chat-input textarea {
         margin-bottom: var(--spacing-xs);
     }
-    
+
     .chat-model-selector label, .chat-agent-selector label {
         display: none; /* 隐藏标签，节省空间 */
     }
@@ -2501,11 +2506,11 @@ body.dark-mode .footer-tab.active {
     .chat-input {
         padding: var(--spacing-xs);
     }
-    
+
     .welcome-message {
         padding: var(--spacing-md);
     }
-    
+
     .settings-container {
         padding: var(--spacing-md);
         margin: var(--spacing-md) var(--spacing-xs);
@@ -2578,8 +2583,8 @@ body.dark-mode .footer-tab.active {
 }
 
 /* 确保所有内容容器不会溢出父容器 */
-.tab-content, 
-.chat-container, 
+.tab-content,
+.chat-container,
 .chat-messages,
 .chat-input,
 main,
@@ -2603,14 +2608,14 @@ img {
     height: auto;
 }
 
-/* 确保所有按钮在窄屏上能够正常显示 */
+/* 确保所有按钮在窄屏上���够正常显示 */
 button {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 表格样式 */
+/* ���格样式 */
 .markdown-table {
     /* 重置所有属性，依赖markdown-it的原生表格样式 */
     all: revert;
@@ -2630,7 +2635,7 @@ button {
     white-space: break-spaces;
 }
 
-/* 强化内联代码块可见性 */
+/* 强化内联���码块������性 */
 .user-message code {
     background-color: rgba(255, 255, 255, 0.3);
     color: white;
@@ -2681,7 +2686,7 @@ button {
     background-color: rgba(0, 0, 0, 0.025);
 }
 
-/* 确保表格在小屏幕上可滚动 */
+/* ���保表格在小屏幕上可滚动 */
 .bot-message table,
 .markdown-rendered table {
     display: table;
@@ -2690,7 +2695,7 @@ button {
 }
 
 /* 优化无序和有序列表的样式 */
-.bot-message ul, 
+.bot-message ul,
 .bot-message ol,
 .markdown-rendered ul,
 .markdown-rendered ol {
@@ -2733,7 +2738,7 @@ button {
     font-family: Consolas, 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
 }
 
-/* 优化引用样式 */
+/* 优化引用���式 */
 .bot-message blockquote,
 .markdown-rendered blockquote {
     border-left: 4px solid var(--primary-color);
@@ -2763,7 +2768,7 @@ button {
     border: 0;
 }
 
-/* 确保表格滚动容器工作正常 */
+/* ���保表格滚动容器工作正常 */
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -2794,7 +2799,7 @@ button {
     text-align: left;
     background-color: var(--primary-color);
     color: white;
-    white-space: pre-wrap; /* 优化换行显示 */
+    white-space: pre-wrap; /* 优化���行显示 */
 }
 
 .bot-message td,
@@ -2809,13 +2814,13 @@ button {
     background-color: rgba(0, 0, 0, 0.025);
 }
 
-/* 修复列表间距 */
+/* 修复列表���距 */
 .bot-message ul,
 .bot-message ol,
 .markdown-rendered ul,
 .markdown-rendered ol {
-    margin: 0.6em 0; /* 减小列表外边距 */
-    padding-left: 1.8em; /* 略微减小缩进 */
+    margin: 0.6em 0; /* 减小列表������距 */
+    padding-left: 1.8em; /* 略微减小���进 */
 }
 
 /* 为markdown-it修改表格包装器 */
@@ -2825,25 +2830,25 @@ button {
     border-collapse: collapse;
 }
 
-/* 自动为markdown-it渲染的表格添加包装容器 */
+/* 自动为markdown-it������的表格添加包装容器 */
 .markdown-rendered table {
     display: table;
     width: 100%;
 }
 
-/* 列表和段落间距微调 */
+/* 列表和段落间距������ */
 .bot-message p + ul,
 .bot-message p + ol,
 .markdown-rendered p + ul,
 .markdown-rendered p + ol {
-    margin-top: 0.4em; /* 紧跟段落的列表上边距减小 */
+    margin-top: 0.4em; /* ������段落的列表上边距减小 */
 }
 
 .bot-message ul + p,
 .bot-message ol + p,
 .markdown-rendered ul + p,
 .markdown-rendered ol + p {
-    margin-top: 0.6em; /* 列表后的段落上边距减小 */
+    margin-top: 0.6em; /* ���表���的段落上边距减小 */
 }
 
 /* 消息操作按钮样式 */
@@ -2905,7 +2910,7 @@ body.dark-mode .message-action-btn,
 body.dark-mode .copy-button {
      background-color: transparent; /* 深色模式默认背景透明 */
      color: var(--text-secondary);
-     border-radius: var(--radius-full); /* 确保有圆角以便悬停背景显示 */
+     border-radius: var(--radius-full); /* 确保������角以便悬停背景显示 */
 }
  body.dark-mode .message-action-btn:hover,
  body.dark-mode .copy-button:hover {
@@ -3068,7 +3073,7 @@ body.dark-mode .copy-button {
     border-collapse: collapse;
 }
 
-/* 新增：聊天界面状态消息样式 */
+/* 新增������天界面状态消息样式 */
 .chat-status {
     padding: var(--spacing-sm) var(--spacing-md);
     margin: 0 auto var(--spacing-sm) auto; /* 上0 左右auto 下SM */
@@ -3126,7 +3131,7 @@ body.dark-mode .hint a {
     margin-top: 0.6em; /* 列表后的段落上边距减小 */
 }
 
-/* 隐藏数字输入框的上下箭头 */
+/* 隐藏���������入框的上下箭头 */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -3138,7 +3143,7 @@ input[type=number] {
   appearance: textfield; /* Chrome, Edge, Safari, Opera */
 }
 
-/* --- 恢复 Agent 设置区域的边框颜色 --- */
+/* --- ������ Agent ������区域的边框颜色 --- */
 
 /* 浅色模式 */
 .agent-item {
@@ -3148,7 +3153,7 @@ input[type=number] {
     border-top-color: #DEE2E6; /* 恢复 Body 顶部边框 */
 }
 .agent-item-body .setting-group {
-    border-bottom-color: #DEE2E6; /* 恢复组内分割线 */
+    border-bottom-color: #DEE2E6; /* 恢复���内���割线 */
 }
 .agent-item-body input[type="text"],
 .agent-item-body input[type="number"],
@@ -3312,7 +3317,7 @@ body.dark-mode .agent-item-body textarea:focus {
 /* } */
 
 body.dark-mode #send-message.stop-streaming:hover {
-    background-color: var(--error-color); /* Hover becomes red */
+    background-color: var(--error-color);
     color: white;
 }
 

@@ -31,6 +31,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     if (state.isStreaming) {
         console.warn("Cannot send message while streaming.");
+        if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning');
         return;
     }
     if (!userMessage && state.images.length === 0) return;
@@ -211,16 +212,19 @@ export function deleteMessage(messageId, state) {
  * @param {function} addThinkingAnimationCallback - Callback (lambda from main.js for ui.js#addThinkingAnimation)
  * @param {function} restoreSendButtonAndInputCallback - Callback
  * @param {function} abortStreamingCallback - Callback
+ * @param {function} showToastCallback - Callback to show toast notifications
  */
-export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback) {
+export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, showToastCallback) {
     if (state.isStreaming) {
         console.warn("Cannot regenerate while streaming.");
+        if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning');
         return;
     }
 
     const clickedMessageIndex = state.chatHistory.findIndex(msg => msg.id === messageId);
     if (clickedMessageIndex === -1) {
         console.error("Regenerate failed: Message not found in history.");
+        if (showToastCallback) showToastCallback(_('regenerateFailedNotFound', {}, currentTranslations), 'error');
         return;
     }
 
@@ -240,6 +244,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
         userIndex = aiIndex - 1; // Assume user message is directly before
         if (userIndex < 0 || state.chatHistory[userIndex].role !== 'user') {
             console.error("Regenerate failed: Could not find preceding user message.");
+            if (showToastCallback) showToastCallback(_('regenerateFailedNoUserMessage', {}, currentTranslations), 'error');
             return; // Cannot regenerate if user message isn't directly before
         }
     }
@@ -247,6 +252,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
     userMessageElement = document.querySelector(`.message[data-message-id="${state.chatHistory[userIndex].id}"]`);
     if (!userMessageElement) {
         console.error("Regenerate failed: Could not find user message DOM element.");
+        if (showToastCallback) showToastCallback(_('regenerateFailedUIDiscrepancy', {}, currentTranslations), 'error');
         return;
     }
 
@@ -296,7 +302,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
             finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content),
             clearImages: () => { }, // Don't clear images on regenerate
-            showToast: showToastCallback // Assuming showToast is passed correctly
+            showToast: showToastCallback // Pass the received showToastCallback
         };
 
         // Call API to insert response
@@ -349,11 +355,14 @@ function extractPartsFromMessage(message) {
  * Aborts the current streaming API request.
  * @param {object} state - Global state reference
  * @param {function} restoreSendButtonAndInputCallback - Callback
+ * @param {function} showToastCallback - Callback to show toast notifications
+ * @param {object} currentTranslations - Translations object
  */
-export function abortStreaming(state, restoreSendButtonAndInputCallback) {
+export function abortStreaming(state, restoreSendButtonAndInputCallback, showToastCallback, currentTranslations) {
     if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {
         console.log("Aborting API request...");
         window.GeminiAPI.currentAbortController.abort();
+        if (showToastCallback) showToastCallback(_('streamingAborted', {}, currentTranslations), 'info');
         // Controller cleanup happens in api.js finally block
     } else {
         console.warn("No active AbortController found to abort.");

@@ -129,8 +129,8 @@ const elements = {
     confirmDelete: document.getElementById('confirm-delete'),
     cancelDelete: document.getElementById('cancel-delete'),
     importAgentsBtn: document.getElementById('import-agents'),
-    exportAgentsBtn: document.getElementById('export-agents'),
     importAgentInput: document.getElementById('import-agent-input'),
+    exportAgentsBtn: document.getElementById('export-agents'),
     // Settings - Model
     apiKey: document.getElementById('api-key'),
     modelSelection: document.getElementById('model-selection'),
@@ -442,7 +442,8 @@ function regenerateMessageUI(messageId) {
         // addThinkingAnimationCallback: uses live isUserNearBottom due to closure
         (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), // Pass the original ui.js function
         restoreSendButtonAndInputUI,
-        abortStreamingUI
+        abortStreamingUI,
+        showToastUI // Pass showToastUI as the showToastCallback
         // No longer passing isUserNearBottom directly to regenerateMessageAction
     );
 }
@@ -619,6 +620,26 @@ window.addCopyButtonToCodeBlock = addCopyButtonToCodeBlockUI; // Expose wrappers
 window.addMessageActionButtons = addMessageActionButtonsUI;
 // window.updateStreamingMessage and window.finalizeBotMessage are set in init()
 window.showToast = showToastUI; // Expose toast globally if needed
+
+// ...
+// 假设这是在“首次操作”完成，并且聊天消息等已添加到DOM之后
+function onFirstOperationComplete() {
+    // ... ���������辑 ...
+
+    // 尝试强制重绘/回流聊天头部来修正选择框位置
+    const chatHeader = elements.chatMessages.previousElementSibling; // 假设 .chat-header 就在 .chat-messages 前面
+    if (chatHeader && chatHeader.classList.contains('chat-header')) {
+        // 一种轻微强制回流的方法
+        chatHeader.style.display = 'none';
+        void chatHeader.offsetHeight; // ������ offsetHeight 会强制浏览器回流
+        chatHeader.style.display = 'flex'; // 恢复原状
+    }
+    // 或者，如果确认 resizeTextarea 能解决且无明显副作用，也可以���用���
+    // if (elements.userInput) {
+    //     resizeTextarea(elements);
+    // }
+}
+// ...
 
 // --- Start Application ---
 document.addEventListener('DOMContentLoaded', init);
