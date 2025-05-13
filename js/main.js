@@ -65,7 +65,7 @@ const state = {
     isConnected: false,
     images: [],
     darkMode: false,
-    language: 'zh-CN',
+    language: 'en', // Changed default language to English
     isStreaming: false,
     // userHasSetPreference: false, // Removed
 };
@@ -175,7 +175,7 @@ function init() {
     loadAgents(
         state,
         () => updateAgentsListUI(state, elements, currentTranslations, autoSaveAgentSettings, showDeleteConfirmDialogUI, switchAgentAndUpdateState), // Pass agent UI update. autoSaveAgentSettings here is the main.js wrapper.
-        () => updateAgentSelectionInChat(state, elements), // Pass chat dropdown update
+        () => updateAgentSelectionInChat(state, elements, currentTranslations), // Pass chat dropdown update with translations
         () => saveCurrentAgentId(state), // Pass save current ID
         currentTranslations // Pass translations for default agent name
     );
@@ -566,13 +566,14 @@ function loadAndApplyTranslations(language) {
         console.error('Translations object not found.');
         return;
     }
-    currentTranslations = translations[language] || translations['zh-CN']; // Fallback
+    currentTranslations = translations[language] || translations['en']; // Fallback to English
     state.language = language; // Ensure state is updated
     console.log(`Applying translations for: ${language}`);
     updateUIElementsWithTranslations(currentTranslations); // Update static UI text
 
     // Update dynamic parts that depend on translations
     updateAgentsListUIAllArgs(); // Re-render agent list with translated labels/placeholders
+    updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
     updateConnectionIndicator(state.isConnected, elements, currentTranslations); // Re-render connection status text
     // Update context status based on current state.pageContext
     let contextKey = 'contextStatusNone';

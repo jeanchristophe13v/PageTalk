@@ -337,12 +337,14 @@ body.dark-mode .toast {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 body.dark-mode .toast.success {
-    background-color: var(--success-color);
-    color: #FFFFFF;
+    background-color: rgba(52, 125, 57, 0.2); /* Match dark-mode .chat-status.success */
+    color: #46954A;                       /* Match dark-mode .chat-status.success */
+    border: 1px solid rgba(52, 125, 57, 0.4); /* Match dark-mode .chat-status.success */
 }
 body.dark-mode .toast.error {
-    background-color: var(--error-color);
-    color: #FFFFFF;
+    background-color: rgba(164, 14, 38, 0.2); /* Match dark-mode .chat-status.error */
+    color: #BD2C3A;                        /* Match dark-mode .chat-status.error */
+    border: 1px solid rgba(164, 14, 38, 0.4);   /* Match dark-mode .chat-status.error */
 }
 
 /* ���用 */
@@ -2196,6 +2198,10 @@ body.dark-mode .footer-tab.active {
     opacity: 0;
     transition: all 0.3s ease;
     pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
 }
 
 .toast.show {
@@ -2204,13 +2210,15 @@ body.dark-mode .footer-tab.active {
 }
 
 .toast.success {
-    background-color: var(--success-color);
-    color: white;
+    background-color: rgba(52, 168, 83, 0.1); /* Match .chat-status.success */
+    color: var(--success-color);           /* Match .chat-status.success */
+    border: 1px solid rgba(52, 168, 83, 0.3); /* Match .chat-status.success */
 }
 
 .toast.error {
-    background-color: var(--error-color);
-    color: white;
+    background-color: rgba(234, 67, 53, 0.1); /* Match .chat-status.error */
+    color: var(--error-color);            /* Match .chat-status.error */
+    border: 1px solid rgba(234, 67, 53, 0.3);  /* Match .chat-status.error */
 }
 
 /* ������式样式调整 */

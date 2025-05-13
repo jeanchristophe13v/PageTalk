@@ -30,7 +30,7 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         if (elements.chatModelSelection) elements.chatModelSelection.value = state.model;
 
         // Language
-        state.language = syncResult.language || 'zh-CN'; // Default to Chinese
+        state.language = syncResult.language || 'en'; // Default to English
         if (elements.languageSelect) elements.languageSelect.value = state.language;
         loadAndApplyTranslationsCallback(state.language); // Apply translations
 
@@ -59,7 +59,7 @@ export async function saveModelSettings(showToastNotification = true, state, ele
     const model = elements.modelSelection.value;
 
     if (!apiKey) {
-        showConnectionStatusCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
+        showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error'); // Changed to showToastCallback
         return;
     }
 
@@ -78,12 +78,12 @@ export async function saveModelSettings(showToastNotification = true, state, ele
         chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, () => {
             if (chrome.runtime.lastError) {
                 console.error("Error saving model settings:", chrome.runtime.lastError);
-                showConnectionStatusCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
+                showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
                 state.isConnected = false; // Revert status
             } else {
-                showConnectionStatusCallback(testResult.message, 'success'); // Show API success message
+                showToastCallback(testResult.message, 'success'); // Changed to showToastCallback for API success message
                 if (showToastNotification) {
-                    // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // Optional: General saved toast
+                    // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // This was already a toast, can be enabled if a general "Saved" is desired on top of API verification
                 }
                 // Sync chat model selector
                 if (elements.chatModelSelection) {
@@ -95,7 +95,7 @@ export async function saveModelSettings(showToastNotification = true, state, ele
     } else {
         // Test failed
         state.isConnected = false;
-        showConnectionStatusCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error');
+        showToastCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error'); // Changed to showToastCallback
         updateConnectionIndicatorCallback();
     }
 

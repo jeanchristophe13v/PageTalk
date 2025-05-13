@@ -30,17 +30,20 @@ function _(key, replacements = {}, translations) {
  */
 export function loadAgents(state, updateAgentsListCallback, updateAgentSelectionInChatCallback, saveCurrentAgentIdCallback, currentTranslations) {
     chrome.storage.sync.get(['agents', 'currentAgentId'], (result) => {
+        console.log('Storage get result:', result); // Add logging
         if (result.agents && Array.isArray(result.agents) && result.agents.length > 0) {
             state.agents = result.agents;
         } else {
             // Create default agent if none exist
             const defaultAgent = {
                 id: 'default', // Keep 'default' ID for the initial one
-                name: _('defaultAgentName', {}, currentTranslations),
+                name: 'defaultAgentName', // Store the translation key
                 ...defaultAgentSettings
             };
             state.agents = [defaultAgent];
         }
+
+        console.log('Loaded agents:', state.agents); // Add logging
 
         // Set current agent ID
         if (result.currentAgentId && state.agents.find(a => a.id === result.currentAgentId)) {
@@ -91,7 +94,7 @@ export function updateAgentsListUI(state, elements, currentTranslations, autoSav
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'agent-item-name';
-        nameSpan.textContent = agent.name;
+        nameSpan.textContent = _(agent.name, {}, currentTranslations);
 
         const expandIcon = document.createElement('span');
         expandIcon.className = 'expand-icon';
@@ -122,7 +125,7 @@ export function updateAgentsListUI(state, elements, currentTranslations, autoSav
         nameGroup.className = 'setting-group';
         nameGroup.innerHTML = `
             <label for="agent-name-${agent.id}">${_('agentNameLabel', {}, currentTranslations)}</label>
-            <input type="text" id="agent-name-${agent.id}" value="${agent.name}">
+            <input type="text" id="agent-name-${agent.id}" value="${_(agent.name, {}, currentTranslations)}">
         `;
         nameGroup.querySelector('input').addEventListener('input', () => {
             clearTimeout(agentItem._saveTimeout);
@@ -273,7 +276,7 @@ export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgen
 
     // Update state object
     const agentToUpdate = state.agents[agentIndex];
-    agentToUpdate.name = newName;
+    agentToUpdate.name = newName; // Save the raw name (user input)
     agentToUpdate.systemPrompt = newSystemPrompt;
     agentToUpdate.temperature = newTemperature;
     agentToUpdate.topP = newTopP;
@@ -293,7 +296,7 @@ export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgen
     // Update UI elements
     const nameSpanInHeader = agentItemElement.querySelector('.agent-item-header .agent-item-name');
     if (nameSpanInHeader) {
-        nameSpanInHeader.textContent = newName;
+        nameSpanInHeader.textContent = _(newName, {}, currentTranslations);
     }
     updateAgentSelectionInChatCallback(); // Update dropdown in chat tab
 
@@ -413,7 +416,7 @@ export function switchAgent(agentId, state, saveCurrentAgentIdCallback) {
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  */
-export function updateAgentSelectionInChat(state, elements) {
+export function updateAgentSelectionInChat(state, elements, currentTranslations) { // Add currentTranslations parameter
     if (!elements.chatAgentSelection) return;
     const currentVal = elements.chatAgentSelection.value; // Store current selection
     elements.chatAgentSelection.innerHTML = '';
@@ -421,7 +424,7 @@ export function updateAgentSelectionInChat(state, elements) {
     state.agents.forEach(agent => {
         const option = document.createElement('option');
         option.value = agent.id;
-        option.textContent = agent.name;
+        option.textContent = _(agent.name, {}, currentTranslations);
         elements.chatAgentSelection.appendChild(option);
     });
 
