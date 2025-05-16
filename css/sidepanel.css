@@ -2220,6 +2220,10 @@ body.dark-mode .footer-tab.active {
     color: var(--error-color);            /* Match .chat-status.error */
     border: 1px solid rgba(234, 67, 53, 0.3);  /* Match .chat-status.error */
 }
+/* 仅将错误类 toast（如API密钥未设置）整体上移 */
+.toast.error {
+    bottom: 160px !important;
+}
 
 /* ������式样式调整 */
 @media (max-width: 400px) {

@@ -303,6 +303,17 @@ function setupEventListeners() {
     }
 }
 
+// --- 修复：API 密钥输入框清空时同步删除缓存 ---
+if (elements.apiKey) {
+    elements.apiKey.addEventListener('input', () => {
+        if (elements.apiKey.value.trim() === '') {
+            chrome.storage.sync.remove('apiKey', () => {
+                state.apiKey = '';
+            });
+        }
+    });
+}
+
 // --- Event Handlers & Triggers ---
 
 function handleUserInputKeydown(e) {

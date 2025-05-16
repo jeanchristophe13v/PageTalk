@@ -37,11 +37,8 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     if (!userMessage && state.images.length === 0) return;
 
     if (!state.apiKey) {
-        // Use the connection status display in the *settings* tab for API key errors
-        showConnectionStatusCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
-        // Optionally switch to the settings tab/model subtab here if desired
-        // switchTab('settings'); // Assuming switchTab is available or passed in
-        // switchSettingsSubTab('model'); // Assuming switchSettingsSubTab is available
+        // Show API key missing error as a toast on the chat page (首页下方)
+        if (showToastCallback) showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
         return;
     }
 
