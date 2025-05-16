@@ -392,7 +392,7 @@ function switchAgentAndUpdateState(agentId) {
 
 // Wrapper function for updateAgentSelectionInChat
 function updateAgentSelectionInChatUI() {
-    updateAgentSelectionInChat(state, elements);
+    updateAgentSelectionInChat(state, elements, currentTranslations);
 }
 
 // Wrapper function for saveAgentsList
