@@ -81,9 +81,9 @@ export async function saveModelSettings(showToastNotification = true, state, ele
                 showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
                 state.isConnected = false; // Revert status
             } else {
-                showToastCallback(testResult.message, 'success'); // Changed to showToastCallback for API success message
                 if (showToastNotification) {
-                    // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // This was already a toast, can be enabled if a general "Saved" is desired on top of API verification
+                    showToastCallback(testResult.message, 'success'); // 仅在需要时弹出API验证成功提示
+                    // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // 可选：额外的“已保存”提示
                 }
                 // Sync chat model selector
                 if (elements.chatModelSelection) {
