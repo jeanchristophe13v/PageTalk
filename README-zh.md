@@ -39,9 +39,10 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 ## 安装
 
 **注意:** 需要在开发者模式下以“加载已解压的扩展程序”方式安装。
+
 **获取 API 密钥:** 在使用插件前，请先从 [Google AI Studio](https://aistudio.google.com) 获取您的 Gemini API 密钥。
 
-1. **克隆仓库或直接下载 ZIP**
+1. **克隆仓库或直接下载 ZIP 并解压**
 ```
 git clone https://github.com/jeanchristophe13v/PageTalk.git
 ```

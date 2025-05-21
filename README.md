@@ -41,9 +41,11 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 ## Installation
 
 **Note:** Load as an unpacked extension in developer mode.
+
 **Get API Key:** Before using the extension, please obtain your Gemini API key from [Google AI Studio](https://aistudio.google.com).
 
-1. **clone the repository or download the ZIP**
+
+1. **clone the repository or download the ZIP and unzip**
 ```
 git clone https://github.com/jeanchristophe13v/PageTalk.git
 ```
