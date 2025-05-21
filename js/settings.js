@@ -68,40 +68,48 @@ export async function saveModelSettings(showToastNotification = true, state, ele
     elements.saveModelSettings.textContent = _('saving', {}, currentTranslations);
     showConnectionStatusCallback(_('testingConnection', {}, currentTranslations), 'info');
 
-    const testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model);
+    let testResult;
+    try {
+        testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model);
 
-    if (testResult.success) {
-        state.apiKey = apiKey;
-        state.model = model;
-        state.isConnected = true;
+        if (testResult.success) {
+            state.apiKey = apiKey;
+            state.model = model;
+            state.isConnected = true;
 
-        chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, () => {
-            if (chrome.runtime.lastError) {
-                console.error("Error saving model settings:", chrome.runtime.lastError);
-                showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
-                state.isConnected = false; // Revert status
-            } else {
-                if (showToastNotification) {
-                    showToastCallback(testResult.message, 'success'); // 仅在需要时弹出API验证成功提示
-                    // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // 可选：额外的“已保存”提示
+            chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error("Error saving model settings:", chrome.runtime.lastError);
+                    showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
+                    state.isConnected = false; // Revert status
+                } else {
+                    if (showToastNotification) {
+                        showToastCallback(testResult.message, 'success'); // 仅在需要时弹出API验证成功提示
+                        // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // 可选：额外的“已保存”提示
+                    }
+                    // Sync chat model selector
+                    if (elements.chatModelSelection) {
+                        elements.chatModelSelection.value = state.model;
+                    }
                 }
-                // Sync chat model selector
-                if (elements.chatModelSelection) {
-                    elements.chatModelSelection.value = state.model;
-                }
-            }
-            updateConnectionIndicatorCallback(); // Update footer indicator
-        });
-    } else {
-        // Test failed
+                updateConnectionIndicatorCallback(); // Update footer indicator
+            });
+        } else {
+            // Test failed
+            state.isConnected = false;
+            showToastCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error'); // Changed to showToastCallback
+            updateConnectionIndicatorCallback();
+        }
+    } catch (error) {
+        console.error("Error during API key test:", error);
         state.isConnected = false;
-        showToastCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error'); // Changed to showToastCallback
+        showToastCallback(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
         updateConnectionIndicatorCallback();
+    } finally {
+        // Restore button
+        elements.saveModelSettings.disabled = false;
+        elements.saveModelSettings.textContent = _('save', {}, currentTranslations);
     }
-
-    // Restore button
-    elements.saveModelSettings.disabled = false;
-    elements.saveModelSettings.textContent = _('save', {}, currentTranslations);
 }
 
 /**

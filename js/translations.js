@@ -3,7 +3,6 @@ const translations = {
     // --- General UI ---
     'appName': 'Pagetalk',
     'loading': '加载中...',
-    'save': '保存',
     'cancel': '取消',
     'delete': '删除',
     'confirm': '确认',
