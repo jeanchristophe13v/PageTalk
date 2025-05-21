@@ -10,10 +10,13 @@
 
 #### [English/英文](README.md)
 
-## PageTalk 2.7.0 介绍 🎉
+## PageTalk 2.7.0  🎉
 
 **新特性：**  
 - **URL 上下文提取**：感谢 Google，现在 gemini-2.0-flash 和 gemini-2.5-flash-preview-05-20 支持从 URL 自动提取网页内容作为上下文了！！
+  
+![image](https://github.com/user-attachments/assets/4f51b52e-3e06-421d-8360-4fa0791f7650)
+
 
 ## 简介
 
