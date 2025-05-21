@@ -5,11 +5,11 @@ import { generateUniqueId } from './utils.js'; // Might need utils later
 
 /** Helper function to get translation string */
 function _(key, replacements = {}, translations) {
-  let translation = translations[key] || key;
-  for (const placeholder in replacements) {
-    translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-  }
-  return translation;
+    let translation = translations[key] || key;
+    for (const placeholder in replacements) {
+        translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
+    }
+    return translation;
 }
 
 /**
@@ -165,8 +165,8 @@ export function handleExportChat(state, elements, showToastCallback, currentTran
         URL.revokeObjectURL(url);
         showToastCallback(_('chatExportSuccess', {}, currentTranslations), 'success');
     } catch (error) {
-         console.error("Error creating download link:", error);
-         showToastCallback(_('chatExportError', { error: error.message }, currentTranslations), 'error'); // Need translation
+        console.error("Error creating download link:", error);
+        showToastCallback(_('chatExportError', { error: error.message }, currentTranslations), 'error'); // Need translation
     }
 }
 
@@ -220,7 +220,7 @@ function exportChatToText(state, currentTranslations) {
 
     const _tr = (key, rep = {}) => _(key, rep, currentTranslations);
     const locale = state.language.toLowerCase() === 'zh-cn' ? 'zh-cn' : 'en';
-     if (typeof dayjs !== 'undefined') dayjs.locale(locale);
+    if (typeof dayjs !== 'undefined') dayjs.locale(locale);
     const timestamp = typeof dayjs !== 'undefined' ? dayjs().format('YYYY-MM-DD HH:mm:ss') : new Date().toLocaleString();
 
     let textContent = `${_tr('appName')} ${_tr('chatTab')} History (${timestamp})\n\n`;
@@ -275,8 +275,8 @@ function extractPartsFromMessage(message) {
 export function initModelSelection(state, elements) {
     const modelOptions = [
         { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
-        { value: 'gemini-2.5-flash-preview-05-20', text: 'gemini-2.5-flash-preview-05-20' },
-        { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking-exp-01-21' },
+        { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
+        { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
         { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
         { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
         { value: 'gemini-2.5-pro-exp-03-25', text: 'gemini-2.5-pro-exp-03-25' },

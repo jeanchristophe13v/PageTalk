@@ -341,7 +341,7 @@ export function createNewAgent(state, updateAgentsListCallback, updateAgentSelec
 
 /**
  * 显示删除确认对话框
- * @param {string} agentId - 要删除���助手ID
+ * @param {string} agentId - 要删除的助手ID
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
@@ -359,7 +359,7 @@ export function showDeleteConfirmDialog(agentId, state, elements, currentTransla
 }
 
 /**
- * 确认���除助手
+ * 确认删除助手
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {function} updateAgentsListCallback - Callback
@@ -393,7 +393,7 @@ export function confirmDeleteAgent(state, elements, updateAgentsListCallback, up
 }
 
 /**
- * �����������使用的助手
+ * 设置当前使用的助手
  * @param {string} agentId - 要切换到的助手ID
  * @param {object} state - Global state reference
  * @param {function} saveCurrentAgentIdCallback - Callback
@@ -508,7 +508,7 @@ export function handleAgentExport(state, showToastCallback, currentTranslations)
 
 /**
  * 处理 Agent 配置文件导入
- * @param {Event} event - 文件输入���的 change ���件
+ * @param {Event} event - 文件输入框的 change 事件
  * @param {object} state - Global state reference
  * @param {function} saveAgentsListCallback - Callback
  * @param {function} updateAgentsListCallback - Callback

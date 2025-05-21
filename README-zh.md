@@ -10,11 +10,6 @@
 
 #### [English/英文](README.md)
 
-### pagetalk 2.6.5 - 再次升级 🎉🎉🎉
-
-*   **Gemini 2.5 Flash 智能预算:** 使用 `gemini-2.5-flash-preview-05-20` 时，插件会根据问题复杂度自动调整 `thinking_budget`，无需手动设置！
-*   **主题自适应增强:** 进一步优化了浅色/深色主题的自动切换。
-
 ## 简介
 
 Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您的网页浏览体验。轻松总结页面、进行上下文对话，并管理自定义 AI 助手。
