@@ -74,16 +74,16 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
     try {
         // --- Determine actual API model name and thinking configuration ---
         let apiModelName = stateRef.model; // Default to the selected model name from dropdown
-        let effectiveThinkingConfig = { thinkingBudget: 0 }; // Default: thinking off for most models
+        let effectiveThinkingConfig = null; // 默认为null，不发送thinkingConfig参数
 
         if (stateRef.model === 'gemini-2.5-flash') {
             apiModelName = 'gemini-2.5-flash-preview-05-20'; // Underlying API model
-            effectiveThinkingConfig = { thinkingBudget: 0 };
+            effectiveThinkingConfig = { thinkingBudget: 0 }; // 只有gemini-2.5-flash设为0
         } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
             apiModelName = 'gemini-2.5-flash-preview-05-20'; // Underlying API model
-            effectiveThinkingConfig = null; // Let the model auto-adjust (don't send thinkingConfig)
+            effectiveThinkingConfig = null; // 不发送thinkingConfig参数
         }
-        // For other models, the default `effectiveThinkingConfig = { thinkingBudget: 0 }` will apply.
+        // 对其他所有模型，保持effectiveThinkingConfig = null的默认值
 
         console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with thinking config:`, effectiveThinkingConfig);
 
