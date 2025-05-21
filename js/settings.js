@@ -275,7 +275,7 @@ function extractPartsFromMessage(message) {
 export function initModelSelection(state, elements) {
     const modelOptions = [
         { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
-        { value: 'gemini-2.5-flash-preview-5-20', text: 'gemini-2.5-flash-preview-5-20' },
+        { value: 'gemini-2.5-flash-preview-05-20', text: 'gemini-2.5-flash-preview-05-20' },
         { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking-exp-01-21' },
         { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
         { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },

@@ -10,11 +10,10 @@
 
 #### [English/英文](README.md)
 
-### pagetalk 2.5.0 - 再次升级 🎉🎉🎉
+### pagetalk 2.6.5 - 再次升级 🎉🎉🎉
 
-*   **Gemini 2.5 Flash 智能预算:** 使用 `gemini-2.5-flash-preview-5-20` 时，插件会根据问题复杂度自动调整 `thinking_budget`，无需手动设置！
+*   **Gemini 2.5 Flash 智能预算:** 使用 `gemini-2.5-flash-preview-05-20` 时，插件会根据问题复杂度自动调整 `thinking_budget`，无需手动设置！
 *   **主题自适应增强:** 进一步优化了浅色/深色主题的自动切换。
-*   *(为啥是 2.5.0 而不是 2.4.0？嗯... 可能有人输版本号的时候手滑了... 而且 2.5.0 看起来也挺酷的！😉)*
 
 ## 简介
 

@@ -150,8 +150,8 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
             }
         };
 
-        // 若为 gemini-2.5-flash-preview-5-20，自动评估 thinkingBudget
-        if (currentModel === 'gemini-2.5-flash-preview-5-20') {
+        // 若为 gemini-2.5-flash-preview-05-20，自动评估 thinkingBudget
+        if (currentModel === 'gemini-2.5-flash-preview-05-20') {
             requestBody.generationConfig.thinkingConfig.thinkingBudget = await getThinkingBudgetFromGemini20(userMessage, stateRef, uiCallbacks);
         }
 

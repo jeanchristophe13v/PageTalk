@@ -14,7 +14,6 @@
 
 *   **Smart Budget for Gemini 2.5 Flash:** Automatically adjusts the `thinking_budget` based on query complexity when using `gemini-2.5-flash-preview-05-20` – no manual tuning needed!
 *   **Enhanced Theme Adaptation:** Further improvements to automatic light/dark theme switching.
-*   *(Why 2.5.0 and not 2.4.0? Well, someone might have mistyped the version number... and 2.5.0 just looked cooler! 😉)*
 
 ## Introduction
 
