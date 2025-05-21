@@ -31,7 +31,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     if (state.isStreaming) {
         console.warn("Cannot send message while streaming.");
-        if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning');
+        // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
         return;
     }
     if (!userMessage && state.images.length === 0) return;
@@ -103,7 +103,8 @@ export async function sendUserMessage(state, elements, currentTranslations, show
             // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
             finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content),
-            showToast: showToastCallback
+            showToast: showToastCallback,
+            restoreSendButtonAndInput: restoreSendButtonAndInputCallback // Add this callback
         };
 
         // Call API
@@ -121,7 +122,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
         // Add error message to chat (don't force scroll)
         // addMessageToChatCallback already handles isUserNearBottom correctly
-        addMessageToChatCallback(_('apiCallFailed', { error: error.message }, currentTranslations), 'bot', {});
+        // addMessageToChatCallback(_('apiCallFailed', { error: error.message }, currentTranslations), 'bot', {}); // Commented out as per task
         restoreSendButtonAndInputCallback(); // Restore button on error
     }
 }
@@ -214,7 +215,7 @@ export function deleteMessage(messageId, state) {
 export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, showToastCallback) {
     if (state.isStreaming) {
         console.warn("Cannot regenerate while streaming.");
-        if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning');
+        // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
         return;
     }
 

@@ -298,13 +298,19 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
             if (thinkingElement && thinkingElement.parentNode) {
                 thinkingElement.remove();
             }
+            // Restore UI state on API error
+            if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
+                uiCallbacks.restoreSendButtonAndInput();
+            }
             if (messageElement) {
-                const errorText = `\n\n--- 获取响应时出错: ${error.message} ---`;
+                // Remove the prefix "获取响应时出错: "
+                const errorText = `\n\n--- ${error.message} ---`;
                 accumulatedText += errorText;
                 uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
             } else { // If error happened before streaming started
                 // Create a proper error message object and add it to history and DOM
-                const errorMessageText = `获取响应时出错: ${error.message}`;
+                // Remove the prefix "获取响应时出错: "
+                const errorMessageText = `${error.message}`;
 
                 // Add to DOM using addMessageToChat and capture the element
                 const errorElement = uiCallbacks.addMessageToChat(errorMessageText, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
