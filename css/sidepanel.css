@@ -2615,6 +2615,30 @@ button {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* --- NEW: Styling for links within user messages --- */
+.user-message a {
+    color: #FFFFFF; /* Default to white to match user message text */
+    text-decoration: underline; /* Underline for clear link indication */
+    font-weight: 500; /* Optional: slightly bolder */
+}
+
+.user-message a:hover {
+    /* color: #E0E0E0; */ /* Optional: slightly different shade on hover */
+    opacity: 0.85; /* Slight dimming on hover */
+    text-decoration: none; /* Optional: remove underline on hover */
+}
+
+body.dark-mode .user-message a {
+    color: #D1E3FF; /* A very light blue for better contrast in dark mode user bubble */
+    text-decoration: underline;
+}
+
+body.dark-mode .user-message a:hover {
+    color: #FFFFFF; /* Bright white on hover */
+    opacity: 1;
+    text-decoration: none; /* Optional: remove underline on hover */
+}
+/* --- END NEW --- */
 /* 优化表格样式 - 适配markdown-it */
 .bot-message table,
 .markdown-rendered table {

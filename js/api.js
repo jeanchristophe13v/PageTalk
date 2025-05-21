@@ -13,6 +13,7 @@ const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 async function _testAndVerifyApiKey(apiKey, model) {
     try {
         let apiTestModel = model;
+        // Map logical model names to actual API model names for testing if necessary
         if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
             apiTestModel = 'gemini-2.5-flash-preview-05-20';
         }
@@ -97,12 +98,33 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
                 temperature: parseFloat(stateRef.temperature), // Use stateRef
                 maxOutputTokens: parseInt(stateRef.maxTokens), // Use stateRef
                 topP: parseFloat(stateRef.topP), // Use stateRef
-            }
+            },
+            tools: [] // Initialize tools array
         };
 
         // Add thinkingConfig to generationConfig only if it's not null
         if (effectiveThinkingConfig) {
             requestBody.generationConfig.thinkingConfig = effectiveThinkingConfig;
+        }
+
+        // --- Add URL context tool for supported models ---
+        // These are the *actual* API model names that support URL context.
+        const actualApiModelsSupportingUrlContext = [
+            'gemini-2.5-flash-preview-05-20',
+            'gemini-2.0-flash'
+            // Add other *actual* API model names like 'gemini-2.5-pro-preview-05-06'
+            // or 'gemini-2.0-flash-live-001' if they are added to the selection
+            // and directly used as `apiModelName`.
+        ];
+
+        if (actualApiModelsSupportingUrlContext.includes(apiModelName)) {
+            requestBody.tools.push({ "url_context": {} });
+            console.log(`URL context tool added for model: ${apiModelName}`);
+        }
+
+        // If tools array is empty after all checks (e.g., no tools added), remove it from requestBody
+        if (requestBody.tools.length === 0) {
+            delete requestBody.tools;
         }
 
         // --- 构建 contents 的逻辑 ---
@@ -132,8 +154,8 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
         }
         if (currentParts.length > 0) {
             requestBody.contents.push({ role: 'user', parts: currentParts });
-        } else if (requestBody.contents.length === 0) {
-            console.warn("Attempting to send an empty message with no history.");
+        } else if (requestBody.contents.length === 0 && !requestBody.tools) { // Also check if tools are present, as a request with only tools might be valid for some APIs
+            console.warn("Attempting to send an empty message with no history and no tools.");
             if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
             uiCallbacks.addMessageToChat("无法发送空消息。", 'bot'); // Use callback
             return;

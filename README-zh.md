@@ -10,6 +10,11 @@
 
 #### [English/英文](README.md)
 
+## PageTalk 2.7.0 介绍 🎉
+
+**新特性：**  
+- **URL 上下文提取**：感谢 Google，现在 gemini-2.0-flash 和 gemini-2.5-flash-preview-05-20 支持从 URL 自动提取网页内容作为上下文了！！
+
 ## 简介
 
 Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您的网页浏览体验。轻松总结页面、进行上下文对话，并管理自定义 AI 助手。

@@ -10,6 +10,11 @@
 
 #### [中文/Chinese](README-zh.md)
 
+## Introducing PageTalk 2.7.0 🎉
+
+**New Features:** 
+- **Url context**: Thanks to Google, now gemini-2.0-flash and gemini-2.5-flash-preview-05-20 can extract context from url.
+
 ## Introduction
 
 Pagetalk is a browser extension that enhances your web browsing by integrating Google's Gemini API. Summarize pages, chat contextually, and manage custom AI agents effortlessly.
