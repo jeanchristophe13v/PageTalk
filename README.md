@@ -13,7 +13,7 @@
 ## Introducing PageTalk 2.7.0 🎉
 
 **New Features:** 
-- **Url context**: Thanks to Google, now gemini-2.0-flash and gemini-2.5-flash-preview-05-20 can extract context from url.
+- **Url context**: Thanks to Google, gemini-2.0-flash and gemini-2.5-flash-preview-05-20 can now extract context from urls.
 
 ![image](https://github.com/user-attachments/assets/43e9015e-fbff-4b61-b7f0-f03c2916082e)
 
