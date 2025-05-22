@@ -26,15 +26,12 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 ## Features
 
 *   **Web Page Interaction:** Reads page content for contextual conversations.
-*   **Gemini API Integration:** Leverages Gemini for powerful language tasks.
 *   **Contextual Chat:** Discuss the current web page with AI.
 *   **Multi-Agent System:** Create, customize, switch, and **import/export** AI agents.
-*   **Model Selection:** Choose from various Gemini models.
 *   **Image Input:** Upload or paste images for discussion.
 *   **Rich Content Rendering:** Supports Markdown, code highlighting, **LaTeX**, and **Mermaid** diagrams.
 *   **Personalized Settings:** Configure API key, **language (EN/ZH)**, **theme (Light/Dark)**.
 *   **Chat Export:** Save conversations as Markdown or Text files.
-*   **Resizable Panel:** Adjust the side panel width.
 
 ## Examples
 ![image](https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158)
@@ -64,17 +61,8 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
 
 ## Usage
 
-1.  **Open:** Click the Pagetalk icon or use shortcut (default `Alt+P`).
-2.  **Chat Tab:**
-    *   Select Model/Agent.
-    *   Extract page content (auto or manual). Status shows context length.
-    *   Type message or paste/upload images.
-    *   Send message (Enter or button).
-    *   Use "Summarize" quick action.
-    *   Clear history/context (trash icon).
-    *   Hover over messages to copy/delete/regenerate.
-    *   AI responses with LaTeX (`$...$`, `$$...$$`) or Mermaid (```mermaid ... ```) syntax will render automatically. Click Mermaid diagrams to zoom/pan.
-3.  **Settings Tab:** (Contains General, Agents, Model sub-tabs)
+- **Open:** Click the Pagetalk icon or use shortcut (default `Alt+P`).
+- **Settings Tab:** (Contains General, Agents, Model sub-tabs)
     *   **General:** Switch Language/Theme, Export Chat History.
     *   **Agents:** Manage agents, Import/Export configurations.
-    *   **Model:** Set API Key, select default model, toggle auto-extract.
+    *   **Model:** Set API Key, select default model.
