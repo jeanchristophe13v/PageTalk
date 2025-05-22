@@ -285,10 +285,12 @@ export function initModelSelection(state, elements) {
         { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
         { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
         { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
+        { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking' },
         { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
-        { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
         { value: 'gemini-2.5-pro-exp-03-25', text: 'gemini-2.5-pro-exp-03-25' },
-        { value: 'gemini-2.5-pro-preview-03-25', text: 'gemini-2.5-pro-preview-03-25' }
+        { value: 'gemini-2.5-pro-preview-03-25', text: 'gemini-2.5-pro-preview-03-25' },
+        { value: 'gemini-2.5-pro-preview-05-06', text: 'gemini-2.5-pro-preview-05-06' },
+        { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
     ];
 
     const populateSelect = (selectElement) => {
