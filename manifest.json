@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pagetalk - 你的gemini浏览器问答助手",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "一个可以读取页面内容，调用Gemini API进行问答的浏览器插件",
   "permissions": [
     "activeTab",
