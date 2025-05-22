@@ -13,6 +13,32 @@ function _(key, replacements = {}, translations) {
 }
 
 /**
+ * 获取浏览器语言设置
+ * @returns {string} 浏览器语言代码
+ */
+function getBrowserLanguage() {
+    return navigator.language || 
+           navigator.userLanguage || 
+           navigator.browserLanguage || 
+           navigator.systemLanguage || 
+           'en';
+}
+
+/**
+ * 根据浏览器语言确定适合的界面语言
+ * @returns {string} 界面语言代码 ('zh-CN' 或 'en')
+ */
+function detectUserLanguage() {
+    const browserLang = getBrowserLanguage();
+    // 如果浏览器语言是中文（简体、繁体等任何中文变种），返回简体中文
+    if (browserLang === 'zh-CN' || browserLang.startsWith('zh')) {
+        return 'zh-CN';
+    } 
+    // 否则默认返回英文
+    return 'en';
+}
+
+/**
  * Loads settings relevant to the Model and General tabs.
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
@@ -29,8 +55,17 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         if (elements.modelSelection) elements.modelSelection.value = state.model;
         if (elements.chatModelSelection) elements.chatModelSelection.value = state.model;
 
-        // Language
-        state.language = syncResult.language || 'en'; // Default to English
+        // Language - 检测浏览器语言
+        if (syncResult.language) {
+            // 如果用户已经设置了语言，使用用户设置
+            state.language = syncResult.language;
+        } else {
+            // 如果用户没有设置语言，自动检测并设置
+            state.language = detectUserLanguage();
+            // 保存检测到的语言设置
+            chrome.storage.sync.set({ language: state.language });
+        }
+        
         if (elements.languageSelect) elements.languageSelect.value = state.language;
         loadAndApplyTranslationsCallback(state.language); // Apply translations
 

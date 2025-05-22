@@ -255,6 +255,27 @@
             </ul>
         </footer>
     </div>
+    
+    <!-- 新增：更新通告模态框 -->
+    <div id="changelog-modal" class="changelog-modal">
+        <div class="changelog-content">
+            <div class="changelog-header">
+                <h2 id="changelog-title">更新</h2>
+                <p id="changelog-subtitle"></p>
+            </div>
+            <div class="changelog-list" id="changelog-list">
+                <!-- 更新记录将通过JavaScript动态填充 -->
+            </div>
+            <div class="changelog-footer">
+                <div class="changelog-checkbox">
+                    <input type="checkbox" id="never-show-checkbox">
+                    <label for="never-show-checkbox" id="never-show-label">不再显示本版本更新</label>
+                </div>
+                <button id="changelog-ok-btn" class="changelog-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+    
     <!-- 新增：Mermaid 图表放大预览模态框 -->
     <div id="mermaid-modal" class="mermaid-modal">
         <span class="close-modal mermaid-close-modal">&times;</span>
@@ -280,6 +301,8 @@
     <!-- Load Helper Modules BEFORE main.js -->
     <script src="../js/api.js"></script>
     <script src="../js/translations.js"></script>
+    <!-- 新增: 加载更新日志模块 -->
+    <script src="../js/changelog.js"></script>
     <!-- Load the main coordinator script as a module -->
     <script type="module" src="../js/main.js"></script>
 </body>

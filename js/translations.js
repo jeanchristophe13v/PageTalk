@@ -16,6 +16,13 @@ const translations = {
     'deleteMessage': '删除消息',
     'edit': '编辑', // Added for potential future use
 
+    // --- 更新通告相关翻译 ---
+    'changelogTitle': '更新',
+    'changelogDate': '日期',
+    'changelogChanges': '更新内容',
+    'changelogOK': 'OK', 
+    'changelogNeverShow': '不再显示', 
+
     // --- HTML Elements (sidepanel.html) ---
     'htmlLang': 'zh-CN',
     'pageTitle': 'Pagetalk',
@@ -140,6 +147,14 @@ const translations = {
     'regenerate': 'Regenerate',
     'deleteMessage': 'Delete Message',
     'edit': 'Edit',
+
+    // --- Changelog Related Translations ---
+    'changelogTitle': 'Updates',
+    'changelogVersion': '', 
+    'changelogDate': 'Date',
+    'changelogChanges': 'Changes',
+    'changelogOK': 'OK', 
+    'changelogNeverShow': 'Don\'t show again',
 
     // --- HTML Elements (sidepanel.html) ---
     'htmlLang': 'en',

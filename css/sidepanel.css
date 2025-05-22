@@ -3322,3 +3322,155 @@ body.dark-mode #send-message.stop-streaming:hover {
 body.dark-mode .code-block.language-json .hljs-punctuation {
     color: var(--text-secondary); /* Use secondary text color for better contrast */
 }
+
+/* 更新通告模态框样式 - 精简版 */
+.changelog-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto;
+    animation: fadeIn 0.3s ease;
+}
+
+.changelog-content {
+    position: relative;
+    background-color: var(--card-background);
+    margin: 12% auto; /* 位置再向上移 */
+    padding: var(--spacing-lg); /* 增大内边距 */
+    width: 85%;
+    max-width: 400px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.changelog-header {
+    margin-bottom: var(--spacing-md); /* 增大头部下边距 */
+    text-align: center;
+}
+
+.changelog-header h2 {
+    font-size: 1.4rem; /* 增大标题字体 */
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* 移除副标题样式，因为我们不再使用副标题 */
+
+.changelog-list {
+    max-height: 220px; /* 略微增大最大高度 */
+    overflow-y: auto;
+    margin-bottom: var(--spacing-md); /* 增大底部边距 */
+}
+
+.changelog-item {
+    margin-bottom: var(--spacing-md); /* 增大项目间距 */
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.changelog-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.changelog-version {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md); /* 增大版本信息与内容的间距 */
+}
+
+.changelog-version-number {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1.1rem; /* 增大版本号字体 */
+}
+
+.changelog-version-date {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.changelog-changes {
+    margin-left: var(--spacing-md);
+    font-size: 0.95rem; /* 略微增大更新内容字体 */
+}
+
+.changelog-changes li {
+    margin-bottom: var(--spacing-md); /* 增大列表项间距 */
+    line-height: 1.5; /* 增大行高 */
+}
+
+.changelog-changes li:last-child {
+    margin-bottom: 0; /* 移除最后一项的底部边距 */
+}
+
+.changelog-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-lg); /* 增大页脚上边距 */
+    padding-top: var(--spacing-md); /* 添加顶部内边距 */
+    border-top: 1px solid var(--border-color); /* 添加顶部边框 */
+}
+
+.changelog-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm); /* 增大复选框与文本的间距 */
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.changelog-checkbox input[type="checkbox"] {
+    accent-color: var(--primary-color);
+    width: 16px; /* 增大复选框尺寸 */
+    height: 16px;
+}
+
+.changelog-ok-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg); /* 增大按钮内边距 */
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px; /* 设置最小宽度 */
+    text-align: center;
+}
+
+.changelog-ok-btn:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+/* 深色模式下的样式调整 */
+body.dark-mode .changelog-content {
+    background-color: var(--card-background);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .changelog-item {
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .changelog-footer {
+    border-top-color: var(--border-color);
+}
+
+body.dark-mode .changelog-ok-btn:hover {
+    background-color: var(--secondary-color);
+}
