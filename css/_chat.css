@@ -1,4 +1,4 @@
-/* 包含 Pagetalk ���������天界面的所有样式，如消息气泡、输入区域、图片预览、思考动画等。 */
+/* 包含 Pagetalk 聊天界面的所有样式，如消息气泡、输入区域、图片预览、思考动画等。 */
 
 /* 聊天界面样式 */
 .chat-container {
@@ -26,7 +26,7 @@
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
     padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md)); /* 缩小内边距 */
-    margin: var(--spacing-md) auto; /* 缩小���边距 */
+    margin: var(--spacing-md) auto; /* 缩小外边距 */
     width: clamp(180px, 90%, 35%); /* 缩小宽度 */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     text-align: center;
@@ -74,7 +74,7 @@
     background-color: rgba(49, 123, 245, 0.15);
 }
 
-/* ���息气泡样式优化 */
+/* 消息气泡样式优化 */
 .message {
     padding: 0; /* Base padding is 0, content inside will have its own */
     border-radius: var(--radius-lg);
@@ -93,7 +93,7 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ������消息气泡样式 */
+/* 用户消息气泡样式 */
 .user-message {
     align-self: flex-end;
     background-color: var(--primary-color);
@@ -167,9 +167,9 @@
     right: var(--spacing-xs);
 }
 
-/* ���一悬停时显示按钮 */
+/* 消息悬停时显示操作按钮 */
 .message:hover .message-actions,
-.message-actions:hover { /* Keep actions visible if mouse is over them */
+.message-actions:hover { /* 保持原有样式 */
     opacity: 1;
 }
 
@@ -178,7 +178,7 @@
     width: 24px;
     height: 24px;
     border-radius: var(--radius-full);
-    background-color: rgba(255, 255, 255, 0.9); /* ���������式背景 */
+    background-color: rgba(255, 255, 255, 0.9); /* 浅色模式背景 */
     border: none; /* 确保无边框 */
     display: flex;
     align-items: center;
@@ -193,7 +193,7 @@
     color: var(--primary-color); /* Default hover to primary color */
 }
 
-/* 用户消息内的按钮���������背景������色 */
+/* 用户消息内的按钮特定背景颜色 */
 .user-message .message-action-btn {
     background-color: rgba(255, 255, 255, 0.3);
     color: rgba(104, 103, 103, 0.8);
@@ -203,13 +203,13 @@
     color: var(--primary-color); /* User message action buttons also hover to primary */
 }
 
-/* 复制按钮基础样式 - 使������ message-action-btn 行为一致 */
+/* 复制按钮基础样式 - 使 message-action-btn 行为一致 */
 .copy-button {
     width: 24px;
     height: 24px;
     border-radius: var(--radius-full);
     background-color: rgba(255, 255, 255, 0.9); /* 浅色模式背景 (与 message-action-btn 一致) */
-    border: none; /* ������重要：移除浏览器默认边框 */
+    border: none; /* 非常重要：移除浏览器默认边框 */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -218,7 +218,7 @@
     padding: 0;
     color: #888; /* 默认灰色 (与 message-action-btn 一致) */
 }
-.copy-button:hover { /* 通用复制���钮���停效果 */
+.copy-button:hover { /* 通用复制按钮悬停效果 */
     transform: scale(1.05);
     color: var(--primary-color);
     background-color: white; /* 稍微变亮一点的背景以示区别 */
@@ -243,7 +243,7 @@
 }
 
 
-/* 流式输出�����样式调整 */
+/* 流式输出光标样式调整 */
 .streaming-cursor {
     display: inline-block;
     width: 2px;
@@ -328,7 +328,7 @@
     border-radius: 16px;
     padding: 2px 14px; /* 减小垂直内边距 */
     resize: none;
-    min-height: 20px; /* 减��默认���度 */
+    min-height: 20px; /* 减小默认高度 */
     max-height: 150px; /* 限定最大高度 */
     font-size: clamp(12px, 3.5vw, 14px);
     transition: all 0.3s ease;
@@ -425,7 +425,7 @@
     box-sizing: border-box;
 }
 
-/* ��图片网格布局 */
+/* 图片网格布局 */
 .images-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -497,19 +497,7 @@
     object-fit: cover;
 }
 
-/* 图片上传按钮 (在 chat-input 内) */
-.upload-image-button { 
-    /* 基础样式继承自 .chat-input button */
-    /* 此处可添加 .upload-image-button 特有的非 :hover 样式 (如果需要) */
-}
-.upload-image-button:hover { /* Specific hover for upload button */
-    color: var(--primary-color);
-    background-color: var(--button-hover-bg);
-}
-.upload-image-button svg { 
-    /* 基础样式继承自 .chat-input button svg */
-    /* 此处可添加 .upload-image-button svg 特有的样式 (如果需要) */
-}
+
 
 /* 图片全屏预览模态框 */
 .image-modal {
@@ -561,7 +549,7 @@
 }
 
 
-/* 聊天���面头部 */
+/* 聊天界面头部 */
 .chat-header {
     display: flex;
     justify-content: space-between;
@@ -639,7 +627,7 @@
     text-align: center;
     display: none; /* 默认隐藏 */
     opacity: 0;
-    transform: translateY(-5px); /* ���上������一点 */
+    transform: translateY(-5px); /* 向上移动一点 */
     transition: all 0.3s ease;
     max-width: 300px; /* 限制气泡最大宽度 */
 }

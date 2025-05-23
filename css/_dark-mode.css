@@ -32,7 +32,7 @@ body.dark-mode .chat-input textarea::placeholder {
     color: var(--text-secondary);
 }
 
-/* ������块 */
+/* 代码块 */
 body.dark-mode .code-block,
 body.dark-mode pre { /* Apply to pre as well for markdown-it */
     background-color: var(--code-background);
@@ -191,14 +191,14 @@ body.dark-mode .export-controls .action-button:hover {
 }
 
 
-/* 消息操作按钮 (包括复制按钮，如果它们共享基������������组合选择器被覆盖) */
+/* 消息操作按钮 (包括复制按钮，如果它们共享基础样式且组合选择器被覆盖) */
 body.dark-mode .message-action-btn {
      background-color: transparent; /* 深色模式下，所有消息操作按钮默认背景透明 */
-     color: var(--text-secondary); /* 深色模式下，������使用次要文字颜色 */
+     color: var(--text-secondary); /* 深色模式下，默认使用次要文字颜色 */
      border-radius: var(--radius-full);
 }
 body.dark-mode .message-action-btn:hover {
-     background-color: rgba(85, 93, 102, 0.5); /* 深色模式������时半透明背景 (通用) */
+     background-color: rgba(85, 93, 102, 0.5); /* 深色模式悬停时半透明背景 (通用) */
      color: var(--primary-color); /* 悬停时图标变为主题色 */
  }
 
@@ -214,7 +214,7 @@ body.dark-mode .copy-button:hover {
 }
 
 
- /* 用户消息气泡���的���作按钮 (深色模式) */
+ /* 用户消息气泡内的操作按钮 (深色模式) */
 body.dark-mode .user-message .message-action-btn {
      background-color: transparent; /* 用户消息中的按钮在深色模式下也默认透明 */
      color: #C9D1D9; /* 深色模式下用户消息按钮使用更亮的灰色图标 */
@@ -222,7 +222,7 @@ body.dark-mode .user-message .message-action-btn {
 }
 body.dark-mode .user-message .message-action-btn:hover {
      background-color: rgba(116, 143, 252, 0.2); /* 主题色的透明悬停背景 */
-     color: #FFFFFF; /* 悬停时���标变为白色 */
+     color: #FFFFFF; /* 悬停时图标变为白色 */
 }
 
 /* 用户消息气泡内的复制按钮特定样式 (深色模式) */
@@ -236,7 +236,7 @@ body.dark-mode .user-message .copy-button:hover {
 }
 
 
-/* ������条 */
+/* 滚动条 */
 body.dark-mode ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border: 2px solid var(--background-color); 
@@ -256,7 +256,7 @@ body.dark-mode .thinking-dots span {
     background-color: var(--primary-color);
 }
 
-/* ���������态 (Model Settings) */
+/* 连接状态 (Model Settings) */
 body.dark-mode .connection-status.success {
     background-color: rgba(52, 125, 57, 0.2); 
     border-color: rgba(52, 125, 57, 0.4); 
@@ -299,7 +299,7 @@ body.dark-mode .footer-tab.active {
     border-color: rgba(116, 143, 252, 0.3);
 }
 
-/* ���置导航按钮 */
+/* 设置导航按钮 */
 body.dark-mode .settings-nav {
     border-bottom-color: var(--border-color);
 }
@@ -315,7 +315,7 @@ body.dark-mode .settings-nav-btn.active {
     background-color: rgba(116, 143, 252, 0.2); 
 }
 
-/* 设置���������标题 */
+/* 设置子标题 */
 body.dark-mode .settings-sub-content h2 {
     color: var(--text-color);
     border-bottom-color: var(--border-color);
@@ -326,7 +326,7 @@ body.dark-mode #settings-general .setting-group {
 }
 
 
-/* ���用 */
+/* 引用 */
 body.dark-mode .bot-message blockquote,
 body.dark-mode .markdown-rendered blockquote {
     border-left-color: var(--primary-color);
@@ -372,7 +372,7 @@ body.dark-mode .toggle-api-key-button:hover {
     color: var(--text-color);
 }
 
-/* ��块 */
+/* 滑块 */
 body.dark-mode .slider-container input[type="range"] {
     background: var(--border-color); /* Track background */
 }

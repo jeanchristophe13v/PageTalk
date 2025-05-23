@@ -50,7 +50,7 @@
 .bot-message ol + p,
 .markdown-rendered ul + p,
 .markdown-rendered ol + p {
-    margin-top: 0.6em; /* ���表���的���落上边距减小 */
+    margin-top: 0.6em; /* 列表后的段落上边距减小 */
 }
 
 /* 调整标题和段落之间的间距合理 */
@@ -93,10 +93,10 @@
     width: 100%;
 }
 
-/* ������代码块内换行符的显示 */
+/* 确保代码块内换行符的显示 */
 .code-block code br {
     display: block; /* 确保换行符被显示为新行 */
-    content: ""; /* 设置 content ������������正常工作 */
+    content: ""; /* 设置 content 属性以确保正常工作 */
     margin-bottom: 0.5em; /* 调整间距 */
 }
 
@@ -139,7 +139,7 @@
 }
 
 
-/* 内���代码样式 */
+/* 内联代码样式 */
 .inline-code {
     /* 重置所有属性，依赖markdown-it的原生内联代码样式 */
     all: revert;
@@ -231,7 +231,7 @@
     text-align: left;
     background-color: var(--primary-color); /* Ensure header cells also have this bg */
     color: white;
-    white-space: pre-wrap; /* 优化换���显示 */
+    white-space: pre-wrap; /* 优化换行显示 */
 }
 
 .bot-message table td,
@@ -241,14 +241,6 @@
     white-space: pre-wrap; /* 优化换行显示 */
 }
 
-/* ���格行���础样式 - 确保无意外的全局 tr 样式影响 */
-.bot-message table tr,
-.markdown-rendered tr {
-    /* ���������以添加特定于这些表格行的基础样式，
-       例如，如果需要重置某些继承的属性。
-       当前为空，表示依赖于 th/td 的边���，
-       ���明确表示不为此处的 tr 添加额外的底部边框（由 :not(:last-child) 控制）。*/
-}
 
 .bot-message table tr:not(:last-child), /* Add border to all but last row in a tbody */
 .markdown-rendered tr:not(:last-child) {
@@ -262,7 +254,7 @@
 }
 
 
-/* 优化代码块���式 - 适配markdown-it (pre + code) */
+/* 优化代码块样式 - 适配markdown-it (pre + code) */
 .bot-message pre,
 .markdown-rendered pre {
     background-color: var(--code-background); /* Use variable */
