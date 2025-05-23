@@ -1,0 +1,675 @@
+/* 包含 Pagetalk ���������天界面的所有样式，如消息气泡、输入区域、图片预览、思考动画等。 */
+
+/* 聊天界面样式 */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* 确保聊天容器本身不溢出 */
+}
+
+/* 聊天消息区域 */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    width: 100%;
+    min-height: 0; /* 确保可以缩小 */
+}
+
+/* 欢迎消息 */
+.welcome-message {
+    background-color: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md)); /* 缩小内边距 */
+    margin: var(--spacing-md) auto; /* 缩小���边距 */
+    width: clamp(180px, 90%, 35%); /* 缩小宽度 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.welcome-message h2 {
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-xs); /* 缩小边距 */
+    font-size: clamp(14px, 3.5vw, 16px); /* 缩小字体 */
+    font-weight: 600;
+    letter-spacing: -0.5px;
+}
+
+.welcome-message p {
+    margin-bottom: var(--spacing-xs); /* 缩小边距 */
+    font-size: clamp(11px, 3vw, 13px); /* 缩小字体 */
+    line-height: 1.5; /* 稍微减小行高 */
+    color: var(--text-secondary);
+}
+
+/* 快捷操作按钮样式 */
+.quick-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(var(--spacing-xs), 2vw, var(--spacing-md));
+    margin-top: var(--spacing-md);
+}
+
+.quick-action-btn {
+    background-color: rgba(49, 123, 245, 0.08);
+    border: none;
+    border-radius: var(--radius-full);
+    padding: var(--spacing-xs) clamp(var(--spacing-xs), 3vw, var(--spacing-md));
+    font-size: clamp(11px, 3vw, 13px);
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.quick-action-btn:hover {
+    background-color: rgba(49, 123, 245, 0.15);
+}
+
+/* ���息气泡样式优化 */
+.message {
+    padding: 0; /* Base padding is 0, content inside will have its own */
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-md); /* Standard bottom margin */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    position: relative;
+    animation: fadeIn 0.3s ease;
+    max-width: 90%;
+    width: fit-content; /* Allows bubble to shrink to content width */
+    box-sizing: border-box; /* Important for max-width and padding */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ������消息气泡样式 */
+.user-message {
+    align-self: flex-end;
+    background-color: var(--primary-color);
+    color: white;
+    /* border-radius already set by .message */
+    display: inline-block; /* For width: auto to work with align-self */
+    max-width: 95%; /* Can be slightly wider than bot messages */
+    width: auto; /* Content dictates width, up to max-width */
+    overflow: visible; /* Ensure internal content like images can layout */
+    padding: var(--spacing-sm) var(--spacing-md); /* Standard internal padding */
+    text-align: left;
+    position: relative; /* For message actions */
+    margin-bottom: 26px; /* Space for actions below */
+}
+
+.user-message p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.4;
+}
+
+/* 机器人消息气泡样式 */
+.bot-message {
+    align-self: flex-start;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    /* border-radius already set by .message */
+    padding: var(--spacing-md); /* Standard internal padding */
+    padding-bottom: 30px; /* Space for actions at the bottom */
+    max-width: 95%;
+    overflow: visible; /* Ensure markdown content can layout (e.g. tables) */
+    line-height: 1.4;
+    position: relative; /* For message actions */
+}
+
+.bot-message p {
+    margin-top: 0;
+    margin-bottom: 0.6em; /* Spacing between paragraphs in bot message */
+    line-height: 1.4;
+}
+
+.bot-message p:last-child {
+    margin-bottom: 0;
+}
+
+.bot-message p + p::before { /* Remove extra space if any was added by browser */
+    content: none;
+    display: none;
+    height: 0;
+}
+
+/* 消息操作按钮容器 */
+.message-actions {
+    position: absolute;
+    display: flex;
+    gap: 4px; /* Reduced gap */
+    opacity: 0; /* Default hidden */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 5;
+}
+
+/* 用户消息中按钮位置调整到气泡下方 */
+.user-message .message-actions {
+    bottom: -24px;
+    right: 0;
+}
+
+/* 机器人消息中按钮位置保持在气泡内右下角 */
+.bot-message .message-actions {
+    bottom: var(--spacing-xs);
+    right: var(--spacing-xs);
+}
+
+/* ���一悬停时显示按钮 */
+.message:hover .message-actions,
+.message-actions:hover { /* Keep actions visible if mouse is over them */
+    opacity: 1;
+}
+
+/* 通用消息操作按钮样式 (复制、删除、重新生成) */
+.message-action-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background-color: rgba(255, 255, 255, 0.9); /* ���������式背景 */
+    border: none; /* 确保无边框 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    color: #888; /* 默认灰色 */
+}
+.message-action-btn:hover {
+    transform: scale(1.05);
+    color: var(--primary-color); /* Default hover to primary color */
+}
+
+/* 用户消息内的按钮���������背景������色 */
+.user-message .message-action-btn {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: rgba(104, 103, 103, 0.8);
+}
+.user-message .message-action-btn:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+    color: var(--primary-color); /* User message action buttons also hover to primary */
+}
+
+/* 复制按钮基础样式 - 使������ message-action-btn 行为一致 */
+.copy-button {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background-color: rgba(255, 255, 255, 0.9); /* 浅色模式背景 (与 message-action-btn 一致) */
+    border: none; /* ������重要：移除浏览器默认边框 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    color: #888; /* 默认灰色 (与 message-action-btn 一致) */
+}
+.copy-button:hover { /* 通用复制���钮���停效果 */
+    transform: scale(1.05);
+    color: var(--primary-color);
+    background-color: white; /* 稍微变亮一点的背景以示区别 */
+}
+
+/* Ensure copy button inside message actions is part of flex layout */
+.message-actions .copy-button {
+    position: static !important; 
+    bottom: auto;     
+    right: auto;      
+    /* 继承上述 .copy-button 的基础样式 */
+}
+
+/* 用户消息中的复制按钮特定样式 (覆盖基础 .copy-button 样式) */
+.user-message .copy-button {
+    background-color: rgba(255, 255, 255, 0.3); /* 用户消息气泡中的按钮背景 */
+    color: rgba(104, 103, 103, 0.8); /* 用户消息气泡中的按钮颜色 */
+}
+.user-message .copy-button:hover {
+    background-color: rgba(255, 255, 255, 0.6); /* 用户消息气泡中按钮悬停背景 */
+    color: var(--primary-color); /* 保持悬停颜色一致 */
+}
+
+
+/* 流式输出�����样式调整 */
+.streaming-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: var(--primary-color);
+    margin-left: 1px;
+    animation: breathing 1.5s infinite ease-in-out;
+    vertical-align: text-bottom;
+}
+
+@keyframes breathing {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* AI思考动画样式 */
+.thinking {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm);
+    min-height: 36px;
+}
+
+.thinking-dots {
+    display: flex;
+    align-items: center;
+}
+
+.thinking-dots span {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    margin: 0 3px;
+    opacity: 0.7;
+}
+
+.thinking-dots span:nth-child(1) {
+    animation: thinking 1.4s infinite ease-in-out;
+    animation-delay: 0s;
+}
+
+.thinking-dots span:nth-child(2) {
+    animation: thinking 1.4s infinite ease-in-out;
+    animation-delay: 0.2s;
+}
+
+.thinking-dots span:nth-child(3) {
+    animation: thinking 1.4s infinite ease-in-out;
+    animation-delay: 0.4s;
+}
+
+@keyframes thinking {
+    0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* 聊天输入区域 */
+.chat-input {
+    display: flex;
+    align-items: center;
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-xs), 2vw, var(--spacing-md));
+    background-color: var(--card-background);
+    border-top: 1px solid var(--border-color);
+    width: 100%;
+    min-height: fit-content;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.chat-input textarea {
+    flex: 1;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2px 14px; /* 减小垂直内边距 */
+    resize: none;
+    min-height: 20px; /* 减��默认���度 */
+    max-height: 150px; /* 限定最大高度 */
+    font-size: clamp(12px, 3.5vw, 14px);
+    transition: all 0.3s ease;
+    outline: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    min-width: 0; 
+    overflow-y: auto; 
+    line-height: 1.4; 
+}
+
+.chat-input textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1);
+}
+
+.chat-input textarea::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-input textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+.chat-input textarea::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-full);
+}
+.chat-input textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* 输入区域按钮 (上传、发送) */
+.chat-input button {
+    width: clamp(30px, 8vw, 34px);
+    height: clamp(30px, 8vw, 34px);
+    border-radius: 50%;
+    border: none;
+    background-color: transparent;
+    margin-left: var(--spacing-xs);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    flex-shrink: 0; 
+}
+
+.chat-input button:not(#send-message):hover { /* Non-send buttons hover */
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+
+.chat-input button svg {
+    width: clamp(14px, 4vw, 16px);
+    height: clamp(14px, 4vw, 16px);
+}
+
+/* 发送按钮 */
+#send-message {
+    background-color: var(--primary-color);
+    color: white;
+    width: clamp(26px, 6.5vw, 30px);
+    height: clamp(26px, 6.5vw, 30px);
+}
+#send-message svg {
+    width: clamp(13px, 3.5vw, 15px);
+    height: clamp(13px, 3.5vw, 15px);
+}
+#send-message:hover {
+    background-color: var(--secondary-color);
+    transform: scale(1.05);
+}
+/* 控制流式输出按钮特定样式 */
+#send-message.stop-streaming {
+    /* background remains primary, hover changes */
+    transform: none; /* Reset hover transform if any conflicts */
+}
+#send-message.stop-streaming:hover {
+    background-color: var(--error-color); /* Hover becomes red */
+    color: white;
+    transform: scale(1.05); 
+}
+
+
+/* 图片预览容器 */
+.image-preview-container {
+    margin: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    background-color: var(--card-background);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* ��图片网格布局 */
+.images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs);
+}
+
+.image-item {
+    position: relative;
+    height: 100px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.image-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.image-item .image-actions {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var (--spacing-xs);
+    display: flex;
+    gap: var(--spacing-xs);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.image-item:hover .image-actions {
+    opacity: 1;
+}
+
+/* 图片预览操作按钮 */
+.image-action-button {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    border: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.image-action-button:hover {
+    background-color: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.image-action-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 用户消息中的图片网格 */
+.user-message .message-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
+}
+.user-message .message-image {
+    width: 100%;
+    height: 80px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    object-fit: cover;
+}
+
+/* 图片上传按钮 (在 chat-input 内) */
+.upload-image-button { 
+    /* 基础样式继承自 .chat-input button */
+    /* 此处可添加 .upload-image-button 特有的非 :hover 样式 (如果需要) */
+}
+.upload-image-button:hover { /* Specific hover for upload button */
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+.upload-image-button svg { 
+    /* 基础样式继承自 .chat-input button svg */
+    /* 此处可添加 .upload-image-button svg 特有的样式 (如果需要) */
+}
+
+/* 图片全屏预览模态框 */
+.image-modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    overflow: auto;
+    padding: 30px;
+    box-sizing: border-box;
+}
+.modal-content { /* For image modal specifically */
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+.close-modal { /* For image modal close button */
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 101; /* Above modal content */
+}
+.close-modal:hover {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* 带有图像的输入框样式调整 */
+.has-image #user-input {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+/* 剪贴板粘贴视觉反馈 */
+.paste-highlight {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.2) !important;
+}
+
+
+/* 聊天���面头部 */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-xs), 2vw, var(--spacing-md));
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--card-background);
+    gap: clamp(var(--spacing-xs), 1vw, var(--spacing-sm));
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.chat-model-selector,
+.chat-agent-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    min-width: 0;
+    flex: 1 1 auto;
+    max-width: 50%; 
+}
+.chat-model-selector {
+    max-width: 55%; 
+    flex: 3; 
+}
+.chat-agent-selector {
+    max-width: 30%; 
+    flex: 1; 
+}
+
+.chat-model-selector label,
+.chat-agent-selector label {
+    font-size: clamp(11px, 3vw, 12px);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.chat-model-selector select,
+.chat-agent-selector select {
+    padding: clamp(2px, 1vw, var(--spacing-xs)) clamp(4px, 1.5vw, var(--spacing-sm));
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    font-size: clamp(11px, 3vw, 12px);
+    background-color: transparent;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    min-width: 0;
+    width: 100%; 
+    text-overflow: ellipsis;
+}
+.chat-model-selector select:hover, .chat-agent-selector select:hover {
+    border-color: var(--primary-color);
+}
+.chat-model-selector select:focus, .chat-agent-selector select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1);
+}
+
+/* Chat header action button (e.g., clear context) specific hover */
+.chat-header .action-button:hover {
+    color: var(--primary-color); /* Override default error color hover */
+    background-color: var(--button-hover-bg);
+}
+/* Chat header close button already handled by .close-panel-btn */
+
+
+/* 新增聊天界面状态消息样式 */
+.chat-status {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: 0 auto var(--spacing-sm) auto; /* 上0 左右auto 下SM */
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    text-align: center;
+    display: none; /* 默认隐藏 */
+    opacity: 0;
+    transform: translateY(-5px); /* ���上������一点 */
+    transition: all 0.3s ease;
+    max-width: 300px; /* 限制气泡最大宽度 */
+}
+
+.chat-status.success {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    background-color: rgba(52, 168, 83, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(52, 168, 83, 0.3);
+}
+
+.chat-status.error {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    background-color: rgba(234, 67, 53, 0.1);
+    color: var(--error-color);
+    border: 1px solid rgba(234, 67, 53, 0.3);
+}
+
+/* 空状态消息 (if used in chat, e.g., for empty agent list, but that's in settings) */
+.empty-state { /* General empty state that might be used in chat for other purposes */
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--text-secondary);
+}
+
+.empty-state p {
+    margin-bottom: var(--spacing-md);
+    font-size: 13px;
+}

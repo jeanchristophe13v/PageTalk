@@ -1,0 +1,475 @@
+/* 包含 Pagetalk 插件在深色模式（body.dark-mode）下覆盖默认样式的规则。 */
+
+/* --- 深色模式各组件调整 --- */
+
+/* 输入框和选择框 */
+body.dark-mode .setting-group input[type="text"],
+body.dark-mode .setting-group input[type="password"],
+body.dark-mode .setting-group input[type="number"],
+body.dark-mode .setting-group textarea,
+body.dark-mode .setting-group select,
+body.dark-mode .chat-input textarea,
+body.dark-mode .chat-model-selector select,
+body.dark-mode .chat-agent-selector select {
+    background-color: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+body.dark-mode .setting-group input:focus,
+body.dark-mode .setting-group textarea:focus,
+body.dark-mode .setting-group select:focus,
+body.dark-mode .chat-input textarea:focus,
+body.dark-mode .chat-model-selector select:focus,
+body.dark-mode .chat-agent-selector select:focus {
+    background-color: #373E47; /* 稍微亮一点的背景 */
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2); /* 调整阴影颜色 */
+}
+body.dark-mode .chat-input textarea {
+    color: var(--text-color); 
+}
+body.dark-mode .chat-input textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+/* ������块 */
+body.dark-mode .code-block,
+body.dark-mode pre { /* Apply to pre as well for markdown-it */
+    background-color: var(--code-background);
+    border-color: var(--code-border);
+    border-left-color: var(--primary-color); 
+}
+body.dark-mode .code-block code,
+body.dark-mode pre code { /* Apply to pre code as well */
+    color: var(--code-text-color);
+}
+body.dark-mode .code-copy-button {
+     background-color: rgba(70, 76, 86, 0.8); 
+     border-color: var(--border-color);
+     color: var(--text-secondary);
+}
+ body.dark-mode .code-copy-button:hover {
+     background-color: rgba(85, 93, 102, 1);
+     color: var(--primary-color);
+ }
+/* Improve JSON punctuation visibility in dark mode */
+body.dark-mode .code-block.language-json .hljs-punctuation,
+body.dark-mode pre.language-json .hljs-punctuation {
+    color: var(--text-secondary); /* Use secondary text color for better contrast */
+}
+
+
+/* 内联代码 */
+body.dark-mode .bot-message code:not(pre code), /* Exclude pre code */
+body.dark-mode .markdown-rendered code:not(pre code) { /* Exclude pre code */
+    background-color: rgba(110, 118, 129, 0.4); 
+    border-color: transparent; 
+    color: var(--text-color);
+}
+body.dark-mode .user-message code {
+    background-color: rgba(201, 209, 217, 0.3); 
+    color: var(--text-color);
+    border-color: transparent;
+}
+body.dark-mode .user-message a {
+    color: #D1E3FF; 
+    text-decoration: underline;
+}
+body.dark-mode .user-message a:hover {
+    color: #FFFFFF; 
+    opacity: 1;
+    text-decoration: none; 
+}
+
+
+/* 表格 */
+ body.dark-mode table thead, /* General table thead */
+ body.dark-mode .markdown-rendered thead { /* Markdown thead */
+     background-color: var(--table-header-bg); /* Uses primary color in dark mode */
+     color: #FFFFFF; /* White text on primary color background */
+ }
+ body.dark-mode table th,
+ body.dark-mode .markdown-rendered th {
+     border-color: var(--border-color);
+     background-color: var(--table-header-bg); /* Ensure background coverage */
+     color: #FFFFFF; /* White text for th */
+ }
+ body.dark-mode table td,
+ body.dark-mode .markdown-rendered td {
+     border-color: var(--border-color);
+     color: var(--text-color); /* Ensure td text is also themed */
+ }
+ body.dark-mode table tr,
+ body.dark-mode .markdown-rendered tr {
+     border-bottom-color: var(--border-color); /* For rows that have bottom border */
+ }
+ body.dark-mode table tr:nth-child(even),
+ body.dark-mode .markdown-rendered tr:nth-child(even) {
+     background-color: var(--table-even-row-bg);
+ }
+
+/* 消息气泡 */
+body.dark-mode .user-message {
+    background-color: var(--primary-color); 
+    color: #FFFFFF; 
+}
+body.dark-mode .bot-message {
+    background-color: var(--card-background);
+    border-color: var(--border-color);
+    color: var(--text-color); /* Ensure bot message text is themed */
+}
+body.dark-mode .welcome-message {
+     background-color: var(--card-background);
+     border-color: var(--border-color);
+     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); 
+}
+body.dark-mode .welcome-message h2 {
+     color: var(--primary-color);
+}
+body.dark-mode .welcome-message p {
+     color: var(--text-secondary);
+}
+
+/* 按钮 */
+body.dark-mode .quick-action-btn {
+    background-color: rgba(116, 143, 252, 0.15); /* Primary color alpha */
+    color: var(--primary-color);
+}
+body.dark-mode .quick-action-btn:hover {
+    background-color: rgba(116, 143, 252, 0.25);
+}
+/* General icon buttons and chat input buttons (non-send) */
+body.dark-mode .icon-btn:hover,
+body.dark-mode .upload-image-button:hover,
+body.dark-mode .chat-input button:not(#send-message):hover {
+     background-color: var(--button-hover-bg);
+     color: var(--primary-color);
+}
+body.dark-mode .icon-btn.add-btn { /* Add button specific */
+     color: var(--success-color); 
+}
+body.dark-mode .icon-btn.add-btn:hover {
+     background-color: rgba(52, 125, 57, 0.2); /* Success color alpha */
+}
+/* Chat header action button (clear context) */
+body.dark-mode .chat-header .action-button:hover {
+    color: var(--primary-color); /* Not error color in dark mode */
+    background-color: var(--button-hover-bg);
+}
+/* Close panel button (error color hover is fine for dark mode too) */
+body.dark-mode .action-button.close-panel-btn:hover {
+     color: var(--error-color);
+     background-color: rgba(255, 135, 135, 0.15); /* Error color alpha */
+}
+
+/* Save/Test buttons in settings */
+body.dark-mode .save-btn,
+body.dark-mode .test-btn {
+    color: #FFFFFF; 
+}
+body.dark-mode .save-btn {
+    background-color: var(--primary-color);
+}
+body.dark-mode .save-btn:hover {
+    background-color: var(--secondary-color); /* Lighter blue for hover */
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.3);
+}
+body.dark-mode .test-btn {
+    background-color: var(--warning-color);
+}
+body.dark-mode .test-btn:hover {
+    background-color: #FFDE6B; /* Lighter warning yellow */
+    box-shadow: 0 2px 8px rgba(255, 212, 59, 0.3);
+}
+body.dark-mode .export-controls .action-button {
+    background-color: var(--primary-color);
+    color: white;
+}
+body.dark-mode .export-controls .action-button:hover {
+    background-color: var(--secondary-color);
+    color: white; 
+}
+
+
+/* 消息操作按钮 (包括复制按钮，如果它们共享基������������组合选择器被覆盖) */
+body.dark-mode .message-action-btn {
+     background-color: transparent; /* 深色模式下，所有消息操作按钮默认背景透明 */
+     color: var(--text-secondary); /* 深色模式下，������使用次要文字颜色 */
+     border-radius: var(--radius-full);
+}
+body.dark-mode .message-action-btn:hover {
+     background-color: rgba(85, 93, 102, 0.5); /* 深色模式������时半透明背景 (通用) */
+     color: var(--primary-color); /* 悬停时图标变为主题色 */
+ }
+
+/* 专门为 .copy-button 在深色模式下的样式 (如果它没有继承 .message-action-btn) */
+/* 或者如果它需要与 .message-action-btn 略有不同 */
+body.dark-mode .copy-button {
+     background-color: transparent; /* 确保复制按钮也是透明背景 */
+     color: var(--text-secondary); /* 与 message-action-btn 保持一致的图标颜色 */
+}
+body.dark-mode .copy-button:hover {
+     background-color: rgba(85, 93, 102, 0.5); /* 与 message-action-btn 保持一致的悬停背景 */
+     color: var(--primary-color); /* 与 message-action-btn 保持一致的悬停颜色 */
+}
+
+
+ /* 用户消息气泡���的���作按钮 (深色模式) */
+body.dark-mode .user-message .message-action-btn {
+     background-color: transparent; /* 用户消息中的按钮在深色模式下也默认透明 */
+     color: #C9D1D9; /* 深色模式下用户消息按钮使用更亮的灰色图标 */
+     border-radius: var(--radius-full);
+}
+body.dark-mode .user-message .message-action-btn:hover {
+     background-color: rgba(116, 143, 252, 0.2); /* 主题色的透明悬停背景 */
+     color: #FFFFFF; /* 悬停时���标变为白色 */
+}
+
+/* 用户消息气泡内的复制按钮特定样式 (深色模式) */
+body.dark-mode .user-message .copy-button {
+    background-color: transparent; /* 确保透明 */
+    color: #C9D1D9; /* 与用户消息中其他操作按钮颜色一致 */
+}
+body.dark-mode .user-message .copy-button:hover {
+    background-color: rgba(116, 143, 252, 0.2); /* 与用户消息中其他操作按钮悬停背景一致 */
+    color: #FFFFFF; /* 与用户消息中其他操作按钮悬停颜色一致 */
+}
+
+
+/* ������条 */
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border: 2px solid var(--background-color); 
+}
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+body.dark-mode .chat-input textarea::-webkit-scrollbar-thumb {
+     background: var(--scrollbar-thumb);
+}
+ body.dark-mode .chat-input textarea::-webkit-scrollbar-thumb:hover {
+     background: var(--scrollbar-thumb-hover);
+ }
+
+/* 思考动画 */
+body.dark-mode .thinking-dots span {
+    background-color: var(--primary-color);
+}
+
+/* ���������态 (Model Settings) */
+body.dark-mode .connection-status.success {
+    background-color: rgba(52, 125, 57, 0.2); 
+    border-color: rgba(52, 125, 57, 0.4); 
+    color: #46954A; 
+}
+body.dark-mode .connection-status.error {
+    background-color: rgba(255, 135, 135, 0.15);
+    border-color: rgba(255, 135, 135, 0.3);
+    color: var(--error-color);
+}
+body.dark-mode .connection-status.info {
+    background-color: rgba(116, 143, 252, 0.15);
+    border-color: rgba(116, 143, 252, 0.3);
+    color: var(--primary-color);
+}
+
+/* 页脚连接指示器 */
+body.dark-mode #connection-indicator.connected {
+    background-color: rgba(52, 125, 57, 0.3);
+    color: #46954A;
+}
+body.dark-mode #connection-indicator.disconnected {
+    background-color: rgba(255, 135, 135, 0.2);
+    color: var(--error-color);
+}
+
+/* 页脚标签 */
+body.dark-mode .footer-tab {
+    color: var(--text-secondary);
+    background-color: transparent;
+    border-color: transparent;
+}
+body.dark-mode .footer-tab:hover {
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+body.dark-mode .footer-tab.active {
+    color: var(--primary-color);
+    background-color: rgba(116, 143, 252, 0.2); /* Darker active background */
+    border-color: rgba(116, 143, 252, 0.3);
+}
+
+/* ���置导航按钮 */
+body.dark-mode .settings-nav {
+    border-bottom-color: var(--border-color);
+}
+body.dark-mode .settings-nav-btn {
+    color: var(--text-secondary);
+}
+body.dark-mode .settings-nav-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+body.dark-mode .settings-nav-btn.active {
+    color: var(--primary-color);
+    background-color: rgba(116, 143, 252, 0.2); 
+}
+
+/* 设置���������标题 */
+body.dark-mode .settings-sub-content h2 {
+    color: var(--text-color);
+    border-bottom-color: var(--border-color);
+}
+/* 通用设置分隔线 */
+body.dark-mode #settings-general .setting-group {
+    border-bottom-color: var(--border-color);
+}
+
+
+/* ���用 */
+body.dark-mode .bot-message blockquote,
+body.dark-mode .markdown-rendered blockquote {
+    border-left-color: var(--primary-color);
+    color: var(--text-secondary);
+    background-color: rgba(116, 143, 252, 0.1); 
+}
+
+/* AI 消息链接颜色 */
+body.dark-mode .bot-message a {
+    color: var(--primary-color); 
+    text-decoration: underline; 
+}
+body.dark-mode .bot-message a:hover {
+    color: var(--secondary-color); 
+    text-decoration: none; 
+}
+
+/* 水平线 */
+body.dark-mode .bot-message hr,
+body.dark-mode .markdown-rendered hr {
+    background-color: var(--border-color);
+}
+
+/* 图片预览 */
+body.dark-mode .image-preview-container {
+    background-color: var(--card-background);
+    border-color: var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+body.dark-mode .image-action-button {
+    background-color: rgba(45, 51, 59, 0.9); 
+    color: var(--primary-color);
+}
+body.dark-mode .image-action-button:hover {
+    background-color: #373E47; 
+}
+
+/* API Key 切换按钮 */
+body.dark-mode .toggle-api-key-button {
+    color: var(--text-secondary);
+}
+body.dark-mode .toggle-api-key-button:hover {
+    color: var(--text-color);
+}
+
+/* ��块 */
+body.dark-mode .slider-container input[type="range"] {
+    background: var(--border-color); /* Track background */
+}
+body.dark-mode .slider-container input[type="range"]::-webkit-slider-thumb {
+    background-color: var(--input-background); /* Thumb background, usually card or input bg */
+    border-color: var(--primary-color);
+}
+body.dark-mode .slider-container input[type="range"]::-webkit-slider-thumb:hover,
+body.dark-mode .slider-container input[type="range"]:active::-webkit-slider-thumb {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* 助手列表项 */
+body.dark-mode .agents-list-container {
+    background-color: var(--input-background); /* Darker background for the overall container */
+    border-color: var(--border-color);
+}
+body.dark-mode .agent-item {
+    background-color: var(--card-background); /* Individual items are cards */
+    border-color: var(--border-color);
+}
+body.dark-mode .agent-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(116, 143, 252, 0.15); /* Primary color shadow */
+}
+body.dark-mode .agent-item-header:hover {
+    background-color: rgba(116, 143, 252, 0.08); /* Primary color transparent */
+}
+body.dark-mode .agent-item-body {
+    background-color: #282E34; /* 比卡片背景稍暗一点 */
+    border-top-color: var(--border-color);
+}
+/* Agent item delete button hover (already specific in _settings.css, might need dark mode override if general .icon-btn dark hover is too strong) */
+body.dark-mode .agent-item-actions .delete-btn:hover {
+     background-color: rgba(255, 135, 135, 0.15); /* Error color alpha */
+     color: var(--error-color);
+}
+/* Agent item body inputs and sliders */
+body.dark-mode .agent-item-body input[type="text"],
+body.dark-mode .agent-item-body input[type="number"],
+body.dark-mode .agent-item-body textarea {
+    background-color: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color); /* Use a consistent border */
+}
+body.dark-mode .agent-item-body input:focus,
+body.dark-mode .agent-item-body textarea:focus {
+    background-color: #373E47;
+    border-color: var(--primary-color);
+}
+body.dark-mode .agent-item-body .slider-container input[type="range"] {
+    background: var(--border-color);
+}
+
+
+/* 模型设置外框 (if it has a different bg from main settings page) */
+body.dark-mode .model-settings-group-box {
+    background-color: var(--card-background); /* Should be card-like */
+    border-color: var(--border-color);
+}
+
+/* 聊天状态消息 (内容提取等) */
+body.dark-mode .chat-status.success {
+    background-color: rgba(52, 125, 57, 0.2);
+    color: #46954A;
+    border-color: rgba(52, 125, 57, 0.4);
+}
+body.dark-mode .chat-status.error {
+    background-color: rgba(255, 135, 135, 0.15);
+    color: var(--error-color);
+    border-color: rgba(255, 135, 135, 0.3);
+}
+/* Hint links */
+body.dark-mode .hint a {
+    color: var(--primary-color);
+}
+
+/* Draggable theme toggle button */
+body.dark-mode #theme-toggle-btn {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+body.dark-mode #theme-toggle-btn:active {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Changelog Modal */
+body.dark-mode .changelog-content {
+    background-color: var(--card-background);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+body.dark-mode .changelog-item {
+    border-bottom-color: var(--border-color);
+}
+body.dark-mode .changelog-footer {
+    border-top-color: var(--border-color);
+}
+body.dark-mode .changelog-ok-btn:hover {
+    background-color: var(--secondary-color);
+}

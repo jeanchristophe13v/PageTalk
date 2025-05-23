@@ -1,0 +1,119 @@
+/* 包含 Pagetalk 插件的所有媒体查询，用于实现响应式布局调整。 */
+
+@media (max-width: 600px) {
+    /* .tab {
+        padding: var(--spacing-xs);
+        font-size: 12px;
+    } Removed as footer tabs are smaller */
+
+    .message {
+        max-width: 98%; /* 在窄屏上进一步增加最大宽度 */
+    }
+
+    .user-message, .bot-message {
+        max-width: 98%; 
+    }
+}
+
+@media (max-width: 400px) {
+    .chat-header {
+        flex-wrap: wrap;
+    }
+
+    .chat-model-selector, .chat-agent-selector {
+        flex: 1 1 100%; /* Allow them to take full width and wrap */
+        max-width: 100%;
+        margin-bottom: var(--spacing-xs); /* Add some space when wrapped */
+    }
+    .chat-model-selector select, .chat-agent-selector select {
+        width: 100%;
+    }
+    .chat-header .action-button { /* Ensure buttons in header don't shrink too much */
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 250px) {
+    /* 窄侧边栏时的调整 */
+    .footer-tabs { /* Target footer tabs specifically */
+        gap: var(--spacing-xs);
+    }
+    .footer-tab {
+        padding: 2px 4px;
+        font-size: 10px; /* Further reduce font size */
+    }
+
+    /* .message max-width already handled by 600px query */
+
+    .chat-input {
+        flex-wrap: wrap; /* Allow input elements to wrap */
+        padding: var(--spacing-xs);
+    }
+    .chat-input textarea {
+        flex-basis: 100%; /* Textarea takes full width */
+        margin-bottom: var(--spacing-xs);
+    }
+    .chat-input button { /* Ensure buttons are reasonably sized */
+        margin-left: 0;
+        margin-right: var(--spacing-xs); /* Space between buttons if they wrap */
+    }
+
+    .chat-model-selector label, .chat-agent-selector label {
+        display: none; /* 隐藏标签，节省空间 */
+    }
+    .settings-nav-btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 11px;
+    }
+    .welcome-message h2 {
+        font-size: clamp(12px, 3.5vw, 14px);
+    }
+    .welcome-message p {
+        font-size: clamp(10px, 3vw, 12px);
+    }
+    .quick-action-btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: clamp(10px, 3vw, 12px);
+    }
+}
+
+@media (min-width: 251px) and (max-width: 350px) {
+    /* 窄侧边栏时的调整 (slightly wider than 250px) */
+    .chat-input {
+        padding: var(--spacing-xs);
+    }
+    .welcome-message {
+        padding: var(--spacing-md);
+        width: clamp(150px, 90%, 40%); /* Adjust width for this range */
+    }
+    /* Settings container padding was removed, sub-content has padding */
+    #settings { /* Main settings tab content area */
+        padding: var(--spacing-md);
+    }
+     .footer-tab {
+        font-size: 10px;
+    }
+}
+
+/* 自适应宽度的布局修复 (general box-sizing and max-width) */
+.image-preview-container,
+#settings, /* Target the main settings section */
+#settings .settings-container, /* And the inner container */
+.agents-list-container,
+.welcome-message,
+.message, /* Already has max-width, box-sizing helps if padding is complex */
+.chat-container, /* Ensure chat container itself doesn't overflow */
+.chat-messages,
+.chat-input {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+/* Ensure test button is styled correctly if not covered by general .test-btn */
+.test-btn { /* This is a fallback if not defined in _settings.css or specific context */
+    background-color: #fbbc05; /* Default test button color */
+    color: #fff;
+}
+.test-btn:hover {
+    background-color: #fdd835; /* Lighter on hover */
+}

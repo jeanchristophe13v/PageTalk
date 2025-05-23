@@ -1,0 +1,61 @@
+/* 包含 Pagetalk 插件中所有 CSS 变量的定义，包括亮色和深色模式。*/
+
+:root {
+    /* 全新配色模式 - 低调沉稳，靛蓝+灰色系 */
+    --primary-color: #4C6EF5;       /* 主色调 - 靛蓝 5 */
+    --secondary-color: #748FFC;      /* 辅助色 - 靛蓝 3 */
+    --background-color: #F8F9FA;    /* 背景色 - 灰色 0 */
+    --card-background: #FFFFFF;     /* 卡片背景 - 白色 */
+    --text-color: #343A40;          /* 主要文字 - 灰色 8 */
+    --text-secondary: #868E96;      /* 次要文字 - 灰色 6 */
+    --border-color: #E9ECEF;        /* 边框色 - 灰色 2 (淡化) */
+    --success-color: #1b9d33;       /* 成功色 - 绿色 7 */
+    --error-color: #C92A2A;         /* 错误色 - 红色 8 */
+    --warning-color: #E67700;       /* 警告色 - 橙色 8 */
+    --input-background: #FFFFFF;    /* 输入框背景 - 白色 */
+    --code-background: #F1F3F5;     /* 代码块背景 - 灰色 1 */
+    --code-text-color: #343A40;     /* 代码文字 - 灰色 8 */
+    --code-border: #DEE2E6;         /* 代码块边框 - 灰色 3 */
+    --table-header-bg: #F1F3F5;     /* 表头背景 - 灰色 1 */
+    --table-even-row-bg: #F8F9FA;   /* 表格偶数行背景 - 灰色 0 */
+    --button-hover-bg: rgba(76, 110, 245, 0.1); /* 主色调透明悬停 */
+    --scrollbar-thumb: rgba(0, 0, 0, 0.15); /* 滚动条滑块 */
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25); /* 滚动条滑块悬停 */
+
+    /* 间距变量 - 缩小整体缩放 */
+    --spacing-xs: 3px;
+    --spacing-sm: 6px;
+    --spacing-md: 12px;
+    --spacing-lg: 18px;
+    --spacing-xl: 24px;
+
+    /* 圆角变量 */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+    --radius-xl: 20px; /* 新增大圆角变量 */
+    --radius-full: 9999px;
+}
+
+/* --- 全新深色模式变量 - 低调沉稳，靛蓝+灰色系 --- */
+body.dark-mode {
+    --primary-color: #748FFC;       /* 主色调 - 靛蓝 3 */
+    --secondary-color: #91A7FF;      /* 辅助色 - 靛蓝 2 */
+    --background-color: #212529;    /* 背景色 - 灰色 9 */
+    --card-background: #2C2E33;     /* 卡片背景 - 稍亮深灰 */
+    --text-color: #e9ecefdb;          /* 主要文字 - 灰色 1 */
+    --text-secondary: #ADB5BD;      /* 次要文字 - 灰色 5 */
+    --border-color: #343A40;        /* 边框色 - 灰色 8 (淡化) */
+    --success-color: #1b9d33;       /* 成功色 - 绿色 4 */
+    --error-color: #FF8787;         /* 错误色 - 红色 3 */
+    --warning-color: #FFD43B;       /* 警告色 - 黄色 4 */
+    --input-background: #2C2E33;    /* 输入框背景 - 卡片背景色 */
+    --code-background: #343A40;     /* 代码块背景 - 灰色 8 */
+    --code-text-color: #e9ecefdb;     /* 代码文字 - 灰色 1 */
+    --code-border: #495057;         /* 代码块边框 - 灰色 7 */
+    --table-header-bg: var(--primary-color);     /* 深色表格头背景 - 主题色 */
+    --table-even-row-bg: rgba(255, 255, 255, 0.04); /* 深色表格偶数行背景 (保持) */
+    --button-hover-bg: rgba(116, 143, 252, 0.15); /* 主色调透明悬停 */
+    --scrollbar-thumb: rgba(255, 255, 255, 0.2); /* 滚动条滑块 */
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3); /* 滚动条滑块悬停 */
+}

@@ -1,0 +1,682 @@
+/* 包含 Pagetalk 插件设置界面的所有样式，包括通用设置、Agent 管理、模型配置、表单元素、滑块、按钮、提示框等。 */
+
+/* 设置界面样式 */
+#settings {
+    padding: clamp(var(--spacing-md), 4vw, var(--spacing-xl));
+    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background-color); /* Settings tab uses main background */
+}
+
+#settings .settings-container { 
+    /* background-color: var(--background-color); /* Removed, settings section has this */
+    padding: 0; 
+    max-width: 100%;
+    width: 100%; 
+    overflow-x: hidden;
+    flex: 1; 
+    display: flex; 
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* 设置子内容区域标题 */
+.settings-sub-content h2 {
+    font-size: clamp(16px, 4vw, 18px); 
+    margin-bottom: var(--spacing-lg); 
+    color: var(--text-color); 
+    font-weight: 600;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* 设置内部导航 */
+.settings-nav {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+    flex-shrink: 0; 
+    align-items: center; 
+}
+
+.settings-nav-btn {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+}
+.settings-nav-btn:hover {
+    color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+}
+.settings-nav-btn.active {
+    color: var(--primary-color);
+    font-weight: 600;
+    background-color: rgba(76, 110, 245, 0.15); 
+}
+/* Push close button to the right */
+#close-panel-settings {
+    margin-left: auto;
+}
+
+
+/* 设置子内容区域 */
+.settings-sub-content {
+    display: none;
+    flex: 1; 
+    overflow-y: auto; 
+    overflow-x: hidden;
+    padding: var(--spacing-sm) 0; 
+    min-height: 0; 
+}
+.settings-sub-content.active {
+    display: block;
+}
+
+/* 通用设置特定样式 */
+#settings-general .setting-group {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color); 
+}
+#settings-general .setting-group:last-of-type {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+.theme-setting { /* For theme toggle within general settings if ever moved back */
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+.theme-setting label {
+    margin-bottom: 0; 
+}
+
+.export-setting label {
+    margin-bottom: var(--spacing-sm); 
+}
+.export-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+.export-controls select {
+    flex: 1; 
+    max-width: 150px; 
+}
+.export-controls .action-button { /* Specific styling for export button */
+    background-color: var(--primary-color); 
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    width: auto; 
+    height: auto;
+    font-size: clamp(12px, 3vw, 13px);
+    transition: all 0.2s ease;
+}
+.export-controls .action-button:hover {
+    background-color: var(--secondary-color);
+    color: white; 
+}
+
+
+/* 设置组 (通用表单元素容器) */
+.setting-group {
+    margin-bottom: var(--spacing-lg); /* Default bottom margin for groups */
+}
+.setting-group label {
+    display: block;
+    margin-bottom: var(--spacing-sm);
+    font-size: clamp(12px, 3vw, 13px);
+    font-weight: 500;
+    color: var(--text-color);
+}
+.setting-group input[type="text"],
+.setting-group input[type="password"],
+.setting-group input[type="number"],
+.setting-group textarea,
+.setting-group select {
+    width: 100%;
+    padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg); /* 16px 圆角 */
+    font-size: clamp(12px, 3vw, 13px);
+    outline: none;
+    transition: all 0.3s ease;
+    background-color: var(--input-background); /* Use variable */
+}
+.setting-group input:focus,
+.setting-group textarea:focus,
+.setting-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1); /* Use primary color with alpha */
+    background-color: var(--card-background); /* Use variable */
+}
+.setting-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+.hint {
+    font-size: clamp(10px, 2.5vw, 11px);
+    color: var (--text-secondary);
+    margin-top: var(--spacing-xs);
+}
+.hint a { /* Style for links inside hints */
+    color: var(--primary-color);
+    text-decoration: none;
+}
+.hint a:hover {
+    text-decoration: underline;
+}
+
+
+/* 滑块容器调整 */
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+}
+.slider-container input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+    outline: none;
+    position: relative;
+    margin: 10px 0; 
+}
+.slider-container input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--card-background); /* Use variable */
+    border: 2px solid var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    margin-top: -6px; 
+}
+.slider-container input[type="range"]::-webkit-slider-thumb:hover,
+.slider-container input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+.slider-container span { /* Slider value display */
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: clamp(12px, 3.5vw, 14px);
+}
+
+/* 复选框组 */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+}
+.checkbox-group input[type="checkbox"] {
+    width: clamp(16px, 4.5vw, 18px);
+    height: clamp(16px, 4.5vw, 18px);
+    accent-color: var(--primary-color);
+}
+
+/* 模型设置特定外框 */
+.model-settings-group-box {
+    border-radius: var(--radius-lg); 
+    margin-bottom: var(--spacing-lg); 
+    padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    border: 1px solid var(--border-color);
+    width: 100%;
+    background-color: var(--card-background); /* Give it a card background */
+}
+.model-settings-group-box .setting-group {
+    border-bottom: none;
+    margin-bottom: var(--spacing-md); 
+    padding-bottom: 0; 
+}
+.model-settings-group-box .setting-group:last-child {
+    margin-bottom: 0;
+}
+
+/* 模型设置保存按钮区域 */
+.model-save-area {
+    display: flex;
+    flex-direction: column; 
+    align-items: flex-end; 
+    margin-top: var(--spacing-lg); 
+}
+.model-save-area .save-btn {
+    margin-top: 0; 
+}
+.model-save-area .connection-status {
+     margin-top: var(--spacing-sm); 
+     width: auto; 
+     text-align: right; 
+}
+.save-btn, .test-btn { /* General save/test button style */
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-md), 3vw, var(--spacing-lg));
+    font-size: clamp(12px, 3.5vw, 14px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+.save-btn {
+    margin-top: var(--spacing-lg); /* Default margin for save buttons */
+}
+.save-btn:hover, .test-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2); /* Primary color shadow */
+}
+.save-btn:active, .test-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(76, 110, 245, 0.2);
+}
+.test-btn { /* Specific for test button, often beside save */
+     background-color: var(--warning-color); 
+     margin-right: var(--spacing-md); 
+}
+.test-btn:hover {
+     background-color: #ffc107; /* Lighter warning color on hover */
+     box-shadow: 0 2px 8px rgba(230, 119, 0, 0.2); /* Warning color shadow */
+}
+
+/* 连接状态提示 (模型设置页) */
+.connection-status {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md); /* Adjusted padding */
+    border-radius: var (--radius-md);
+    font-size: 13px;
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+.connection-status.success {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    background-color: rgba(52, 168, 83, 0.1);
+    color: var(--success-color); 
+    border: 1px solid rgba(52, 168, 83, 0.3);
+}
+.connection-status.error {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    background-color: rgba(234, 67, 53, 0.1);
+    color: var(--error-color); 
+    border: 1px solid rgba(234, 67, 53, 0.3);
+}
+
+
+
+/* 助手列表样式 */
+.agents-list-container {
+    background-color: var(--card-background); /* Card background for the container */
+    border-radius: var(--radius-lg); 
+    margin-bottom: var(--spacing-lg);
+    padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    border: 1px solid var(--border-color);
+    width: 100%;
+    box-sizing: border-box;
+}
+.agents-list-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0; 
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+.agents-list-header h3 {
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+/* Agent 操作按钮栏 */
+.agent-actions-bar {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    padding: var(--spacing-sm) 0; 
+    margin-bottom: var(--spacing-md); 
+}
+.agent-actions-left,
+.agent-actions-right {
+    display: flex;
+    gap: var(--spacing-sm); 
+}
+/* Agent icon buttons specific hover/active */
+.icon-btn.add-btn { /* Add button specific color */
+    color: var(--success-color);
+}
+.icon-btn.add-btn:hover {
+    background-color: rgba(52, 168, 83, 0.1); /* Success color hover */
+}
+.icon-btn.add-btn svg { /* Make add icon bolder */
+    stroke-width: 2; 
+    width: clamp(18px, 5vw, 20px); 
+    height: clamp(18px, 5vw, 20px); 
+}
+/* Import/Export buttons use default icon-btn hover */
+
+
+.agents-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    flex-grow: 1; 
+    overflow-y: auto;
+    min-height: 100px; 
+    padding-right: var(--spacing-xs); 
+}
+
+/* Agent 列表项 */
+.agent-item {
+    display: flex; 
+    flex-direction: column; 
+    border-radius: var(--radius-md);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+    width: 100%;
+    overflow: hidden; 
+}
+.agent-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(76, 110, 245, 0.1); /* Primary color shadow */
+}
+.agent-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.agent-item-header:hover {
+    background-color: var(--button-hover-bg); /* Primary color transparent hover */
+}
+.agent-item-name { 
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: clamp(12px, 3vw, 13px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; 
+    margin-right: var(--spacing-sm); 
+}
+.expand-icon {
+    flex-shrink: 0;
+    margin-left: auto; 
+    margin-right: var(--spacing-sm);
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+    display: flex; 
+    align-items: center;
+}
+.agent-item.expanded .expand-icon {
+    transform: rotate(90deg);
+}
+.agent-item-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0; 
+}
+.agent-item-actions .delete-btn { /* Specific styles for delete button in agent item */
+     width: clamp(22px, 6.5vw, 26px);
+     height: clamp(22px, 6.5vw, 26px);
+     border-radius: var(--radius-full);
+     border: none;
+     background-color: transparent;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     cursor: pointer;
+     transition: all 0.2s ease;
+     color: var(--text-secondary);
+     opacity: 0.7; /* Slightly transparent by default */
+     padding: 0; 
+}
+.agent-item-actions .delete-btn:hover {
+     opacity: 1;
+     color: var(--error-color);
+     background-color: rgba(234, 67, 53, 0.1); /* Error color transparent hover */
+}
+.agent-item-header:hover .agent-item-actions .delete-btn { /* Make fully visible on header hover */
+    opacity: 1;
+}
+
+/* Agent 项内容体 (可折叠) */
+.agent-item-body {
+    display: none; 
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    background-color: #fdfdfd; /* Slightly different background from card to differentiate */
+}
+.agent-item.expanded .agent-item-body {
+    display: block; 
+}
+.agent-item-body .setting-group {
+    margin-bottom: var(--spacing-md); 
+    padding-bottom: var(--spacing-md); /* Add padding for visual separation if no border */
+    /* border-bottom: 1px solid var(--border-color); /* Optional: line between groups inside body */
+}
+.agent-item-body .setting-group:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.agent-item-body .setting-group label {
+    margin-bottom: var(--spacing-xs); 
+}
+.agent-item-body .setting-group input[type="text"],
+.agent-item-body .setting-group input[type="number"],
+.agent-item-body .setting-group textarea {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 13px;
+    border-radius: var(--radius-lg); 
+    border-color: var(--border-color); /* Ensure correct border in light mode */
+}
+.agent-item-body .setting-group textarea {
+    min-height: 120px; 
+}
+.agent-item-body .slider-container {
+    gap: var(--spacing-sm); 
+}
+.agent-item-body .slider-container input[type="range"] {
+    background: var(--border-color); /* Correct slider track in light mode */
+}
+
+
+/* 删除确认对话框 */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dialog-content {
+    background-color: var(--card-background);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    width: 90%;
+    max-width: 320px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    animation: fade-in 0.2s ease; /* Using existing fadeIn */
+}
+/* @keyframes fade-in is in _base.css */
+.dialog-content h3 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+}
+.dialog-content p {
+    margin-bottom: var(--spacing-lg);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+}
+.dialog-actions .cancel-btn,
+.dialog-actions .delete-btn { /* Note: .delete-btn here is for dialog, not agent item action */
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.dialog-actions .cancel-btn {
+    background-color: var(--border-color); /* Use a neutral background */
+    color: var(--text-secondary);
+}
+.dialog-actions .cancel-btn:hover {
+    background-color: #e0e0e0; /* Slightly darker neutral */
+}
+.dialog-actions .delete-btn { /* Confirm delete button in dialog */
+    background-color: rgba(234, 67, 53, 0.1); /* Error color transparent */
+    color: var(--error-color);
+}
+.dialog-actions .delete-btn:hover {
+    background-color: rgba(234, 67, 53, 0.2); /* Darker error transparent */
+}
+
+
+/* 状态提示 Toast */
+.toast {
+    position: fixed;
+    bottom: 60px; 
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    background-color: var(--card-background);
+    color: var(--text-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90%;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px); /* Slide up effect */
+}
+.toast.success {
+    background-color: rgba(52, 168, 83, 0.1); 
+    color: var(--success-color);           
+    border: 1px solid rgba(52, 168, 83, 0.3); 
+}
+.toast.error {
+    background-color: rgba(234, 67, 53, 0.1); 
+    color: var(--error-color);            
+    border: 1px solid rgba(234, 67, 53, 0.3);  
+    bottom: 160px !important; /* Errors (like API key missing) appear higher */
+}
+.toast.info { /* For informational toasts like "Streaming Aborted" */
+    background-color: rgba(76, 110, 245, 0.1);
+    color: var(--primary-color);
+    border: 1px solid rgba(76, 110, 245, 0.3);
+}
+
+
+/* API Key 输入框样式 */
+.api-key-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.api-key-input-container input { /* Specifically target input within this container */
+    padding-right: 30px; /* Space for the toggle button */
+}
+.toggle-api-key-button {
+    position: absolute;
+    right: 8px; 
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    color: var(--text-secondary); /* Default color */
+}
+.toggle-api-key-button:hover {
+    color: var(--text-color); /* Darker on hover */
+}
+
+
+/* 隐藏数字输入框的上下箭头 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] { /* For Firefox */
+  -moz-appearance: textfield; 
+  appearance: textfield; /* For other modern browsers */
+}
+
+
+/* --- 可拖动主题切换按钮 --- */
+#theme-toggle-btn {
+    display: none; /* Hide by default, shown via JS for settings tab */
+    position: absolute; 
+    right: var(--spacing-lg); 
+    bottom: 80px; 
+    left: auto; 
+    top: auto; 
+    cursor: grab; 
+    z-index: 99; 
+    width: 48px; 
+    height: 48px; 
+    padding: 12px; 
+    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    /* Inherits .icon-btn styles for background, color, border-radius, etc. */
+    /* JS will add .icon-btn and .theme-toggle-btn classes */
+}
+#theme-toggle-btn:active {
+    cursor: grabbing; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+}
+/* JS controls display based on active tab */
