@@ -51,7 +51,7 @@ import {
 // --- State Management ---
 const state = {
     apiKey: '',
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash',
     agents: [],
     currentAgentId: null,
     // Settings derived from current agent
@@ -247,8 +247,16 @@ function setupEventListeners() {
     elements.tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
+            // 调用 ui.js 中的 switchTab (假设 switchTab 是一个可访问的函数，或者这部分逻辑在 main.js 中)
             switchTab(tabId, elements, (subTab) => switchSettingsSubTab(subTab, elements));
             setThemeButtonVisibility(tabId, elements); // Update button visibility on tab switch
+
+            // 新增：如果切换到聊天标签页，则聚焦输入框
+            if (tabId === 'chat' && elements.userInput) {
+                // 使用 setTimeout 确保在标签页内容完全显示后再聚焦
+                setTimeout(() => elements.userInput.focus(), 50);
+                // console.log("User input focused on tab switch to chat (from main.js event listener).");
+            }
         });
     });
 
@@ -504,8 +512,15 @@ function handleContentScriptMessages(event) {
             // Feedback is now handled within the copy functions themselves
             // console.log('Copy successful (message from content script)');
             break;
-        case 'panelShown':
-            resizeTextarea(elements);
+        case 'panelShownAndFocusInput': // 修改：处理新的 action
+            // 首先确保聊天标签页是当前活动的标签页
+            const chatTabElement = document.getElementById('chat');
+            if (elements.userInput && chatTabElement && chatTabElement.classList.contains('active')) {
+                // 使用 setTimeout 确保在面板完全显示后再聚焦
+                setTimeout(() => elements.userInput.focus(), 50);
+                // console.log("User input focused on panel shown (chat tab active).");
+            }
+            resizeTextarea(elements); // 保持原有 resize 逻辑
             break;
         case 'panelResized':
             resizeTextarea(elements);

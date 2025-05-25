@@ -213,12 +213,12 @@ function setupChangelogTranslations() {
  */
 function closeChangelogModal(neverShowAgain) {
     const modal = document.getElementById('changelog-modal');
-    
+
     // 隐藏模态框
     if (modal) {
         modal.style.display = 'none';
     }
-    
+
     // 如果选择了不再显示当前版本更新，记录到 localStorage
     if (neverShowAgain) {
         localStorage.setItem(`hideChangelog_${currentVersion}`, 'true');
@@ -226,6 +226,16 @@ function closeChangelogModal(neverShowAgain) {
         localStorage.setItem('lastViewedVersion', currentVersion);
     }
     // 否则不更新 lastViewedVersion，这样在刷新页面后还会显示
+
+    // 新增：尝试在关闭模态框后聚焦聊天输入框
+    // 需要能够访问到聊天输入框元素和聊天标签页的激活状态
+    const userInput = document.getElementById('user-input');
+    const chatTab = document.getElementById('chat'); // 假设聊天标签页的 ID 是 'chat'
+    if (userInput && chatTab && chatTab.classList.contains('active')) {
+        // 只有当聊天标签页是激活状态时才聚焦
+        setTimeout(() => userInput.focus(), 0); // 使用 setTimeout 将聚焦操作推迟到下一个事件循环，确保模态框完全消失
+        // console.log("Changelog modal closed, focusing user input.");
+    }
 }
 
 /**

@@ -150,13 +150,14 @@ function showPanel() {
       }
     }, 500);
 
-    // 新增：通知 iframe 面板已显示，以便触发 resizeTextarea
+    // 新增：通知 iframe 面板已显示，以便触发 resizeTextarea 和 focus
     setTimeout(() => {
       const iframe = document.getElementById('pagetalk-panel-iframe');
       if (iframe && iframe.contentWindow) {
-        iframe.contentWindow.postMessage({ action: 'panelShown' }, '*');
+        // 修改 action 名称，更明确其意图
+        iframe.contentWindow.postMessage({ action: 'panelShownAndFocusInput' }, '*');
       }
-    }, 10); // 稍微延迟确保 iframe 内脚本已准备好
+    }, 50); // 稍微延迟确保 iframe 内脚本已准备好
 
     // 新增：面板显示时，立即检测并发送当前主题
     setTimeout(detectAndSendTheme, 100); // 稍长延迟确保 iframe 内监听器已设置
