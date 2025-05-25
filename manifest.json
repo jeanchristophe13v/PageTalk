@@ -33,7 +33,7 @@
     ],
   "web_accessible_resources": [
     {
-      "resources": ["html/*", "css/*", "js/*", "*.png"],
+      "resources": ["html/*", "css/*", "js/*", "js/lib/*", "magic.png"],
       "matches": ["<all_urls>"]
     }
   ],
