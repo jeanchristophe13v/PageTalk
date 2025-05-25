@@ -16,14 +16,14 @@ function initPagetalkPanel() {
     return;
   }
 
-  // ��建面板容器
+  // 创建面板容器
   const panelContainer = document.createElement('div');
   panelContainer.id = 'pagetalk-panel-container';
-  panelContainer.style.zIndex = '9999'; // ���置 z-index
+  panelContainer.style.zIndex = '9999'; // 设置 z-index
   panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
   panelContainer.style.overflow = 'hidden'; // 防止 iframe 内容溢出圆角
 
-  // 创建������器
+  // 创建调整大小的拖拽器
   const resizer = document.createElement('div');
   resizer.id = 'pagetalk-panel-resizer';
 
@@ -50,7 +50,7 @@ function setupResizeEvents(resizer, panel) {
   resizer.addEventListener('mousedown', function (e) {
     e.preventDefault();
 
-    // ���������在调整大小
+    // 标记当前是否在调整大小
     resizing = true;
 
     // 记录初始鼠标位置
@@ -68,11 +68,11 @@ function setupResizeEvents(resizer, panel) {
     // 创建移动事件处理函数
     function onMouseMove(e) {
       if (resizing) {
-        // ��������的宽度 - 修正计算逻辑
+        // 计算新的宽度 - 修正计算逻辑
         const diffX = initialX - e.clientX;
         const newWidth = initialWidth + diffX;
 
-        // 限制最小宽度为200px���最大宽度为窗口的80%
+        // 限制最小宽度为200px，最大宽度为窗口的80%
         if (newWidth >= 200 && newWidth <= window.innerWidth * 0.8) {
           // 检查宽度是否真的改变了
           if (panelWidth !== newWidth) {
@@ -81,7 +81,7 @@ function setupResizeEvents(resizer, panel) {
             panel.style.width = `${newWidth}px`;
             document.body.style.marginRight = `${newWidth}px`;
 
-            // ���增：������ iframe 面板宽度已改变
+            // 新增：通知 iframe 面板宽度已改变
             const iframe = document.getElementById('pagetalk-panel-iframe');
             if (iframe && iframe.contentWindow) {
               // 使用 requestAnimationFrame 或 setTimeout 避免过于频繁地发送消息
@@ -137,7 +137,7 @@ function showPanel() {
   const panel = document.getElementById('pagetalk-panel-container');
   if (panel) {
     panel.style.display = 'block';
-    panel.style.width = `${panelWidth}px`; // 确保面板宽度���设置������
+    panel.style.width = `${panelWidth}px`; // 确保面板宽度被正确设置
     document.body.classList.toggle('pagetalk-panel-open', true);
     document.body.style.marginRight = `${panelWidth}px`;
     panelActive = true;
@@ -202,7 +202,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ error: error.message });
       }
     })();
-    return true; // 必须返回 true 来表明 sendResponse 将会异步调用
+    return true; // 必须返回 true 来表明 sendResponse 将会异 asynchronous 调用
   }
 
   // 处理打开/关闭面板的请求
@@ -217,7 +217,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   // 确保为其他可能的消息处理器也返回 true（如果它们是异步的）
-  // ���果������其他异步处理器，可以在这里返回 false 或 undefined
+  // 如果没有其他异步处理器，可以在这里返回 false 或 undefined
   // 但为了安全起见，如果这个 listener 包含任何异步操作，最好总是返回 true
   return true;
 });
@@ -226,9 +226,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function extractPageContent() {
   const currentUrl = window.location.href;
   const contentType = document.contentType;
-  // 检测是否为 PDF.js 渲染的页面 (���如 arXiv)
+  // 检测是否为 PDF.js 渲染的页面 (例如 arXiv)
   const isPdfJsViewerDom = document.querySelector('div#viewer.pdfViewer') !== null || document.querySelector('div#viewerContainer') !== null;
-  // 检测是否为直接的 PDF ���接或���览器识别为 PDF 内容类型
+  // 检测是否为直接的 PDF 链接或浏览器识别为 PDF 内容类型
   const isDirectPdf = currentUrl.toLowerCase().endsWith('.pdf') || contentType === 'application/pdf';
 
   console.log(`[PageTalk] Extraction check: isDirectPdf=${isDirectPdf}, isPdfJsViewerDom=${isPdfJsViewerDom}, contentType=${contentType}, url=${currentUrl}`);
@@ -267,7 +267,7 @@ async function extractPageContent() {
       return fullText.trim();
     } catch (pdfError) {
       console.warn('[PageTalk] PDF fetch/parse error for direct PDF:', pdfError);
-      // 如果 fetch/parse ������，但 DOM 结构像是 PDF.js viewer，尝试从 DOM 提取
+      // 如果 fetch/parse 失败，但 DOM 结构像是 PDF.js viewer，尝试从 DOM 提取
       if (isPdfJsViewerDom) {
         console.log('[PageTalk] Falling back to DOM extraction for direct PDF (e.g. arXiv).');
         return extractFromPdfJsDom(); // 尝试从DOM中提取
@@ -313,7 +313,7 @@ function extractWithReadability() {
       }
       content = '(Fallback to body text) ' + content; // 标记为后备提取
     }
-    const maxLength = 500000; // 限制最���长度
+    const maxLength = 500000; // 限制最大长度
     if (content.length > maxLength) {
       content = content.substring(0, maxLength) + '...（内容已截断）';
     }
@@ -331,7 +331,7 @@ function extractWithReadability() {
  */
 function extractFromPdfJsDom() {
   let pdfText = '';
-  // 尝试������������的 PDF.js viewer 容器选择器
+  // 尝试常见的 PDF.js viewer 容器选择器
   const viewer = document.getElementById('viewer') ||
     document.getElementById('viewerContainer') ||
     document.querySelector('.pdfViewer'); // 一个常见的类名
@@ -341,7 +341,7 @@ function extractFromPdfJsDom() {
     pdfText = viewer.innerText.trim();
     console.log('[PageTalk] Extracted text from PDF.js viewer DOM using innerText, length:', pdfText.length);
   } else {
-    // 如果 viewer.innerText 失败，尝试���具体地从 textLayer 提取
+    // 如果 viewer.innerText 失败，尝试更具体地从 textLayer 提取
     const textLayers = document.querySelectorAll('.textLayer');
     if (textLayers.length > 0) {
       let combinedText = [];
@@ -350,7 +350,7 @@ function extractFromPdfJsDom() {
         const spans = layer.querySelectorAll('span');
         let layerText = '';
         spans.forEach(span => {
-          // ������������如果 span 有实际文本内容且不是纯粹的间隔符
+          // 检查并确保如果 span 有实际文本内容且不是纯粹的间隔符
           if (span.textContent && span.textContent.trim() !== '') {
             layerText += span.textContent;
           }
@@ -387,7 +387,7 @@ function detectAndSendTheme() {
     return; // 如果 iframe 不存在或未加载完成，则不发送
   }
 
-  let detectedTheme = 'system'; // ������为 'system'，表示未检测到明确主题或依赖系统
+  let detectedTheme = 'system'; // 默认为 'system'，表示未检测到明确主题或依赖系统
 
   // 1. 检查 HTML data-color-mode 属性 (GitHub 使用) - 最高优先级
   const dataColorMode = document.documentElement.getAttribute('data-color-mode');
@@ -418,10 +418,10 @@ function detectAndSendTheme() {
   // 3. 如果以上属性都未明确指定，检查 body class (更灵活的匹配)
   if (detectedTheme === 'system') {
     const bodyClasses = document.body.classList;
-    // 检查���见的深色模式类名
+    // 检查常见的深色模式类名
     if (bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark') || bodyClasses.contains('dark')) {
       detectedTheme = 'dark';
-      // 检查常见的���色模式类名
+      // 检查常见的浅色模式类名
     } else if (bodyClasses.contains('light-mode') || bodyClasses.contains('theme-light') || bodyClasses.contains('light')) {
       detectedTheme = 'light';
     }
@@ -434,7 +434,7 @@ function detectAndSendTheme() {
   if (detectedTheme === 'system') {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     // 只有在系统偏好明确时才覆盖 'system'
-    if (prefersDark.media !== 'not all') { // ���查���体查询是否有效
+    if (prefersDark.media !== 'not all') { // 检查媒体查询是否有效
       detectedTheme = prefersDark.matches ? 'dark' : 'light';
       console.log(`[PageTalk content.js] Detected theme via prefers-color-scheme: ${detectedTheme}`);
     } else {
@@ -448,7 +448,7 @@ function detectAndSendTheme() {
 
   iframe.contentWindow.postMessage({
     action: 'webpageThemeDetected', // 更改 action 名称
-    theme: detectedTheme // 发���检测到的主��� ('dark', 'light', 'system')
+    theme: detectedTheme // 发送检测到的主题 ('dark', 'light', 'system')
   }, '*');
 }
 
@@ -456,14 +456,14 @@ function detectAndSendTheme() {
 const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 function handleSystemThemeChange(event) {
   console.log(`[PageTalk content.js] System theme changed event detected. prefersDark: ${event.matches}`);
-  // ���新运行检测逻辑，它会优先检查 HTML 属性/类，只有在没有显式设置时才会使用系统偏好
+  // 重新运行检测逻辑，它会优先检查 HTML 属性/类，只有在没有显式设置时才会使用系统偏好
   detectAndSendTheme();
 }
 
 // 使用 addEventListener 替代旧的 addListener
 if (mediaQuery.addEventListener) {
   mediaQuery.addEventListener('change', handleSystemThemeChange);
-} else if (mediaQuery.addListener) { // 兼容旧版���览器
+} else if (mediaQuery.addListener) { // 兼容旧版浏览器
   mediaQuery.addListener(handleSystemThemeChange);
 }
 // --- 结束：主题检测与发送 ---
@@ -484,7 +484,7 @@ window.addEventListener('message', (event) => {
     hidePanel();
   }
   else if (event.data.action === 'requestPageContent') {
-    (async () => { // ���用 IIFE 处理异步
+    (async () => { // 使用 IIFE 处理异步
       let showSuccess = false;
       // 检查是否是当前页面视图的第一次提取
       if (!messageShownForThisPageView) {
@@ -502,7 +502,7 @@ window.addEventListener('message', (event) => {
       }
     })();
   }
-  // 添加���理���制文本的功能
+  // 添加复制文本的功能
   else if (event.data.action === 'copyText') {
     // 使用Clipboard API复制文本
     const text = event.data.text;
@@ -523,7 +523,7 @@ window.addEventListener('message', (event) => {
       // 尝试使用document.execCommand进行复制 (对所有浏览器兼容)
       const success = document.execCommand('copy');
       if (success) {
-        // 获取iframe���素并通知复制成功
+        // 获取iframe元素并通知复制成功
         if (iframe && iframe.contentWindow) {
           iframe.contentWindow.postMessage({
             action: 'copySuccess'
@@ -544,6 +544,6 @@ window.addEventListener('message', (event) => {
 // 初始运行
 // 在页面加载完成后立即发送主题更新消息
 window.addEventListener('load', () => {
-  // initPagetalkPanel(); // ������是否在load时立即初始化，或者按需初始化
+  // initPagetalkPanel(); // 考虑是否在load时立即初始化，或者按需初始化
   detectAndSendTheme(); // 页面加载完成后立即发送主题
 });

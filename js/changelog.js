@@ -5,6 +5,22 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "2.7.5",
+        date: "2025-05-25",
+        changes: {
+            "zh-CN": [
+                "新增pdf解析功能（在线，非本地pdf），现在可以在网页中的pdf和PageTalk对话",
+                "聊天界面的小幅优化",
+                "修复了agent的删除bug"
+            ],
+            "en": [
+                "Added PDF parsing feature (online), now you can chat with PageTalk in web PDFs",
+                "Minor UI optimizations in chat interface",
+                "Fixed agent deletion bug"
+            ]
+        }
+    },
+    {
         version: "2.7.1",
         date: "2025-05-22",
         changes: {
