@@ -10,13 +10,12 @@
 
 #### [中文/Chinese](README-zh.md)
 
-## Introducing PageTalk 2.7.0 🎉
+## Introducing PageTalk 2.7.5 🎉
 
-**New Features:** 
-- **Url context**: Thanks to Google, gemini-2.0-flash and gemini-2.5-flash-preview-05-20 can now extract context from urls.
-
-![image](https://github.com/user-attachments/assets/43e9015e-fbff-4b61-b7f0-f03c2916082e)
-
+**New Features:**
+- **Added PDF parsing feature (online, not local):** Now you can chat with PageTalk in web PDFs.
+- Minor UI optimizations in chat interface.
+- Fixed agent deletion bug.
 
 ## Introduction
 
@@ -30,6 +29,8 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 *   **Multi-Agent System:** Create, customize, switch, and **import/export** AI agents.
 *   **Image Input:** Upload or paste images for discussion.
 *   **Rich Content Rendering:** Supports Markdown, code highlighting, **LaTeX**, and **Mermaid** diagrams.
+*   **PDF Parsing & Chat:** Extract and chat with PDF content directly in web pages.
+*   **Url Context Extraction:** Gemini-2.0-flash and Gemini-2.5-flash-preview-05-20（ gemini-2.5-flash(-thinking) ） can automatically extract web page content as context.
 *   **Personalized Settings:** Configure API key, **language (EN/ZH)**, **theme (Light/Dark)**.
 *   **Chat Export:** Save conversations as Markdown or Text files.
 

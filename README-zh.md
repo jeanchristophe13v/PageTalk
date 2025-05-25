@@ -10,13 +10,12 @@
 
 #### [English/英文](README.md)
 
-## PageTalk 2.7.0  🎉
+## PageTalk 2.7.5  🎉
 
 **新特性：**  
-- **URL 上下文提取**：感谢 Google，现在 gemini-2.0-flash 和 gemini-2.5-flash-preview-05-20 支持从 URL 自动提取网页内容作为上下文了！！
-  
-![image](https://github.com/user-attachments/assets/4f51b52e-3e06-421d-8360-4fa0791f7650)
-
+- **新增 PDF 解析功能（在线，非本地）**：现在可以在网页中的 PDF 和 PageTalk 对话。
+- 聊天界面的小幅优化。
+- 修复了 agent 的删除 bug。
 
 ## 简介
 
@@ -30,6 +29,8 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 *   **多助手系统:** 创建、自定义、切换并**导入/导出** AI 助手。
 *   **图片输入:** 上传或粘贴图片进行讨论。
 *   **富文本渲染:** 支持 Markdown、代码高亮、**LaTeX** 公式和 **Mermaid** 图表。
+*   **PDF 解析与对话:** 支持网页内 PDF 文件内容提取与对话。
+*   **URL 上下文提取:** Gemini-2.0-flash 和 Gemini-2.5-flash-preview-05-20 ( gemini-2.5-flash(-thinking) )支持自动提取网页内容作为上下文。
 *   **个性化设置:** 配置 API 密钥、**语言 (中/英)**、**主题 (浅色/深色)**。
 *   **聊天导出:** 将对话保存为 Markdown 或纯文本文件。
 

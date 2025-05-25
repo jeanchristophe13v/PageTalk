@@ -14,7 +14,7 @@ const changelog = [
                 "修复了agent的删除bug"
             ],
             "en": [
-                "Added PDF parsing feature (online), now you can chat with PageTalk in web PDFs",
+                "Added PDF parsing feature (online, not local), now you can chat with PageTalk in web PDFs",
                 "Minor UI optimizations in chat interface",
                 "Fixed agent deletion bug"
             ]
