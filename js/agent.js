@@ -190,10 +190,7 @@ export function updateAgentsListUI(state, elements, currentTranslations, autoSav
             }
         });
 
-        // If it's the currently selected agent, expand it initially
-        if (agent.id === state.currentAgentId) {
-            agentItem.classList.add('expanded');
-        }
+        // 移除初始展开当前选中助手的逻辑，确保所有助手保持折叠状态
     });
 }
 
@@ -380,9 +377,10 @@ export function confirmDeleteAgent(state, elements, updateAgentsListCallback, up
 
     state.agents = state.agents.filter(a => a.id !== agentId);
 
+    // 无论删除的是否是当前选中的助手，都清除当前助手的设置，并保持折叠状态
     if (state.currentAgentId === agentId) {
-        state.currentAgentId = state.agents[0].id; // Switch to the first available agent
-        loadCurrentAgentSettingsIntoState(state); // Load new current agent's settings
+        state.currentAgentId = null; // 清除当前选中的助手ID
+        loadCurrentAgentSettingsIntoState(state); // 这将重置为默认空设置
     }
 
     updateAgentsListCallback();

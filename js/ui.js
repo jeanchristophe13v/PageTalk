@@ -220,9 +220,8 @@ export function addThinkingAnimation(insertAfterElement = null, elements, isUser
         elements.chatMessages.appendChild(thinkingElement);
     }
 
-    if (isUserNearBottom) {
-        thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
+    // 移除条件判断，无条件滚动到视图底部
+    thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
     return thinkingElement;
 }
