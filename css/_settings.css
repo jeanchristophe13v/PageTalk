@@ -167,8 +167,9 @@
 }
 .hint {
     font-size: clamp(10px, 2.5vw, 11px);
-    color: var (--text-secondary);
+    color: var(--text-secondary);
     margin-top: var(--spacing-xs);
+    padding-left: var(--spacing-md); /* Add padding to move text to the right */
 }
 .hint a { /* Style for links inside hints */
     color: var(--primary-color);

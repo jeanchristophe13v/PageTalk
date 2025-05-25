@@ -431,6 +431,14 @@ export function updateUIElementsWithTranslations(currentTranslations) {
 
     setTitle('#theme-toggle-btn', 'themeToggleTitle'); // Title for the draggable button
 
+    // Handle all elements with data-i18n attribute
+    document.querySelectorAll('[data-i18n]').forEach(element => {
+        const key = element.dataset.i18n;
+        if (key) {
+            element.textContent = _tr(key);
+        }
+    });
+
     // Note: Dynamic elements like agent list items, status messages, etc.,
     // need to be updated when they are created or their state changes,
     // using the _ function with the currentTranslations.

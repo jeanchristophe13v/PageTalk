@@ -26,9 +26,9 @@ const translations = {
     // --- HTML Elements (sidepanel.html) ---
     'htmlLang': 'zh-CN',
     'pageTitle': 'Pagetalk',
-    'modelLabel': 'Model：',
+    'modelLabel': '模型：',
     'modelSelectLabel': '选择模型',
-    'agentLabel': 'Agent：',
+    'agentLabel': '助手：',
     'agentSelectLabel': '选择助手',
     'clearContextTitle': '清除聊天记录',
     'closePanelTitle': '关闭面板',
@@ -40,29 +40,29 @@ const translations = {
     'uploadImageTitle': '上传图片',
     'userInputPlaceholder': '...',
     'sendMessageTitle': '发送消息',
-    'settingsTab': 'Settings', // Footer tab
-    'chatTab': 'Chat', // Footer tab
-    'generalSettingsNav': 'General',
-    'agentSettingsNav': 'Agent',
-    'modelSettingsNav': 'Model',
-    'generalSettingsHeading': 'General Settings',
-    'languageLabel': 'Language:',
-    'exportChatLabel': 'Export Chat History:',
+    'settingsTab': '设置', // Footer tab
+    'chatTab': '聊天', // Footer tab
+    'generalSettingsNav': '通用',
+    'agentSettingsNav': '助手',
+    'modelSettingsNav': '模型',
+    'generalSettingsHeading': '通用设置',
+    'languageLabel': '语言：',
+    'exportChatLabel': '导出聊天记录：',
     'exportFormatMarkdown': 'Markdown',
     'exportFormatText': 'Text',
-    'exportButton': 'Export',
-    'agentSettingsHeading': 'Agent Settings',
-    'agentsListHeading': 'Agents',
+    'exportButton': '导出',
+    'agentSettingsHeading': '助手设置',
+    'agentsListHeading': '助手',
     'addNewAgentTitle': '添加新助手',
     'deleteConfirmHeading': '确认删除',
     'deleteConfirmPrompt': '您确定要删除助手 "{agentName}" 吗？此操作无法撤销。', // Placeholder for agent name
-    'modelSettingsHeading': 'Model Settings',
+    'modelSettingsHeading': '模型设置',
     'apiKeyLabel': 'Gemini API Key:',
     'apiKeyPlaceholder': '输入您的API Key',
     'toggleApiKeyVisibilityTitle': 'Toggle API Key visibility', // Keep English for title? Let's translate.
     'toggleApiKeyVisibilityTitleTranslated': '切换API密钥可见性',
-    'apiKeyHint': 'Get Your API Key', // Link text is separate
-    'modelSelectLabelSettings': 'Model:', // Model selection in settings
+    'apiKeyHint': '获取您的API Key', // Link text is separate
+    'modelSelectLabelSettings': '模型：', // Model selection in settings
     'connectionStatusPlaceholder': '', // Placeholder for connection status
     'themeToggleTitle': '切换深色/浅色模式',
     'contextStatusPrefix': '上下文：',
@@ -70,8 +70,8 @@ const translations = {
     'contextStatusExtracting': '正在提取...',
     'contextStatusFailed': '提取失败',
     'contextStatusChars': '{charCount} 字符', // Placeholder for character count
-    'connectionIndicatorConnected': 'Connected',
-    'connectionIndicatorDisconnected': 'Disconnected',
+    'connectionIndicatorConnected': '已连接',
+    'connectionIndicatorDisconnected': '未连接',
     'emptyAgentList': '暂无助手，点击添加按钮创建',
     'agentNameLabel': 'Name:',
     'agentIdLabel': 'ID:', // Maybe not show ID? Let's keep it for now.
@@ -90,7 +90,7 @@ const translations = {
     'apiKeyMissingError': '请先在"模型"选项卡中设置API密钥',
     'saveSuccessToast': '已保存',
     'saveFailedToast': '保存失败：{error}', // Placeholder for error message
-    'settingsSaved': 'Saved', // Used in showConnectionStatus for success
+    'settingsSaved': '已保存', // Used in showConnectionStatus for success
     'connectionTestSuccess': '连接成功', // Used in showConnectionStatus for success
     'connectionTestFailed': '连接失败: {error}', // Placeholder for error message
     'contextClearedSuccess': '聊天记录已清除',
@@ -134,7 +134,7 @@ const translations = {
     // --- General UI ---
     'appName': 'Pagetalk',
     'loading': 'Loading...',
-    'save': 'Save',
+    'save': '保存',
     'cancel': 'Cancel',
     'delete': 'Delete',
     'confirm': 'Confirm',
@@ -194,7 +194,7 @@ const translations = {
     'apiKeyPlaceholder': 'Enter your API Key',
     'toggleApiKeyVisibilityTitle': 'Toggle API Key visibility',
     'toggleApiKeyVisibilityTitleTranslated': 'Toggle API Key visibility', // Keep English for title
-    'apiKeyHint': 'Get Your API Key',
+    'apiKeyHint': 'Get Your API Key in',
     'modelSelectLabelSettings': 'Model:',
     'connectionStatusPlaceholder': '',
     'themeToggleTitle': 'Toggle dark/light mode',
@@ -259,8 +259,8 @@ const translations = {
     'buttonPositionSaveError': 'Error saving button position',
     'setDefaultButtonPositionLog': 'Setting default button position',
     'agentSettingsSaved': 'Saved',
-    'testingConnection': 'Testing connection...',
-    'saving': 'Saving...',
+    'testingConnection': '正在测试连接...',
+    'saving': '保存中...',
     'containsNImages': '[Contains {count} image(s)]', // For text export
   }
 };

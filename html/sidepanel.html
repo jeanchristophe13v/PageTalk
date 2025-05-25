@@ -31,14 +31,14 @@
                 <div class="chat-container">
                     <div class="chat-header">
                         <div class="chat-model-selector">
-                            <label for="chat-model-selection">Model：</label>
+                            <label for="chat-model-selection">模型：</label>
                             <select id="chat-model-selection" aria-label="选择模型">
                                 <!-- 这里的选项会通过 JavaScript 动态填充 -->
                             </select>
                         </div>
                         <!-- 添加助手选择器 -->
                         <div class="chat-agent-selector">
-                            <label for="chat-agent-selection">Agent：</label>
+                            <label for="chat-agent-selection">助手：</label>
                             <select id="chat-agent-selection" aria-label="选择助手">
                                 <!-- 这里的选项会通过 JavaScript 动态填充 -->
                             </select>
@@ -102,9 +102,9 @@
                 <div class="settings-container">
                     <!-- 设置内部导航 -->
                     <div class="settings-nav">
-                        <button class="settings-nav-btn" data-subtab="agent">Agent</button>
-                        <button class="settings-nav-btn" data-subtab="model">Model</button>
-                        <button class="settings-nav-btn active" data-subtab="general">General</button>
+                        <button class="settings-nav-btn" data-subtab="agent">助手</button>
+                        <button class="settings-nav-btn" data-subtab="model">模型</button>
+                        <button class="settings-nav-btn active" data-subtab="general">通用</button>
                         <!-- 添加关闭按钮 -->
                          <button id="close-panel-settings" title="关闭面板" class="action-button close-panel-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -115,33 +115,35 @@
 
                     <!-- 通用设置 -->
                     <div id="settings-general" class="settings-sub-content active">
-                        <h2>General Settings</h2>
+                        <h2>通用设置</h2>
                         <div class="setting-group">
-                            <label for="language-select">Language:</label>
-                            <select id="language-select">
-                                <option value="zh-CN">简体中文</option>
-                                <option value="en">English</option>
-                            </select>
+                            <label for="language-select">语言：</label>
+                            <div class="export-controls">
+                                <select id="language-select">
+                                    <option value="zh-CN">简体中文</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="setting-group export-setting">
-                            <label for="export-format">Export Chat History:</label>
+                            <label for="export-format">导出聊天记录：</label>
                             <div class="export-controls">
                                 <select id="export-format">
                                     <option value="markdown">Markdown</option>
                                     <option value="text">Text</option>
                                 </select>
-                                <button id="export-chat-history" class="action-button">Export</button>
+                                <button id="export-chat-history" class="action-button">导出</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Agent 设置 -->
                     <div id="settings-agent" class="settings-sub-content">
-                        <h2>Agent Settings</h2>
+                        <h2>助手设置</h2>
                         <!-- 助手列表区域 -->
                         <div class="agents-list-container">
                             <div class="agents-list-header">
-                                <h3>Agents</h3>
+                                <h3>助手</h3>
                                 <!-- 隐藏的文件输入框 (保留) -->
                                 <input type="file" id="import-agent-input" accept=".json" style="display: none;">
                             </div>
@@ -190,7 +192,7 @@
 
                     <!-- 模型设置 -->
                     <div id="settings-model" class="settings-sub-content">
-                        <h2>Model Settings</h2>
+                        <h2>模型设置</h2>
                         <div class="model-settings-group-box">
                             <div class="setting-group">
                                 <label for="api-key">Gemini API Key:</label>
@@ -208,10 +210,10 @@
                                         </svg>
                                     </button>
                                 </div>
-                                <p class="hint">   Get Your API Key <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
+                                <p class="hint"><span data-i18n="apiKeyHint"></span>  <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
                             </div>
                             <div class="setting-group">
-                                <label for="model-selection">Model:</label>
+                                <label for="model-selection">模型：</label>
                                 <select id="model-selection">
                                     <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                                     <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking</option>
@@ -224,7 +226,7 @@
                             </div>
                         </div>
                         <div class="model-save-area">
-                            <button id="save-model-settings" class="save-btn">Save</button>
+                            <button id="save-model-settings" class="save-btn">保存</button>
                             <div id="connection-status" class="connection-status"></div>
                         </div>
                     </div>
@@ -246,12 +248,12 @@
         <footer>
             <div class="status-bar">
                 <span id="context-status">Context: 无</span>
-                <span id="connection-indicator" class="disconnected">disconnected</span>
+                <span id="connection-indicator" class="disconnected">未连接</span>
             </div>
             <!-- 更新后的底部导航栏 -->
             <ul class="footer-tabs">
-                <li class="footer-tab active" data-tab="chat">Chat</li>
-                <li class="footer-tab" data-tab="settings">Settings</li>
+                <li class="footer-tab active" data-tab="chat">聊天</li>
+                <li class="footer-tab" data-tab="settings">设置</li>
             </ul>
         </footer>
     </div>
