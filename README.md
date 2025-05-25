@@ -17,6 +17,9 @@
 - Minor UI optimizations in chat interface.
 - Fixed agent deletion bug.
 
+![b5d6f628b841d2c7103ec4cccba8c38c](https://github.com/user-attachments/assets/2b48a633-418e-433b-8e3e-c2444d188fee)
+
+
 ## Introduction
 
 Pagetalk is a browser extension that enhances your web browsing by integrating Google's Gemini API. Summarize pages, chat contextually, and manage custom AI agents effortlessly.
@@ -41,6 +44,7 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 
 ![image](https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24)
 
+![9291f32857cc26e4f039f5ec72ab07bc](https://github.com/user-attachments/assets/9fef9086-be70-448c-b23e-e79629e42d2a)
 
 
 
