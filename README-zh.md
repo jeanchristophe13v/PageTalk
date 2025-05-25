@@ -17,6 +17,9 @@
 - 聊天界面的小幅优化。
 - 修复了 agent 的删除 bug。
 
+![b5d6f628b841d2c7103ec4cccba8c38c](https://github.com/user-attachments/assets/b408c5ab-cc73-4a44-80a3-6dcd9d0be53b)
+
+
 ## 简介
 
 Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您的网页浏览体验。轻松总结页面、进行上下文对话，并管理自定义 AI 助手。
@@ -41,6 +44,7 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 
 ![image](https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24)
 
+![9291f32857cc26e4f039f5ec72ab07bc](https://github.com/user-attachments/assets/c23d2919-aa7c-427a-80a8-1b08a5f46a5c)
 
 ## 安装
 
