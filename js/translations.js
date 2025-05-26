@@ -127,14 +127,15 @@ const translations = {
     'setDefaultButtonPositionLog': '设置默认按钮位置', // Log message
     'agentSettingsSaved': 'Saved', // Agent settings status message
     'testingConnection': 'Testing connection...', // Model settings status
-    'saving': 'Saving...', // Model settings button text
+    'save': '保存',
+    'saving': '保存中...',
     'containsNImages': '[包含 {count} 张图片]', // For text export
   },
   'en': {
     // --- General UI ---
     'appName': 'Pagetalk',
     'loading': 'Loading...',
-    'save': '保存',
+    'save': 'Save',
     'cancel': 'Cancel',
     'delete': 'Delete',
     'confirm': 'Confirm',
@@ -259,8 +260,8 @@ const translations = {
     'buttonPositionSaveError': 'Error saving button position',
     'setDefaultButtonPositionLog': 'Setting default button position',
     'agentSettingsSaved': 'Saved',
-    'testingConnection': '正在测试连接...',
-    'saving': '保存中...',
+    'testingConnection': 'Testing connection...',
+    'saving': 'Saving...',
     'containsNImages': '[Contains {count} image(s)]', // For text export
   }
 };
