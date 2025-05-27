@@ -127,7 +127,12 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     // Scroll only if forced or user is near bottom
     if (forceScroll || isUserNearBottom) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        setTimeout(() => {
+            elements.chatMessages.scrollTo({
+                top: elements.chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50);
     }
 
     return messageElement;
@@ -159,7 +164,12 @@ export function updateStreamingMessage(messageElement, content, isUserNearBottom
     messageElement.appendChild(streamingCursor);
 
     if (isUserNearBottom) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        setTimeout(() => {
+            elements.chatMessages.scrollTo({
+                top: elements.chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50);
     }
 }
 
@@ -189,7 +199,12 @@ export function finalizeBotMessage(messageElement, finalContent, addCopyButtonTo
     renderDynamicContent(messageElement, elements); // Final render
 
     if (isUserNearBottom) {
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        setTimeout(() => {
+            elements.chatMessages.scrollTo({
+                top: elements.chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
     }
 
     restoreSendButtonAndInput(); // Restore button state
@@ -221,7 +236,12 @@ export function addThinkingAnimation(insertAfterElement = null, elements, isUser
     }
 
     // 移除条件判断，无条件滚动到视图底部
-    thinkingElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setTimeout(() => {
+        elements.chatMessages.scrollTo({
+            top: elements.chatMessages.scrollHeight,
+            behavior: 'smooth'
+        });
+    }, 50);
 
     return thinkingElement;
 }

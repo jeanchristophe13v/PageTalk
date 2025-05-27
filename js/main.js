@@ -350,6 +350,17 @@ function handleChatScroll() {
 
 // Wrapper function to trigger sendUserMessage with all dependencies
 function sendUserMessageTrigger() {
+    // 添加发送动效
+    if (elements.sendMessage) {
+        elements.sendMessage.classList.add('sending');
+        // 移除发送动效，让动画完成
+        setTimeout(() => {
+            if (elements.sendMessage) {
+                elements.sendMessage.classList.remove('sending');
+            }
+        }, 600);
+    }
+    
     sendUserMessageAction(
         state, elements, currentTranslations,
         (msg, type) => showConnectionStatus(msg, type, elements), // showConnectionStatusCallback
