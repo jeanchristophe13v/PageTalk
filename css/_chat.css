@@ -936,3 +936,355 @@
     margin-bottom: var(--spacing-md);
     font-size: 13px;
 }
+
+/* 视频预览容器样式 */
+.video-preview-container {
+    margin: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    background-color: var(--card-background);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* 视频网格布局 */
+.videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs);
+}
+
+.video-item {
+    position: relative;
+    height: 120px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: #000;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.video-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.video-thumbnail {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.video-item:hover .video-overlay {
+    opacity: 1;
+}
+
+.video-play-icon {
+    color: white;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.video-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
+    color: white;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 8px;
+}
+
+.video-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    font-weight: 500;
+}
+
+.video-size {
+    font-size: 9px;
+    color: #ccc;
+    flex-shrink: 0;
+}
+
+.video-actions {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    display: flex;
+    gap: var(--spacing-xs);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.video-item:hover .video-actions {
+    opacity: 1;
+}
+
+/* 视频预览操作按钮 */
+.video-action-button {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    border: none;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.video-action-button:hover {
+    background-color: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.video-action-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 用户消息中的视频网格 */
+.user-message .message-videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
+}
+
+.user-message .message-video {
+    width: 100%;
+    height: 90px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+}
+
+.user-message .message-video .video-thumbnail {
+    width: 100%;
+    height: 70px;
+    object-fit: cover;
+}
+
+.user-message .message-video .video-info {
+    height: 20px;
+    font-size: 10px;
+    padding: 0 6px;
+}
+
+/* 统一模态框样式 */
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(4px);
+    }
+}
+
+.dialog-content {
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    animation: slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+    z-index: 10001;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dialog-content h3 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.dialog-content p {
+    margin-bottom: var(--spacing-md);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.dialog-content input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--input-background);
+    color: var(--text-color);
+    font-size: 14px;
+    margin-bottom: var(--spacing-lg);
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(0);
+}
+
+.dialog-content input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1);
+    background-color: var(--card-background);
+    transform: translateY(-1px);
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+}
+
+.dialog-actions button {
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 80px;
+    transform: scale(1);
+    position: relative;
+    overflow: hidden;
+}
+
+.dialog-actions button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.cancel-btn {
+    background: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+}
+
+.cancel-btn:hover {
+    background: var(--button-secondary-hover);
+    transform: scale(1.02);
+}
+
+.cancel-btn:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+.confirm-btn {
+    background: var(--primary-color);
+    color: white;
+}
+
+.confirm-btn:hover {
+    background: var(--secondary-color);
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(49, 123, 245, 0.3);
+}
+
+.confirm-btn:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+.confirm-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.confirm-btn:disabled::before {
+    display: none;
+}
+
+/* 删除按钮样式 */
+.delete-btn {
+    background: rgba(234, 67, 53, 0.1);
+    color: var(--error-color);
+}
+
+.delete-btn:hover {
+    background: rgba(234, 67, 53, 0.2);
+    transform: scale(1.02);
+}
+
+.delete-btn:hover::before {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+}

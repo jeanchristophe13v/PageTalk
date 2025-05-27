@@ -22,11 +22,12 @@ function _(key, replacements = {}, translations) {
  * @param {function} addThinkingAnimationCallback - Callback (this is a lambda from main.js calling ui.js#addThinkingAnimation with live isUserNearBottom)
  * @param {function} resizeTextareaCallback - Callback
  * @param {function} clearImagesCallback - Callback
+ * @param {function} clearVideosCallback - Callback
  * @param {function} showToastCallback - Callback
  * @param {function} restoreSendButtonAndInputCallback - Callback
  * @param {function} abortStreamingCallback - Callback
  */
-export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback) {
+export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, clearVideosCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback) {
     const userMessage = elements.userInput.value.trim();
 
     if (state.isStreaming) {
@@ -34,7 +35,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
         return;
     }
-    if (!userMessage && state.images.length === 0) return;
+    if (!userMessage && state.images.length === 0 && state.videos.length === 0) return;
 
     if (!state.apiKey) {
         // Show API key missing error as a toast on the chat page (首页下方)
@@ -56,10 +57,11 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     // --- End Streaming State ---
 
     const currentImages = [...state.images]; // Copy images for this message
+    const currentVideos = [...state.videos]; // Copy videos for this message
 
     // Add user message UI (force scroll ensures it's visible before thinking anim)
     // addMessageToChatCallback (main.js#addMessageToChatUI) handles isUserNearBottom internally
-    const userMessageElement = addMessageToChatCallback(userMessage, 'user', { images: currentImages, forceScroll: true });
+    const userMessageElement = addMessageToChatCallback(userMessage, 'user', { images: currentImages, videos: currentVideos, forceScroll: true });
     const userMessageId = userMessageElement.dataset.messageId;
 
     elements.userInput.value = '';
@@ -71,6 +73,12 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     currentImages.forEach(image => {
         const base64data = image.dataUrl.split(',')[1];
         currentParts.push({ inlineData: { mimeType: image.mimeType, data: base64data } });
+    });
+    currentVideos.forEach(video => {
+        if (video.type === 'youtube') {
+            currentParts.push({ fileData: { fileUri: video.url } });
+        }
+        // 移除本地视频文件处理，只支持 YouTube 视频
     });
 
     // Add user message to history *before* API call
@@ -88,6 +96,9 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     if (currentImages.length > 0) {
         clearImagesCallback(); // This callback clears state.images and updates the UI
+    }
+    if (currentVideos.length > 0) {
+        clearVideosCallback(); // This callback clears state.videos and updates the UI
     }
 
     // Call the addThinkingAnimationCallback passed from main.js.
@@ -111,6 +122,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         await window.GeminiAPI.callGeminiAPIWithImages(
             userMessage,
             currentImages, // Use the copied currentImages
+            currentVideos, // Use the copied currentVideos
             thinkingElement,
             state, // Pass full state reference
             apiUiCallbacks // Pass callbacks object
@@ -133,11 +145,12 @@ export async function sendUserMessage(state, elements, currentTranslations, show
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {function} clearImagesCallback - Callback
+ * @param {function} clearVideosCallback - Callback
  * @param {function} showToastCallback - Callback
  * @param {object} currentTranslations - Translations object
  * @param {boolean} [showToast=true] - Whether to show the "Cleared" toast
  */
-export function clearContext(state, elements, clearImagesCallback, showToastCallback, currentTranslations, showToast = true) {
+export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
     state.chatHistory = [];
     elements.chatMessages.innerHTML = ''; // Clear UI
 
@@ -167,6 +180,7 @@ export function clearContext(state, elements, clearImagesCallback, showToastCall
     elements.chatMessages.appendChild(welcomeMessage);
 
     clearImagesCallback(); // Clear images using callback
+    clearVideosCallback(); // Clear videos using callback
     if (showToast) {
         showToastCallback(_('contextClearedSuccess', {}, currentTranslations), 'success');
     }
@@ -256,7 +270,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
 
     // Extract user input parts
     const userMessageData = state.chatHistory[userIndex];
-    const { text: userMessageText, images: userImages } = extractPartsFromMessage(userMessageData); // Use helper
+    const { text: userMessageText, images: userImages, videos: userVideos } = extractPartsFromMessage(userMessageData); // Use helper
 
     // Prepare history up to (but not including) the user message of the turn
     const historyForApi = state.chatHistory.slice(0, userIndex);
@@ -307,6 +321,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
         await window.GeminiAPI.callApiAndInsertResponse(
             userMessageText,
             userImages,
+            userVideos,
             thinkingElement,
             historyForApi,
             userIndex + 1, // Insert *after* the user message index
@@ -327,26 +342,36 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
 }
 
 /**
- * Helper to extract text and image info from a message object.
+ * Helper to extract text, image and video info from a message object.
  * @param {object} message - A message object from state.chatHistory
- * @returns {{text: string, images: Array<{dataUrl: string, mimeType: string}>}}
+ * @returns {{text: string, images: Array<{dataUrl: string, mimeType: string}>, videos: Array<{dataUrl?: string, mimeType?: string, url?: string, type: string}>}}
  */
 function extractPartsFromMessage(message) {
     let text = '';
     const images = [];
+    const videos = [];
     if (message && message.parts && Array.isArray(message.parts)) {
         message.parts.forEach(part => {
             if (part.text) {
                 text += (text ? '\n' : '') + part.text; // Combine text parts
             } else if (part.inlineData && part.inlineData.data && part.inlineData.mimeType) {
-                images.push({
-                    dataUrl: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
-                    mimeType: part.inlineData.mimeType
+                if (part.inlineData.mimeType.startsWith('image/')) {
+                    images.push({
+                        dataUrl: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+                        mimeType: part.inlineData.mimeType
+                    });
+                }
+                // 移除本地视频文件处理
+            } else if (part.fileData && part.fileData.fileUri) {
+                // YouTube URL
+                videos.push({
+                    url: part.fileData.fileUri,
+                    type: 'youtube'
                 });
             }
         });
     }
-    return { text, images };
+    return { text, images, videos };
 }
 
 /**

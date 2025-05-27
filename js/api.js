@@ -57,16 +57,17 @@ async function _testAndVerifyApiKey(apiKey, model) {
  * 核心 API 调用逻辑，支持插入或追加响应
  * @param {string} userMessage - 用户消息内容
  * @param {Array<{dataUrl: string, mimeType: string}>} images - 图片数组
+ * @param {Array<{dataUrl?: string, mimeType?: string, url?: string, type: string}>} videos - 视频数组
  * @param {HTMLElement} thinkingElement - 思考动画元素
  * @param {Array|null} historyForApi - 用于 API 调用的历史记录 (null 表示使用全局历史)
  * @param {boolean} insertResponse - true: 插入响应, false: 追加响应
  * @param {number|null} [targetInsertionIndex=null] - 如果 insertResponse 为 true，则指定插入到 state.chatHistory 的索引
  * @param {HTMLElement|null} [insertAfterElement=null] - 如果 insertResponse 为 true，则指定插入到此 DOM 元素之后
  * @param {object} stateRef - Reference to the main state object from sidepanel.js
- * @param {object} uiCallbacks - Object containing UI update functions { addMessageToChat, updateStreamingMessage, finalizeBotMessage, clearImages, showToast }
+ * @param {object} uiCallbacks - Object containing UI update functions { addMessageToChat, updateStreamingMessage, finalizeBotMessage, clearImages, clearVideos, showToast }
  * @returns {Promise<void>}
  */
-async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks) {
+async function callGeminiAPIInternal(userMessage, images = [], videos = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks) {
     let accumulatedText = '';
     let messageElement = null;
     let botMessageId = null;
@@ -152,6 +153,19 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
                 currentParts.push({ inlineData: { mimeType: image.mimeType, data: base64data } });
             }
         }
+        if (videos.length > 0) {
+            for (const video of videos) {
+                if (video.type === 'youtube') {
+                    // YouTube URL
+                    currentParts.push({
+                        fileData: {
+                            fileUri: video.url
+                        }
+                    });
+                }
+                // 移除本地视频文件处理，只支持 YouTube 视频
+            }
+        }
         if (currentParts.length > 0) {
             requestBody.contents.push({ role: 'user', parts: currentParts });
         } else if (requestBody.contents.length === 0 && !requestBody.tools) { // Also check if tools are present, as a request with only tools might be valid for some APIs
@@ -173,10 +187,14 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: { message: '无法解析错误响应' } }));
-            // 检查是否是图片不支持的错误
+            // 检查是否是多媒体不支持的错误
             if (images.length > 0 && errorData.error?.message?.includes('does not support image input')) {
                 // 直接抛出特定错误信息，由外部 catch 处理 UI 显示
                 throw new Error(`Model ${apiModelName} does not support image input`);
+            }
+            if (videos.length > 0 && errorData.error?.message?.includes('does not support video input')) {
+                // 直接抛出特定错误信息，由外部 catch 处理 UI 显示
+                throw new Error(`Model ${apiModelName} does not support video input`);
             }
             // 其他错误，抛出通用错误
             throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
@@ -291,9 +309,14 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
             uiCallbacks.addMessageToChat("未能生成回复。", 'bot', false, [], insertResponse ? insertAfterElement : null); // Use callback
         }
 
-        // 清除图片（仅在初始发送时）
-        if (stateRef.images.length > 0 && thinkingElement && historyForApi === null) { // Use stateRef
-            uiCallbacks.clearImages(); // Use callback
+        // 清除图片和视频（仅在初始发送时）
+        if ((stateRef.images.length > 0 || stateRef.videos.length > 0) && thinkingElement && historyForApi === null) { // Use stateRef
+            if (stateRef.images.length > 0) {
+                uiCallbacks.clearImages(); // Use callback
+            }
+            if (stateRef.videos.length > 0) {
+                uiCallbacks.clearVideos(); // Use callback
+            }
         }
 
     } catch (error) {
@@ -375,15 +398,15 @@ async function callGeminiAPIInternal(userMessage, images = [], thinkingElement, 
 /**
  * 用于发送新消息 (追加)
  */
-async function callGeminiAPIWithImages(userMessage, images = [], thinkingElement, stateRef, uiCallbacks) {
-    await callGeminiAPIInternal(userMessage, images, thinkingElement, null, false, null, null, stateRef, uiCallbacks); // insertResponse = false, historyForApi = null
+async function callGeminiAPIWithImages(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks) {
+    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, null, false, null, null, stateRef, uiCallbacks); // insertResponse = false, historyForApi = null
 }
 
 /**
  * 用于重新生成并插入响应
  */
-async function callApiAndInsertResponse(userMessage, images = [], thinkingElement, historyForApi, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks) {
-    await callGeminiAPIInternal(userMessage, images, thinkingElement, historyForApi, true, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks); // insertResponse = true
+async function callApiAndInsertResponse(userMessage, images = [], videos = [], thinkingElement, historyForApi, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks) {
+    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, historyForApi, true, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks); // insertResponse = true
 }
 
 // Export functions to be used in sidepanel.js

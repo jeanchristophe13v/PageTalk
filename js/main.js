@@ -7,6 +7,7 @@ import { generateUniqueId } from './utils.js';
 import { renderDynamicContent, rerenderAllMermaidCharts, showMermaidModal, hideMermaidModal } from './render.js';
 import { applyTheme, updateMermaidTheme, toggleTheme, makeDraggable, loadButtonPosition, setThemeButtonVisibility } from './theme.js';
 import { setupImagePaste, handleImageSelect, handleImageFile, updateImagesPreview, removeImageById, clearImages, showFullSizeImage, hideImageModal } from './image.js';
+import { handleYouTubeUrl, updateVideosPreview, removeVideoById, clearVideos, showYouTubeDialog, hideYouTubeDialog } from './video.js';
 // Correctly import autoSaveAgentSettings with an alias
 import {
     loadAgents,
@@ -64,6 +65,7 @@ const state = {
     chatHistory: [],
     isConnected: false,
     images: [],
+    videos: [],
     darkMode: false,
     language: 'en', // Changed default language to English
     isStreaming: false,
@@ -100,8 +102,15 @@ const elements = {
     closePanelBtnChat: document.getElementById('close-panel'),
     uploadImage: document.getElementById('upload-image'),
     fileInput: document.getElementById('file-input'),
+    addYoutubeUrl: document.getElementById('add-youtube-url'),
     imagePreviewContainer: document.getElementById('image-preview-container'),
     imagesGrid: document.getElementById('images-grid'),
+    videoPreviewContainer: document.getElementById('video-preview-container'),
+    videosGrid: document.getElementById('videos-grid'),
+    youtubeUrlDialog: document.getElementById('youtube-url-dialog'),
+    youtubeUrlInput: document.getElementById('youtube-url-input'),
+    cancelYoutube: document.getElementById('cancel-youtube'),
+    confirmYoutube: document.getElementById('confirm-youtube'),
     imageModal: document.getElementById('image-modal'),
     modalImage: document.getElementById('modal-image'),
     closeModal: document.querySelector('.close-modal'),
@@ -268,7 +277,7 @@ function setupEventListeners() {
     // Chat Actions
     elements.sendMessage.addEventListener('click', sendUserMessageTrigger); // Initial listener
     elements.userInput.addEventListener('keydown', handleUserInputKeydown);
-    elements.clearContextBtn.addEventListener('click', () => clearContextAction(state, elements, clearImagesUI, showToastUI, currentTranslations));
+    elements.clearContextBtn.addEventListener('click', () => clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations));
     elements.chatModelSelection.addEventListener('change', handleChatModelChange);
     elements.chatAgentSelection.addEventListener('change', handleChatAgentChange);
 
@@ -277,6 +286,24 @@ function setupEventListeners() {
     elements.fileInput.addEventListener('change', (e) => handleImageSelect(e, (file) => handleImageFile(file, state, updateImagesPreviewUI), elements));
     elements.closeModal.addEventListener('click', () => hideImageModal(elements));
     window.addEventListener('click', (e) => { if (e.target === elements.imageModal) hideImageModal(elements); }); // Close modal on overlay click
+
+    // YouTube Video Handling
+    elements.addYoutubeUrl.addEventListener('click', () => showYouTubeDialog(elements));
+    elements.cancelYoutube.addEventListener('click', () => hideYouTubeDialog(elements));
+    elements.confirmYoutube.addEventListener('click', () => {
+        const url = elements.youtubeUrlInput.value.trim();
+        if (url) {
+            handleYouTubeUrl(url, state, updateVideosPreviewUI, currentTranslations);
+            hideYouTubeDialog(elements);
+        }
+    });
+    elements.youtubeUrlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            elements.confirmYoutube.click();
+        }
+    });
+    window.addEventListener('click', (e) => { if (e.target === elements.youtubeUrlDialog) hideYouTubeDialog(elements); }); // Close dialog on overlay click
 
     // Mermaid Modal
     elements.mermaidCloseModal.addEventListener('click', () => hideMermaidModal(elements));
@@ -369,6 +396,7 @@ function sendUserMessageTrigger() {
         (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), // Pass the original ui.js function
         () => resizeTextarea(elements), // resizeTextareaCallback
         clearImagesUI, // clearImagesCallback
+        clearVideosUI, // clearVideosCallback
         showToastUI, // showToastCallback
         restoreSendButtonAndInputUI, // restoreSendButtonAndInputCallback
         abortStreamingUI // abortStreamingCallback
@@ -498,6 +526,21 @@ function removeImageByIdUI(imageId) {
     removeImageById(imageId, state, updateImagesPreviewUI);
 }
 
+// Wrapper function for clearVideos
+function clearVideosUI() {
+    clearVideos(state, updateVideosPreviewUI);
+}
+
+// Wrapper function for updateVideosPreview
+function updateVideosPreviewUI() {
+    updateVideosPreview(state, elements, currentTranslations, removeVideoByIdUI);
+}
+
+// Wrapper function for removeVideoById
+function removeVideoByIdUI(videoId) {
+    removeVideoById(videoId, state, updateVideosPreviewUI);
+}
+
 // Wrapper function for showToast
 function showToastUI(message, type) {
     showToast(message, type);
@@ -625,7 +668,7 @@ function loadAndApplyTranslations(language) {
 
     // Re-render welcome message if chat is empty
     if (elements.chatMessages && elements.chatMessages.children.length === 1 && elements.chatMessages.firstElementChild.classList.contains('welcome-message')) {
-        clearContextAction(state, elements, clearImagesUI, showToastUI, currentTranslations, false); // Re-adds welcome message, no toast
+        clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations, false); // Re-adds welcome message, no toast
     } else {
         // Update existing welcome message if present
         const welcomeHeading = elements.chatMessages.querySelector('.welcome-message h2');

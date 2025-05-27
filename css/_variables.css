@@ -19,6 +19,9 @@
     --table-header-bg: #F1F3F5;     /* 表头背景 - 灰色 1 */
     --table-even-row-bg: #F8F9FA;   /* 表格偶数行背景 - 灰色 0 */
     --button-hover-bg: rgba(76, 110, 245, 0.1); /* 主色调透明悬停 */
+    --button-secondary-bg: #E9ECEF; /* 次要按钮背景 */
+    --button-secondary-text: #868E96; /* 次要按钮文字 */
+    --button-secondary-hover: #e0e0e0; /* 次要按钮悬停 */
     --scrollbar-thumb: rgba(0, 0, 0, 0.15); /* 滚动条滑块 */
     --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25); /* 滚动条滑块悬停 */
 
@@ -56,6 +59,9 @@ body.dark-mode {
     --table-header-bg: var(--primary-color);     /* 深色表格头背景 - 主题色 */
     --table-even-row-bg: rgba(255, 255, 255, 0.04); /* 深色表格偶数行背景 (保持) */
     --button-hover-bg: rgba(116, 143, 252, 0.15); /* 主色调透明悬停 */
+    --button-secondary-bg: #343A40; /* 次要按钮背景 */
+    --button-secondary-text: #ADB5BD; /* 次要按钮文字 */
+    --button-secondary-hover: #495057; /* 次要按钮悬停 */
     --scrollbar-thumb: rgba(255, 255, 255, 0.2); /* 滚动条滑块 */
     --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3); /* 滚动条滑块悬停 */
 }

@@ -83,6 +83,15 @@ const translations = {
     'imageAlt': '图片 {index}', // Placeholder for image index
     'viewImageTitle': '查看原图',
     'deleteImageTitle': '删除图片',
+    // YouTube video handling
+    'addYouTubeUrlTitle': '添加YouTube链接',
+    'youTubeUrlDialogTitle': '添加YouTube视频',
+    'youTubeUrlDialogDescription': '请输入YouTube视频链接：',
+    'youTubeUrlPlaceholder': 'https://www.youtube.com/watch?v=...',
+    'videoAlt': '视频 {index}',
+    'viewVideoTitle': '播放视频',
+    'deleteVideoTitle': '删除视频',
+    'invalidYouTubeUrl': '请输入有效的YouTube链接',
     'newAgentBaseName': '助手', // 新增：用于新助手命名的基础词
     'stopStreamingTitle': '终止输出', // 新增：终止按钮标题
 
@@ -217,6 +226,15 @@ const translations = {
     'imageAlt': 'Image {index}',
     'viewImageTitle': 'View Original',
     'deleteImageTitle': 'Delete Image',
+    // YouTube video handling
+    'addYouTubeUrlTitle': 'Add YouTube URL',
+    'youTubeUrlDialogTitle': 'Add YouTube Video',
+    'youTubeUrlDialogDescription': 'Enter a YouTube video URL to include in your message:',
+    'youTubeUrlPlaceholder': 'https://www.youtube.com/watch?v=...',
+    'videoAlt': 'Video {index}',
+    'viewVideoTitle': 'Play Video',
+    'deleteVideoTitle': 'Delete Video',
+    'invalidYouTubeUrl': 'Please enter a valid YouTube URL',
     'newAgentBaseName': 'Agent', // Added: Base word for new agent naming
     'stopStreamingTitle': 'Stop Generating', // Added: Stop button title
 

@@ -71,7 +71,7 @@ export function switchSettingsSubTab(subTabId, elements) {
  * @returns {HTMLElement} 创建的消息元素
  */
 export function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
-    const { isStreaming = false, images = [], insertAfterElement = null, forceScroll = false } = options;
+    const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false } = options;
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
 
@@ -101,6 +101,53 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
         messageHTML += '</div>';
     }
 
+    if (sender === 'user' && videos.length > 0) {
+        messageHTML += '<div class="message-videos">';
+        videos.forEach((video, index) => {
+            if (video.type === 'youtube') {
+                // YouTube 视频
+                const videoId = extractYouTubeVideoId(video.url);
+                const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                messageHTML += `
+                    <div class="message-video youtube-video" data-video-id="${escapeHtml(videoId)}" data-url="${escapeHtml(video.url)}">
+                        <img class="video-thumbnail" src="${escapeHtml(thumbnailUrl)}" alt="YouTube video thumbnail"
+                             onerror="this.src='https://img.youtube.com/vi/${escapeHtml(videoId)}/hqdefault.jpg'">
+                        <div class="video-overlay">
+                            <div class="video-play-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 9.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="video-info">
+                            <span class="video-name">${escapeHtml(video.name || 'YouTube Video')}</span>
+                        </div>
+                    </div>
+                `;
+            } else if (video.type === 'file') {
+                // 本地视频文件
+                messageHTML += `
+                    <div class="message-video local-video" data-url="${escapeHtml(video.dataUrl)}">
+                        <video class="video-thumbnail" src="${escapeHtml(video.dataUrl)}" muted preload="metadata"></video>
+                        <div class="video-overlay">
+                            <div class="video-play-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="M6.271 5.055a.5.5 0 0 1 .52.038L11 7.055a.5.5 0 0 1 0 .89L6.791 9.907a.5.5 0 0 1-.791-.39V5.604a.5.5 0 0 1 .271-.549z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="video-info">
+                            <span class="video-name">${escapeHtml(video.name || 'Video File')}</span>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        messageHTML += '</div>';
+    }
+
     if (content) {
         // Use MarkdownRenderer (assuming it's globally available or passed in)
         messageHTML += window.MarkdownRenderer.render(content);
@@ -113,6 +160,22 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
         messageElement.querySelectorAll('.message-image').forEach(img => {
             img.addEventListener('click', () => {
                 showFullSizeImage(img.dataset.url, elements); // Use data-url
+            });
+        });
+    }
+
+    // Add click listeners for user videos AFTER setting innerHTML
+    if (sender === 'user' && videos.length > 0) {
+        messageElement.querySelectorAll('.message-video').forEach(videoEl => {
+            videoEl.addEventListener('click', () => {
+                const url = videoEl.dataset.url;
+                if (videoEl.classList.contains('youtube-video')) {
+                    // 在新标签页中打开YouTube视频
+                    window.open(url, '_blank');
+                } else if (videoEl.classList.contains('local-video')) {
+                    // 创建简单的视频播放模态框
+                    showVideoModal(url, elements);
+                }
             });
         });
     }
@@ -724,4 +787,66 @@ export function showCopyMessageFeedback(buttonElement) {
         }
         buttonElement.disabled = false;
     }, 1500);
+}
+
+/**
+ * 从YouTube URL中提取视频ID
+ * @param {string} url - YouTube URL
+ * @returns {string} - Video ID
+ */
+function extractYouTubeVideoId(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : '';
+}
+
+/**
+ * 显示视频播放模态框
+ * @param {string} videoUrl - 视频URL
+ * @param {object} elements - DOM elements reference
+ */
+function showVideoModal(videoUrl, elements) {
+    // 创建简单的视频模态框
+    let videoModal = document.getElementById('video-modal');
+    if (!videoModal) {
+        videoModal = document.createElement('div');
+        videoModal.id = 'video-modal';
+        videoModal.className = 'image-modal'; // 复用图片模态框的样式
+        videoModal.innerHTML = `
+            <span class="close-modal">&times;</span>
+            <video id="modal-video" class="modal-content" controls autoplay style="max-width: 90%; max-height: 90%;">
+                <source src="" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+        `;
+        document.body.appendChild(videoModal);
+        
+        // 添加关闭事件
+        const closeBtn = videoModal.querySelector('.close-modal');
+        closeBtn.addEventListener('click', () => hideVideoModal());
+        videoModal.addEventListener('click', (e) => {
+            if (e.target === videoModal) hideVideoModal();
+        });
+    }
+    
+    const modalVideo = videoModal.querySelector('#modal-video source');
+    const video = videoModal.querySelector('#modal-video');
+    modalVideo.src = videoUrl;
+    video.load(); // 重新加载视频
+    videoModal.style.display = 'block';
+}
+
+/**
+ * 隐藏视频播放模态框
+ */
+function hideVideoModal() {
+    const videoModal = document.getElementById('video-modal');
+    if (videoModal) {
+        const video = videoModal.querySelector('#modal-video');
+        if (video) {
+            video.pause();
+            video.currentTime = 0;
+        }
+        videoModal.style.display = 'none';
+    }
 }

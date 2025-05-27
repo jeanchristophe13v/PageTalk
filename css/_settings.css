@@ -633,84 +633,28 @@
 }
 
 
-/* 删除确认对话框 - 无背景遮罩版 */
-.dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: transparent; /* 移除背景遮罩 */
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none; /* 让点击穿透到背景 */
+/* 删除确认对话框样式 - 现在使用统一的 _chat.css 中的 .dialog-overlay 和 .dialog-content 样式 */
+/* 保留删除对话框特定的样式调整 */
+#delete-confirm-dialog .dialog-content {
+    max-width: 320px; /* 删除对话框稍微小一点 */
 }
 
-.dialog-content {
-    background-color: var(--card-background);
-    border-radius: var(--radius-lg); /* 增大圆角更现代 */
-    padding: var(--spacing-lg);
-    width: 90%;
-    max-width: 320px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* 柔化阴影 */
-    border: 1px solid var(--border-color); /* 添加边框增强层次 */
-    animation: dialogSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform: scale(1);
-    z-index: 10000;
-    pointer-events: all; /* 恢复对话框的点击事件 */
-}
-
-@keyframes dialogSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95) translateY(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-/* @keyframes fade-in is in _base.css */
-.dialog-content h3 {
+#delete-confirm-dialog .dialog-content h3 {
     font-size: 16px;
     margin-bottom: var(--spacing-md);
     color: var(--text-color);
 }
-.dialog-content p {
+
+#delete-confirm-dialog .dialog-content p {
     margin-bottom: var(--spacing-lg);
     font-size: 14px;
     line-height: 1.5;
     color: var(--text-secondary);
 }
-.dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--spacing-md);
-}
-.dialog-actions .cancel-btn,
-.dialog-actions .delete-btn { /* Note: .delete-btn here is for dialog, not agent item action */
-    border: none;
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-lg);
+
+/* 删除对话框动作按钮的字体大小稍微调整 */
+#delete-confirm-dialog .dialog-actions button {
     font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.dialog-actions .cancel-btn {
-    background-color: var(--border-color); /* Use a neutral background */
-    color: var(--text-secondary);
-}
-.dialog-actions .cancel-btn:hover {
-    background-color: #e0e0e0; /* Slightly darker neutral */
-}
-.dialog-actions .delete-btn { /* Confirm delete button in dialog */
-    background-color: rgba(234, 67, 53, 0.1); /* Error color transparent */
-    color: var(--error-color);
-}
-.dialog-actions .delete-btn:hover {
-    background-color: rgba(234, 67, 53, 0.2); /* Darker error transparent */
 }
 
 
