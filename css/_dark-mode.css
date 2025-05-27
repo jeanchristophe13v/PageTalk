@@ -388,11 +388,11 @@ body.dark-mode .slider-container input[type="range"]:active::-webkit-slider-thum
 
 /* 助手列表项 */
 body.dark-mode .agents-list-container {
-    background-color: var(--input-background); /* Darker background for the overall container */
+    background-color: var(--background-color); /* Darker background for the overall container */
     border-color: var(--border-color);
 }
 body.dark-mode .agent-item {
-    background-color: var(--card-background); /* Individual items are cards */
+    background-color: var(--code-background); /* Individual items are cards */
     border-color: var(--border-color);
 }
 body.dark-mode .agent-item:hover {
