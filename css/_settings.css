@@ -52,16 +52,45 @@
     font-size: clamp(12px, 3.5vw, 14px);
     font-weight: 500;
     border-radius: var(--radius-md);
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+    position: relative;
+    overflow: hidden;
 }
+
+.settings-nav-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background-color: rgba(49, 123, 245, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
 .settings-nav-btn:hover {
     color: var(--primary-color);
     background-color: var(--button-hover-bg);
+    transform: scale(1.02);
 }
+
+.settings-nav-btn:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
+.settings-nav-btn:active {
+    transform: scale(0.98);
+}
+
 .settings-nav-btn.active {
     color: var(--primary-color);
     font-weight: 600;
-    background-color: rgba(76, 110, 245, 0.15); 
+    background-color: rgba(76, 110, 245, 0.15);
+    transform: scale(1);
 }
 /* Push close button to the right */
 #close-panel-settings {
@@ -72,14 +101,27 @@
 /* 设置子内容区域 */
 .settings-sub-content {
     display: none;
-    flex: 1; 
-    overflow-y: auto; 
+    flex: 1;
+    overflow-y: auto;
     overflow-x: hidden;
-    padding: var(--spacing-sm) 0; 
-    min-height: 0; 
+    padding: var(--spacing-sm) 0;
+    min-height: 0;
+    opacity: 0;
+    transform: translateY(0); /* 修改：移除初始位移避免溢出 */
+    transition: opacity 0.2s ease; /* 简化：只使用透明度过渡 */
 }
 .settings-sub-content.active {
     display: block;
+    animation: settingsContentFadeIn 0.2s ease forwards; /* 简化动画 */
+}
+
+@keyframes settingsContentFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 /* 通用设置特定样式 */
@@ -151,15 +193,29 @@
     border-radius: var(--radius-lg); /* 16px 圆角 */
     font-size: clamp(12px, 3vw, 13px);
     outline: none;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--input-background); /* Use variable */
+    transform: translateY(0);
 }
 .setting-group input:focus,
-.setting-group textarea:focus,
+.setting-group textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1), 0 2px 8px rgba(49, 123, 245, 0.05);
+    background-color: var(--card-background); /* Use variable */
+    transform: translateY(-1px);
+}
+
 .setting-group select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1); /* Use primary color with alpha */
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
     background-color: var(--card-background); /* Use variable */
+    transform: none; /* 取消选择框的上抬效果 */
+}
+
+/* 输入时的微妙反馈 */
+.setting-group input:not(:placeholder-shown),
+.setting-group textarea:not(:placeholder-shown) {
+    border-color: rgba(49, 123, 245, 0.3);
 }
 .setting-group textarea {
     min-height: 80px;
@@ -279,18 +335,41 @@
     padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-md), 3vw, var(--spacing-lg));
     font-size: clamp(12px, 3.5vw, 14px);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 500;
+    transform: scale(1);
+    position: relative;
+    overflow: hidden;
 }
+
+.save-btn::before, .test-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
 .save-btn {
     margin-top: var(--spacing-lg); /* Default margin for save buttons */
 }
 .save-btn:hover, .test-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2); /* Primary color shadow */
+    transform: scale(1.02); /* 移除 translateY，只保留缩放 */
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2); /* 减少阴影强度 */
 }
+
+.save-btn:hover::before, .test-btn:hover::before {
+    width: 100%;
+    height: 100%;
+}
+
 .save-btn:active, .test-btn:active {
-    transform: translateY(0);
+    transform: scale(0.98);
     box-shadow: 0 1px 3px rgba(76, 110, 245, 0.2);
 }
 .test-btn { /* Specific for test button, often beside save */
@@ -332,81 +411,117 @@
 
 
 
-/* 助手列表样式 */
+/* 助手列表样式 - 重构版 */
 .agents-list-container {
-    background-color: var(--card-background); /* Card background for the container */
-    border-radius: var(--radius-lg); 
+    background-color: var(--card-background);
+    border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-lg);
     padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
     border: 1px solid var(--border-color);
     width: 100%;
     box-sizing: border-box;
+    /* 重要：防止内容溢出 */
+    overflow: hidden;
 }
+
 .agents-list-header {
     display: flex;
     align-items: center;
-    margin-bottom: 0; 
+    margin-bottom: 0;
     padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border-color);
 }
+
 .agents-list-header h3 {
     font-size: clamp(12px, 3.5vw, 14px);
     font-weight: 600;
     color: var(--text-color);
     margin: 0;
 }
+
 /* Agent 操作按钮栏 */
 .agent-actions-bar {
     display: flex;
-    justify-content: space-between; 
+    justify-content: space-between;
     align-items: center;
-    padding: var(--spacing-sm) 0; 
-    margin-bottom: var(--spacing-md); 
+    padding: var(--spacing-sm) 0;
+    margin-bottom: var(--spacing-md);
 }
+
 .agent-actions-left,
 .agent-actions-right {
     display: flex;
-    gap: var(--spacing-sm); 
+    gap: var(--spacing-sm);
 }
+
 /* Agent icon buttons specific hover/active */
-.icon-btn.add-btn { /* Add button specific color */
+.icon-btn.add-btn {
     color: var(--success-color);
 }
+
 .icon-btn.add-btn:hover {
-    background-color: rgba(52, 168, 83, 0.1); /* Success color hover */
+    background-color: rgba(52, 168, 83, 0.1);
 }
-.icon-btn.add-btn svg { /* Make add icon bolder */
-    stroke-width: 2; 
-    width: clamp(18px, 5vw, 20px); 
-    height: clamp(18px, 5vw, 20px); 
+
+.icon-btn.add-btn svg {
+    stroke-width: 2;
+    width: clamp(18px, 5vw, 20px);
+    height: clamp(18px, 5vw, 20px);
 }
-/* Import/Export buttons use default icon-btn hover */
 
-
+/* 助手列表容器 - 最终优化版 */
 .agents-list {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    flex-grow: 1; 
+    flex-grow: 1;
     overflow-y: auto;
-    min-height: 100px; 
-    padding-right: var(--spacing-xs); 
+    overflow-x: hidden; /* 防止水平滚动条 */
+    min-height: 100px;
+    max-height: 400px;
+    /* 简化：只保留必要的内边距 */
+    padding: var(--spacing-xs) 0 var(--spacing-md) 0;
+    /* 自定义滚动条样式 */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
 }
 
-/* Agent 列表项 */
+.agents-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.agents-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.agents-list::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+.agents-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+}
+
+/* Agent 列表项 - 完美适配版 */
 .agent-item {
-    display: flex; 
-    flex-direction: column; 
+    display: flex;
+    flex-direction: column;
     border-radius: var(--radius-md);
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
-    width: 100%;
-    overflow: hidden; 
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    width: calc(100% - 4px); /* 为阴影预留 2px 左右空间 */
+    margin: 2px; /* 为上下阴影预留空间 */
+    transform: scale(1);
+    opacity: 1;
 }
+
 .agent-item:hover {
     border-color: var(--primary-color);
-    box-shadow: 0 2px 6px rgba(76, 110, 245, 0.1); /* Primary color shadow */
+    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.15);
+    transform: translateY(-1px) scale(1.005);
+    z-index: 1;
 }
 .agent-item-header {
     display: flex;
@@ -472,13 +587,19 @@
 
 /* Agent 项内容体 (可折叠) */
 .agent-item-body {
-    display: none; 
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-top: 1px solid var(--border-color);
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 var(--spacing-lg);
+    border-top: 1px solid transparent;
     background-color: #fdfdfd; /* Slightly different background from card to differentiate */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
 }
 .agent-item.expanded .agent-item-body {
-    display: block; 
+    max-height: 800px; /* 足够大的高度 */
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top-color: var(--border-color);
+    opacity: 1;
 }
 .agent-item-body .setting-group {
     margin-bottom: var(--spacing-md); 
@@ -512,27 +633,44 @@
 }
 
 
-/* 删除确认对话框 */
+/* 删除确认对话框 - 无背景遮罩版 */
 .dialog-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 100;
+    background-color: transparent; /* 移除背景遮罩 */
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
+    pointer-events: none; /* 让点击穿透到背景 */
 }
+
 .dialog-content {
     background-color: var(--card-background);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg); /* 增大圆角更现代 */
     padding: var(--spacing-lg);
     width: 90%;
     max-width: 320px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    animation: fade-in 0.2s ease; /* Using existing fadeIn */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); /* 柔化阴影 */
+    border: 1px solid var(--border-color); /* 添加边框增强层次 */
+    animation: dialogSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: scale(1);
+    z-index: 10000;
+    pointer-events: all; /* 恢复对话框的点击事件 */
+}
+
+@keyframes dialogSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 /* @keyframes fade-in is in _base.css */
 .dialog-content h3 {

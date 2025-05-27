@@ -11,7 +11,7 @@ body.dark-mode .setting-group select,
 body.dark-mode .chat-input textarea,
 body.dark-mode .chat-model-selector select,
 body.dark-mode .chat-agent-selector select {
-    background-color: var(--input-background);
+    background-color: var(--input-background); /* 保持使用变量 */
     color: var(--text-color);
     border-color: var(--border-color);
 }
@@ -21,9 +21,9 @@ body.dark-mode .setting-group select:focus,
 body.dark-mode .chat-input textarea:focus,
 body.dark-mode .chat-model-selector select:focus,
 body.dark-mode .chat-agent-selector select:focus {
-    background-color: #373E47; /* 稍微亮一点的背景 */
+    background-color: var(--card-background); /* 聚焦时使用卡片背景色，更亮 */
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2); /* 调整阴影颜色 */
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
 }
 body.dark-mode .chat-input textarea {
     color: var(--text-color); 
@@ -403,7 +403,7 @@ body.dark-mode .agent-item-header:hover {
     background-color: rgba(116, 143, 252, 0.08); /* Primary color transparent */
 }
 body.dark-mode .agent-item-body {
-    background-color: #282E34; /* 比卡片背景稍暗一点 */
+    background-color: var(--background-color); /* 使用主背景色，更统一 */
     border-top-color: var(--border-color);
 }
 /* Agent item delete button hover (already specific in _settings.css, might need dark mode override if general .icon-btn dark hover is too strong) */
@@ -415,13 +415,13 @@ body.dark-mode .agent-item-actions .delete-btn:hover {
 body.dark-mode .agent-item-body input[type="text"],
 body.dark-mode .agent-item-body input[type="number"],
 body.dark-mode .agent-item-body textarea {
-    background-color: var(--input-background);
+    background-color: var(--input-background); /* 保持使用变量 */
     color: var(--text-color);
     border-color: var(--border-color); /* Use a consistent border */
 }
 body.dark-mode .agent-item-body input:focus,
 body.dark-mode .agent-item-body textarea:focus {
-    background-color: #373E47;
+    background-color: var(--card-background); /* 聚焦时使用卡片背景色，更亮 */
     border-color: var(--primary-color);
 }
 body.dark-mode .agent-item-body .slider-container input[type="range"] {
