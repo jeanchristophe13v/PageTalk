@@ -175,26 +175,13 @@
                             <!-- 新增: Agent 操作按钮栏 -->
                             <div class="agent-actions-bar">
                                 <div class="agent-actions-left">
-                                    <button id="import-agents" class="icon-btn import-btn" title="导入助手配置">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-down-short" viewBox="0 0 16 16">
-                                            <path fill-rule="evenodd" d="M8 4a.5.5 0 0 1 .5.5v5.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 10.293V4.5A.5.5 0 0 1 8 4z"/>
-                                        </svg>
-                                    </button>
-                                    <button id="export-agents" class="icon-btn export-btn" title="导出助手配置">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16">
-                                            <path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/>
-                                        </svg>
-                                    </button>
+                                <button id="import-agents" class="action-button agent-action-button" data-i18n="importAgentsButton"></button>
+                                <button id="export-agents" class="action-button agent-action-button" data-i18n="exportAgentsButton"></button>
                                 </div>
                                 <div class="agent-actions-right">
-                                    <button id="add-new-agent" class="icon-btn add-btn" title="添加新助手">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                        </svg>
-                                    </button>
+                                    <button id="add-new-agent" class="action-button agent-action-button add-agent-button" data-i18n="addNewAgentButton"></button>
                                 </div>
                             </div>
-                            
                             <!-- 助手列表 -->
                             <div id="agents-list" class="agents-list">
                                 <!-- 助手项将通过 JavaScript 动态添加 -->

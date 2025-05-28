@@ -10,6 +10,7 @@
     --text-secondary: #868E96;      /* 次要文字 - 灰色 6 */
     --border-color: #E9ECEF;        /* 边框色 - 灰色 2 (淡化) */
     --success-color: #1b9d33b0;       /* 成功色 - 绿色 7 */
+    --success-color-dark: #178a2e;    /* 成功色 - 绿色 7 的深色变体 */
     --error-color: #c92a2a9c;         /* 错误色 - 红色 8 */
     --warning-color: #E67700;       /* 警告色 - 橙色 8 */
     --input-background: #FFFFFF;    /* 输入框背景 - 白色 */

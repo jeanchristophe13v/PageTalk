@@ -111,6 +111,9 @@ const translations = {
     'agentSaveFailedNotFound': '保存失败：找不到助手',
     'minOneAgentError': '至少保留一个助手',
     // Agent Import/Export
+    'importAgentsButton': '导入',
+    'exportAgentsButton': '导出',
+    'addNewAgentButton': '添加',
     importAgentConfigTitle: '导入助手配置 (.json)',
     exportAgentConfigTitle: '导出助手配置 (.json)',
     agentExportEmptyError: '没有助手可导出。',
@@ -254,6 +257,9 @@ const translations = {
     'newAgentCreatedToast': 'New agent created',
     'agentDeletedToast': 'Agent deleted',
     // Agent Import/Export
+    'importAgentsButton': 'Import',
+    'exportAgentsButton': 'Export',
+    'addNewAgentButton': 'Add',
     importAgentConfigTitle: 'Import Agent Configuration (.json)',
     exportAgentConfigTitle: 'Export Agent Configuration (.json)',
     agentExportEmptyError: 'No agents to export.',

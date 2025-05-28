@@ -254,6 +254,11 @@ function init() {
         uiFinalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlockUI, addMessageActionButtonsUI, restoreSendButtonAndInputUI, isUserNearBottom, elements);
     };
 
+    // 确保在所有初始化完成后，输入框获得焦点
+    if (elements.userInput) {
+        setTimeout(() => elements.userInput.focus(), 150); // 增加延迟以确保DOM完全准备好
+    }
+
     console.log("Pagetalk Initialized.");
 }
 
@@ -757,11 +762,11 @@ function handleContentScriptMessages(event) {
             break;
         case 'panelShownAndFocusInput': // 修改：处理新的 action
             // 首先确保聊天标签页是当前活动的标签页
-            const chatTabElement = document.getElementById('chat');
-            if (elements.userInput && chatTabElement && chatTabElement.classList.contains('active')) {
-                // 使用 setTimeout 确保在面板完全显示后再聚焦
+            // 强制切换到聊天标签页并聚焦输入框
+            switchTab('chat', elements, (subTab) => switchSettingsSubTab(subTab, elements)); // 确保聊天标签页被激活
+            if (elements.userInput) {
                 setTimeout(() => elements.userInput.focus(), 50);
-                // console.log("User input focused on panel shown (chat tab active).");
+                // console.log("User input focused on panel shown (forced via panelShownAndFocusInput).");
             }
             resizeTextarea(elements); // 保持原有 resize 逻辑
             break;

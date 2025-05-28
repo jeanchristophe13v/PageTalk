@@ -460,19 +460,44 @@
     gap: var(--spacing-sm);
 }
 
-/* Agent icon buttons specific hover/active */
-.icon-btn.add-btn {
-    color: var(--success-color);
+/* Agent 操作按钮的通用样式 */
+.agent-action-button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    font-size: clamp(11px, 2.5vw, 12px);
+    transition: all 0.2s ease;
+    min-width: 50px; /* 缩小最小宽度 */
+    text-align: center;
+    display: flex; /* 使文本居中 */
+    justify-content: center; /* 使文本居中 */
+    align-items: center; /* 使文本居中 */
+    height: 28px; /* 调整高度与导入导出按钮一致 */
+    box-sizing: border-box; /* 确保padding和border包含在height内 */
 }
 
-.icon-btn.add-btn:hover {
-    background-color: rgba(52, 168, 83, 0.1);
+.agent-action-button:hover {
+    background-color: var(--secondary-color); /* 悬停时使用 secondary-color */
+    color: white;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(49, 123, 245, 0.3);
 }
 
-.icon-btn.add-btn svg {
-    stroke-width: 2;
-    width: clamp(18px, 5vw, 20px);
-    height: clamp(18px, 5vw, 20px);
+.agent-action-button:active {
+    transform: scale(0.98);
+}
+
+/* 添加按钮的特定样式 */
+.add-agent-button {
+    background-color: var(--success-color); /* 绿色 */
+    min-width: 50px;
+    height: 29px; /* 确保高度一致 */
+}
+
+.add-agent-button:hover {
+    background-color: #45a049; /* 更好看的绿色悬停效果 */
+    box-shadow: 0 3px 8px rgba(69, 160, 73, 0.25); /* 调整阴影颜色和强度 */
 }
 
 /* 助手列表容器 - 最终优化版 */
