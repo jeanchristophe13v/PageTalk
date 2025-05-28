@@ -2,15 +2,15 @@
 
 :root {
     /* 全新配色模式 - 低调沉稳，靛蓝+灰色系 */
-    --primary-color: #4C6EF5;       /* 主色调 - 靛蓝 5 */
+    --primary-color: #557ffd;       /* 主色调 - 靛蓝 5 */
     --secondary-color: #748FFC;      /* 辅助色 - 靛蓝 3 */
     --background-color: #F8F9FA;    /* 背景色 - 灰色 0 */
     --card-background: #FFFFFF;     /* 卡片背景 - 白色 */
-    --text-color: #343A40;          /* 主要文字 - 灰色 8 */
+    --text-color: #343a40e5;          /* 主要文字 - 灰色 8 */
     --text-secondary: #868E96;      /* 次要文字 - 灰色 6 */
     --border-color: #E9ECEF;        /* 边框色 - 灰色 2 (淡化) */
-    --success-color: #1b9d33;       /* 成功色 - 绿色 7 */
-    --error-color: #C92A2A;         /* 错误色 - 红色 8 */
+    --success-color: #1b9d33b0;       /* 成功色 - 绿色 7 */
+    --error-color: #c92a2a9c;         /* 错误色 - 红色 8 */
     --warning-color: #E67700;       /* 警告色 - 橙色 8 */
     --input-background: #FFFFFF;    /* 输入框背景 - 白色 */
     --code-background: #F1F3F5;     /* 代码块背景 - 灰色 1 */

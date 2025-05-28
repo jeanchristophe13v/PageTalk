@@ -1508,10 +1508,15 @@
     border-bottom: none;
 }
 
-.tab-selection-item:hover, .tab-selection-item.selected {
+.tab-selection-item:hover {
     background-color: var(--button-hover-bg);
     color: var(--primary-color);
 }
+
+/* .tab-selection-item.selected {
+    background-color: var(--button-hover-bg);
+    color: var(--primary-color);
+} */
 
 .tab-item-favicon {
     width: 16px;

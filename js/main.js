@@ -263,6 +263,8 @@ function setupEventListeners() {
     elements.tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
+            // 新增：在切换标签页前关闭标签页选择弹窗
+            closeTabSelectionPopupUIFromMain();
             // 调用 ui.js 中的 switchTab (假设 switchTab 是一个可访问的函数，或者这部分逻辑在 main.js 中)
             switchTab(tabId, elements, (subTab) => switchSettingsSubTab(subTab, elements));
             setThemeButtonVisibility(tabId, elements); // Update button visibility on tab switch

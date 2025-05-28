@@ -136,11 +136,11 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 
         // 新增：整合来自选定标签页的上下文
         if (stateRef.selectedContextTabs && stateRef.selectedContextTabs.length > 0) {
-            // 移除 ESystemPrompt 和 ವಿಶೇಷ 标签的要求
-            // let ESystemPrompt = '\n\n你拥有多个文件读取能力，可以同时阅读多个文件，以下是你读取到的文件内容。其中 [tabTitle: "文件名1", tabContent: "文件内容1"]，[tabTitle: "文件名2", tabContent: "文件内容2"] 以此类推，当用户提问时，请分别总结每个文件的内容，并在回答的开头使用 ವಿಶೇಷ 标签包裹文件列表，例如 "विशेष ["文件名1", "文件名2"]"，记得用逗号隔开。回答的正文部分，如果必要，请明确指出信息来源于哪个页面，给出缩略标题。\n\n'
+            // 移除 ESystemPrompt
+            // let ESystemPrompt = '\n\n你拥有多个网页读取能力，可以同时阅读多个网页，以下是你读取到的网页内容。其中 [tabTitle: "网页1", tabContent: "网页1"]，[tabTitle: "网页2", tabContent: "网页内容2"] 以此类推，当用户提问时，请根据这些页面的内容进行回答。回答的正文部分，如果必要，请明确指出信息来源于哪个页面，给出缩略标题。\n\n'
             // systemContent += ESystemPrompt;
             
-            systemContent += "\n\n当涉及多个外部文档时，回答的正文部分，如果必要，请明确指出信息来源于哪个页面，给出该页面的缩略标题。例如：'根据页面 A 的内容...'。请避免在每句话末尾都重复来源，除非对于理解至关重要。";
+            systemContent += "\n\n当涉及多个外部文档时，回答的正文部分，如果必要，请明确指出信息来源于哪个页面（给出该页面的缩略标题）。例如：'根据页面 A 的内容（不要把完整的页面内容展示出来，让用户知道页面来源即可）...'。请避免在每句话末尾都重复来源，除非对于理解至关重要。";
 
             stateRef.selectedContextTabs.forEach(tab => {
                 if (tab.content && !tab.isLoading) {
@@ -182,7 +182,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                         }
                     });
                 }
-                // 移除本地视频文件处理，只支持 YouTube 视频
+
             }
         }
         if (currentParts.length > 0) {
