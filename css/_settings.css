@@ -1,5 +1,11 @@
 /* 包含 Pagetalk 插件设置界面的所有样式，包括通用设置、Agent 管理、模型配置、表单元素、滑块、按钮、提示框等。 */
 
+:root {
+    --toast-bottom-base: 120px; /* 常规提示的基础底部位置 */
+    --toast-bottom-error: 120px; /* 错误提示的特殊底部位置 */
+    --toast-visual-offset-y: -10px; /* toast.show 状态下的向上视觉偏移 */
+}
+
 /* 设置界面样式 */
 #settings {
     padding: clamp(var(--spacing-md), 4vw, var(--spacing-xl));
@@ -661,9 +667,9 @@
 /* 状态提示 Toast */
 .toast {
     position: fixed;
-    bottom: 60px; 
+    bottom: var(--toast-bottom-base); /* 使用变量 */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%); /* 初始 transform，show 状态会覆盖 Y 方向 */
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     background-color: var(--card-background);
@@ -672,7 +678,7 @@
     z-index: 1000;
     font-size: 13px;
     opacity: 0;
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, bottom 0.3s ease; /* 添加 transform 和 bottom 过渡 */
     pointer-events: none;
     white-space: nowrap;
     overflow: hidden;
@@ -681,23 +687,25 @@
 }
 .toast.show {
     opacity: 1;
-    transform: translateX(-50%) translateY(-10px); /* Slide up effect */
+    transform: translateX(-50%) translateY(var(--toast-visual-offset-y)); /* 使用变量 */
 }
 .toast.success {
-    background-color: rgba(52, 168, 83, 0.1); 
-    color: var(--success-color);           
-    border: 1px solid rgba(52, 168, 83, 0.3); 
+    background-color: rgba(52, 168, 83, 0.1);
+    color: var(--success-color);
+    border: 1px solid rgba(52, 168, 83, 0.3);
+    bottom: var(--toast-bottom-base); /* 明确使用基础位置变量 */
 }
 .toast.error {
-    background-color: rgba(234, 67, 53, 0.1); 
-    color: var(--error-color);            
-    border: 1px solid rgba(234, 67, 53, 0.3);  
-    bottom: 160px !important; /* Errors (like API key missing) appear higher */
+    background-color: rgba(234, 67, 53, 0.1);
+    color: var(--error-color);
+    border: 1px solid rgba(234, 67, 53, 0.3);
+    bottom: var(--toast-bottom-error) !important; /* 使用变量, 保留 important */
 }
 .toast.info { /* For informational toasts like "Streaming Aborted" */
     background-color: rgba(76, 110, 245, 0.1);
     color: var(--primary-color);
     border: 1px solid rgba(76, 110, 245, 0.3);
+    bottom: var(--toast-bottom-base); /* info 提示也使用基础位置 */
 }
 
 

@@ -17,7 +17,7 @@
     padding: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: calc(var(--spacing-md) + 8px); /* 进一步增大间距 */
     width: 100%;
     min-height: 0; /* 确保可以缩小 */
 }
@@ -345,7 +345,7 @@
 .message:hover .message-actions,
 .message-actions:hover { /* 保持原有样式 */
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(2px) scale(1); /* Modified to remove upward lift */
 }
 
 /* 通用消息操作按钮样式 (复制、删除、重新生成) */
@@ -982,7 +982,7 @@
     text-align: center;
     display: none; /* 默认隐藏 */
     opacity: 0;
-    transform: translateY(-5px); /* 向上移动一点 */
+    transform: translateY(-20px); /* 向上移动更多 */
     transition: all 0.3s ease;
     max-width: 300px; /* 限制气泡最大宽度 */
 }
@@ -990,7 +990,7 @@
 .chat-status.success {
     display: block;
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-15px); /* 调整出现时的位置 */
     background-color: rgba(52, 168, 83, 0.1);
     color: var(--success-color);
     border: 1px solid rgba(52, 168, 83, 0.3);
@@ -999,7 +999,7 @@
 .chat-status.error {
     display: block;
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-15px); /* 调整出现时的位置 */
     background-color: rgba(234, 67, 53, 0.1);
     color: var(--error-color);
     border: 1px solid rgba(234, 67, 53, 0.3);
@@ -1564,34 +1564,7 @@
     padding: var(--spacing-md);
 }
 
-/* Toast / Notification styles */
-.toast {
-    position: fixed;
-    left: 50%;
-    bottom: 20px; /* 默认 Toast 的位置 */
-    transform: translateX(-50%);
-    background-color: var(--toast-bg-color);
-    color: var(--toast-text-color);
-    padding: var(--spacing-sm) var(--spacing-lg);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    z-index: 10005; /* 确保在其他内容之上，但在模态框之下 */
-    opacity: 0;
-    transition: opacity 0.3s ease, bottom 0.3s ease; /* 添加 bottom 过渡 */
-    font-size: 14px;
-    font-weight: 500;
-    max-width: 80%;
-    text-align: center;
-}
-
-.toast.show {
-    opacity: 1;
-}
-
-/* 特定于标签页加载的 Toast 的自定义位置 */
-.toast.toast-tab-loaded {
-    bottom: 115px; 
-}
+/* End of file or other styles */
 
 
 

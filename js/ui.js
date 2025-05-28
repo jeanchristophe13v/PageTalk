@@ -405,28 +405,31 @@ export function updateContextStatus(contextStatusKey, replacements = {}, element
  * @param {string} [customClass=''] - 可选的自定义CSS类名
  */
 export function showToast(message, type, customClass = '') {
-    let toast = document.querySelector('.toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        // toast.className = 'toast'; // 初始类名在下面统一设置
-        document.body.appendChild(toast);
-    }
-
+    const toast = document.createElement('div');
+    toast.className = `toast ${type} ${customClass}`; // Combine base, type, and custom classes
     toast.textContent = message;
-    // 组合基础类名、类型类名和自定义类名
-    toast.className = `toast ${type} ${customClass || ''}`.trim();
+    document.body.appendChild(toast);
 
-    // Force reflow before adding 'show' class for transition
-    void toast.offsetWidth;
+    // Trigger reflow to enable transition
+    toast.offsetHeight; 
 
     toast.classList.add('show');
 
-    // Hide after duration
-    setTimeout(() => {
-        toast.classList.remove('show');
-        // 可选：如果toast元素被不同类型的通知复用，可以在隐藏后重置其className
-        // setTimeout(() => { if (toast.parentNode && !toast.classList.contains('show')) toast.className = 'toast'; }, 300);
-    }, 2000);
+    // Keep a reference to the timeout
+    let currentToastTimeout = setTimeout(() => {
+        toast.classList.remove('show'); // Restore automatic hiding
+        setTimeout(() => { // Restore automatic hiding
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300); // Wait for fade out transition
+    }, 1500); // Default display time: 2 seconds
+
+    // Clear any existing toast timeout
+    if (window.toastTimeout) {
+        clearTimeout(window.toastTimeout);
+    }
+    window.toastTimeout = currentToastTimeout; // Store the new timeout
 }
 
 /**
