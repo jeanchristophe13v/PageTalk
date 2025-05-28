@@ -517,7 +517,7 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     // Welcome message updated dynamically
     setAttr('#modal-image', 'alt', 'imagePreviewAltTranslated');
     setTitle('#upload-image', 'uploadImageTitle');
-    setPlaceholder('#user-input', 'userInputPlaceholder');
+    setPlaceholder('#user-input', 'userInputContextPlaceholder');
     setTitle('#send-message', 'sendMessageTitle'); // Default title
 
     setText('.footer-tab[data-tab="chat"]', 'chatTab');

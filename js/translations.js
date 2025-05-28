@@ -38,7 +38,8 @@ const translations = {
     'imagePreviewAltTranslated': '全尺寸图片预览',
     'chatStatusPlaceholder': '', // Placeholder for status messages
     'uploadImageTitle': '上传图片',
-    'userInputPlaceholder': '...',
+    'userInputPlaceholder': '输入消息...',
+    'userInputContextPlaceholder': '输入@选择多个标签页进行对话',
     'sendMessageTitle': '发送消息',
     'settingsTab': '设置', // Footer tab
     'chatTab': '聊天', // Footer tab
@@ -183,7 +184,8 @@ const translations = {
     'imagePreviewAltTranslated': 'Full size image preview', // Keep English for alt
     'chatStatusPlaceholder': '',
     'uploadImageTitle': 'Upload Image',
-    'userInputPlaceholder': '...',
+    'userInputPlaceholder': 'Enter message...',
+    'userInputContextPlaceholder': 'Type @ to select multiple tabs for conversation',
     'sendMessageTitle': 'Send Message',
     'settingsTab': 'Settings',
     'chatTab': 'Chat',

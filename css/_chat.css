@@ -633,6 +633,11 @@
 }
 
 /* 输入时的微妙反馈 */
+.chat-input textarea::placeholder {
+    color: #999; /* 更浅的灰色 */
+    opacity: 1; /* 确保在所有浏览器中都可见 */
+}
+
 .chat-input textarea:not(:placeholder-shown) {
     border-color: rgba(49, 123, 245, 0.3);
 }
