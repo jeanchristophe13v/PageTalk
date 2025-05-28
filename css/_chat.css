@@ -384,6 +384,12 @@
     color: var(--primary-color); /* User message action buttons also hover to primary */
 }
 
+/* 聊天消息中删除操作按钮的特定悬停样式 (现在与用户消息操作按钮悬停一致) */
+.message-action-btn.delete-message-action:hover {
+    background-color: rgba(255, 255, 255, 0.6); /* 白色背景，与用户消息按钮悬停一致 */
+    color: var(--primary-color); /* 主题色图标，与用户消息按钮悬停一致 */
+}
+
 /* 复制按钮基础样式 - 使 message-action-btn 行为一致 */
 .copy-button {
     width: 24px;
@@ -1346,16 +1352,6 @@
     display: none;
 }
 
-/* 删除按钮样式 */
-.delete-btn {
-    background: rgba(234, 67, 53, 0.1);
-    color: var(--error-color);
-}
-
-.delete-btn:hover {
-    background: rgba(234, 67, 53, 0.2);
-    transform: scale(1.02);
-}
 
 .delete-btn:hover::before {
     width: 100%;
