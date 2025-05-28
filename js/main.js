@@ -500,7 +500,8 @@ function handleTabSelectedFromPopup(selectedTab) {
         url: selectedTab.url, 
         favIconUrl: selectedTab.favIconUrl,
         content: null, 
-        isLoading: true 
+        isLoading: true,
+        isContextSent: false
     };
     state.selectedContextTabs.push(newSelectedTabEntry);
     updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // <--- MODIFIED HERE (added removeSelectedTabFromMain)
@@ -586,7 +587,8 @@ function sendUserMessageTrigger() {
         clearVideosUI, 
         showToastUI, 
         restoreSendButtonAndInputUI, 
-        abortStreamingUI 
+        abortStreamingUI,
+        updateSelectedTabsBarFromMain
     );
 }
 
@@ -688,7 +690,8 @@ function regenerateMessageUI(messageId) {
         (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom),
         restoreSendButtonAndInputUI,
         abortStreamingUI,
-        showToastUI
+        showToastUI,
+        updateSelectedTabsBarFromMain
     );
 }
 
@@ -924,6 +927,11 @@ function removeSelectedTabFromMain(tabId) {
     // 调用 ui.js 中的函数更新UI (确保此函数接受正确的参数)
     updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
     console.log(`Selected context tab ${tabId} removed. Remaining:`, state.selectedContextTabs.length);
+}
+
+// 新增：用于更新已选标签栏UI的回调函数
+function updateSelectedTabsBarFromMain() {
+    updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
 }
 
 export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {

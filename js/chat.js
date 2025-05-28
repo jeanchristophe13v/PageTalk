@@ -26,8 +26,9 @@ function _(key, replacements = {}, translations) {
  * @param {function} showToastCallback - Callback
  * @param {function} restoreSendButtonAndInputCallback - Callback
  * @param {function} abortStreamingCallback - Callback
+ * @param {function} [updateSelectedTabsBarCallback] - Optional callback to update selected tabs bar UI
  */
-export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, clearVideosCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback) {
+export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, clearVideosCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, updateSelectedTabsBarCallback) {
     const userMessage = elements.userInput.value.trim();
 
     if (state.isStreaming) {
@@ -35,7 +36,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
         return;
     }
-    if (!userMessage && state.images.length === 0 && state.videos.length === 0) return;
+    if (!userMessage && state.images.length === 0 && state.videos.length === 0 && state.selectedContextTabs.filter(t => t.content && !t.isLoading && !t.isContextSent).length === 0) return;
 
     if (!state.apiKey) {
         // Show API key missing error as a toast on the chat page (首页下方)
@@ -59,13 +60,44 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     const currentImages = [...state.images]; // Copy images for this message
     const currentVideos = [...state.videos]; // Copy videos for this message
 
+    // 准备在用户消息气泡中显示的标签页信息
+    const tabsForBubbleDisplay = state.selectedContextTabs
+        .filter(tab => tab.content && !tab.isLoading && !tab.isContextSent)
+        .map(tab => ({ title: tab.title, favIconUrl: tab.favIconUrl }));
+
     // Add user message UI (force scroll ensures it's visible before thinking anim)
     // addMessageToChatCallback (main.js#addMessageToChatUI) handles isUserNearBottom internally
-    const userMessageElement = addMessageToChatCallback(userMessage, 'user', { images: currentImages, videos: currentVideos, forceScroll: true });
+    const userMessageElement = addMessageToChatCallback(userMessage, 'user', { images: currentImages, videos: currentVideos, forceScroll: true, sentContextTabs: tabsForBubbleDisplay });
     const userMessageId = userMessageElement.dataset.messageId;
 
     elements.userInput.value = '';
     resizeTextareaCallback(); // Adjust textarea height
+
+    // --- 立即标记已选标签页为已发送并更新UI ---
+    let contextTabsForApi = [];
+    if (state.selectedContextTabs && state.selectedContextTabs.length > 0) {
+        const tabsToSendNow = state.selectedContextTabs.filter(
+            tab => tab.content && !tab.isLoading && !tab.isContextSent
+        );
+
+        if (tabsToSendNow.length > 0) {
+            contextTabsForApi = tabsToSendNow.map(tab => ({ title: tab.title, content: tab.content }));
+
+            tabsToSendNow.forEach(tabSent => {
+                const originalTab = state.selectedContextTabs.find(t => t.id === tabSent.id);
+                if (originalTab) {
+                    originalTab.isContextSent = true;
+                }
+            });
+
+            state.selectedContextTabs = state.selectedContextTabs.filter(tab => !tab.isContextSent);
+            
+            if (updateSelectedTabsBarCallback) {
+                updateSelectedTabsBarCallback(); // 立即更新UI
+            }
+        }
+    }
+    // --- 结束处理标签页逻辑 ---
 
     // Build message parts
     const currentParts = [];
@@ -113,7 +145,10 @@ export async function sendUserMessage(state, elements, currentTranslations, show
             addMessageToChat: addMessageToChatCallback,
             // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
-            finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content),
+            finalizeBotMessage: (el, content) => {
+                window.finalizeBotMessage(el, content);
+                // 此处不再需要处理 selectedContextTabs 的逻辑，已提前处理
+            },
             showToast: showToastCallback,
             restoreSendButtonAndInput: restoreSendButtonAndInputCallback // Add this callback
         };
@@ -125,7 +160,8 @@ export async function sendUserMessage(state, elements, currentTranslations, show
             currentVideos, // Use the copied currentVideos
             thinkingElement,
             state, // Pass full state reference
-            apiUiCallbacks // Pass callbacks object
+            apiUiCallbacks, // Pass callbacks object
+            contextTabsForApi // <--- Pass the prepared context tabs
         );
         // finalizeBotMessage (called by API module on success) will restore button state
 
@@ -225,8 +261,9 @@ export function deleteMessage(messageId, state) {
  * @param {function} restoreSendButtonAndInputCallback - Callback
  * @param {function} abortStreamingCallback - Callback
  * @param {function} showToastCallback - Callback to show toast notifications
+ * @param {function} [updateSelectedTabsBarCallback] - Optional callback to update selected tabs bar UI
  */
-export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, showToastCallback) {
+export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, showToastCallback, updateSelectedTabsBarCallback) {
     if (state.isStreaming) {
         console.warn("Cannot regenerate while streaming.");
         // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
@@ -287,6 +324,32 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
     console.log(`Removed ${removedAICount} old AI response(s) starting after index ${userIndex}`);
 
 
+    // --- 在重新生成前，立即标记即将作为上下文发送的标签页并更新UI ---
+    let contextTabsForApiRegen = [];
+    if (state.selectedContextTabs && state.selectedContextTabs.length > 0) {
+        const tabsToRegenNow = state.selectedContextTabs.filter(
+            tab => tab.content && !tab.isLoading && !tab.isContextSent
+        );
+
+        if (tabsToRegenNow.length > 0) {
+            contextTabsForApiRegen = tabsToRegenNow.map(tab => ({ title: tab.title, content: tab.content }));
+
+            tabsToRegenNow.forEach(tabSent => {
+                const originalTab = state.selectedContextTabs.find(t => t.id === tabSent.id);
+                if (originalTab) {
+                    originalTab.isContextSent = true;
+                }
+            });
+
+            state.selectedContextTabs = state.selectedContextTabs.filter(tab => !tab.isContextSent);
+            
+            if (updateSelectedTabsBarCallback) {
+                updateSelectedTabsBarCallback(); // 立即更新UI
+            }
+        }
+    }
+    // --- 结束处理标签页逻辑 ---
+
     // --- Start Streaming State ---
     state.isStreaming = true;
     elements.sendMessage.classList.add('stop-streaming');
@@ -312,7 +375,10 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
             addMessageToChat: addMessageToChatCallback,
             // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
-            finalizeBotMessage: (el, content) => window.finalizeBotMessage(el, content),
+            finalizeBotMessage: (el, content) => {
+                window.finalizeBotMessage(el, content);
+                // 此处不再需要处理 selectedContextTabs 的逻辑，已提前处理
+            },
             clearImages: () => { }, // Don't clear images on regenerate
             showToast: showToastCallback // Pass the received showToastCallback
         };
@@ -327,7 +393,8 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
             userIndex + 1, // Insert *after* the user message index
             userMessageElement, // Insert *after* this DOM element
             state,
-            apiUiCallbacks
+            apiUiCallbacks,
+            contextTabsForApiRegen // <--- Pass the prepared context tabs
         );
         // finalizeBotMessage will restore button state on success
 

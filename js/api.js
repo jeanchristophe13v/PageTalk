@@ -65,98 +65,136 @@ async function _testAndVerifyApiKey(apiKey, model) {
  * @param {HTMLElement|null} [insertAfterElement=null] - 如果 insertResponse 为 true，则指定插入到此 DOM 元素之后
  * @param {object} stateRef - Reference to the main state object from sidepanel.js
  * @param {object} uiCallbacks - Object containing UI update functions { addMessageToChat, updateStreamingMessage, finalizeBotMessage, clearImages, clearVideos, showToast }
+ * @param {Array<{title: string, content: string}>|null} [explicitContextTabs=null] - Explicit tab contents to use for context.
  * @returns {Promise<void>}
  */
-async function callGeminiAPIInternal(userMessage, images = [], videos = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks) {
+async function callGeminiAPIInternal(userMessage, images = [], videos = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks, explicitContextTabs = null) {
     let accumulatedText = '';
     let messageElement = null;
     let botMessageId = null;
     const controller = new AbortController(); // Create AbortController
     window.GeminiAPI.currentAbortController = controller; // Store controller globally
+
+    function escapeXml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            return ''; // Return empty string for non-string inputs or handle error
+        }
+        return unsafe.replace(/[<>&'"]/g, function (c) {
+            switch (c) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+                case '\'': return '&apos;';
+                case '"': return '&quot;';
+                default: return c;
+            }
+        });
+    }
+
     try {
         // --- Determine actual API model name and thinking configuration ---
-        let apiModelName = stateRef.model; // Default to the selected model name from dropdown
-        let effectiveThinkingConfig = null; // 默认为null，不发送thinkingConfig参数
+        let apiModelName = stateRef.model;
+        let effectiveThinkingConfig = null;
 
         if (stateRef.model === 'gemini-2.5-flash') {
-            apiModelName = 'gemini-2.5-flash-preview-05-20'; // Underlying API model
-            effectiveThinkingConfig = { thinkingBudget: 0 }; // 只有gemini-2.5-flash设为0
+            apiModelName = 'gemini-2.5-flash-preview-05-20';
+            effectiveThinkingConfig = { thinkingBudget: 0 };
         } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
-            apiModelName = 'gemini-2.5-flash-preview-05-20'; // Underlying API model
-            effectiveThinkingConfig = null; // 不发送thinkingConfig参数
+            apiModelName = 'gemini-2.5-flash-preview-05-20';
+            effectiveThinkingConfig = null;
         }
-        // 对其他所有模型，保持effectiveThinkingConfig = null的默认值
-
         console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with thinking config:`, effectiveThinkingConfig);
 
-        // 使用提供的历史记录 (historyForApi) 或全局历史记录 (stateRef.chatHistory)
-        const historyToSend = historyForApi ? [...historyForApi] : [...stateRef.chatHistory]; // Use stateRef
+        const historyToSend = historyForApi ? [...historyForApi] : [...stateRef.chatHistory];
 
-        // 构建请求体
         const requestBody = {
-            contents: [],
+            contents: [], // Initialize contents array
             generationConfig: {
-                temperature: parseFloat(stateRef.temperature), // Use stateRef
-                maxOutputTokens: parseInt(stateRef.maxTokens), // Use stateRef
-                topP: parseFloat(stateRef.topP), // Use stateRef
+                temperature: parseFloat(stateRef.temperature),
+                maxOutputTokens: parseInt(stateRef.maxTokens),
+                topP: parseFloat(stateRef.topP),
             },
-            tools: [] // Initialize tools array
+            tools: []
         };
 
-        // Add thinkingConfig to generationConfig only if it's not null
         if (effectiveThinkingConfig) {
             requestBody.generationConfig.thinkingConfig = effectiveThinkingConfig;
         }
 
-        // --- Add URL context tool for supported models ---
-        // These are the *actual* API model names that support URL context.
-        const actualApiModelsSupportingUrlContext = [
-            'gemini-2.5-flash-preview-05-20',
-            'gemini-2.0-flash'
-            // Add other *actual* API model names like 'gemini-2.5-pro-preview-05-06'
-            // or 'gemini-2.0-flash-live-001' if they are added to the selection
-            // and directly used as `apiModelName`.
-        ];
-
+        const actualApiModelsSupportingUrlContext = ['gemini-2.5-flash-preview-05-20', 'gemini-2.0-flash'];
         if (actualApiModelsSupportingUrlContext.includes(apiModelName)) {
             requestBody.tools.push({ "url_context": {} });
             console.log(`URL context tool added for model: ${apiModelName}`);
         }
-
-        // If tools array is empty after all checks (e.g., no tools added), remove it from requestBody
         if (requestBody.tools.length === 0) {
             delete requestBody.tools;
         }
 
-        // --- 构建 contents 的逻辑 ---
-        let systemContent = stateRef.systemPrompt; // Use stateRef
-        if (stateRef.pageContext) { // Use stateRef
-            systemContent += `\n\n以下是作为你回答的网页参考内容，回答时请务必使用用户所使用的语言，并用markdown格式输出\n\n${stateRef.pageContext}`; // Use stateRef
-        }
+        // --- Construct XML System Prompt ---
+        let xmlSystemPrompt = `
+<instructions>
+  <role>You are a helpful and professional AI assistant. Your primary goal is to answer the user's questions accurately and informatively, drawing upon the provided context and chat history.</role>
+  <output_format>
+    <language>Respond in the language used by the user in their most recent query.</language>
+    <markdown>Format your entire response using Markdown.</markdown>
+  </output_format>
+  <context_handling>
+    <general>You will be provided with several pieces of context: the main page content, additional selected web pages, and the ongoing chat history. Integrate information from all relevant sources to formulate your response.</general>
+    <source_attribution>
+      <guideline>When your answer incorporates information directly from the 'main_page_content' or any 'additional_page_context', you should briefly mention the source by its title. This helps the user understand the basis of your answer.</guideline>
+      <format_examples>
+        <example>For instance: "According to the 'Summarized Page Title A' document,..."</example>
+        <example>Or: "Regarding X, the page 'Summarized Page Title B' suggests that..."</example>
+      </format_examples>
+      <natural_integration>Strive for natural integration of these attributions. Avoid rigid, repetitive attributions for every sentence unless crucial for clarity. A single attribution for a paragraph drawing from one source is often sufficient.</natural_integration>
+    </source_attribution>
+    <information_usage>
+      <accuracy>Base your answers strictly on the provided information. Do not introduce external knowledge or make assumptions beyond the given context.</accuracy>
+      <conciseness>Be concise yet comprehensive.</conciseness>
+      <no_fabrication>If the answer cannot be found in the provided contexts, clearly state this.</no_fabrication>
+    </information_usage>
+  </context_handling>
+  <multi_turn_dialogue>
+    <instruction>Carefully consider the entire chat history to understand conversational flow and maintain relevance. Refer to previous turns as needed for coherent, contextually appropriate responses.</instruction>
+  </multi_turn_dialogue>
+  <agent_specific_instructions>
+    ${stateRef.systemPrompt ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
+  </agent_specific_instructions>
+</instructions>
 
-        // 新增：整合来自选定标签页的上下文
-        if (stateRef.selectedContextTabs && stateRef.selectedContextTabs.length > 0) {
-            // 移除 ESystemPrompt
-            // let ESystemPrompt = '\n\n你拥有多个网页读取能力，可以同时阅读多个网页，以下是你读取到的网页内容。其中 [tabTitle: "网页1", tabContent: "网页1"]，[tabTitle: "网页2", tabContent: "网页内容2"] 以此类推，当用户提问时，请根据这些页面的内容进行回答。回答的正文部分，如果必要，请明确指出信息来源于哪个页面，给出缩略标题。\n\n'
-            // systemContent += ESystemPrompt;
-            
-            systemContent += "\n\n当涉及多个外部文档时，回答的正文部分，如果必要，请明确指出信息来源于哪个页面（给出该页面的缩略标题）。例如：'根据页面 A 的内容（不要把完整的页面内容展示出来，让用户知道页面来源即可）...'。请避免在每句话末尾都重复来源，除非对于理解至关重要。";
+<provided_contexts>
+  <main_page_content source_title="Current Page Document">
+    <content>
+      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No main page content was loaded or provided.'}
+    </content>
+  </main_page_content>
+`;
 
-            stateRef.selectedContextTabs.forEach(tab => {
-                if (tab.content && !tab.isLoading) {
-                    const escapedTitle = tab.title.replaceAll('"', '\\"');
-                    // systemContent += `[tabTitle: "${escapedTitle}", tabContent: "${tab.content}"]\n`;
-                    // 更改整合格式，使其更自然
-                    systemContent += `\n\n--- 页面：${escapedTitle} ---\n${tab.content}\n--- 结束页面：${escapedTitle} ---\n`;
+        if (explicitContextTabs && explicitContextTabs.length > 0) {
+            xmlSystemPrompt += `  <additional_page_contexts>
+`;
+            explicitContextTabs.forEach(tab => {
+                if (tab.content) {
+                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>\n${escapeXml(tab.content)}\n      </content>\n    </page>\n`;
+                } else {
+                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>Content for this tab was not loaded or is empty.</content>\n    </page>\n`;
                 }
             });
+            xmlSystemPrompt += `  </additional_page_contexts>
+`;
+        } else {
+            xmlSystemPrompt += `  <additional_page_contexts_status>No additional pages were selected for context.</additional_page_contexts_status>
+`;
         }
+        xmlSystemPrompt += `</provided_contexts>`;
+        // --- End XML System Prompt Construction ---
 
-        if (systemContent) {
-            requestBody.contents.push({ role: 'user', parts: [{ text: systemContent }] });
-            requestBody.contents.push({ role: 'model', parts: [{ text: "OK." }] });
-        }
-        // 使用准备好的 historyToSend 进行迭代
+        // Add XML system prompt as the first user turn
+        requestBody.contents.push({ role: 'user', parts: [{ text: xmlSystemPrompt.trim() }] });
+        // Add a model acknowledgment turn
+        requestBody.contents.push({ role: 'model', parts: [{ text: "Understood. I will adhere to these instructions and utilize the provided contexts and chat history." }] });
+
+        // Add chat history
         historyToSend.forEach(msg => {
             if (msg.parts && Array.isArray(msg.parts) && msg.parts.length > 0) {
                 requestBody.contents.push({ role: msg.role, parts: msg.parts });
@@ -164,6 +202,8 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                 console.warn("Skipping history message due to missing, invalid, or empty parts:", msg);
             }
         });
+
+        // Add current user message (text, images, videos)
         const currentParts = [];
         if (userMessage) currentParts.push({ text: userMessage });
         if (images.length > 0) {
@@ -175,25 +215,25 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         if (videos.length > 0) {
             for (const video of videos) {
                 if (video.type === 'youtube') {
-                    // YouTube URL
                     currentParts.push({
                         fileData: {
                             fileUri: video.url
                         }
                     });
                 }
-
             }
         }
         if (currentParts.length > 0) {
             requestBody.contents.push({ role: 'user', parts: currentParts });
-        } else if (requestBody.contents.length === 0 && !requestBody.tools) { // Also check if tools are present, as a request with only tools might be valid for some APIs
-            console.warn("Attempting to send an empty message with no history and no tools.");
+        } else if (requestBody.contents.length === 2 && !requestBody.tools) { // Check if only system prompt + ack and no tools
+             console.warn("Attempting to send an effectively empty message (only system prompt and ack) with no tools.");
             if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
-            uiCallbacks.addMessageToChat("无法发送空消息。", 'bot'); // Use callback
+            // uiCallbacks.addMessageToChat("无法发送空消息。", 'bot'); // Potentially re-enable if needed
+            if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
+                 uiCallbacks.restoreSendButtonAndInput();
+            }
             return;
         }
-        // --- 结束构建 contents 的逻辑 ---
 
         const endpoint = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`; // Use actual apiModelName
 
@@ -416,16 +456,18 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 
 /**
  * 用于发送新消息 (追加)
+ * @param {Array<{title: string, content: string}>|null} [contextTabsForApi=null] - Explicit tab contents for API.
  */
-async function callGeminiAPIWithImages(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks) {
-    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, null, false, null, null, stateRef, uiCallbacks); // insertResponse = false, historyForApi = null
+async function callGeminiAPIWithImages(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null) {
+    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, null, false, null, null, stateRef, uiCallbacks, contextTabsForApi); // insertResponse = false, historyForApi = null
 }
 
 /**
  * 用于重新生成并插入响应
+ * @param {Array<{title: string, content: string}>|null} [contextTabsForApi=null] - Explicit tab contents for API.
  */
-async function callApiAndInsertResponse(userMessage, images = [], videos = [], thinkingElement, historyForApi, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks) {
-    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, historyForApi, true, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks); // insertResponse = true
+async function callApiAndInsertResponse(userMessage, images = [], videos = [], thinkingElement, historyForApi, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks, contextTabsForApi = null) {
+    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, historyForApi, true, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks, contextTabsForApi); // insertResponse = true
 }
 
 // Export functions to be used in sidepanel.js
