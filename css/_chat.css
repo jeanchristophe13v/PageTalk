@@ -228,22 +228,22 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: calc(var(--spacing-xs) / 1.5) var(--spacing-xs); /* 调整内边距使标签更紧凑 */
-    border-radius: var(--radius-md); /* 给每个标签项圆角 */
-    background-color: var(--card-background-rgb-opacity-low); /* 使用变量，并确保有后备 */
+    padding: calc(var(--spacing-xs) / 1.2) var(--spacing-sm); /* 调整内边距使标签更高 */
+    padding-left: calc(var(--spacing-sm) + 2px); /* 增加左侧内边距，让图标不靠近边缘 */
+    border-radius: var(--radius-md);
+    background-color: var(--card-background-rgb-opacity-low);
     border: 1px solid var(--border-color);
-    max-width: 100%; /* 确保不超过父容器 */
-    overflow: hidden; /* 确保子元素不会溢出圆角 */
+    max-width: 100%;
+    overflow: hidden;
     box-shadow: var(--shadow-sm);
-    color: var(--text-secondary); /* 文本颜色适应主题 */
+    color: var(--text-secondary);
 }
 
 .sent-tab-favicon {
-    width: 14px;
-    height: 14px;
+    width: 16px; /* 增加图标大小 */
+    height: 16px; /* 增加图标大小 */
     object-fit: contain;
     flex-shrink: 0;
-    /* margin-left: var(--spacing-xs); */ /* 移除，由父级 gap 控制 */
     border-radius: 2px;
 }
 
@@ -1369,20 +1369,43 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-sm) var(--spacing-md); /* 增加上下间距 */
-    background-color: var(--card-background); /* 与输入区域背景一致或稍作区分 */
+    padding: calc(var(--spacing-sm) + 2px) var(--spacing-md); /* 增加上下内边距2px */
+    background-color: rgba(255, 255, 255, 0.85); /* 半透明背景，适用于亮色模式 */
     border-bottom: 1px solid var(--border-color);
-    overflow-x: auto; /* 横向滚动 */
-    overflow-y: hidden;
+    overflow: hidden;
     max-width: 100%;
     box-sizing: border-box;
     border-top-left-radius: var(--radius-lg);
     border-top-right-radius: var(--radius-lg);
-    /* 如果 selected-tabs-bar 出现，它应该有顶部边框，而 chat-input 则不需要了 */
     border-top: 1px solid var(--border-color);
-    white-space: nowrap; /* 防止标签换行 */
-    flex-shrink: 1; /* 允许在空间不足时收缩 */
+    white-space: nowrap;
+    flex-shrink: 1;
+    
+    /* 增强磨玻璃效果 */
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+    
+    /* 轻微的阴影效果增强立体感 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) inset;
+    
+    /* 添加渐变边框效果 */
+    background-image: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0.02) 100%);
 }
+
+/* 深色模式下已选标签栏 */
+body.dark-mode .selected-tabs-bar {
+    background-color: rgba(44, 46, 51, 0.85); /* 深色模式下的半透明背景，与卡片背景协调 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) inset;
+    border-color: var(--border-color);
+    background-image: linear-gradient(135deg,
+        rgba(60, 60, 65, 0.1) 0%,
+        rgba(40, 40, 45, 0.05) 50%,
+        rgba(30, 30, 35, 0.02) 100%);
+}
+
 
 .chat-input-area .chat-input { /* 当标签栏存在时，chat-input 的顶部边框由标签栏提供 */
     border-top: none;
@@ -1394,78 +1417,158 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    background-color: var(--background-color); /* 更浅的背景，或var(--button-secondary-bg) */
-    border: 1px solid var(--border-color-strong);
-    border-radius: var(--radius-full); /* 胶囊形状 */
-    padding: var(--spacing-xs) var(--spacing-sm); /* 增加上下间距 */
+    background-color: rgba(255, 255, 255, 0.6); /* 更透明的背景，配合磨玻璃效果 */
+    border: 1px solid rgba(233, 236, 239, 0.8); /* 半透明边框 */
+    border-radius: var(--radius-full);
+    padding: calc(var(--spacing-xs) + 3px) var(--spacing-sm); /* 上下内边距 */
+    padding-left: calc(var(--spacing-sm) + 2px); /* 增加左侧内边距，让图标不靠近边缘 */
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-color);
     cursor: default;
     transition: all 0.2s ease;
-    /* max-width: 180px; /* 移除固定最大宽度，允许压缩 */
-    flex-grow: 1; /* 允许在有额外空间时增长 */
-    flex-shrink: 1; /* 允许在 flex 容器中被压缩 */
-    min-width: 0; /* 允许内容在压缩时截断 */
-    flex-basis: 0; /* 将初始大小设置为0，以便flex-grow和flex-shrink均匀分配 */
-    overflow: hidden; /* 添加 overflow hidden 以确保子元素符合父容器的圆角 */
+    flex-grow: 1; /* 允许增长 */
+    flex-shrink: 1; /* 允许收缩 */
+    flex-basis: 0; /* 初始大小为0，让flex-grow和flex-shrink平均分配空间 */
+    min-width: 40px; /* 减小最小宽度，允许更多压缩 */
+    max-width: 200px; /* 最大宽度限制 */
+    overflow: hidden;
+    
+    /* 轻微的阴影增强立体感 */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    
+    /* 磨玻璃效果 */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    
+    /* 空间不足时优化显示 */
+    position: relative;
+    margin: 0 1px; /* 添加小间距，提高可区分度 */
+}
+
+/* 当标签很多、空间不足时，优先保留图标和关闭按钮，文本优雅压缩 */
+@media (max-width: 600px), (min-width: 601px) and (max-width: 900px) {
+    .selected-tab-chip {
+        padding: calc(var(--spacing-xs) + 3px) var(--spacing-xs); /* 保持增加的上下内边距 */
+        padding-left: calc(var(--spacing-xs) + 4px); /* 在小屏幕上也增加左侧内边距 */
+        min-width: 32px; /* 进一步减小最小宽度 */
+    }
+    
+    /* 当宽度低于特定值时，文本可以完全隐藏，只保留图标和关闭按钮 */
+    .selected-tab-chip.micro {
+        min-width: 32px;
+        width: 32px;
+        padding: calc(var(--spacing-xs) + 3px) calc(var(--spacing-xs) / 2); /* 保持增加的上下内边距 */
+        /* 微型模式下居中显示，无需特别设置左侧内边距 */
+        justify-content: center;
+    }
+    
+    .selected-tab-chip.micro span {
+        display: none;
+    }
+}
+
+/* 深色模式下的标签芯片 */
+body.dark-mode .selected-tab-chip {
+    background-color: rgba(52, 58, 64, 0.7); /* 深色模式下的半透明背景 */
+    border-color: rgba(52, 58, 64, 0.9); /* 深色模式下的边框 */
+    color: var(--text-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .selected-tab-chip:hover,
-.selected-tab-chip.active { /* 添加 active 状态 */
-    border-color: var(--primary-color-light);
-    background-color: var(--button-hover-bg); /* 使用与标签页列表相同的悬停背景 */
-    color: var(--primary-color); /* 使用与标签页列表相同的悬停颜色 */
+.selected-tab-chip.active {
+    border-color: rgba(70, 116, 255, 0.5); /* 半透明主色调边框 */
+    background-color: rgba(70, 116, 255, 0.08); /* 主色调透明背景 */
+    color: var(--primary-color);
+    /* 不使用悬浮上抬效果，但稍微增加阴影 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* 深色模式下的悬停样式 */
+body.dark-mode .selected-tab-chip:hover,
+body.dark-mode .selected-tab-chip.active {
+    border-color: rgba(116, 143, 252, 0.5);
+    background-color: rgba(116, 143, 252, 0.15);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .selected-tab-chip img {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
+    width: 16px; /* 增加图标大小 */
+    height: 16px; /* 增加图标大小 */
+    border-radius: 3px;
     object-fit: contain;
-    flex-shrink: 0; /* 防止图标被压缩 */
+    flex-shrink: 0;
 }
 
 .selected-tab-chip span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    flex-grow: 1; /* 允许标题占据可用空间 */
-    min-width: 0; /* 允许标题在空间不足时缩小，配合 text-overflow */
+    flex-grow: 1;
+    min-width: 0;
+    font-weight: 500; /* 稍微加粗文字 */
 }
 
 .selected-tab-chip button {
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 16px; /* X 大小*/
+    font-size: 14px;
     padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-left: var(--spacing-xs);
     cursor: pointer;
     line-height: 1;
     opacity: 0.7;
-    flex-shrink: 0; /* 确保按钮不被压缩 */
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
 }
 
 .selected-tab-chip button:hover {
     color: var(--error-color);
     opacity: 1;
+    background-color: rgba(201, 42, 42, 0.1);
+    transform: scale(1.1); /* 稍微放大按钮增强交互感 */
+}
+
+/* 深色模式下的关闭按钮悬停效果 */
+body.dark-mode .selected-tab-chip button:hover {
+    background-color: rgba(255, 135, 135, 0.15);
 }
 
 .selected-tab-chip.loading {
     color: var(--primary-color);
-    /* border-color: var(--primary-color-light); */
+    border-color: rgba(70, 116, 255, 0.3);
+    background-color: rgba(70, 116, 255, 0.05);
+}
+
+/* 深色模式下的加载状态 */
+body.dark-mode .selected-tab-chip.loading {
+    border-color: rgba(116, 143, 252, 0.3);
+    background-color: rgba(116, 143, 252, 0.08);
 }
 
 .selected-tab-chip.error {
     color: var(--error-color);
-    border-color: var(--error-color-light);
-    background-color: rgba(234, 67, 53, 0.05);
+    border-color: rgba(201, 42, 42, 0.3);
+    background-color: rgba(201, 42, 42, 0.05);
+}
+
+/* 深色模式下的错误状态 */
+body.dark-mode .selected-tab-chip.error {
+    border-color: rgba(255, 135, 135, 0.3);
+    background-color: rgba(255, 135, 135, 0.08);
 }
 
 .tab-chip-spinner {
     width: 12px;
     height: 12px;
-    border: 2px solid currentColor; /* currentColor 会继承 .loading 或 .error 的颜色 */
+    border: 2px solid currentColor;
     border-top-color: transparent;
     border-radius: 50%;
     animation: chip-spinner-anim 0.8s linear infinite;
@@ -1479,25 +1582,80 @@
 }
 
 
-/* 标签页选择弹窗 */
+/* 标签页选择弹窗 - 增强磨玻璃效果 */
 .tab-selection-popup {
     position: fixed; /* 使用 fixed 定位 */
     z-index: 10010; /* 比 sidepanel 内其他元素高，但低于模态框等 */
-    /* background-color: var(--card-background); */ /* 移除，改用毛玻璃 */
-    border: 1px solid var(--border-color-glass);
-    border-radius: var(--radius-lg); /* 更大的圆角 */
-    box-shadow: var(--shadow-xl); /* 更明显的阴影 */
-    max-height: 280px; /* 增加一点最大高度 */
+    border: 1px solid rgba(233, 236, 239, 0.5); /* 半透明边框，替代 var(--border-color-glass) */
+    border-radius: var(--radius-xl); /* 更大的圆角 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 20px 60px rgba(0, 0, 0, 0.15); /* 更深的阴影层次，替代 var(--shadow-glass) */
+    max-height: 320px; /* 稍微增加高度 */
     overflow-y: auto;
-    /* width: 300px; */ /* 由JS设置 */
-    /* bottom: 50px; */ /* 由JS动态设置，使其更靠近输入框上方 */
-    /* left: 10px;   */ /* 由JS设置 */
-    padding: var(--spacing-xs) 0; /* 垂直内边距，列表项将有自己的内边距 */
+    padding: 0; /* 移除内边距，避免顶部和底部留白 */
+    
+    /* 增强的磨玻璃效果 - 使用明确的背景颜色替代 var(--glass-bg-color) */
+    background-color: rgba(255, 255, 255, 0.85); /* 半透明背景 */
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    
+    /* 渐变边框效果 */
+    background-image: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0.02) 100%);
+    
+    /* 入场动画 */
+    animation: popupSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center bottom;
+}
 
-    /* 毛玻璃效果 */
-    background-color: var(--glass-bg-color); 
-    backdrop-filter: blur(12px) saturate(150%);
-    -webkit-backdrop-filter: blur(12px) saturate(150%); 
+/* 深色模式下标签页选择弹窗 */
+body.dark-mode .tab-selection-popup {
+    border-color: rgba(52, 58, 64, 0.6);
+    background-color: rgba(44, 46, 51, 0.85); /* 深色模式下的半透明背景 */
+    background-image: linear-gradient(135deg,
+        rgba(70, 70, 70, 0.15) 0%,
+        rgba(40, 40, 40, 0.05) 50%,
+        rgba(20, 20, 20, 0.02) 100%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+/* 弹窗入场动画 */
+@keyframes popupSlideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(8px) scale(0.95);
+        backdrop-filter: blur(4px) saturate(100%);
+        -webkit-backdrop-filter: blur(4px) saturate(100%);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+    }
+}
+
+/* 弹窗滚动条美化 */
+.tab-selection-popup::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tab-selection-popup::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-full);
+    margin: 0; /* 移除上下边距，避免留白 */
+}
+
+.tab-selection-popup::-webkit-scrollbar-thumb {
+    background: rgba(70, 116, 255, 0.3);
+    border-radius: var(--radius-full);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.tab-selection-popup::-webkit-scrollbar-thumb:hover {
+    background: rgba(70, 116, 255, 0.5);
 }
 
 .tab-selection-list {
@@ -1514,10 +1672,18 @@
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.15s ease;
+    margin: 0; /* 确保没有外边距 */
+}
+
+.tab-selection-item:first-child {
+    border-top-left-radius: var(--radius-xl); /* 与弹窗圆角一致 */
+    border-top-right-radius: var(--radius-xl);
 }
 
 .tab-selection-item:last-child {
     border-bottom: none;
+    border-bottom-left-radius: var(--radius-xl); /* 与弹窗圆角一致 */
+    border-bottom-right-radius: var(--radius-xl);
 }
 
 .tab-selection-item:hover {
@@ -1553,26 +1719,14 @@
     color: var(--text-tertiary);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* 常规省略 */
+    text-overflow: ellipsis; /* 使用标准省略，移除渐变效果 */
     flex-shrink: 1; /* 允许 URL 缩小 */
     max-width: 40%; /* 限制 URL 最大宽度 */
-    position: relative; /* 用于渐变 */
+    /* 移除 position: relative，不再使用渐变效果 */
 }
 
-/* URL 末尾渐变消失效果 */
-.tab-item-url::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 20px; /* 渐变宽度 */
-    background: linear-gradient(to right, transparent, var(--button-hover-bg) 80%);
-}
-
-.tab-selection-item:not(:hover):not(.selected) .tab-item-url::after {
-    background: linear-gradient(to right, transparent, var(--card-background) 80%);
-}
+/* 移除URL渐变效果，避免右侧留白 */
+/* .tab-item-url::after 相关样式已移除 */
 
 .tab-selection-item.no-results {
     justify-content: center;
@@ -1581,7 +1735,7 @@
     padding: var(--spacing-md);
 }
 
-/* End of file or other styles */
+
 
 
 
