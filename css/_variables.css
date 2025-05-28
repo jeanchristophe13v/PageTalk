@@ -2,7 +2,7 @@
 
 :root {
     /* 全新配色模式 - 低调沉稳，靛蓝+灰色系 */
-    --primary-color: #557ffd;       /* 主色调 - 靛蓝 5 */
+    --primary-color: #4674ff;       /* 主色调 - 靛蓝 5 */
     --secondary-color: #748FFC;      /* 辅助色 - 靛蓝 3 */
     --background-color: #F8F9FA;    /* 背景色 - 灰色 0 */
     --card-background: #FFFFFF;     /* 卡片背景 - 白色 */

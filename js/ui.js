@@ -425,11 +425,6 @@ export function showToast(message, type, customClass = '') {
         }, 300); // Wait for fade out transition
     }, 1500); // Default display time: 2 seconds
 
-    // Clear any existing toast timeout
-    if (window.toastTimeout) {
-        clearTimeout(window.toastTimeout);
-    }
-    window.toastTimeout = currentToastTimeout; // Store the new timeout
 }
 
 /**
