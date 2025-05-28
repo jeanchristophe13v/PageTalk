@@ -395,20 +395,34 @@ function handleUserInputForTabSelection(e) {
     const cursorPos = e.target.selectionStart;
     const atCharIndex = text.lastIndexOf('@', cursorPos - 1);
 
+    // 定义有效的标签页名称匹配字符：字母、数字、下划线、连字符
+    const validTabNameCharRegex = /^[a-zA-Z0-9_-]*$/;
+
     if (atCharIndex !== -1) {
+        const textAfterAt = text.substring(atCharIndex + 1, cursorPos);
         const textBeforeAt = text.substring(0, atCharIndex);
-        const charImmediatelyAfterAt = text.substring(atCharIndex + 1, cursorPos);
-        
-        if ((atCharIndex === 0 || /\s$/.test(textBeforeAt)) && !/\s/.test(charImmediatelyAfterAt) && !state.isTabSelectionPopupOpen) {
-            console.log('尝试打开标签页选择列表，触发字符: @');
-            fetchAndShowTabsForSelection();
-        }
-    } else if (state.isTabSelectionPopupOpen) {
-        const currentTextBeforeCursor = text.substring(0, cursorPos);
-        const lastAt = currentTextBeforeCursor.lastIndexOf('@');
-        if (lastAt === -1 || /\s/.test(currentTextBeforeCursor.substring(lastAt + 1))) {
+
+        // 检查 @ 符号是否在开头或前面有空格，并且 @ 后面没有空格
+        const isValidTrigger = (atCharIndex === 0 || /\s$/.test(textBeforeAt)) && !/\s/.test(textAfterAt);
+
+        if (isValidTrigger) {
+            // 如果弹窗未打开，则尝试打开
+            if (!state.isTabSelectionPopupOpen) {
+                console.log('尝试打开标签页选择列表，触发字符: @');
+                fetchAndShowTabsForSelection();
+            }
+            // 如果弹窗已打开，且 @ 后的内容不再是有效匹配字符，则关闭
+            // 或者 @ 后的内容为空，且弹窗已打开，也关闭 (例如用户删除了 @ 后的所有内容)
+            if (state.isTabSelectionPopupOpen && !validTabNameCharRegex.test(textAfterAt)) {
+                closeTabSelectionPopupUIFromMain();
+            }
+        } else if (state.isTabSelectionPopupOpen) {
+            // 如果 @ 符号不再是有效触发条件（例如 @ 后面有空格），则关闭弹窗
             closeTabSelectionPopupUIFromMain();
         }
+    } else if (state.isTabSelectionPopupOpen) {
+        // 如果输入框中不再有 @ 符号，且弹窗是打开的，则关闭弹窗
+        closeTabSelectionPopupUIFromMain();
     }
 }
 

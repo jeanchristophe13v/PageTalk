@@ -976,34 +976,17 @@ export function closeTabSelectionPopupUI() {
 // 新增：处理弹窗外部点击事件
 function handleClickOutsideTabPopup(event) {
     const popup = document.getElementById('tab-selection-popup');
-    // 检查点击事件的目标是否在弹窗内部或者就是触发弹窗的输入框
-    const userInput = document.getElementById('user-input'); // 假设这是您的输入框ID
+    const userInput = document.getElementById('user-input');
+
+    // 如果点击目标既不在弹窗内，也不在输入框内，则关闭弹窗
     if (popup && !popup.contains(event.target) && event.target !== userInput) {
-        // 并且，如果点击的目标不是输入框本身（因为输入框的input事件会处理重新打开或关闭）
-        // 而且输入框的值不再符合触发弹窗的条件 (例如@被删除或@后有空格)
-        if (userInput) {
-            const text = userInput.value;
-            const cursorPos = userInput.selectionStart;
-            const atCharIndex = text.lastIndexOf('@', cursorPos - 1);
-            let shouldClose = true;
-            if (atCharIndex !== -1) {
-                const textBeforeAt = text.substring(0, atCharIndex);
-                const charImmediatelyAfterAt = text.substring(atCharIndex + 1, cursorPos);
-                if ((atCharIndex === 0 || /\s$/.test(textBeforeAt)) && !/\s/.test(charImmediatelyAfterAt)) {
-                    shouldClose = false; // 仍然是有效的触发条件，不因外部点击而关闭
-                }
-            }
-            if (shouldClose) {
-                 closeTabSelectionPopupUI();
-                 // 通知 main.js 更新状态
-                 const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
-                 document.dispatchEvent(mainJSNotifier);
-            }
-        }
+        closeTabSelectionPopupUI();
+        // 通知 main.js 更新状态
+        const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
+        document.dispatchEvent(mainJSNotifier);
     }
-    // 无论如何，一旦这个监听器被触发，就应该移除它，因为它是一次性的
-    // closeTabSelectionPopupUI() 内部会再次尝试移除，这里确保移除
-    document.removeEventListener('click', handleClickOutsideTabPopup, { capture: true });
+    // 注意：由于监听器是 { once: true }，它会在第一次触发后自动移除。
+    // 如果需要更复杂的管理，可能需要调整 showTabSelectionPopupUI 和 closeTabSelectionPopupUI 中的监听器添加/移除逻辑。
 }
 
 // 新增：处理弹窗内的键盘导航
