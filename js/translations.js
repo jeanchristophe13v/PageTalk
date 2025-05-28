@@ -139,6 +139,8 @@ const translations = {
     'save': '保存',
     'saving': '保存中...',
     'containsNImages': '[包含 {count} 张图片]', // For text export
+    'tabContentLoadedSuccess': '页面已加载',
+    'tabContentLoadFailed': '无法加载页面 \'{title}...\' 内容: {error}',
   },
   'en': {
     // --- General UI ---
@@ -281,6 +283,8 @@ const translations = {
     'testingConnection': 'Testing connection...',
     'saving': 'Saving...',
     'containsNImages': '[Contains {count} image(s)]', // For text export
+    'tabContentLoadedSuccess': 'Page content loaded',
+    'tabContentLoadFailed': 'Failed to load content for tab \'{title}...\': {error}',
   }
 };
 

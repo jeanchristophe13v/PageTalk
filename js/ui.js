@@ -72,16 +72,54 @@ export function switchSettingsSubTab(subTabId, elements) {
  */
 export function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
     const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false, sentContextTabs = [] } = options;
+    
+    let sentTabsElement = null;
+    // 新增：如果发送的是用户消息，并且包含了 sentContextTabs，则先创建它们
+    if (sender === 'user' && sentContextTabs.length > 0) {
+        sentTabsElement = document.createElement('div');
+        sentTabsElement.className = 'sent-tabs-container';
+        let tabsHTML = '';
+        sentContextTabs.forEach(tab => {
+            const escapedTitle = escapeHtml(tab.title);
+            const favIconSrc = escapeHtml(tab.favIconUrl || '../magic.png');
+            tabsHTML += `
+                <div class="sent-tab-item">
+                    <img src="${favIconSrc}" alt="" class="sent-tab-favicon">
+                    <span class="sent-tab-title">${escapedTitle}</span>
+                </div>
+            `;
+        });
+        sentTabsElement.innerHTML = tabsHTML;
+    }
+
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
 
     const messageId = generateUniqueId();
     messageElement.dataset.messageId = messageId;
 
-    if (insertAfterElement && insertAfterElement.parentNode === elements.chatMessages) {
-        insertAfterElement.insertAdjacentElement('afterend', messageElement);
+    // 决定插入点
+    const parentNode = elements.chatMessages;
+    let actualInsertBeforeElement = null;
+    if (insertAfterElement && insertAfterElement.parentNode === parentNode) {
+        actualInsertBeforeElement = insertAfterElement.nextSibling;
     } else {
-        elements.chatMessages.appendChild(messageElement);
+        // 默认添加到末尾，所以 insertBeforeElement 为 null 即可
+    }
+
+    // 如果有 sentTabsElement，先插入它
+    if (sentTabsElement) {
+        if (actualInsertBeforeElement) {
+            parentNode.insertBefore(sentTabsElement, actualInsertBeforeElement);
+        } else {
+            parentNode.appendChild(sentTabsElement);
+        }
+    }
+    // 然后插入消息气泡
+    if (actualInsertBeforeElement) {
+        parentNode.insertBefore(messageElement, actualInsertBeforeElement);
+    } else {
+        parentNode.appendChild(messageElement);
     }
 
     if (isStreaming) {
@@ -90,21 +128,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     // --- Non-streaming or final render ---
     let messageHTML = '';
-
-    if (sender === 'user' && sentContextTabs.length > 0) {
-        messageHTML += '<div class="sent-tabs-container">';
-        sentContextTabs.forEach(tab => {
-            const escapedTitle = escapeHtml(tab.title);
-            const favIconSrc = escapeHtml(tab.favIconUrl || '../magic.png');
-            messageHTML += `
-                <div class="sent-tab-item">
-                    <img src="${favIconSrc}" alt="" class="sent-tab-favicon">
-                    <span class="sent-tab-title">${escapedTitle}</span>
-                </div>
-            `;
-        });
-        messageHTML += '</div>';
-    }
+    // 原本在这里渲染 sentContextTabs 的逻辑已移到前面创建 sentTabsElement
 
     if (sender === 'user' && images.length > 0) {
         messageHTML += '<div class="message-images">';
@@ -378,17 +402,19 @@ export function updateContextStatus(contextStatusKey, replacements = {}, element
  * 显示通知提示 (Toast)
  * @param {string} message - 消息内容
  * @param {string} type - 提示类型 ('success' 或 'error')
+ * @param {string} [customClass=''] - 可选的自定义CSS类名
  */
-export function showToast(message, type) {
+export function showToast(message, type, customClass = '') {
     let toast = document.querySelector('.toast');
     if (!toast) {
         toast = document.createElement('div');
-        toast.className = 'toast';
+        // toast.className = 'toast'; // 初始类名在下面统一设置
         document.body.appendChild(toast);
     }
 
     toast.textContent = message;
-    toast.className = `toast ${type}`;
+    // 组合基础类名、类型类名和自定义类名
+    toast.className = `toast ${type} ${customClass || ''}`.trim();
 
     // Force reflow before adding 'show' class for transition
     void toast.offsetWidth;
@@ -398,8 +424,8 @@ export function showToast(message, type) {
     // Hide after duration
     setTimeout(() => {
         toast.classList.remove('show');
-        // Optional: remove the element after transition
-        // setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300);
+        // 可选：如果toast元素被不同类型的通知复用，可以在隐藏后重置其className
+        // setTimeout(() => { if (toast.parentNode && !toast.classList.contains('show')) toast.className = 'toast'; }, 300);
     }, 2000);
 }
 
@@ -876,7 +902,7 @@ export function showTabSelectionPopupUI(tabs, onSelectCallback, elements, curren
     popup.className = 'tab-selection-popup'; // 用于CSS样式
 
     const inputRect = elements.userInput.getBoundingClientRect();
-    popup.style.bottom = `${window.innerHeight - inputRect.top}px`; // 放置在输入框上方
+    popup.style.bottom = `${window.innerHeight - inputRect.top + 8}px`; // 向上微调 8px
     popup.style.left = `${inputRect.left}px`;
     popup.style.width = `${inputRect.width}px`;
 
@@ -902,7 +928,7 @@ export function showTabSelectionPopupUI(tabs, onSelectCallback, elements, curren
 
             const titleSpan = document.createElement('span');
             titleSpan.className = 'tab-item-title';
-            titleSpan.textContent = tab.title;
+            titleSpan.textContent = tab.title || '-'; // Fallback if title is undefined
 
             const urlSpan = document.createElement('span');
             urlSpan.className = 'tab-item-url';
@@ -1073,7 +1099,7 @@ export function updateSelectedTabsBarUI(selectedTabs, elements, onRemoveTabCallb
         favIcon.alt = '';
 
         const titleSpan = document.createElement('span');
-        titleSpan.textContent = tab.title;
+        titleSpan.textContent = tab.title || '-'; // Fallback if title is undefined
 
         const removeBtn = document.createElement('button');
         removeBtn.innerHTML = '&times;';

@@ -195,9 +195,10 @@
     padding: var(--spacing-sm) var(--spacing-md); /* Standard internal padding */
     text-align: left;
     position: relative; /* For message actions */
-    margin-bottom: 26px; /* Space for actions below */
     /* 微妙的悬停效果 */
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+    /* 新增：为 sent-tabs-container 腾出空间，如果它直接在此元素上方的话 */
+    /* 但由于它们是兄弟元素，间距由 .chat-messages 的 gap 或 .sent-tabs-container 的 margin-bottom 控制 */
 }
 
 .user-message:hover {
@@ -205,25 +206,36 @@
     box-shadow: 0 2px 8px rgba(49, 123, 245, 0.15);
 }
 
-/* 新增：用户消息气泡内已发送标签页的容器 */
+/* 用户消息气泡内已发送标签页的容器 - 现在是外部容器的样式 */
 .sent-tabs-container {
     display: flex;
     flex-direction: column;
+    align-self: flex-end; /* 与用户消息气泡对齐 */
     gap: calc(var(--spacing-xs) / 2);
-    margin-bottom: var(--spacing-xs); /* 与消息文本的间距 */
-    padding-bottom: calc(var(--spacing-xs) / 2); /* 容器底部轻微内边距 */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* 分隔线 */
+    margin-bottom: calc(var(--spacing-xs) / 2); /* 与下方用户消息气泡的间距 */
+    /* padding-bottom: calc(var(--spacing-xs) / 2); */ /* 不再需要，因为不再是内部容器 */
+    /* border-bottom: 1px solid rgba(255, 255, 255, 0.2); */ /* 不再需要，因为不再是内部容器 */
+    width: fit-content; /* 根据内容调整宽度 */
+    max-width: 90%; /* 与用户消息气泡最大宽度相似或略小 */
+    margin-right: 0; /* 确保与 flex-end 对齐 */
+    /* 为了美观，可以给这个容器也加上一点圆角和背景，使其看起来像一组独立的标签 */
+    /* background-color: rgba(0,0,0,0.03); /* 非常淡的背景 */
+    /* padding: var(--spacing-xs); */
+    /* border-radius: var(--radius-md); */
 }
 
 .sent-tab-item {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: calc(var(--spacing-xs) / 2) 0; /* 垂直轻微内边距，无水平内边距以利用空间 */
-    border-radius: var(--radius-sm);
-    background-color: rgba(255, 255, 255, 0.05); /* 非常轻微的背景以区分 */
+    padding: calc(var(--spacing-xs) / 1.5) var(--spacing-xs); /* 调整内边距使标签更紧凑 */
+    border-radius: var(--radius-md); /* 给每个标签项圆角 */
+    background-color: var(--card-background-rgb-opacity-low); /* 使用变量，并确保有后备 */
+    border: 1px solid var(--border-color);
     max-width: 100%; /* 确保不超过父容器 */
     overflow: hidden; /* 确保子元素不会溢出圆角 */
+    box-shadow: var(--shadow-sm);
+    color: var(--text-secondary); /* 文本颜色适应主题 */
 }
 
 .sent-tab-favicon {
@@ -231,7 +243,7 @@
     height: 14px;
     object-fit: contain;
     flex-shrink: 0;
-    margin-left: var(--spacing-xs); /* 图标左边距 */
+    /* margin-left: var(--spacing-xs); */ /* 移除，由父级 gap 控制 */
     border-radius: 2px;
 }
 
@@ -241,9 +253,8 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: rgba(255, 255, 255, 0.9);
+    /* color: rgba(255, 255, 255, 0.9); */ /* 改为继承或使用变量 */
     max-width: calc(100% - 30px); /* 限制标题最大宽度，为图标和间距留出空间 */
-    /* 渐变省略效果，如果需要更复杂的 */
     position: relative;
 }
 
@@ -443,7 +454,7 @@
     align-items: center;
     justify-content: center;
     padding: var(--spacing-md);
-    min-height: 50px;
+    min-height: 40px;
     /* 添加思考状态的入场动画 - 只播放一次后保持显示 */
     animation: thinkingAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     position: relative;
@@ -1464,16 +1475,21 @@
 .tab-selection-popup {
     position: fixed; /* 使用 fixed 定位 */
     z-index: 10010; /* 比 sidepanel 内其他元素高，但低于模态框等 */
-    background-color: var(--card-background);
-    border: 1px solid var(--border-color-strong);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    max-height: 250px; /* 或根据需要调整 */
+    /* background-color: var(--card-background); */ /* 移除，改用毛玻璃 */
+    border: 1px solid var(--border-color-glass);
+    border-radius: var(--radius-lg); /* 更大的圆角 */
+    box-shadow: var(--shadow-xl); /* 更明显的阴影 */
+    max-height: 280px; /* 增加一点最大高度 */
     overflow-y: auto;
-    width: 300px; /* 示例宽度，将由JS设置 */
-    bottom: 50px; /* 示例位置，将由JS设置 */
-    left: 10px;   /* 示例位置，将由JS设置 */
+    /* width: 300px; */ /* 由JS设置 */
+    /* bottom: 50px; */ /* 由JS动态设置，使其更靠近输入框上方 */
+    /* left: 10px;   */ /* 由JS设置 */
     padding: var(--spacing-xs) 0; /* 垂直内边距，列表项将有自己的内边距 */
+
+    /* 毛玻璃效果 */
+    background-color: var(--glass-bg-color); 
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%); 
 }
 
 .tab-selection-list {
@@ -1551,3 +1567,35 @@
     cursor: default;
     padding: var(--spacing-md);
 }
+
+/* Toast / Notification styles */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 20px; /* 默认 Toast 的位置 */
+    transform: translateX(-50%);
+    background-color: var(--toast-bg-color);
+    color: var(--toast-text-color);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 10005; /* 确保在其他内容之上，但在模态框之下 */
+    opacity: 0;
+    transition: opacity 0.3s ease, bottom 0.3s ease; /* 添加 bottom 过渡 */
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 80%;
+    text-align: center;
+}
+
+.toast.show {
+    opacity: 1;
+}
+
+/* 特定于标签页加载的 Toast 的自定义位置 */
+.toast.toast-tab-loaded {
+    bottom: 115px; 
+}
+
+
+

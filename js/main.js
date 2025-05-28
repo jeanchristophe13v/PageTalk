@@ -490,21 +490,26 @@ function handleTabSelectedFromPopup(selectedTab) {
     updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // <--- MODIFIED HERE (added removeSelectedTabFromMain)
 
     chrome.runtime.sendMessage({ action: 'extractTabContent', tabId: selectedTab.id }, (response) => {
-        const tabEntry = state.selectedContextTabs.find(t => t.id === selectedTab.id);
-        if (!tabEntry) return; 
-
-        if (chrome.runtime.lastError || response.error) {
-            console.error(`Error extracting content for tab ${selectedTab.id}:`, chrome.runtime.lastError || response.error);
-            tabEntry.content = `Error: ${chrome.runtime.lastError?.message || response.error}`;
-            tabEntry.isLoading = false;
-            if (showToastUI) showToastUI(`无法加载 "${selectedTab.title.substring(0,20)}..." 的内容`, 'error');
-        } else {
-            tabEntry.content = response.content;
-            tabEntry.isLoading = false;
-            if (showToastUI) showToastUI(`已加载 "${selectedTab.title.substring(0,20)}..."`, 'success');
-            console.log(`Content for tab ${selectedTab.id} loaded, length: ${response.content?.length}`);
+        const tabData = state.selectedContextTabs.find(t => t.id === selectedTab.id);
+        if (tabData) {
+            if (response.content && !response.error) {
+                tabData.content = response.content;
+                tabData.isLoading = false;
+                tabData.error = false;
+                console.log(`Content for tab ${selectedTab.id} loaded, length: ${response.content?.length}`);
+                // 使用自定义类名调用 showToastUI
+                showToastUI(_('tabContentLoadedSuccess', { title: tabData.title.substring(0, 20) }), 'success', 'toast-tab-loaded');
+            } else {
+                tabData.content = null; // 确保错误时内容为空
+                tabData.isLoading = false;
+                tabData.error = true;
+                const errorMessage = response.error || 'Unknown error loading tab';
+                console.error(`Failed to load content for tab ${selectedTab.id}: ${errorMessage}`);
+                // 使用自定义类名调用 showToastUI
+                showToastUI(_('tabContentLoadFailed', { title: tabData.title.substring(0, 20), error: errorMessage }), 'error', 'toast-tab-loaded');
+            }
+            updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // 更新UI以反映加载/错误状态
         }
-        updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // <--- MODIFIED HERE (added removeSelectedTabFromMain)
     });
 }
 
@@ -707,8 +712,8 @@ function removeVideoByIdUI(videoId) {
 }
 
 // Wrapper function for showToast
-function showToastUI(message, type) {
-    showToast(message, type);
+function showToastUI(message, type, customClass = '') {
+    showToast(message, type, customClass);
 }
 
 
