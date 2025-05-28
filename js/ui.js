@@ -1089,6 +1089,7 @@ export function updateSelectedTabsBarUI(selectedTabs, elements, onRemoveTabCallb
     selectedTabs.forEach(tab => {
         const tabChip = document.createElement('div');
         tabChip.className = 'selected-tab-chip';
+        tabChip.title = `${tab.title || '-'} `; // 添加 title 属性显示完整信息
         if (tab.isLoading) tabChip.classList.add('loading');
         if (tab.content === null && !tab.isLoading) tabChip.classList.add('error'); // 内容为null且不是loading状态，则标记为error
 

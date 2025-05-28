@@ -1364,7 +1364,7 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md); /* 增加上下间距 */
     background-color: var(--card-background); /* 与输入区域背景一致或稍作区分 */
     border-bottom: 1px solid var(--border-color);
     overflow-x: auto; /* 横向滚动 */
@@ -1375,6 +1375,8 @@
     border-top-right-radius: var(--radius-lg);
     /* 如果 selected-tabs-bar 出现，它应该有顶部边框，而 chat-input 则不需要了 */
     border-top: 1px solid var(--border-color);
+    white-space: nowrap; /* 防止标签换行 */
+    flex-shrink: 1; /* 允许在空间不足时收缩 */
 }
 
 .chat-input-area .chat-input { /* 当标签栏存在时，chat-input 的顶部边框由标签栏提供 */
@@ -1390,19 +1392,24 @@
     background-color: var(--background-color); /* 更浅的背景，或var(--button-secondary-bg) */
     border: 1px solid var(--border-color-strong);
     border-radius: var(--radius-full); /* 胶囊形状 */
-    padding: calc(var(--spacing-xs) / 2) var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm); /* 增加上下间距 */
     font-size: 12px;
     color: var(--text-secondary);
     cursor: default;
     transition: all 0.2s ease;
-    max-width: 180px; /* 限制最大宽度，模仿浏览器标签 */
-    flex-shrink: 0; /* 防止在 flex 容器中被过度压缩 */
-    overflow: hidden; /* 添加 overflow hidden 以确保子元素符合父容器的圆角和 max-width */
+    /* max-width: 180px; /* 移除固定最大宽度，允许压缩 */
+    flex-grow: 1; /* 允许在有额外空间时增长 */
+    flex-shrink: 1; /* 允许在 flex 容器中被压缩 */
+    min-width: 0; /* 允许内容在压缩时截断 */
+    flex-basis: 0; /* 将初始大小设置为0，以便flex-grow和flex-shrink均匀分配 */
+    overflow: hidden; /* 添加 overflow hidden 以确保子元素符合父容器的圆角 */
 }
 
-.selected-tab-chip:hover {
+.selected-tab-chip:hover,
+.selected-tab-chip.active { /* 添加 active 状态 */
     border-color: var(--primary-color-light);
-    background-color: var(--background-color-hover);
+    background-color: var(--button-hover-bg); /* 使用与标签页列表相同的悬停背景 */
+    color: var(--primary-color); /* 使用与标签页列表相同的悬停颜色 */
 }
 
 .selected-tab-chip img {
