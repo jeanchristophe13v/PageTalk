@@ -5,6 +5,32 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.0.0",
+        date: "2025-05-28",
+        changes: {
+            "zh-CN": [
+                "功能：",
+                "1. 新增多标签页交互功能，可以在输入框输入@以选择其他页面纳入上下文，进行对话。🌐",
+                "2. 支持YouTube URL解析。📺",
+                "   （2.0-flash一次只能解析一个视频，2.5-flash则可以解析多个视频）",
+                "   注意：2.0-flash也许会提示“一次只能上传一个链接”，请不要理会，点击重新生成按钮即可。",
+                "优化和bug修复：",
+                "1. 优化了动效，重构了一些UI，更加直观、美观。✨",
+                "2. 修复了诸多bug。🐛"
+            ],
+            "en": [
+                "Features:",
+                "1. New Multi-Tab Interaction: Type `@` in the input box to select other open tabs and include their content in the conversation context. 🌐",
+                "2. YouTube URL Parsing Support: 📺",
+                "   (Gemini 2.0-flash can parse one video URL at a time, while 2.5-flash can parse multiple video URLs.)",
+                "   Note for 2.0-flash users: If you encounter a \"Only one link can be uploaded at a time\" prompt, please ignore it and click the \"Regenerate\" button.",
+                "Optimizations & Bug Fixes:",
+                "1. UI/UX Enhancements: Refactored UI and optimized animations for a more intuitive and visually appealing experience. ✨",
+                "2. Numerous Bug Fixes: Addressed and resolved various bugs. 🐛"
+            ]
+        }
+    },
+    {
         version: "2.7.5",
         date: "2025-05-25",
         changes: {

@@ -10,12 +10,17 @@
 
 #### [中文/Chinese](README-zh.md)
 
-## Introducing PageTalk 2.7.5 🎉
+## Introducing PageTalk 3.0.0 🎉
 
 **New Features:**
-- **Added PDF parsing feature (online, not local):** Now you can chat with PageTalk in web PDFs.
-- Minor UI optimizations in chat interface.
-- Fixed agent deletion bug.
+- **New Multi-Tab Interaction:** Type `@` in the input box to select other open tabs and include their content in the conversation context. 🌐
+- **YouTube URL Parsing Support:** 📺
+    - Gemini 2.0-flash can parse one video URL at a time.
+    - Gemini 2.5-flash can parse multiple video URLs.
+    - *Note for 2.0-flash users: If you encounter a "Only one link can be uploaded at a time" prompt, please ignore it and click the "Regenerate" button.*
+- **Optimizations & Bug Fixes:**
+    - UI/UX Enhancements: Refactored UI and optimized animations for a more intuitive and visually appealing experience. ✨
+    - Numerous Bug Fixes: Addressed and resolved various bugs. 🐛
 
 ![b5d6f628b841d2c7103ec4cccba8c38c](https://github.com/user-attachments/assets/2b48a633-418e-433b-8e3e-c2444d188fee)
 

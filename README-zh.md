@@ -10,12 +10,17 @@
 
 #### [English/英文](README.md)
 
-## PageTalk 2.7.5  🎉
+## PageTalk 3.0.0 🎉
 
 **新特性：**  
-- **新增 PDF 解析功能（在线，非本地）**：现在可以在网页中的 PDF 和 PageTalk 对话。
-- 聊天界面的小幅优化。
-- 修复了 agent 的删除 bug。
+- **新增多标签页交互功能**：现在可以在输入框输入`@`以选择其他页面纳入上下文，进行对话。🌐
+- **支持YouTube URL解析**：📺
+    - 2.0-flash一次只能解析一个视频。
+    - 2.5-flash则可以解析多个视频。
+    - *注意：2.0-flash也许会提示 “一次只能上传一个链接”，请不要理会，点击重新生成按钮即可。*
+- **优化和bug修复**：
+    - 优化了动效，重构了一些UI，更加直观、美观。✨
+    - 修复了诸多bug。🐛
 
 ![b5d6f628b841d2c7103ec4cccba8c38c](https://github.com/user-attachments/assets/b408c5ab-cc73-4a44-80a3-6dcd9d0be53b)
 
