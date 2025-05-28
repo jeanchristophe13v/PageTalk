@@ -46,7 +46,11 @@ import {
     addCopyButtonToCodeBlock,
     addMessageActionButtons,
     showCopyCodeFeedback,
-    showCopyMessageFeedback
+    showCopyMessageFeedback,
+    // 新增导入 for Tab Selection and Bar
+    showTabSelectionPopupUI,
+    closeTabSelectionPopupUI as uiCloseTabSelectionPopupUI, // Alias to avoid naming conflict if any future local var
+    updateSelectedTabsBarUI
 } from './ui.js';
 
 // --- State Management ---
@@ -70,6 +74,9 @@ const state = {
     language: 'en', // Changed default language to English
     isStreaming: false,
     // userHasSetPreference: false, // Removed
+    selectedContextTabs: [], // 新增：存储用户选择的用于上下文的标签页
+    availableTabsForSelection: [], // 新增：存储查询到的供用户选择的标签页
+    isTabSelectionPopupOpen: false, // 新增：跟踪标签页选择弹窗的状态
 };
 
 // Default settings (used by agent module)
@@ -277,9 +284,19 @@ function setupEventListeners() {
     // Chat Actions
     elements.sendMessage.addEventListener('click', sendUserMessageTrigger); // Initial listener
     elements.userInput.addEventListener('keydown', handleUserInputKeydown);
+    // 新增：监听用户输入框的 input 事件，用于检测 "@"
+    elements.userInput.addEventListener('input', handleUserInputForTabSelection);
     elements.clearContextBtn.addEventListener('click', () => clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations));
     elements.chatModelSelection.addEventListener('change', handleChatModelChange);
     elements.chatAgentSelection.addEventListener('change', handleChatAgentChange);
+
+    // 新增：监听由 ui.js 触发的弹窗关闭事件，以同步状态
+    document.addEventListener('tabPopupManuallyClosed', () => {
+        if (state.isTabSelectionPopupOpen) {
+            state.isTabSelectionPopupOpen = false;
+            console.log("Tab selection popup closed via custom event, state updated.");
+        }
+    });
 
     // Image Handling
     elements.uploadImage.addEventListener('click', () => elements.fileInput.click());
@@ -358,7 +375,144 @@ function handleUserInputKeydown(e) {
             sendUserMessageTrigger();
         }
     }
+    // 如果标签选择弹窗打开，并且按下了 Escape 键，则关闭弹窗
+    if (state.isTabSelectionPopupOpen && e.key === 'Escape') {
+        e.preventDefault();
+        closeTabSelectionPopupUIFromMain();
+    }
+    // 如果标签选择弹窗打开，并且按下了 Tab 键或箭头键，则阻止默认行为并处理导航
+    if (state.isTabSelectionPopupOpen && (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        // e.preventDefault(); //  ui.js 中的 handlePopupKeyDown 会处理 preventDefault
+        // navigateTabSelectionPopupUI(e.key); // 这个UI函数将在后面步骤定义
+    }
 }
+
+// 新增：处理用户输入以触发标签页选择
+function handleUserInputForTabSelection(e) {
+    const text = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    const atCharIndex = text.lastIndexOf('@', cursorPos - 1);
+
+    if (atCharIndex !== -1) {
+        const textBeforeAt = text.substring(0, atCharIndex);
+        const charImmediatelyAfterAt = text.substring(atCharIndex + 1, cursorPos);
+        
+        if ((atCharIndex === 0 || /\s$/.test(textBeforeAt)) && !/\s/.test(charImmediatelyAfterAt) && !state.isTabSelectionPopupOpen) {
+            console.log('尝试打开标签页选择列表，触发字符: @');
+            fetchAndShowTabsForSelection();
+        }
+    } else if (state.isTabSelectionPopupOpen) {
+        const currentTextBeforeCursor = text.substring(0, cursorPos);
+        const lastAt = currentTextBeforeCursor.lastIndexOf('@');
+        if (lastAt === -1 || /\s/.test(currentTextBeforeCursor.substring(lastAt + 1))) {
+            closeTabSelectionPopupUIFromMain();
+        }
+    }
+}
+
+// 新增：获取并显示标签页以供选择
+async function fetchAndShowTabsForSelection() {
+    if (state.isStreaming) return; 
+
+    try {
+        const tabs = await chrome.tabs.query({});
+        if (tabs && tabs.length > 0) {
+            const currentExtensionId = chrome.runtime.id;
+            state.availableTabsForSelection = tabs.filter(tab => 
+                tab.id && 
+                tab.url && 
+                !tab.url.startsWith(`chrome-extension://${currentExtensionId}`) &&
+                !tab.url.startsWith('chrome://') &&
+                !tab.url.startsWith('about:') &&
+                !tab.url.startsWith('edge://')
+            ).map(tab => ({
+                id: tab.id,
+                title: tab.title || 'Untitled Tab',
+                url: tab.url,
+                favIconUrl: tab.favIconUrl || '../magic.png' 
+            }));
+
+            if (state.availableTabsForSelection.length > 0) {
+                // 调用UI函数显示弹窗 
+                showTabSelectionPopupUI(state.availableTabsForSelection, handleTabSelectedFromPopup, elements, currentTranslations);
+                state.isTabSelectionPopupOpen = true;
+            } else {
+                state.availableTabsForSelection = [];
+                state.isTabSelectionPopupOpen = false;
+            }
+        } else {
+            state.availableTabsForSelection = [];
+            state.isTabSelectionPopupOpen = false;
+        }
+    } catch (error) {
+        console.error('Error querying tabs:', error);
+        state.availableTabsForSelection = [];
+        state.isTabSelectionPopupOpen = false;
+        if (showToastUI) showToastUI('获取标签页列表失败', 'error');
+    }
+}
+
+// 新增：处理从弹窗中选择标签页的回调
+function handleTabSelectedFromPopup(selectedTab) {
+    if (!selectedTab) {
+        // state.isTabSelectionPopupOpen = false; // closeTabSelectionPopupUIFromMain 会处理
+        closeTabSelectionPopupUIFromMain(); // <--- Ensure state is updated if no tab selected (e.g. Esc)
+        return;
+    }
+
+    console.log('Tab selected:', selectedTab);
+    // state.isTabSelectionPopupOpen = false; // closeTabSelectionPopupUIFromMain 会处理
+    closeTabSelectionPopupUIFromMain(); // <--- MODIFIED HERE (called by ui.js click handler, but ensure state sync)
+    
+    const currentText = elements.userInput.value;
+    const cursorPos = elements.userInput.selectionStart;
+    const atCharIndex = currentText.lastIndexOf('@', cursorPos -1);
+    if (atCharIndex !== -1) {
+        elements.userInput.value = currentText.substring(0, atCharIndex); 
+    }
+    elements.userInput.focus(); 
+    
+    const isAlreadySelected = state.selectedContextTabs.some(tab => tab.id === selectedTab.id);
+    if (isAlreadySelected) {
+        if (showToastUI) showToastUI(`标签页 "${selectedTab.title.substring(0,20)}..." 已添加`, 'info');
+        return;
+    }
+
+    const newSelectedTabEntry = { 
+        id: selectedTab.id, 
+        title: selectedTab.title, 
+        url: selectedTab.url, 
+        favIconUrl: selectedTab.favIconUrl,
+        content: null, 
+        isLoading: true 
+    };
+    state.selectedContextTabs.push(newSelectedTabEntry);
+    updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // <--- MODIFIED HERE (added removeSelectedTabFromMain)
+
+    chrome.runtime.sendMessage({ action: 'extractTabContent', tabId: selectedTab.id }, (response) => {
+        const tabEntry = state.selectedContextTabs.find(t => t.id === selectedTab.id);
+        if (!tabEntry) return; 
+
+        if (chrome.runtime.lastError || response.error) {
+            console.error(`Error extracting content for tab ${selectedTab.id}:`, chrome.runtime.lastError || response.error);
+            tabEntry.content = `Error: ${chrome.runtime.lastError?.message || response.error}`;
+            tabEntry.isLoading = false;
+            if (showToastUI) showToastUI(`无法加载 "${selectedTab.title.substring(0,20)}..." 的内容`, 'error');
+        } else {
+            tabEntry.content = response.content;
+            tabEntry.isLoading = false;
+            if (showToastUI) showToastUI(`已加载 "${selectedTab.title.substring(0,20)}..."`, 'success');
+            console.log(`Content for tab ${selectedTab.id} loaded, length: ${response.content?.length}`);
+        }
+        updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // <--- MODIFIED HERE (added removeSelectedTabFromMain)
+    });
+}
+
+// 后续步骤将定义:
+// - showTabSelectionPopupUI (在ui.js)
+// - closeTabSelectionPopupUI (在ui.js)
+// - navigateTabSelectionPopupUI (在ui.js)
+// - updateSelectedTabsBarUI (在ui.js)
 
 function handleChatModelChange() {
     state.model = elements.chatModelSelection.value;
@@ -388,19 +542,30 @@ function sendUserMessageTrigger() {
         }, 600);
     }
     
+    // 准备 sentContextTabs 数据 (只包含必要信息)
+    const tabsForMessageBubble = state.selectedContextTabs.map(tab => ({
+        title: tab.title,
+        favIconUrl: tab.favIconUrl
+        // 不传递 tab.content 或 tab.id 到气泡渲染中
+    }));
+
     sendUserMessageAction(
         state, elements, currentTranslations,
         (msg, type) => showConnectionStatus(msg, type, elements), // showConnectionStatusCallback
-        addMessageToChatUI, // addMessageToChatCallback
-        // addThinkingAnimationCallback: uses live isUserNearBottom due to closure
-        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), // Pass the original ui.js function
-        () => resizeTextarea(elements), // resizeTextareaCallback
-        clearImagesUI, // clearImagesCallback
-        clearVideosUI, // clearVideosCallback
-        showToastUI, // showToastCallback
-        restoreSendButtonAndInputUI, // restoreSendButtonAndInputCallback
-        abortStreamingUI // abortStreamingCallback
-        // No longer passing isUserNearBottom directly to sendUserMessageAction
+        (content, sender, options) => { // Modified addMessageToChatCallback wrapper
+            let messageOptions = {...options};
+            if (sender === 'user' && tabsForMessageBubble.length > 0) {
+                messageOptions.sentContextTabs = tabsForMessageBubble;
+            }
+            return addMessageToChatUI(content, sender, messageOptions);
+        },
+        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), 
+        () => resizeTextarea(elements), 
+        clearImagesUI, 
+        clearVideosUI, 
+        showToastUI, 
+        restoreSendButtonAndInputUI, 
+        abortStreamingUI 
     );
 }
 
@@ -465,6 +630,8 @@ function saveCurrentAgentIdState() {
 
 // Wrapper function for addMessageToChat
 function addMessageToChatUI(content, sender, options) {
+    // 将 isUserNearBottom 的当前值传递给 ui.js 中的 addMessageToChat
+    // options 现在可能包含 sentContextTabs
     return addMessageToChat(content, sender, options, state, elements, currentTranslations, addCopyButtonToCodeBlockUI, addMessageActionButtonsUI, isUserNearBottom);
 }
 
@@ -497,12 +664,10 @@ function regenerateMessageUI(messageId) {
     regenerateMessageAction(
         messageId, state, elements, currentTranslations,
         addMessageToChatUI,
-        // addThinkingAnimationCallback: uses live isUserNearBottom due to closure
-        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), // Pass the original ui.js function
+        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom),
         restoreSendButtonAndInputUI,
         abortStreamingUI,
-        showToastUI // Pass showToastUI as the showToastCallback
-        // No longer passing isUserNearBottom directly to regenerateMessageAction
+        showToastUI
     );
 }
 
@@ -722,3 +887,45 @@ function onFirstOperationComplete() {
 
 // --- Start Application ---
 document.addEventListener('DOMContentLoaded', init);
+
+// 新增包装函数，用于从 main.js 中关闭弹窗并更新状态
+function closeTabSelectionPopupUIFromMain() {
+    if (state.isTabSelectionPopupOpen) { // 只有在弹窗确实打开时才操作
+        uiCloseTabSelectionPopupUI(); // 调用从 ui.js 导入的函数来移除DOM
+        state.isTabSelectionPopupOpen = false;
+        console.log("Tab selection popup closed from main.js, state updated.");
+    }
+}
+
+// 新增：移除选中的上下文标签页
+function removeSelectedTabFromMain(tabId) {
+    state.selectedContextTabs = state.selectedContextTabs.filter(tab => tab.id !== tabId);
+    // 调用 ui.js 中的函数更新UI (确保此函数接受正确的参数)
+    updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
+    console.log(`Selected context tab ${tabId} removed. Remaining:`, state.selectedContextTabs.length);
+}
+
+export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
+    state.chatHistory = [];
+    elements.chatMessages.innerHTML = ''; // Clear UI
+
+    // Re-add welcome message
+    const welcomeMessage = document.createElement('div');
+    welcomeMessage.className = 'welcome-message';
+    welcomeMessage.innerHTML = `
+        <h2>${_('welcomeHeading')}</h2>
+        <button class="quick-action-btn">${_('summarizeAction')}</button>
+    `;
+    elements.chatMessages.appendChild(welcomeMessage);
+
+    clearImagesCallback(); // Clear images using callback
+    clearVideosCallback(); // Clear videos using callback
+
+    // 新增：清空已选标签页并更新UI栏
+    state.selectedContextTabs = [];
+    updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
+
+    if (showToast) {
+        showToastCallback(_('contextClearedSuccess', {}, currentTranslations), 'success');
+    }
+}

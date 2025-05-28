@@ -95,6 +95,88 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             recentExtractionTime: Date.now()
         });
         sendResponse({ success: true });
+    } 
+    // 新增：处理从指定标签页提取内容的请求
+    else if (message.action === "extractTabContent") {
+        const targetTabId = message.tabId;
+        if (!targetTabId) {
+            console.error("Background: No tabId provided for extractTabContent");
+            sendResponse({ error: "No tabId provided" });
+            return true; // Keep channel open for async response
+        }
+
+        // 检查目标标签页URL是否受限 (例如 chrome://, about:// 等)
+        chrome.tabs.get(targetTabId, (tab) => {
+            if (chrome.runtime.lastError) {
+                console.error("Background: Error getting tab info:", chrome.runtime.lastError.message);
+                sendResponse({ error: chrome.runtime.lastError.message });
+                return; // Exit, channel will close
+            }
+
+            if (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('about://') || tab.url.startsWith('edge://'))) {
+                console.warn(`Background: Cannot access restricted URL: ${tab.url}`);
+                sendResponse({ error: `Cannot access restricted URL: ${tab.url}` });
+                return; // Exit, channel will close
+            }
+
+            // 尝试在目标标签页执行脚本
+            chrome.scripting.executeScript({
+                target: { tabId: targetTabId },
+                func: getPageContentForExtraction, // 将要执行的函数
+            }, (injectionResults) => {
+                if (chrome.runtime.lastError) {
+                    console.error("Background: Error injecting script into tab " + targetTabId, chrome.runtime.lastError.message);
+                    sendResponse({ error: chrome.runtime.lastError.message });
+                } else if (injectionResults && injectionResults[0] && injectionResults[0].result) {
+                    sendResponse({ content: injectionResults[0].result });
+                } else {
+                    // 检查是否有注入错误，但没有显式 result
+                    if (injectionResults && injectionResults[0] && injectionResults[0].error) {
+                         console.error("Background: Injection script error in tab " + targetTabId, injectionResults[0].error);
+                         sendResponse({ error: "Injection script error: " + injectionResults[0].error.message });
+                    } else {
+                        console.error("Background: Failed to extract content from tab " + targetTabId + ". No result or error from injection.", injectionResults);
+                        sendResponse({ error: "Failed to extract content from tab. The tab might be protected or not suitable for content extraction." });
+                    }
+                }
+            });
+        });
+        return true; //  必须返回 true 以表明 sendResponse 将会异步调用
     }
     return true;
 });
+
+// 这个函数将在目标标签页的上下文中执行
+function getPageContentForExtraction() {
+    try {
+        if (typeof Readability === 'undefined') {
+            // Readability 通常由 content.js 注入到所有页面
+            // 如果这里未定义，说明 content.js 可能没有在该页面成功注入或运行
+            console.error('Readability library not found in target tab context.');
+            return 'Error: Readability library not available in this tab.';
+        }
+        const documentClone = document.cloneNode(true);
+        const reader = new Readability(documentClone);
+        const article = reader.parse();
+        let content = '';
+        if (article && article.textContent) {
+            content = article.textContent.replace(/\s+/g, ' ').trim();
+        } else {
+            // 后备方案：尝试获取 body 的 textContent
+            content = document.body.textContent || '';
+            content = content.replace(/\s+/g, ' ').trim();
+            if (!content) {
+                return 'Unable to extract content using Readability or body.textContent.';
+            }
+            content = '(Fallback to body text) ' + content;
+        }
+        const maxLength = 500000; // 与 content.js 中的限制一致
+        if (content.length > maxLength) {
+            content = content.substring(0, maxLength) + '... (Content truncated)';
+        }
+        return content;
+    } catch (e) {
+        console.error('Error during Readability extraction in target tab:', e);
+        return `Error extracting content: ${e.message}`;
+    }
+}

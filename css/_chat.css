@@ -7,6 +7,7 @@
     height: 100%;
     width: 100%;
     overflow: hidden; /* 确保聊天容器本身不溢出 */
+    padding-bottom: 0; /* 移除原有的，由 chat-input 和 selected-tabs-bar 控制 */
 }
 
 /* 聊天消息区域 */
@@ -203,6 +204,64 @@
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(49, 123, 245, 0.15);
 }
+
+/* 新增：用户消息气泡内已发送标签页的容器 */
+.sent-tabs-container {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing-xs) / 2);
+    margin-bottom: var(--spacing-xs); /* 与消息文本的间距 */
+    padding-bottom: calc(var(--spacing-xs) / 2); /* 容器底部轻微内边距 */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* 分隔线 */
+}
+
+.sent-tab-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: calc(var(--spacing-xs) / 2) 0; /* 垂直轻微内边距，无水平内边距以利用空间 */
+    border-radius: var(--radius-sm);
+    background-color: rgba(255, 255, 255, 0.05); /* 非常轻微的背景以区分 */
+    max-width: 100%; /* 确保不超过父容器 */
+    overflow: hidden; /* 确保子元素不会溢出圆角 */
+}
+
+.sent-tab-favicon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+    margin-left: var(--spacing-xs); /* 图标左边距 */
+    border-radius: 2px;
+}
+
+.sent-tab-title {
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: rgba(255, 255, 255, 0.9);
+    max-width: calc(100% - 30px); /* 限制标题最大宽度，为图标和间距留出空间 */
+    /* 渐变省略效果，如果需要更复杂的 */
+    position: relative;
+}
+
+/* 可选：为 sent-tab-title 添加更平滑的渐变省略（如果纯 ellipsis 不够） */
+/*
+.sent-tab-title::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, transparent, var(--primary-color) 80%);
+}
+.user-message:not(:hover) .sent-tab-title::after {
+     background: linear-gradient(to right, transparent, var(--primary-color) 80%); 
+}
+*/
 
 .user-message p {
     margin: 0;
@@ -519,12 +578,16 @@
     display: flex;
     align-items: center;
     padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-xs), 2vw, var(--spacing-md));
-    background-color: var(--card-background);
-    border-top: 1px solid var(--border-color);
+    /* background-color: var(--card-background); /* 移动到父级 div.chat-input-area */
+    /* border-top: 1px solid var(--border-color); /* 移动到父级 div.chat-input-area */
     width: 100%;
     min-height: fit-content;
     box-sizing: border-box;
     overflow-x: hidden;
+    background-color: var(--card-background); /* 确保 chat-input 本身有背景 */
+    border-top: 1px solid var(--border-color); /* 如果 selected-tabs-bar 不存在，这个边框会显示 */
+    position: relative; /* 用于确保圆角在 selected-tabs-bar 出现时能正确处理 */
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0; /* 默认顶部圆角，底部直角 */
 }
 
 .chat-input textarea {
@@ -1287,4 +1350,204 @@
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 已选标签栏 */
+.selected-tabs-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    background-color: var(--card-background); /* 与输入区域背景一致或稍作区分 */
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto; /* 横向滚动 */
+    overflow-y: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+    /* 如果 selected-tabs-bar 出现，它应该有顶部边框，而 chat-input 则不需要了 */
+    border-top: 1px solid var(--border-color);
+}
+
+.chat-input-area .chat-input { /* 当标签栏存在时，chat-input 的顶部边框由标签栏提供 */
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.selected-tab-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    background-color: var(--background-color); /* 更浅的背景，或var(--button-secondary-bg) */
+    border: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-full); /* 胶囊形状 */
+    padding: calc(var(--spacing-xs) / 2) var(--spacing-sm);
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: default;
+    transition: all 0.2s ease;
+    max-width: 180px; /* 限制最大宽度，模仿浏览器标签 */
+    flex-shrink: 0; /* 防止在 flex 容器中被过度压缩 */
+    overflow: hidden; /* 添加 overflow hidden 以确保子元素符合父容器的圆角和 max-width */
+}
+
+.selected-tab-chip:hover {
+    border-color: var(--primary-color-light);
+    background-color: var(--background-color-hover);
+}
+
+.selected-tab-chip img {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    object-fit: contain;
+    flex-shrink: 0; /* 防止图标被压缩 */
+}
+
+.selected-tab-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1; /* 允许标题占据可用空间 */
+    min-width: 0; /* 允许标题在空间不足时缩小，配合 text-overflow */
+}
+
+.selected-tab-chip button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px; /* X 大小*/
+    padding: 0;
+    margin-left: var(--spacing-xs);
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.7;
+    flex-shrink: 0; /* 确保按钮不被压缩 */
+}
+
+.selected-tab-chip button:hover {
+    color: var(--error-color);
+    opacity: 1;
+}
+
+.selected-tab-chip.loading {
+    color: var(--primary-color);
+    /* border-color: var(--primary-color-light); */
+}
+
+.selected-tab-chip.error {
+    color: var(--error-color);
+    border-color: var(--error-color-light);
+    background-color: rgba(234, 67, 53, 0.05);
+}
+
+.tab-chip-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid currentColor; /* currentColor 会继承 .loading 或 .error 的颜色 */
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: chip-spinner-anim 0.8s linear infinite;
+    margin-left: var(--spacing-xs);
+}
+
+@keyframes chip-spinner-anim {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* 标签页选择弹窗 */
+.tab-selection-popup {
+    position: fixed; /* 使用 fixed 定位 */
+    z-index: 10010; /* 比 sidepanel 内其他元素高，但低于模态框等 */
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    max-height: 250px; /* 或根据需要调整 */
+    overflow-y: auto;
+    width: 300px; /* 示例宽度，将由JS设置 */
+    bottom: 50px; /* 示例位置，将由JS设置 */
+    left: 10px;   /* 示例位置，将由JS设置 */
+    padding: var(--spacing-xs) 0; /* 垂直内边距，列表项将有自己的内边距 */
+}
+
+.tab-selection-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tab-selection-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.15s ease;
+}
+
+.tab-selection-item:last-child {
+    border-bottom: none;
+}
+
+.tab-selection-item:hover, .tab-selection-item.selected {
+    background-color: var(--button-hover-bg);
+    color: var(--primary-color);
+}
+
+.tab-item-favicon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 2px;
+}
+
+.tab-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    min-width: 0; /* 确保在 flex 容器中可以缩小 */
+}
+
+.tab-item-url {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 常规省略 */
+    flex-shrink: 1; /* 允许 URL 缩小 */
+    max-width: 40%; /* 限制 URL 最大宽度 */
+    position: relative; /* 用于渐变 */
+}
+
+/* URL 末尾渐变消失效果 */
+.tab-item-url::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px; /* 渐变宽度 */
+    background: linear-gradient(to right, transparent, var(--button-hover-bg) 80%);
+}
+
+.tab-selection-item:not(:hover):not(.selected) .tab-item-url::after {
+    background: linear-gradient(to right, transparent, var(--card-background) 80%);
+}
+
+.tab-selection-item.no-results {
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: default;
+    padding: var(--spacing-md);
 }

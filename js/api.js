@@ -133,6 +133,25 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         if (stateRef.pageContext) { // Use stateRef
             systemContent += `\n\n以下是作为你回答的网页参考内容，回答时请务必使用用户所使用的语言，并用markdown格式输出\n\n${stateRef.pageContext}`; // Use stateRef
         }
+
+        // 新增：整合来自选定标签页的上下文
+        if (stateRef.selectedContextTabs && stateRef.selectedContextTabs.length > 0) {
+            // 移除 ESystemPrompt 和 ವಿಶೇಷ 标签的要求
+            // let ESystemPrompt = '\n\n你拥有多个文件读取能力，可以同时阅读多个文件，以下是你读取到的文件内容。其中 [tabTitle: "文件名1", tabContent: "文件内容1"]，[tabTitle: "文件名2", tabContent: "文件内容2"] 以此类推，当用户提问时，请分别总结每个文件的内容，并在回答的开头使用 ವಿಶೇಷ 标签包裹文件列表，例如 "विशेष ["文件名1", "文件名2"]"，记得用逗号隔开。回答的正文部分，如果必要，请明确指出信息来源于哪个页面，给出缩略标题。\n\n'
+            // systemContent += ESystemPrompt;
+            
+            systemContent += "\n\n当涉及多个外部文档时，回答的正文部分，如果必要，请明确指出信息来源于哪个页面，给出该页面的缩略标题。例如：'根据页面 A 的内容...'。请避免在每句话末尾都重复来源，除非对于理解至关重要。";
+
+            stateRef.selectedContextTabs.forEach(tab => {
+                if (tab.content && !tab.isLoading) {
+                    const escapedTitle = tab.title.replaceAll('"', '\\"');
+                    // systemContent += `[tabTitle: "${escapedTitle}", tabContent: "${tab.content}"]\n`;
+                    // 更改整合格式，使其更自然
+                    systemContent += `\n\n--- 页面：${escapedTitle} ---\n${tab.content}\n--- 结束页面：${escapedTitle} ---\n`;
+                }
+            });
+        }
+
         if (systemContent) {
             requestBody.contents.push({ role: 'user', parts: [{ text: systemContent }] });
             requestBody.contents.push({ role: 'model', parts: [{ text: "OK." }] });

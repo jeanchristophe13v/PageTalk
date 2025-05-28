@@ -61,7 +61,7 @@ export function switchSettingsSubTab(subTabId, elements) {
  * 向聊天区域添加消息 - 使用markdown-it渲染
  * @param {string|null} content - 文本内容，可以为null
  * @param {'user'|'bot'} sender - 发送者
- * @param {object} options - 选项对象 { isStreaming, images, insertAfterElement, forceScroll }
+ * @param {object} options - 选项对象 { isStreaming, images, insertAfterElement, forceScroll, sentContextTabs }
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
@@ -71,7 +71,7 @@ export function switchSettingsSubTab(subTabId, elements) {
  * @returns {HTMLElement} 创建的消息元素
  */
 export function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
-    const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false } = options;
+    const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false, sentContextTabs = [] } = options;
     const messageElement = document.createElement('div');
     messageElement.classList.add('message', `${sender}-message`);
 
@@ -90,6 +90,22 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     // --- Non-streaming or final render ---
     let messageHTML = '';
+
+    if (sender === 'user' && sentContextTabs.length > 0) {
+        messageHTML += '<div class="sent-tabs-container">';
+        sentContextTabs.forEach(tab => {
+            const escapedTitle = escapeHtml(tab.title);
+            const favIconSrc = escapeHtml(tab.favIconUrl || '../magic.png');
+            messageHTML += `
+                <div class="sent-tab-item">
+                    <img src="${favIconSrc}" alt="" class="sent-tab-favicon">
+                    <span class="sent-tab-title">${escapedTitle}</span>
+                </div>
+            `;
+        });
+        messageHTML += '</div>';
+    }
+
     if (sender === 'user' && images.length > 0) {
         messageHTML += '<div class="message-images">';
         images.forEach((image, index) => {
@@ -848,5 +864,240 @@ function hideVideoModal() {
             video.currentTime = 0;
         }
         videoModal.style.display = 'none';
+    }
+}
+
+// 新增：显示标签页选择弹窗
+export function showTabSelectionPopupUI(tabs, onSelectCallback, elements, currentTranslations) {
+    closeTabSelectionPopupUI(); //确保同一时间只有一个弹窗
+
+    const popup = document.createElement('div');
+    popup.id = 'tab-selection-popup';
+    popup.className = 'tab-selection-popup'; // 用于CSS样式
+
+    const inputRect = elements.userInput.getBoundingClientRect();
+    popup.style.bottom = `${window.innerHeight - inputRect.top}px`; // 放置在输入框上方
+    popup.style.left = `${inputRect.left}px`;
+    popup.style.width = `${inputRect.width}px`;
+
+    const list = document.createElement('ul');
+    list.className = 'tab-selection-list';
+
+    if (tabs.length === 0) {
+        const noResultsItem = document.createElement('li');
+        noResultsItem.className = 'tab-selection-item no-results';
+        noResultsItem.textContent = currentTranslations['noTabsFound'] || 'No open tabs found'; // 需要添加翻译
+        list.appendChild(noResultsItem);
+    } else {
+        tabs.forEach((tab, index) => {
+            const item = document.createElement('li');
+            item.className = 'tab-selection-item';
+            item.dataset.tabId = tab.id;
+            item.dataset.index = index;
+
+            const favIcon = document.createElement('img');
+            favIcon.className = 'tab-item-favicon';
+            favIcon.src = tab.favIconUrl || '../magic.png'; // 后备图标
+            favIcon.alt = 'Favicon';
+
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'tab-item-title';
+            titleSpan.textContent = tab.title;
+
+            const urlSpan = document.createElement('span');
+            urlSpan.className = 'tab-item-url';
+            urlSpan.textContent = tab.url;
+
+            item.appendChild(favIcon);
+            item.appendChild(titleSpan);
+            item.appendChild(urlSpan);
+
+            item.addEventListener('click', () => {
+                onSelectCallback(tab);
+                closeTabSelectionPopupUI();
+            });
+            list.appendChild(item);
+        });
+    }
+
+    popup.appendChild(list);
+    document.body.appendChild(popup);
+
+    // 初始选中第一个（如果存在）
+    if (tabs.length > 0) {
+        list.children[0].classList.add('selected');
+    }
+
+    // 添加全局点击监听器以关闭弹窗，如果点击发生在弹窗外部
+    // 使用setTimeout确保它在当前事件处理完成后添加
+    setTimeout(() => {
+        document.addEventListener('click', handleClickOutsideTabPopup, { capture: true, once: true });
+    }, 0);
+     // 添加键盘事件监听，用于弹窗内的导航
+    document.addEventListener('keydown', handlePopupKeyDown);
+}
+
+// 新增：关闭标签页选择弹窗
+export function closeTabSelectionPopupUI() {
+    const popup = document.getElementById('tab-selection-popup');
+    if (popup) {
+        popup.remove();
+    }
+    // 在main.js中更新 state.isTabSelectionPopupOpen = false;
+    // 这个函数主要负责DOM操作
+    document.removeEventListener('click', handleClickOutsideTabPopup, { capture: true });
+    document.removeEventListener('keydown', handlePopupKeyDown);
+}
+
+// 新增：处理弹窗外部点击事件
+function handleClickOutsideTabPopup(event) {
+    const popup = document.getElementById('tab-selection-popup');
+    // 检查点击事件的目标是否在弹窗内部或者就是触发弹窗的输入框
+    const userInput = document.getElementById('user-input'); // 假设这是您的输入框ID
+    if (popup && !popup.contains(event.target) && event.target !== userInput) {
+        // 并且，如果点击的目标不是输入框本身（因为输入框的input事件会处理重新打开或关闭）
+        // 而且输入框的值不再符合触发弹窗的条件 (例如@被删除或@后有空格)
+        if (userInput) {
+            const text = userInput.value;
+            const cursorPos = userInput.selectionStart;
+            const atCharIndex = text.lastIndexOf('@', cursorPos - 1);
+            let shouldClose = true;
+            if (atCharIndex !== -1) {
+                const textBeforeAt = text.substring(0, atCharIndex);
+                const charImmediatelyAfterAt = text.substring(atCharIndex + 1, cursorPos);
+                if ((atCharIndex === 0 || /\s$/.test(textBeforeAt)) && !/\s/.test(charImmediatelyAfterAt)) {
+                    shouldClose = false; // 仍然是有效的触发条件，不因外部点击而关闭
+                }
+            }
+            if (shouldClose) {
+                 closeTabSelectionPopupUI();
+                 // 通知 main.js 更新状态
+                 const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
+                 document.dispatchEvent(mainJSNotifier);
+            }
+        }
+    }
+    // 无论如何，一旦这个监听器被触发，就应该移除它，因为它是一次性的
+    // closeTabSelectionPopupUI() 内部会再次尝试移除，这里确保移除
+    document.removeEventListener('click', handleClickOutsideTabPopup, { capture: true });
+}
+
+// 新增：处理弹窗内的键盘导航
+function handlePopupKeyDown(event) {
+    const popup = document.getElementById('tab-selection-popup');
+    if (!popup) return;
+
+    const items = popup.querySelectorAll('.tab-selection-item:not(.no-results)');
+    if (items.length === 0) return;
+
+    let currentIndex = -1;
+    items.forEach((item, index) => {
+        if (item.classList.contains('selected')) {
+            currentIndex = index;
+        }
+    });
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (currentIndex < items.length - 1) {
+            if (currentIndex !== -1) items[currentIndex].classList.remove('selected');
+            items[++currentIndex].classList.add('selected');
+            items[currentIndex].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (currentIndex > 0) {
+            if (currentIndex !== -1) items[currentIndex].classList.remove('selected');
+            items[--currentIndex].classList.add('selected');
+            items[currentIndex].scrollIntoView({ block: 'nearest' });
+        }
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (currentIndex !== -1) {
+            items[currentIndex].click(); // 触发选中项的点击事件
+        }
+    } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeTabSelectionPopupUI();
+        // 通知 main.js 更新状态
+        const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
+        document.dispatchEvent(mainJSNotifier);
+    } else if (event.key === 'Tab') {
+        event.preventDefault(); // 阻止 Tab 的默认行为，使其在弹窗内循环或关闭弹窗
+        closeTabSelectionPopupUI();
+        const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
+        document.dispatchEvent(mainJSNotifier);
+        document.getElementById('user-input')?.focus(); // 将焦点移回输入框
+    }
+}
+
+// 新增：创建和管理已选标签栏的UI
+export function updateSelectedTabsBarUI(selectedTabs, elements, onRemoveTabCallback, currentTranslations) {
+    let bar = document.getElementById('selected-tabs-bar');
+    const chatInputContainer = elements.userInput.parentElement; // 一般是 .chat-input
+
+    if (selectedTabs.length === 0) {
+        if (bar) bar.remove();
+        if (elements.chatMessages) {
+            elements.chatMessages.style.paddingBottom = 'var(--spacing-md)'; // 恢复默认
+        }
+        if (chatInputContainer) {
+            chatInputContainer.style.borderTopLeftRadius = 'var(--radius-lg)'; // 恢复圆角
+            chatInputContainer.style.borderTopRightRadius = 'var(--radius-lg)';
+        }
+        return;
+    }
+
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'selected-tabs-bar';
+        bar.className = 'selected-tabs-bar'; // 用于CSS
+        // 将其插入到 chat-messages 和 chat-input 之间
+        if (chatInputContainer && chatInputContainer.parentNode) {
+            chatInputContainer.parentNode.insertBefore(bar, chatInputContainer);
+             // 调整 chat-input 的顶部圆角
+            chatInputContainer.style.borderTopLeftRadius = '0';
+            chatInputContainer.style.borderTopRightRadius = '0';
+        }
+    }
+    bar.innerHTML = ''; // 清空旧内容
+
+    selectedTabs.forEach(tab => {
+        const tabChip = document.createElement('div');
+        tabChip.className = 'selected-tab-chip';
+        if (tab.isLoading) tabChip.classList.add('loading');
+        if (tab.content === null && !tab.isLoading) tabChip.classList.add('error'); // 内容为null且不是loading状态，则标记为error
+
+        const favIcon = document.createElement('img');
+        favIcon.src = tab.favIconUrl || '../magic.png';
+        favIcon.alt = '';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = tab.title;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '&times;';
+        removeBtn.title = currentTranslations['removeTabTitle'] || 'Remove tab'; // 需要翻译
+        removeBtn.onclick = (e) => {
+            e.stopPropagation();
+            onRemoveTabCallback(tab.id);
+        };
+
+        tabChip.appendChild(favIcon);
+        tabChip.appendChild(titleSpan);
+
+        if (tab.isLoading) {
+            const spinner = document.createElement('div');
+            spinner.className = 'tab-chip-spinner';
+            tabChip.appendChild(spinner);
+        }
+        tabChip.appendChild(removeBtn);
+        bar.appendChild(tabChip);
+    });
+
+    // 调整聊天消息区域的底部内边距，为标签栏腾出空间
+    if (elements.chatMessages) {
+        const barHeight = bar.offsetHeight;
+        elements.chatMessages.style.paddingBottom = `calc(${barHeight}px + var(--spacing-sm))`; 
     }
 }
