@@ -22,8 +22,30 @@
     - 优化了动效，重构了一些UI，更加直观、美观。✨
     - 修复了诸多bug。🐛
 
-![b5d6f628b841d2c7103ec4cccba8c38c](https://github.com/user-attachments/assets/b408c5ab-cc73-4a44-80a3-6dcd9d0be53b)
+---
 
+**输入@选择已打开的标签页**
+
+![image](https://github.com/user-attachments/assets/23d3b878-52f3-437a-a85a-c7d53f194fe7)
+
+
+
+**选中样式**
+
+![image](https://github.com/user-attachments/assets/17d27bb0-47a9-4297-a8aa-8d637679a807)
+
+
+
+**让PageTalk总结你选择的标签页**
+
+![image](https://github.com/user-attachments/assets/dc001071-2580-414f-a5ce-f127f966e50d)
+
+
+**解析Youtube URL**
+
+![image](https://github.com/user-attachments/assets/6ed43746-a2c4-4c60-b00a-9a1d49833460)
+
+---
 
 ## 简介
 

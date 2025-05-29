@@ -22,8 +22,29 @@
     - UI/UX Enhancements: Refactored UI and optimized animations for a more intuitive and visually appealing experience. ✨
     - Numerous Bug Fixes: Addressed and resolved various bugs. 🐛
 
-![b5d6f628b841d2c7103ec4cccba8c38c](https://github.com/user-attachments/assets/2b48a633-418e-433b-8e3e-c2444d188fee)
+---
 
+**Type @ to select opened tabs**
+
+![image](https://github.com/user-attachments/assets/23d3b878-52f3-437a-a85a-c7d53f194fe7)
+
+
+
+**All selected tabs on it**
+
+![image](https://github.com/user-attachments/assets/17d27bb0-47a9-4297-a8aa-8d637679a807)
+
+
+
+**Tell PageTalk to summarize all of it**
+
+![image](https://github.com/user-attachments/assets/dc001071-2580-414f-a5ce-f127f966e50d)
+
+**Upload YouTube urls**
+
+![image](https://github.com/user-attachments/assets/dc5b1978-6bd6-4305-99d0-d1f9c18f9ca5)
+
+---
 
 ## Introduction
 
