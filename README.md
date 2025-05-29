@@ -25,24 +25,24 @@
 ---
 
 **Type @ to select opened tabs**
-
-![image](https://github.com/user-attachments/assets/23d3b878-52f3-437a-a85a-c7d53f194fe7)
-
-
+<br>
+<img src="https://github.com/user-attachments/assets/23d3b878-52f3-437a-a85a-c7d53f194fe7" alt="image" width="600"/>
+<br><br>
 
 **All selected tabs on it**
-
-![image](https://github.com/user-attachments/assets/17d27bb0-47a9-4297-a8aa-8d637679a807)
-
-
+<br>
+<img src="https://github.com/user-attachments/assets/17d27bb0-47a9-4297-a8aa-8d637679a807" alt="image" width="600"/>
+<br><br>
 
 **Tell PageTalk to summarize all of it**
-
-![image](https://github.com/user-attachments/assets/dc001071-2580-414f-a5ce-f127f966e50d)
+<br>
+<img src="https://github.com/user-attachments/assets/dc001071-2580-414f-a5ce-f127f966e50d" alt="image" width="600"/>
+<br><br>
 
 **Upload YouTube urls**
-
-![image](https://github.com/user-attachments/assets/dc5b1978-6bd6-4305-99d0-d1f9c18f9ca5)
+<br>
+<img src="https://github.com/user-attachments/assets/dc5b1978-6bd6-4305-99d0-d1f9c18f9ca5" alt="image" width="600"/>
+<br><br>
 
 ---
 
@@ -64,13 +64,14 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 *   **Chat Export:** Save conversations as Markdown or Text files.
 
 ## Examples
-![image](https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158)
-
-![image](https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238)
-
-![image](https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24)
-
-![9291f32857cc26e4f039f5ec72ab07bc](https://github.com/user-attachments/assets/9fef9086-be70-448c-b23e-e79629e42d2a)
+<img src="https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158" alt="image" width="600"/>
+<br><br>
+<img src="https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238" alt="image" width="600"/>
+<br><br>
+<img src="https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24" alt="image" width="600"/>
+<br><br>
+<img src="https://github.com/user-attachments/assets/9fef9086-be70-448c-b23e-e79629e42d2a" alt="image" width="600"/>
+<br><br>
 
 
 

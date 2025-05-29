@@ -25,25 +25,24 @@
 ---
 
 **输入@选择已打开的标签页**
-
-![image](https://github.com/user-attachments/assets/23d3b878-52f3-437a-a85a-c7d53f194fe7)
-
-
+<br>
+<img src="https://github.com/user-attachments/assets/23d3b878-52f3-437a-a85a-c7d53f194fe7" alt="image" width="600"/>
+<br><br>
 
 **选中样式**
-
-![image](https://github.com/user-attachments/assets/17d27bb0-47a9-4297-a8aa-8d637679a807)
-
-
+<br>
+<img src="https://github.com/user-attachments/assets/17d27bb0-47a9-4297-a8aa-8d637679a807" alt="image" width="600"/>
+<br><br>
 
 **让PageTalk总结你选择的标签页**
-
-![image](https://github.com/user-attachments/assets/dc001071-2580-414f-a5ce-f127f966e50d)
-
+<br>
+<img src="https://github.com/user-attachments/assets/dc001071-2580-414f-a5ce-f127f966e50d" alt="image" width="600"/>
+<br><br>
 
 **解析Youtube URL**
-
-![image](https://github.com/user-attachments/assets/6ed43746-a2c4-4c60-b00a-9a1d49833460)
+<br>
+<img src="https://github.com/user-attachments/assets/6ed43746-a2c4-4c60-b00a-9a1d49833460" alt="image" width="600"/>
+<br><br>
 
 ---
 
@@ -65,13 +64,14 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 *   **聊天导出:** 将对话保存为 Markdown 或纯文本文件。
 
 ## 用例
-![image](https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158)
-
-![image](https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238)
-
-![image](https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24)
-
-![9291f32857cc26e4f039f5ec72ab07bc](https://github.com/user-attachments/assets/c23d2919-aa7c-427a-80a8-1b08a5f46a5c)
+<img src="https://github.com/user-attachments/assets/4aa393e4-659d-433a-9d4c-583217c95158" alt="image" width="600"/>
+<br><br>
+<img src="https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238" alt="image" width="600"/>
+<br><br>
+<img src="https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24" alt="image" width="600"/>
+<br><br>
+<img src="https://github.com/user-attachments/assets/c23d2919-aa7c-427a-80a8-1b08a5f46a5c" alt="image" width="600"/>
+<br><br>
 
 ## 安装
 
