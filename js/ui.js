@@ -555,6 +555,14 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     setPlaceholder('#user-input', 'userInputContextPlaceholder');
     setTitle('#send-message', 'sendMessageTitle'); // Default title
 
+    // YouTube URL Dialog
+    setTitle('#add-youtube-url', 'addYoutubeLinkTitle');
+    setText('#youtube-url-dialog h3', 'addYoutubeVideoTitle');
+    setText('#youtube-url-dialog p', 'enterYoutubeLinkPrompt');
+    setPlaceholder('#youtube-url-input', 'youtubeLinkPlaceholder');
+    setText('#cancel-youtube', 'cancelButton');
+    setText('#confirm-youtube', 'addButton');
+
     setText('.footer-tab[data-tab="chat"]', 'chatTab');
     setText('.footer-tab[data-tab="settings"]', 'settingsTab');
 
