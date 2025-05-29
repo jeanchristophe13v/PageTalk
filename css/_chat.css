@@ -234,7 +234,7 @@
     background-color: var(--card-background-rgb-opacity-low);
     border: 1px solid var(--border-color);
     max-width: 100%;
-    overflow: hidden;
+    /* overflow: hidden; */ /* Removed to let flex children handle overflow */
     box-shadow: var(--shadow-sm);
     color: var(--text-secondary);
 }
@@ -254,8 +254,34 @@
     overflow: hidden;
     text-overflow: ellipsis;
     /* color: rgba(255, 255, 255, 0.9); */ /* 改为继承或使用变量 */
-    max-width: calc(100% - 30px); /* 限制标题最大宽度，为图标和间距留出空间 */
+    /* max-width: calc(100% - 30px); */ /* Removed fixed max-width */
+    flex-grow: 1; /* Allow title to take available space */
+    flex-shrink: 1; /* Allow title to shrink */
+    min-width: 0; /* Critical for ellipsis to work in flex item */
     position: relative;
+}
+
+/* "Remove Sent Tab" button in user message bubble */
+.remove-sent-tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px; /* Larger for easier clicking */
+    font-weight: bold;
+    padding: 0 4px;
+    margin-left: var(--spacing-xs);
+    cursor: pointer;
+    line-height: 1;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    align-self: center; /* Vertically center if tab item is taller */
+    flex-shrink: 0; /* Ensure the button does not shrink */
+}
+
+.remove-sent-tab-btn:hover {
+    color: var(--error-color);
+    opacity: 1;
+    transform: scale(1.1);
 }
 
 /* 可选：为 sent-tab-title 添加更平滑的渐变省略（如果纯 ellipsis 不够） */

@@ -63,7 +63,11 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     // 准备在用户消息气泡中显示的标签页信息
     const tabsForBubbleDisplay = state.selectedContextTabs
         .filter(tab => tab.content && !tab.isLoading && !tab.isContextSent)
-        .map(tab => ({ title: tab.title, favIconUrl: tab.favIconUrl }));
+        .map(tab => ({
+            id: tab.id,
+            title: tab.title,
+            favIconUrl: tab.favIconUrl
+        }));
 
     // Add user message UI (force scroll ensures it's visible before thinking anim)
     // addMessageToChatCallback (main.js#addMessageToChatUI) handles isUserNearBottom internally
@@ -81,7 +85,8 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         );
 
         if (tabsToSendNow.length > 0) {
-            contextTabsForApi = tabsToSendNow.map(tab => ({ title: tab.title, content: tab.content }));
+            // Ensure contextTabsForApi includes id, title, and content
+            contextTabsForApi = tabsToSendNow.map(tab => ({ id: tab.id, title: tab.title, content: tab.content }));
 
             tabsToSendNow.forEach(tabSent => {
                 const originalTab = state.selectedContextTabs.find(t => t.id === tabSent.id);
@@ -115,7 +120,14 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     // Add user message to history *before* API call
     if (currentParts.length > 0) {
-        state.chatHistory.push({ role: 'user', parts: currentParts, id: userMessageId });
+        state.chatHistory.push({
+            role: 'user',
+            parts: currentParts,
+            id: userMessageId,
+            // 新增：存储随此用户消息发送的上下文标签页
+            // contextTabsForApi 包含了 { id, title, content }
+            sentContextTabsInfo: contextTabsForApi.length > 0 ? contextTabsForApi : null
+        });
     } else {
         // Should not happen due to initial check, but as a safeguard:
         // Check if thinkingElement exists before trying to remove it
@@ -231,6 +243,12 @@ export function deleteMessage(messageId, state) {
     const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
     let domRemoved = false;
     if (messageElement) {
+        // Check if there's a preceding sent-tabs-container to remove
+        const prevSibling = messageElement.previousElementSibling;
+        if (prevSibling && prevSibling.classList.contains('sent-tabs-container') &&
+            prevSibling.dataset.messageIdRef === messageId) {
+            prevSibling.remove();
+        }
         messageElement.remove();
         domRemoved = true;
     }
@@ -240,6 +258,12 @@ export function deleteMessage(messageId, state) {
     if (messageIndex !== -1) {
         state.chatHistory.splice(messageIndex, 1);
         historyRemoved = true;
+    }
+
+    // Clean up from locallyIgnoredTabs
+    if (state.locallyIgnoredTabs && state.locallyIgnoredTabs[messageId]) {
+        delete state.locallyIgnoredTabs[messageId];
+        console.log(`Cleaned up ignored tabs for deleted message ${messageId}`);
     }
 
     if (domRemoved || historyRemoved) {
@@ -309,6 +333,9 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
     const userMessageData = state.chatHistory[userIndex];
     const { text: userMessageText, images: userImages, videos: userVideos } = extractPartsFromMessage(userMessageData); // Use helper
 
+    // 新增：提取该用户轮次最初发送的上下文标签页
+    const previouslySentContextTabsFromHistory = userMessageData.sentContextTabsInfo || []; // 确保是数组 [{id, title, content}]
+
     // Prepare history up to (but not including) the user message of the turn
     const historyForApi = state.chatHistory.slice(0, userIndex);
 
@@ -325,22 +352,38 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
 
 
     // --- 在重新生成前，立即标记即将作为上下文发送的标签页并更新UI ---
-    let contextTabsForApiRegen = [];
+    // Start with the effective previously sent context, filtering out locally ignored ones
+    const ignoredTabIdsForThisTurn = (state.locallyIgnoredTabs && state.locallyIgnoredTabs[userMessageData.id]) ? state.locallyIgnoredTabs[userMessageData.id] : [];
+    
+    let effectivePreviouslySentContext = previouslySentContextTabsFromHistory.filter(
+        tab => !ignoredTabIdsForThisTurn.includes(tab.id)
+    );
+    
+    let contextTabsForApiRegen = [...effectivePreviouslySentContext]; // Contains {id, title, content}
+
+    // 处理在"重新生成"之前新选择的、尚未发送的标签页
     if (state.selectedContextTabs && state.selectedContextTabs.length > 0) {
-        const tabsToRegenNow = state.selectedContextTabs.filter(
+        const newlySelectedTabsToSend = state.selectedContextTabs.filter(
             tab => tab.content && !tab.isLoading && !tab.isContextSent
         );
 
-        if (tabsToRegenNow.length > 0) {
-            contextTabsForApiRegen = tabsToRegenNow.map(tab => ({ title: tab.title, content: tab.content }));
+        if (newlySelectedTabsToSend.length > 0) {
+            const newTabsForApi = newlySelectedTabsToSend.map(tab => ({ id: tab.id, title: tab.title, content: tab.content }));
+            
+            // 合并新选择的标签页，避免重复（基于ID去重）
+            newTabsForApi.forEach(newTab => {
+                if (!contextTabsForApiRegen.some(existingTab => existingTab.id === newTab.id)) {
+                    contextTabsForApiRegen.push(newTab);
+                }
+            });
 
-            tabsToRegenNow.forEach(tabSent => {
+            // 标记这些新选择的标签页为已发送并更新UI
+            newlySelectedTabsToSend.forEach(tabSent => {
                 const originalTab = state.selectedContextTabs.find(t => t.id === tabSent.id);
                 if (originalTab) {
                     originalTab.isContextSent = true;
                 }
             });
-
             state.selectedContextTabs = state.selectedContextTabs.filter(tab => !tab.isContextSent);
             
             if (updateSelectedTabsBarCallback) {

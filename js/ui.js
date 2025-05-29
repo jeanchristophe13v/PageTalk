@@ -73,62 +73,95 @@ export function switchSettingsSubTab(subTabId, elements) {
 export function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
     const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false, sentContextTabs = [] } = options;
     
-    let sentTabsElement = null;
-    // 新增：如果发送的是用户消息，并且包含了 sentContextTabs，则先创建它们
-    if (sender === 'user' && sentContextTabs.length > 0) {
-        sentTabsElement = document.createElement('div');
-        sentTabsElement.className = 'sent-tabs-container';
-        let tabsHTML = '';
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', `${sender}-message`);
+    
+    const messageId = (options && options.id) ? options.id : generateUniqueId();
+    messageDiv.dataset.messageId = messageId;
+
+    // --- 新增：处理已发送的上下文标签页 (在用户消息之前显示) ---
+    let sentTabsContainer = null;
+    if (sender === 'user' && sentContextTabs && sentContextTabs.length > 0) {
+        sentTabsContainer = document.createElement('div');
+        sentTabsContainer.className = 'sent-tabs-container';
+        // 关键：将 sentTabsContainer 与它下方的 messageDiv 关联起来
+        sentTabsContainer.dataset.messageIdRef = messageId;
+
         sentContextTabs.forEach(tab => {
-            const escapedTitle = escapeHtml(tab.title);
-            const favIconSrc = escapeHtml(tab.favIconUrl || '../magic.png');
-            tabsHTML += `
-                <div class="sent-tab-item">
-                    <img src="${favIconSrc}" alt="" class="sent-tab-favicon">
-                    <span class="sent-tab-title">${escapedTitle}</span>
-                </div>
-            `;
+            const tabItem = document.createElement('div');
+            tabItem.className = 'sent-tab-item';
+            tabItem.dataset.tabId = tab.id; // Store tab ID for later reference
+
+            const favicon = document.createElement('img');
+            favicon.src = tab.favIconUrl || '../magic.png';
+            favicon.alt = 'favicon';
+            favicon.className = 'sent-tab-favicon';
+            tabItem.appendChild(favicon);
+
+            const title = document.createElement('span');
+            title.className = 'sent-tab-title';
+            title.textContent = tab.title;
+            title.title = tab.title; // Tooltip for full title
+            tabItem.appendChild(title);
+
+            // 添加关闭按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'remove-sent-tab-btn';
+            closeBtn.innerHTML = '✖'; // Use a clear X symbol
+            closeBtn.title = _('removeContextTabTitle', {}, currentTranslations) || 'Remove this tab from context for this message';
+            closeBtn.dataset.tabId = tab.id;
+            closeBtn.dataset.messageId = messageId; // The ID of the message bubble this tab group is associated with
+
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 调用 main.js 中的回调函数来处理状态更新
+                if (window.handleRemoveSentTabContext) {
+                    window.handleRemoveSentTabContext(closeBtn.dataset.messageId, closeBtn.dataset.tabId);
+                }
+                // 从 DOM 中移除当前标签项
+                tabItem.remove();
+                // 如果容器为空，也移除容器
+                if (sentTabsContainer.children.length === 0) {
+                    sentTabsContainer.remove();
+                }
+            });
+            tabItem.appendChild(closeBtn);
+
+            sentTabsContainer.appendChild(tabItem);
         });
-        sentTabsElement.innerHTML = tabsHTML;
     }
-
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('message', `${sender}-message`);
-
-    const messageId = generateUniqueId();
-    messageElement.dataset.messageId = messageId;
+    // --- 结束：处理已发送的上下文标签页 ---
 
     // 决定插入点
     const parentNode = elements.chatMessages;
     let actualInsertBeforeElement = null;
     if (insertAfterElement && insertAfterElement.parentNode === parentNode) {
         actualInsertBeforeElement = insertAfterElement.nextSibling;
-    } else {
-        // 默认添加到末尾，所以 insertBeforeElement 为 null 即可
     }
 
-    // 如果有 sentTabsElement，先插入它
-    if (sentTabsElement) {
+    // 如果有 sentTabsContainer，先插入它
+    if (sentTabsContainer) {
         if (actualInsertBeforeElement) {
-            parentNode.insertBefore(sentTabsElement, actualInsertBeforeElement);
+            parentNode.insertBefore(sentTabsContainer, actualInsertBeforeElement);
         } else {
-            parentNode.appendChild(sentTabsElement);
+            parentNode.appendChild(sentTabsContainer);
         }
     }
+    
     // 然后插入消息气泡
     if (actualInsertBeforeElement) {
-        parentNode.insertBefore(messageElement, actualInsertBeforeElement);
+        parentNode.insertBefore(messageDiv, actualInsertBeforeElement);
     } else {
-        parentNode.appendChild(messageElement);
+        parentNode.appendChild(messageDiv);
     }
 
     if (isStreaming) {
-        return messageElement; // Return early for streaming
+        return messageDiv; // Return early for streaming
     }
 
     // --- Non-streaming or final render ---
     let messageHTML = '';
-    // 原本在这里渲染 sentContextTabs 的逻辑已移到前面创建 sentTabsElement
+    // 原本在这里渲染 sentContextTabs 的逻辑已移到前面创建 sentTabsContainer
 
     if (sender === 'user' && images.length > 0) {
         messageHTML += '<div class="message-images">';
@@ -193,11 +226,11 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
         messageHTML += window.MarkdownRenderer.render(content);
     }
 
-    messageElement.innerHTML = messageHTML;
+    messageDiv.innerHTML = messageHTML;
 
     // Add click listeners for user images AFTER setting innerHTML
     if (sender === 'user' && images.length > 0) {
-        messageElement.querySelectorAll('.message-image').forEach(img => {
+        messageDiv.querySelectorAll('.message-image').forEach(img => {
             img.addEventListener('click', () => {
                 showFullSizeImage(img.dataset.url, elements); // Use data-url
             });
@@ -206,7 +239,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     // Add click listeners for user videos AFTER setting innerHTML
     if (sender === 'user' && videos.length > 0) {
-        messageElement.querySelectorAll('.message-video').forEach(videoEl => {
+        messageDiv.querySelectorAll('.message-video').forEach(videoEl => {
             videoEl.addEventListener('click', () => {
                 const url = videoEl.dataset.url;
                 if (videoEl.classList.contains('youtube-video')) {
@@ -221,12 +254,12 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
     }
 
 
-    const codeBlocks = messageElement.querySelectorAll('.code-block');
+    const codeBlocks = messageDiv.querySelectorAll('.code-block');
     codeBlocks.forEach(addCopyButtonToCodeBlock); // Use callback
 
-    addMessageActionButtons(messageElement, content || ''); // Use callback
+    addMessageActionButtons(messageDiv, content || ''); // Use callback
 
-    renderDynamicContent(messageElement, elements); // Render KaTeX/Mermaid
+    renderDynamicContent(messageDiv, elements); // Render KaTeX/Mermaid
 
     // Scroll only if forced or user is near bottom
     if (forceScroll || isUserNearBottom) {
@@ -238,7 +271,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
         }, 50);
     }
 
-    return messageElement;
+    return messageDiv;
 }
 
 

@@ -77,6 +77,7 @@ const state = {
     selectedContextTabs: [], // 新增：存储用户选择的用于上下文的标签页
     availableTabsForSelection: [], // 新增：存储查询到的供用户选择的标签页
     isTabSelectionPopupOpen: false, // 新增：跟踪标签页选择弹窗的状态
+    locallyIgnoredTabs: {}, // 新增: 跟踪用户从特定消息上下文中移除的标签页 { messageId: [tabId1, tabId2] }
 };
 
 // Default settings (used by agent module)
@@ -582,6 +583,7 @@ function sendUserMessageTrigger() {
         (content, sender, options) => { // Modified addMessageToChatCallback wrapper
             let messageOptions = {...options};
             if (sender === 'user' && tabsForMessageBubble.length > 0) {
+                // tabsForBubbleDisplay should now include id, title, favIconUrl
                 messageOptions.sentContextTabs = tabsForMessageBubble;
             }
             return addMessageToChatUI(content, sender, messageOptions);
@@ -942,6 +944,7 @@ function updateSelectedTabsBarFromMain() {
 export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
     state.chatHistory = [];
     elements.chatMessages.innerHTML = ''; // Clear UI
+    state.locallyIgnoredTabs = {}; // 新增：清空已忽略标签页的状态
 
     // Re-add welcome message
     const welcomeMessage = document.createElement('div');
@@ -961,5 +964,20 @@ export function clearContext(state, elements, clearImagesCallback, clearVideosCa
 
     if (showToast) {
         showToastCallback(_('contextClearedSuccess', {}, currentTranslations), 'success');
+    }
+}
+
+// 新增：处理从特定消息上下文中移除已发送标签页的逻辑
+function handleRemoveSentTabContext(messageId, tabId) {
+    if (!state.locallyIgnoredTabs[messageId]) {
+        state.locallyIgnoredTabs[messageId] = [];
+    }
+    if (!state.locallyIgnoredTabs[messageId].includes(tabId)) {
+        state.locallyIgnoredTabs[messageId].push(tabId);
+        console.log(`Tab ${tabId} marked as ignored for message ${messageId}. Ignored:`, state.locallyIgnoredTabs);
+        // 可选：显示一个toast通知用户该标签页的上下文不会用于此消息的后续重新生成
+        // showToastUI(`标签页上下文已从本次对话中移除 (重新生成时生效)`, 'info');
+    } else {
+        console.log(`Tab ${tabId} was already marked as ignored for message ${messageId}.`);
     }
 }
