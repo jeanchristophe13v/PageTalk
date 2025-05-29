@@ -73,6 +73,7 @@ const state = {
     darkMode: false,
     language: 'en', // Changed default language to English
     isStreaming: false,
+    userScrolledUpDuringStream: false, // 新增：跟踪用户在流式传输期间是否已向上滚动
     // userHasSetPreference: false, // Removed
     selectedContextTabs: [], // 新增：存储用户选择的用于上下文的标签页
     availableTabsForSelection: [], // 新增：存储查询到的供用户选择的标签页
@@ -243,16 +244,19 @@ function init() {
 
     // Wrapper for ui.js's updateStreamingMessage
     window.updateStreamingMessage = (messageElement, content) => {
-        // `isUserNearBottom` and `elements` are live from main.js's scope
-        uiUpdateStreamingMessage(messageElement, content, isUserNearBottom, elements);
+        // `elements` is live from main.js's scope
+        // Determine if scroll should happen based on the new logic
+        const shouldScroll = state.isStreaming ? !state.userScrolledUpDuringStream : isUserNearBottom;
+        uiUpdateStreamingMessage(messageElement, content, shouldScroll, elements); // Pass the decision
     };
 
     // Wrapper for ui.js's finalizeBotMessage
     window.finalizeBotMessage = (messageElement, finalContent) => {
-        // `isUserNearBottom`, `elements`, `addCopyButtonToCodeBlockUI`,
+        // `elements`, `addCopyButtonToCodeBlockUI`,
         // `addMessageActionButtonsUI`, `restoreSendButtonAndInputUI`
         // are all live from main.js's scope
-        uiFinalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlockUI, addMessageActionButtonsUI, restoreSendButtonAndInputUI, isUserNearBottom, elements);
+        const shouldScroll = state.isStreaming ? !state.userScrolledUpDuringStream : isUserNearBottom; // Similar logic for finalize
+        uiFinalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlockUI, addMessageActionButtonsUI, restoreSendButtonAndInputUI, shouldScroll, elements);
     };
 
     // 确保在所有初始化完成后，输入框获得焦点
@@ -554,7 +558,20 @@ function handleChatAgentChange() {
 
 function handleChatScroll() {
     const el = elements.chatMessages;
-    isUserNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD;
+
+    if (state.isStreaming) {
+        if (!atBottom && !state.userScrolledUpDuringStream) {
+            // User scrolled up for the first time during this stream
+            state.userScrolledUpDuringStream = true;
+            console.log("User scrolled up during stream, auto-scroll disabled for this stream.");
+        } else if (atBottom && state.userScrolledUpDuringStream) {
+            // User scrolled back to bottom, re-enable auto-scroll
+            state.userScrolledUpDuringStream = false;
+            console.log("User scrolled back to bottom during stream, auto-scroll re-enabled.");
+        }
+    }
+    isUserNearBottom = atBottom; // Keep this for non-streaming contexts or as a general flag
 }
 
 // Wrapper function to trigger sendUserMessage with all dependencies

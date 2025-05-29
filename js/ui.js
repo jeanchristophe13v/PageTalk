@@ -279,10 +279,10 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
  * 更新流式消息 - 使用markdown-it渲染
  * @param {HTMLElement} messageElement - 消息元素
  * @param {string} content - 当前累积的内容
- * @param {boolean} isUserNearBottom - Whether user is scrolled near bottom
+ * @param {boolean} shouldScroll - Whether to scroll to bottom
  * @param {object} elements - DOM elements reference
  */
-export function updateStreamingMessage(messageElement, content, isUserNearBottom, elements) {
+export function updateStreamingMessage(messageElement, content, shouldScroll, elements) {
     let formattedContent = window.MarkdownRenderer.render(content);
 
     const streamingCursor = document.createElement('span');
@@ -299,7 +299,7 @@ export function updateStreamingMessage(messageElement, content, isUserNearBottom
 
     messageElement.appendChild(streamingCursor);
 
-    if (isUserNearBottom) {
+    if (shouldScroll) { // 使用 shouldScroll 决策
         setTimeout(() => {
             elements.chatMessages.scrollTo({
                 top: elements.chatMessages.scrollHeight,
@@ -316,10 +316,10 @@ export function updateStreamingMessage(messageElement, content, isUserNearBottom
  * @param {function} addCopyButtonToCodeBlock - Callback
  * @param {function} addMessageActionButtons - Callback
  * @param {function} restoreSendButtonAndInput - Callback
- * @param {boolean} isUserNearBottom - Whether user is scrolled near bottom
+ * @param {boolean} shouldScroll - Whether to scroll to bottom
  * @param {object} elements - DOM elements reference
  */
-export function finalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlock, addMessageActionButtons, restoreSendButtonAndInput, isUserNearBottom, elements) {
+export function finalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlock, addMessageActionButtons, restoreSendButtonAndInput, shouldScroll, elements) {
     const streamingCursor = messageElement.querySelector('.streaming-cursor');
     if (streamingCursor) {
         streamingCursor.remove();
@@ -334,7 +334,7 @@ export function finalizeBotMessage(messageElement, finalContent, addCopyButtonTo
 
     renderDynamicContent(messageElement, elements); // Final render
 
-    if (isUserNearBottom) {
+    if (shouldScroll) { // 使用 shouldScroll 决策
         setTimeout(() => {
             elements.chatMessages.scrollTo({
                 top: elements.chatMessages.scrollHeight,
@@ -371,13 +371,15 @@ export function addThinkingAnimation(insertAfterElement = null, elements, isUser
         elements.chatMessages.appendChild(thinkingElement);
     }
 
-    // 移除条件判断，无条件滚动到视图底部
-    setTimeout(() => {
-        elements.chatMessages.scrollTo({
-            top: elements.chatMessages.scrollHeight,
-            behavior: 'smooth'
-        });
-    }, 50);
+    // 仅当用户在底部时才滚动，以避免覆盖用户的向上滚动操作
+    if (isUserNearBottom) {
+        setTimeout(() => {
+            elements.chatMessages.scrollTo({
+                top: elements.chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50);
+    }
 
     return thinkingElement;
 }
@@ -609,10 +611,16 @@ export function updateUIElementsWithTranslations(currentTranslations) {
  * @param {function} abortStreamingCallback - Callback to remove abort listener
  */
 export function restoreSendButtonAndInput(state, elements, currentTranslations, sendUserMessageCallback, abortStreamingCallback) {
-    if (!state.isStreaming) return;
+    if (!state.isStreaming && !state.userScrolledUpDuringStream) return; // 如果不是流式或者没有向上滚动标记，则提前返回，避免不必要的操作
 
     console.log("Restoring send button and input state...");
-    state.isStreaming = false;
+    
+    if (state.isStreaming) {
+        state.isStreaming = false;
+    }
+    if (state.userScrolledUpDuringStream) {
+        state.userScrolledUpDuringStream = false; // 在流结束后也重置此标记
+    }
 
     elements.sendMessage.classList.remove('stop-streaming');
     elements.sendMessage.title = _('sendMessageTitle', {}, currentTranslations);

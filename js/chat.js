@@ -46,6 +46,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     // --- Start Streaming State ---
     state.isStreaming = true;
+    state.userScrolledUpDuringStream = false; // 重置滚动标记
     elements.sendMessage.classList.add('stop-streaming');
     elements.sendMessage.title = _('stopStreamingTitle', {}, currentTranslations);
     elements.sendMessage.innerHTML = `
@@ -395,6 +396,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
 
     // --- Start Streaming State ---
     state.isStreaming = true;
+    state.userScrolledUpDuringStream = false; // 重置滚动标记
     elements.sendMessage.classList.add('stop-streaming');
     elements.sendMessage.title = _('stopStreamingTitle', {}, currentTranslations);
     elements.sendMessage.innerHTML = `
