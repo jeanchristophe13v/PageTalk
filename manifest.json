@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Pagetalk - 你的gemini浏览器问答助手",
+  "name": "PageTalk - Your Gemini Browser Q&A Assistant",
   "version": "3.0.0",
-  "description": "一个可以读取页面内容，调用Gemini API进行问答的浏览器插件",
+  "description": "A browser extension that can read page content and use the Gemini API for Q&A",
   "permissions": [
     "activeTab",
     "storage",
@@ -13,7 +13,7 @@
     "<all_urls>"
   ],
   "action": {
-    "default_title": "Pagetalk",
+    "default_title": "PageTalk",
     "default_icon": "magic.png"
   },
   "icons": {
