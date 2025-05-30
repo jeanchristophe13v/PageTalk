@@ -133,7 +133,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         // --- Construct XML System Prompt ---
         let xmlSystemPrompt = `
 <instructions>
-  <role>You are a helpful and professional AI assistant. Your primary goal is to answer the user's questions accurately and informatively, drawing upon the provided context and chat history.</role>
+  <role>You are a helpful and professional AI assistant. You are capable of understanding and processing text, as well as analyzing images provided in the user's messages. Your primary goal is to answer the user's questions accurately and informatively, drawing upon all provided context, including images and chat history. If an image is provided, please analyze it and use that information in your response.</role>
   <output_format>
     <language>Respond in the language used by the user in their most recent query.</language>
     <markdown>Format your entire response using Markdown.</markdown>
@@ -152,6 +152,8 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
       <accuracy>Base your answers strictly on the provided information. Do not introduce external knowledge or make assumptions beyond the given context.</accuracy>
       <conciseness>Be concise yet comprehensive.</conciseness>
       <no_fabrication>If the answer cannot be found in the provided contexts, clearly state this.</no_fabrication>
+      <important_content_source_clarification>
+        You have been given the full text content for the 'main_page_content' and any pages listed under 'additional_page_contexts'.\n      When answering questions about these specific documents, you MUST rely exclusively on the text provided within their respective \\\`<content>\\\` tags.\n      DO NOT attempt to access or fetch any external URLs for these documents, even if their titles ('source_title') or any part of the user's query seems to mention a URL related to them.\n      Your knowledge for these provided documents is the text embedded here. Treat this embedded text as the definitive source.\n      </important_content_source_clarification>
     </information_usage>
   </context_handling>
   <multi_turn_dialogue>
@@ -245,18 +247,11 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: { message: '无法解析错误响应' } }));
-            // 检查是否是多媒体不支持的错误
-            if (images.length > 0 && errorData.error?.message?.includes('does not support image input')) {
-                // 直接抛出特定错误信息，由外部 catch 处理 UI 显示
-                throw new Error(`Model ${apiModelName} does not support image input`);
-            }
-            if (videos.length > 0 && errorData.error?.message?.includes('does not support video input')) {
-                // 直接抛出特定错误信息，由外部 catch 处理 UI 显示
-                throw new Error(`Model ${apiModelName} does not support video input`);
-            }
-            // 其他错误，抛出通用错误
-            throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}, unable to parse error response.` } }));
+            const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+            // Log the actual model being used and the error for debugging
+            console.error(`API Error with model ${apiModelName} (selected: ${stateRef.model}): ${errorMessage}`, errorData);
+            throw new Error(errorMessage);
         }
 
         // 处理 SSE 流
