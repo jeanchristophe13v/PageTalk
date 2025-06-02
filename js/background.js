@@ -8,7 +8,7 @@
 // 当安装或更新扩展时初始化
 chrome.runtime.onInstalled.addListener(() => {
     // onInstalled 事件触发
-    
+
     // 创建右键菜单
     chrome.contextMenus.create({
         id: "openPagetalk",
@@ -33,7 +33,7 @@ chrome.action.onClicked.addListener((tab) => {
     }
 });
 
-// 切换面板显示
+// 切换面板状态
 async function togglePagetalkPanel(tabId) {
     try {
         // --- 新增代码 开始 ---
@@ -75,108 +75,75 @@ async function togglePagetalkPanel(tabId) {
                     }
                 }, 100); // 注入后稍作等待
             } catch (e) {
-                 // 理论上，因为前面的URL检查，这里不应该再捕捉到 'Cannot access a chrome:// URL' 错误了
-                 // 如果还出错，可能是其他注入问题
+                // 理论上，因为前面的URL检查，这里不应该再捕捉到 'Cannot access a chrome:// URL' 错误了
+                // 如果还出错，可能是其他注入问题
                 console.error('注入脚本失败 (非URL访问权限问题):', e);
             }
         }
     } catch (outerError) {
         // 捕获获取 tab 信息或其他意外错误
-        console.error('togglePagetalkPanel 函数出错:', outerError);
+        console.error('togglePagetalkPanel 获取 tab 信息或其他意外出错:', outerError);
     }
 }
 
 // 监听来自内容脚本或面板的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === "pageContentExtracted") {
-        // 存储最近提取的页面内容
-        chrome.storage.local.set({ 
+    if (message.action === "pageContentExtracted") { // 来自 content.js 通过 iframe -> main.js -> content script -> background (这条路径似乎不直接发生)
+        // 通常是 main.js 直接通过 chrome.runtime.sendMessage 联系 background
+        // ... (此部分逻辑可能需要审视，但不是当前 bug 的核心) ...
+        // 实际上 pageContentExtracted 是 content.js 发给 iframe(main.js)的
+        // main.js 收到后更新自己的状态，通常不直接发给 background.js
+        // 如果有特定场景，保留。
+        chrome.storage.local.set({
             recentPageContent: message.content,
             recentExtractionTime: Date.now()
         });
         sendResponse({ success: true });
-    } 
-    // 新增：处理从指定标签页提取内容的请求
+    }
+    // 修改：处理从 main.js 发来的提取指定标签页内容的请求
     else if (message.action === "extractTabContent") {
         const targetTabId = message.tabId;
         if (!targetTabId) {
             console.error("Background: No tabId provided for extractTabContent");
             sendResponse({ error: "No tabId provided" });
-            return true; // Keep channel open for async response
+            return true;
         }
 
-        // 检查目标标签页URL是否受限 (例如 chrome://, about:// 等)
         chrome.tabs.get(targetTabId, (tab) => {
             if (chrome.runtime.lastError) {
                 console.error("Background: Error getting tab info:", chrome.runtime.lastError.message);
                 sendResponse({ error: chrome.runtime.lastError.message });
-                return; // Exit, channel will close
+                return;
             }
 
             if (tab.url && (tab.url.startsWith('chrome://') || tab.url.startsWith('about://') || tab.url.startsWith('edge://'))) {
                 console.warn(`Background: Cannot access restricted URL: ${tab.url}`);
                 sendResponse({ error: `Cannot access restricted URL: ${tab.url}` });
-                return; // Exit, channel will close
+                return;
             }
 
-            // 尝试在目标标签页执行脚本
-            chrome.scripting.executeScript({
-                target: { tabId: targetTabId },
-                func: getPageContentForExtraction, // 将要执行的函数
-            }, (injectionResults) => {
+            // 向目标标签页的 content.js 发送请求
+            chrome.tabs.sendMessage(targetTabId, { action: "getFullPageContentRequest" }, (responseFromContentScript) => {
                 if (chrome.runtime.lastError) {
-                    console.error("Background: Error injecting script into tab " + targetTabId, chrome.runtime.lastError.message);
-                    sendResponse({ error: chrome.runtime.lastError.message });
-                } else if (injectionResults && injectionResults[0] && injectionResults[0].result) {
-                    sendResponse({ content: injectionResults[0].result });
+                    // 捕获 sendMessage 可能发生的错误，例如目标标签页没有监听器，或标签页已关闭
+                    console.error("Background: Error sending 'getFullPageContentRequest' to tab " + targetTabId, chrome.runtime.lastError.message);
+                    sendResponse({ error: "Failed to communicate with the tab: " + chrome.runtime.lastError.message });
+                } else if (responseFromContentScript) {
+                    // 将 content.js 的响应转发回 main.js
+                    sendResponse(responseFromContentScript);
                 } else {
-                    // 检查是否有注入错误，但没有显式 result
-                    if (injectionResults && injectionResults[0] && injectionResults[0].error) {
-                         console.error("Background: Injection script error in tab " + targetTabId, injectionResults[0].error);
-                         sendResponse({ error: "Injection script error: " + injectionResults[0].error.message });
-                    } else {
-                        console.error("Background: Failed to extract content from tab " + targetTabId + ". No result or error from injection.", injectionResults);
-                        sendResponse({ error: "Failed to extract content from tab. The tab might be protected or not suitable for content extraction." });
-                    }
+                    // responseFromContentScript可能是undefined如果content script没有正确sendResponse
+                    console.error("Background: No response or empty response from content script in tab " + targetTabId);
+                    sendResponse({ error: "No response from content script in the target tab." });
                 }
             });
         });
-        return true; //  必须返回 true 以表明 sendResponse 将会异步调用
+        return true; // 必须返回 true 以表明 sendResponse 将会异步调用
     }
+    // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
+    // 但如果整个 onMessage 可能处理异步操作，最好总是返回 true
     return true;
 });
 
-// 这个函数将在目标标签页的上下文中执行
-function getPageContentForExtraction() {
-    try {
-        if (typeof Readability === 'undefined') {
-            // Readability 通常由 content.js 注入到所有页面
-            // 如果这里未定义，说明 content.js 可能没有在该页面成功注入或运行
-            console.error('Readability library not found in target tab context.');
-            return 'Error: Readability library not available in this tab.';
-        }
-        const documentClone = document.cloneNode(true);
-        const reader = new Readability(documentClone);
-        const article = reader.parse();
-        let content = '';
-        if (article && article.textContent) {
-            content = article.textContent.replace(/\s+/g, ' ').trim();
-        } else {
-            // 后备方案：尝试获取 body 的 textContent
-            content = document.body.textContent || '';
-            content = content.replace(/\s+/g, ' ').trim();
-            if (!content) {
-                return 'Unable to extract content using Readability or body.textContent.';
-            }
-            content = '(Fallback to body text) ' + content;
-        }
-        const maxLength = 500000; // 与 content.js 中的限制一致
-        if (content.length > maxLength) {
-            content = content.substring(0, maxLength) + '... (Content truncated)';
-        }
-        return content;
-    } catch (e) {
-        console.error('Error during Readability extraction in target tab:', e);
-        return `Error extracting content: ${e.message}`;
-    }
-}
+// 移除 getPageContentForExtraction 函数，因为它不再被使用
+// function getPageContentForExtraction() { ... } // REMOVED

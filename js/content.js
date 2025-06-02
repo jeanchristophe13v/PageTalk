@@ -9,6 +9,35 @@ let panelWidth = 520;
 let resizing = false;
 let messageShownForThisPageView = false; // 新增：跟踪当前页面视图是否已显示过提取成功消息
 
+// 新增：封装 PDF.js 的加载和初始化
+let pdfjsLibPromise = null;
+
+async function getInitializedPdfjsLib() {
+  if (!pdfjsLibPromise) {
+    pdfjsLibPromise = (async () => {
+      // 确保在 try-catch 块中处理导入，以防模块加载失败
+      try {
+        const { getDocument, GlobalWorkerOptions } = await import(chrome.runtime.getURL('js/lib/pdf.mjs'));
+        // 确保 GlobalWorkerOptions 存在
+        if (GlobalWorkerOptions) {
+          GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('js/lib/pdf.worker.mjs');
+          console.log('[PageTalk] PDF.js library (our version) loaded and worker configured via getInitializedPdfjsLib.');
+          return { getDocument, GlobalWorkerOptions };
+        } else {
+          console.error('[PageTalk] PDF.js GlobalWorkerOptions is undefined after import.');
+          return null; // 未能正确加载 PDF.js 的 GlobalWorkerOptions
+        }
+      } catch (error) {
+        console.error('[PageTalk] Failed to import PDF.js library:', error);
+        pdfjsLibPromise = null; // 重置 promise 以便下次重试（如果适用）
+        throw error; // 重新抛出错误，让调用者处理
+      }
+    })();
+  }
+  return pdfjsLibPromise;
+}
+
+
 // 初始化函数 - 创建面板DOM
 function initPagetalkPanel() {
   // 如果面板已存在，则不重复创建
@@ -97,7 +126,7 @@ function setupResizeEvents(resizer, panel) {
       }
     }
 
-    // 创建鼠标释放事件处理函数
+    // 创建鼠标松开事件处理函数
     function onMouseUp() {
       // 停止调整大小
       resizing = false;
@@ -123,7 +152,7 @@ function setupResizeEvents(resizer, panel) {
       document.body.style.userSelect = '';
     }
 
-    // 添加临时事件监听器
+    // 添加鼠标移动事件监听器
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 
@@ -157,7 +186,7 @@ function showPanel() {
         // 修改 action 名称，更明确其意图
         iframe.contentWindow.postMessage({ action: 'panelShownAndFocusInput' }, '*');
       }
-    }, 50); // 稍微延迟确保 iframe 内脚本已准备好
+    }, 50); // 轻微延迟确保 iframe 内脚本已准备好
 
     // 新增：面板显示时，立即检测并发送当前主题
     setTimeout(detectAndSendTheme, 100); // 稍长延迟确保 iframe 内监听器已设置
@@ -192,18 +221,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse && sendResponse({ success: true });
     return true;
   }
-  // 处理提取内容的请求
-  if (message.action === "extractContent") {
+  // 修改：处理来自 background.js 的内容提取请求
+  if (message.action === "getFullPageContentRequest") {
     (async () => { // 使用 IIFE 来处理异步操作
       try {
         const content = await extractPageContent(); // extractPageContent 现在是异步的
         sendResponse({ content: content });
       } catch (error) {
-        console.error('[PageTalk] Error during content extraction (listener):', error);
+        console.error('[PageTalk] Error during content extraction (getFullPageContentRequest listener):', error);
         sendResponse({ error: error.message });
       }
     })();
-    return true; // 必须返回 true 来表明 sendResponse 将会异 asynchronous 调用
+    return true; // 必须返回 true 来表明 sendResponse 将会异步调用
   }
 
   // 处理打开/关闭面板的请求
@@ -214,12 +243,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 切换面板显示
     togglePanel();
     sendResponse({ success: true, panelActive });
-    return true; // 也是异步的，尽管 togglePanel 本身不是
+    return true; // 这是异步的，尽管 togglePanel 本身不是
   }
 
   // 确保为其他可能的消息处理器也返回 true（如果它们是异步的）
   // 如果没有其他异步处理器，可以在这里返回 false 或 undefined
-  // 但为了安全起见，如果这个 listener 包含任何异步操作，最好总是返回 true
+  // 为了保险起见，如果这个 listener 包含任何异步操作，最好总是返回 true
   return true;
 });
 
@@ -237,13 +266,11 @@ async function extractPageContent() {
   if (isDirectPdf) {
     console.log('[PageTalk] Direct PDF detected. Attempting fetch and PDF.js parse.');
     try {
-      // 确保加载我们插件自带的 PDF.js 库，以保证版本和功能一致性
-      const { getDocument, GlobalWorkerOptions } = await import(chrome.runtime.getURL('js/lib/pdf.mjs'));
-      // 将导入的模块赋值给 window.pdfjsLib，方便后续使用
-      window.pdfjsLib = { getDocument, GlobalWorkerOptions };
-      // 设置 PDF.js worker 的路径
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('js/lib/pdf.worker.mjs');
-      console.log('[PageTalk] PDF.js library (our version) loaded and worker configured.');
+      // 修改：使用 getInitializedPdfjsLib 获取 pdf.js
+      const pdfjs = await getInitializedPdfjsLib();
+      if (!pdfjs || !pdfjs.getDocument) { // 检查 pdfjs 是否成功初始化
+        throw new Error('PDF.js library failed to initialize.');
+      }
 
       // 使用 fetch 获取 PDF 文件的 ArrayBuffer
       const response = await fetch(currentUrl);
@@ -251,7 +278,8 @@ async function extractPageContent() {
         throw new Error(`Failed to fetch PDF (${response.status}): ${response.statusText}`);
       }
       const pdfData = await response.arrayBuffer();
-      const pdf = await window.pdfjsLib.getDocument({ data: pdfData }).promise;
+      // 修改：使用 pdfjs.getDocument
+      const pdf = await pdfjs.getDocument({ data: pdfData }).promise;
 
       // 提取 PDF 元数据和文本内容
       let fullText = `PDF Title: ${pdf.info?.Title || document.title || 'Unknown Title'}\n`;
@@ -265,6 +293,10 @@ async function extractPageContent() {
         fullText += `--- Page ${i} ---\n${pageText}\n\n`;
       }
       console.log('[PageTalk] PDF text extracted via fetch, length:', fullText.length);
+      const maxLength = 500000; // 限制最大长度，与 Readability 提取一致
+      if (fullText.length > maxLength) {
+        fullText = fullText.substring(0, maxLength) + '... (Content truncated)';
+      }
       return fullText.trim();
     } catch (pdfError) {
       console.warn('[PageTalk] PDF fetch/parse error for direct PDF:', pdfError);
@@ -273,7 +305,7 @@ async function extractPageContent() {
         console.log('[PageTalk] Falling back to DOM extraction for direct PDF (e.g. arXiv).');
         return extractFromPdfJsDom(); // 尝试从DOM中提取
       }
-      // 如果 DOM 提取也不适用或失败，最终回退到 Readability
+      // 如果 DOM 提取方式不适用或失败，最终回退到 Readability
       console.warn('[PageTalk] Falling back to Readability for direct PDF after fetch/parse error.');
       return `Error processing PDF: ${pdfError.message}. \n\n ${extractWithReadability()}`;
     }
@@ -335,10 +367,10 @@ function extractFromPdfJsDom() {
   // 尝试常见的 PDF.js viewer 容器选择器
   const viewer = document.getElementById('viewer') ||
     document.getElementById('viewerContainer') ||
-    document.querySelector('.pdfViewer'); // 一个常见的类名
+    document.querySelector('.pdfViewer'); // 尝试常见的类名
 
   if (viewer && typeof viewer.innerText === 'string' && viewer.innerText.trim()) {
-    // 使用 innerText 通常能较好地获取屏幕阅读器可见的文本顺序
+    // 使用 innerText 通常能较好地获取屏幕阅读器可见的文本内容
     pdfText = viewer.innerText.trim();
     console.log('[PageTalk] Extracted text from PDF.js viewer DOM using innerText, length:', pdfText.length);
   } else {
@@ -351,14 +383,14 @@ function extractFromPdfJsDom() {
         const spans = layer.querySelectorAll('span');
         let layerText = '';
         spans.forEach(span => {
-          // 检查并确保如果 span 有实际文本内容且不是纯粹的间隔符
+          // 检查确保如果 span 有实际文本内容且不是纯粹的间隔符
           if (span.textContent && span.textContent.trim() !== '') {
             layerText += span.textContent;
           }
         });
         combinedText.push(layerText);
       });
-      pdfText = combinedText.join('\n').trim(); // 用换行符连接不同图层的文本
+      pdfText = combinedText.join('\n').trim(); // 用换行符连接不同层的文本
       if (pdfText) {
         console.log('[PageTalk] Extracted text by combining .textLayer span contents, length:', pdfText.length);
       }
@@ -379,7 +411,7 @@ function extractFromPdfJsDom() {
 
 // --- 主题检测与发送 ---
 /**
- * 检测当前网页的显式或系统颜色模式偏好，并发送给侧边栏 iframe
+ * 检测网页当前的显式或系统颜色模式偏好，并发送给侧边栏 iframe
  */
 function detectAndSendTheme() {
   const iframe = document.getElementById('pagetalk-panel-iframe');
@@ -440,7 +472,7 @@ function detectAndSendTheme() {
       console.log(`[PageTalk content.js] Detected theme via prefers-color-scheme: ${detectedTheme}`);
     } else {
       console.log('[PageTalk content.js] prefers-color-scheme media query is not valid, keeping theme as system/default.');
-      // 在这种情况下，保持 detectedTheme 为 'system' 或 'light' (取决于你的默认偏好)
+      // 在这种情况下，detectedTheme 为 'system' 或 'light' (取决于你的默认偏好)
       detectedTheme = 'light'; // 明确设置为浅色作为最终回退
     }
   }
