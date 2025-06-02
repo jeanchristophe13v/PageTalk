@@ -4,31 +4,50 @@
   top: 0;
   right: 0;
   height: 100vh;
-  width: 350px; /* 初始宽度 */
-  z-index: 2147483647 !important; /* Attempt to ensure top-level stacking */
-  display: none; /* 初始隐藏 */
+  /* width 由 JS 控制并从 localStorage 读取 */
+  z-index: 2147483647 !important;
+  display: none;
   box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  background-color: white; /* 确保有背景色 */
 }
 
 #pagetalk-panel-resizer {
   position: absolute;
-  left: 0;
+  left: -4px; /* 让一部分resizer在面板外部，更容易拖动 */
   top: 0;
-  width: 5px;
+  width: 8px; /* 增加可点击区域 */
   height: 100%;
   cursor: ew-resize;
-  z-index: 100000;
+  z-index: 10; /* 确保 resizer 在 iframe 之上，但在可能的其他插件模态框之下 */
+  /* background-color: rgba(0,0,0,0.01); */ /* 可选：给resizer一点视觉提示，但要确保不影响透明度 */
 }
 
 #pagetalk-panel-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  background-color: white;
 }
 
 /* 当面板打开时，给页面添加右侧边距 */
 body.pagetalk-panel-open {
-  margin-right: 350px; /* 初始值与面板宽度匹配 */
-  transition: margin-right 0.3s ease;
+  /* margin-right 由 JS动态设置 */
+  transition: margin-right 0.2s ease-out;
+}
+
+/* 新增：拖动时禁用页面其他元素事件的样式 */
+body.pagetalk-resizing-active {
+  cursor: ew-resize !important;
+  user-select: none !important;
+  -webkit-user-select: none !important; /* Safari and Chrome */
+  -moz-user-select: none !important;    /* Firefox */
+  -ms-user-select: none !important;     /* IE10+ */
+}
+
+body.pagetalk-resizing-active > *:not(#pagetalk-panel-container) {
+    pointer-events: none !important;
+}
+
+/* 针对PDF阅读器调整的辅助类 */
+.pagetalk-adjusted {
+    transition: margin-right 0.2s ease-out, width 0.2s ease-out;
 }

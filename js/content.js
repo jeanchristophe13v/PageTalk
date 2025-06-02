@@ -5,7 +5,9 @@
 
 // 全局变量，跟踪面板状态
 let panelActive = false;
-let panelWidth = 520;
+let panelWidth = 520; // 默认宽度
+let minPanelWidth = 280; // 新增最小宽度限制
+let maxPanelWidthPercentage = 0.8; // 最大宽度为窗口的80%
 let resizing = false;
 let messageShownForThisPageView = false; // 新增：跟踪当前页面视图是否已显示过提取成功消息
 
@@ -40,37 +42,37 @@ async function getInitializedPdfjsLib() {
 
 // 初始化函数 - 创建面板DOM
 function initPagetalkPanel() {
-  // 如果面板已存在，则不重复创建
   if (document.getElementById('pagetalk-panel-container')) {
     return;
   }
 
-  // 创建面板容器
   const panelContainer = document.createElement('div');
   panelContainer.id = 'pagetalk-panel-container';
-  panelContainer.style.zIndex = '9999'; // 设置 z-index
-  panelContainer.style.width = `${panelWidth}px`; // 明确设置初始宽度
-  panelContainer.style.overflow = 'hidden'; // 防止 iframe 内容溢出圆角
+  panelContainer.style.zIndex = '2147483647'; // 确保 z-index 设置正确
 
-  // 创建调整大小的拖拽器
+  // 从localStorage加载保存的宽度
+  const savedWidth = localStorage.getItem('pagetalkPanelWidth');
+  if (savedWidth) {
+    panelWidth = parseInt(savedWidth, 10);
+    const windowWidth = window.innerWidth;
+    // 确保加载的宽度在允许范围内
+    panelWidth = Math.max(minPanelWidth, Math.min(panelWidth, windowWidth * maxPanelWidthPercentage));
+  }
+  panelContainer.style.width = `${panelWidth}px`;
+  panelContainer.style.overflow = 'hidden';
+
   const resizer = document.createElement('div');
   resizer.id = 'pagetalk-panel-resizer';
 
-  // 创建iframe来加载面板内容
   const iframe = document.createElement('iframe');
   iframe.id = 'pagetalk-panel-iframe';
+  iframe.src = chrome.runtime.getURL('html/sidepanel.html');
+  iframe.style.overflow = 'hidden';
 
-  // 设置iframe源为插件中的HTML文件
-  const extensionURL = chrome.runtime.getURL('html/sidepanel.html');
-  iframe.src = extensionURL;
-  iframe.style.overflow = 'hidden';   // 确保 iframe 内容也被裁剪
-
-  // 组装DOM结构
   panelContainer.appendChild(resizer);
   panelContainer.appendChild(iframe);
   document.body.appendChild(panelContainer);
 
-  // 设置调整大小的事件监听
   setupResizeEvents(resizer, panelContainer);
 }
 
@@ -78,86 +80,91 @@ function initPagetalkPanel() {
 function setupResizeEvents(resizer, panel) {
   resizer.addEventListener('mousedown', function (e) {
     e.preventDefault();
-
-    // 标记当前是否在调整大小
     resizing = true;
 
-    // 记录初始鼠标位置
     const initialX = e.clientX;
-    const initialWidth = parseInt(window.getComputedStyle(panel).width, 10);
-
-    // 获取iframe元素
+    const initialWidth = panelWidth; // 使用当前的 panelWidth
     const iframe = document.getElementById('pagetalk-panel-iframe');
 
-    // 在拖动开始时禁用iframe内容重排
     if (iframe) {
-      iframe.style.pointerEvents = 'none';
+      iframe.style.pointerEvents = 'none'; // 拖动时禁用iframe的鼠标事件
     }
+    document.body.classList.add('pagetalk-resizing-active'); // 添加此类以禁用页面其他元素事件
 
-    // 创建移动事件处理函数
-    function onMouseMove(e) {
-      if (resizing) {
-        // 计算新的宽度 - 修正计算逻辑
-        const diffX = initialX - e.clientX;
-        const newWidth = initialWidth + diffX;
+    function onMouseMove(eMove) {
+      if (!resizing) return;
 
-        // 限制最小宽度为200px，最大宽度为窗口的80%
-        if (newWidth >= 200 && newWidth <= window.innerWidth * 0.8) {
-          // 检查宽度是否真的改变了
-          if (panelWidth !== newWidth) {
-            // 更新面板宽度
-            panelWidth = newWidth;
-            panel.style.width = `${newWidth}px`;
-            document.body.style.marginRight = `${newWidth}px`;
+      const diffX = initialX - eMove.clientX;
+      let newWidth = initialWidth + diffX;
+      
+      const windowWidth = window.innerWidth;
+      // 限制新宽度的范围
+      newWidth = Math.max(minPanelWidth, Math.min(newWidth, windowWidth * maxPanelWidthPercentage));
 
-            // 新增：通知 iframe 面板宽度已改变
-            const iframe = document.getElementById('pagetalk-panel-iframe');
-            if (iframe && iframe.contentWindow) {
-              // 使用 requestAnimationFrame 或 setTimeout 避免过于频繁地发送消息
-              requestAnimationFrame(() => {
-                iframe.contentWindow.postMessage({
-                  action: 'panelResized',
-                  width: panelWidth
-                }, '*');
-              });
+      if (panelWidth !== newWidth) {
+        panelWidth = newWidth;
+        panel.style.width = `${newWidth}px`;
+
+        const currentUrl = window.location.href;
+        const contentType = document.contentType;
+        const isPdfPage = currentUrl.toLowerCase().endsWith('.pdf') ||
+                          contentType === 'application/pdf' ||
+                          document.querySelector('div#viewer.pdfViewer') !== null ||
+                          document.querySelector('div#viewerContainer') !== null ||
+                          document.querySelector('embed[type="application/pdf"]') !== null;
+
+        if (isPdfPage) {
+            // 尝试调整特定PDF容器
+            const pdfJsViewer = document.getElementById('viewerContainer') || document.getElementById('outerContainer');
+            if (pdfJsViewer && pdfJsViewer.classList.contains('pagetalk-adjusted')) {
+                pdfJsViewer.style.marginRight = `${newWidth}px`;
+            } else {
+                const pdfEmbed = document.querySelector('embed[type="application/pdf"].pagetalk-adjusted');
+                const pdfIframe = document.querySelector('iframe[src$=".pdf"].pagetalk-adjusted');
+                const targetPdfElement = pdfEmbed || pdfIframe;
+                if (targetPdfElement) {
+                    targetPdfElement.style.width = `calc(100% - ${newWidth}px)`;
+                }
             }
-          }
+        } else {
+            document.body.style.marginRight = `${newWidth}px`;
         }
-      }
-    }
 
-    // 创建鼠标松开事件处理函数
-    function onMouseUp() {
-      // 停止调整大小
-      resizing = false;
-
-      // 恢复iframe内容交互
-      if (iframe) {
-        iframe.style.pointerEvents = 'auto';
-
-        // 使用postMessage通知iframe内容重新布局，而不是直接调用dispatchEvent
-        setTimeout(() => {
-          if (iframe.contentWindow) {
+        if (iframe && iframe.contentWindow) {
+          requestAnimationFrame(() => { // 使用 rAF 优化性能
             iframe.contentWindow.postMessage({
               action: 'panelResized',
               width: panelWidth
             }, '*');
-          }
-        }, 100);
+          });
+        }
       }
-
-      // 移除事件监听器
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      document.body.style.userSelect = '';
     }
 
-    // 添加鼠标移动事件监听器
+    function onMouseUp() {
+      if (!resizing) return;
+      resizing = false;
+
+      if (iframe) {
+        iframe.style.pointerEvents = 'auto'; // 恢复iframe的鼠标事件
+      }
+      document.body.classList.remove('pagetalk-resizing-active'); // 移除此类
+      
+      localStorage.setItem('pagetalkPanelWidth', panelWidth.toString()); // 保存宽度
+
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.postMessage({ // 发送最终尺寸
+          action: 'panelResized',
+          width: panelWidth
+        }, '*');
+      }
+
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
-
-    // 防止文本选择
-    document.body.style.userSelect = 'none';
   });
 }
 
@@ -166,30 +173,59 @@ function showPanel() {
   const panel = document.getElementById('pagetalk-panel-container');
   if (panel) {
     panel.style.display = 'block';
-    panel.style.width = `${panelWidth}px`; // 确保面板宽度被正确设置
-    document.body.classList.toggle('pagetalk-panel-open', true);
-    document.body.style.marginRight = `${panelWidth}px`;
+    panel.style.width = `${panelWidth}px`;
+    document.body.classList.add('pagetalk-panel-open');
+
+    const currentUrl = window.location.href;
+    const contentType = document.contentType;
+    const isPdfPage = currentUrl.toLowerCase().endsWith('.pdf') ||
+                      contentType === 'application/pdf' ||
+                      document.querySelector('div#viewer.pdfViewer') !== null ||
+                      document.querySelector('div#viewerContainer') !== null ||
+                      document.querySelector('embed[type="application/pdf"]') !== null;
+    
+    if (isPdfPage) {
+      console.log('[PageTalk] PDF page detected. Attempting to adjust PDF viewer.');
+      let adjusted = false;
+      const pdfJsViewer = document.getElementById('viewerContainer') || document.getElementById('outerContainer');
+      if (pdfJsViewer) {
+          // 保存原始样式，如果尚未保存
+          if (!pdfJsViewer.dataset.originalMarginRight) pdfJsViewer.dataset.originalMarginRight = getComputedStyle(pdfJsViewer).marginRight;
+          pdfJsViewer.style.marginRight = `${panelWidth}px`;
+          pdfJsViewer.classList.add('pagetalk-adjusted');
+          adjusted = true;
+          console.log('[PageTalk] Adjusted PDF.js viewer container margin-right.');
+      } else {
+          const pdfEmbed = document.querySelector('embed[type="application/pdf"]');
+          const pdfIframe = document.querySelector('iframe[src$=".pdf"]'); // 简单匹配包含.pdf的iframe
+          const targetPdfElement = pdfEmbed || pdfIframe;
+
+          if (targetPdfElement) {
+              if (!targetPdfElement.dataset.originalWidth) targetPdfElement.dataset.originalWidth = getComputedStyle(targetPdfElement).width;
+              targetPdfElement.style.width = `calc(100% - ${panelWidth}px)`;
+              targetPdfElement.classList.add('pagetalk-adjusted');
+              adjusted = true;
+              console.log('[PageTalk] Adjusted PDF embed/iframe width.');
+          }
+      }
+      if (!adjusted) {
+          console.log('[PageTalk] No specific PDF container found/adjusted. Panel will overlay. Body margin unchanged.');
+      }
+      // 在PDF页面，不修改 document.body.style.marginRight
+    } else {
+      document.body.style.marginRight = `${panelWidth}px`;
+    }
     panelActive = true;
 
-    // 通知面板内容提取页面内容 (保留原有逻辑)
     setTimeout(() => {
       const iframe = document.getElementById('pagetalk-panel-iframe');
       if (iframe && iframe.contentWindow) {
         iframe.contentWindow.postMessage({ action: 'pageContentLoaded' }, '*');
-      }
-    }, 500);
-
-    // 新增：通知 iframe 面板已显示，以便触发 resizeTextarea 和 focus
-    setTimeout(() => {
-      const iframe = document.getElementById('pagetalk-panel-iframe');
-      if (iframe && iframe.contentWindow) {
-        // 修改 action 名称，更明确其意图
         iframe.contentWindow.postMessage({ action: 'panelShownAndFocusInput' }, '*');
       }
-    }, 50); // 轻微延迟确保 iframe 内脚本已准备好
-
-    // 新增：面板显示时，立即检测并发送当前主题
-    setTimeout(detectAndSendTheme, 100); // 稍长延迟确保 iframe 内监听器已设置
+    }, 100);
+  
+    setTimeout(detectAndSendTheme, 150);
   }
 }
 
@@ -198,9 +234,25 @@ function hidePanel() {
   const panel = document.getElementById('pagetalk-panel-container');
   if (panel) {
     panel.style.display = 'none';
-    document.body.classList.toggle('pagetalk-panel-open', false);
-    document.body.style.marginRight = '0';
+    document.body.classList.remove('pagetalk-panel-open');
     panelActive = false;
+
+    // 恢复PDF容器的样式
+    const pdfJsViewer = document.querySelector('.pagetalk-adjusted#viewerContainer, .pagetalk-adjusted#outerContainer');
+    if (pdfJsViewer) {
+        if (pdfJsViewer.dataset.originalMarginRight) pdfJsViewer.style.marginRight = pdfJsViewer.dataset.originalMarginRight;
+        pdfJsViewer.classList.remove('pagetalk-adjusted');
+        console.log('[PageTalk] Restored PDF.js viewer container margin-right.');
+    } else {
+        const targetPdfElement = document.querySelector('embed[type="application/pdf"].pagetalk-adjusted, iframe[src$=".pdf"].pagetalk-adjusted');
+        if (targetPdfElement) {
+            if (targetPdfElement.dataset.originalWidth) targetPdfElement.style.width = targetPdfElement.dataset.originalWidth;
+            targetPdfElement.classList.remove('pagetalk-adjusted');
+            console.log('[PageTalk] Restored PDF embed/iframe width.');
+        }
+    }
+    // 恢复普通页面的body margin
+    document.body.style.marginRight = '0';
   }
 }
 
