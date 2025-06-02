@@ -7,8 +7,14 @@
   /* width 由 JS 控制并从 localStorage 读取 */
   z-index: 2147483647 !important;
   display: none;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-  background-color: white; /* 确保有背景色 */
+  /* 旧的: box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1); */
+  /* 新的: 使用多重阴影增加层次感和柔和的边缘 */
+  /* 第一层是一个非常细微的、几乎不可见的"边框"式阴影，用于清晰边界 */
+  /* 第二层是一个向左的、更柔和的投射阴影，用于增加深度 */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.04), /* 极细的轮廓阴影 */
+    -4px 0 12px rgba(0, 0, 0, 0.08); /* 更柔和的左侧投射阴影 */
+  background-color: white; /* 确保 iframe 容器本身有背景色，以便阴影正确显示 */
 }
 
 #pagetalk-panel-resizer {
