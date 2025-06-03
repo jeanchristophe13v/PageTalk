@@ -619,18 +619,13 @@ export function updateUIElementsWithTranslations(currentTranslations) {
  * @param {function} abortStreamingCallback - Callback to remove abort listener
  */
 export function restoreSendButtonAndInput(state, elements, currentTranslations, sendUserMessageCallback, abortStreamingCallback) {
-    if (!state.isStreaming && !state.userScrolledUpDuringStream) return; // 如果不是流式或者没有向上滚动标记，则提前返回，避免不必要的操作
+    // 强制彻底重置按钮状态，无论流式状态
+    if (state.isStreaming) state.isStreaming = false;
+    if (state.userScrolledUpDuringStream) state.userScrolledUpDuringStream = false;
 
-    console.log("Restoring send button and input state...");
-    
-    if (state.isStreaming) {
-        state.isStreaming = false;
-    }
-    if (state.userScrolledUpDuringStream) {
-        state.userScrolledUpDuringStream = false; // 在流结束后也重置此标记
-    }
-
-    elements.sendMessage.classList.remove('stop-streaming');
+    // 移除所有可能的 loading/sending/stop-streaming 样式
+    elements.sendMessage.classList.remove('stop-streaming', 'sending', 'loading');
+    elements.sendMessage.disabled = false;
     elements.sendMessage.title = _('sendMessageTitle', {}, currentTranslations);
     elements.sendMessage.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -638,7 +633,10 @@ export function restoreSendButtonAndInput(state, elements, currentTranslations, 
         </svg>
     `;
 
-    elements.sendMessage.removeEventListener('click', abortStreamingCallback);
+    // 彻底解绑所有点击事件再重新绑定，防止多次绑定
+    const newSendButton = elements.sendMessage.cloneNode(true);
+    elements.sendMessage.parentNode.replaceChild(newSendButton, elements.sendMessage);
+    elements.sendMessage = newSendButton;
     elements.sendMessage.addEventListener('click', sendUserMessageCallback);
 
     if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {

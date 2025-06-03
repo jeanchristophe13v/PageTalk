@@ -130,6 +130,39 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             delete requestBody.tools;
         }
 
+        // --- 获取更自然的页面标题 ---
+        // 尝试从state中获取页面标题信息，否则使用默认值
+        let pageTitle = '当前页面';
+        
+        // 如果有页面上下文，尝试从中提取标题信息
+        if (stateRef.pageContext) {
+            // 简单的标题提取逻辑 - 查找是否有标题信息
+            const titleMatch = stateRef.pageContext.match(/^(.{1,100})/);
+            if (titleMatch) {
+                const firstLine = titleMatch[1].trim();
+                // 如果第一行看起来像是标题（不太长且不包含大量技术符号）
+                if (firstLine.length > 5 && firstLine.length < 80 && !firstLine.includes('function') && !firstLine.includes('class')) {
+                    pageTitle = firstLine;
+                }
+            }
+        }
+        
+        // 如果pageTitle仍然是默认值，检查URL来推断页面类型
+        if (pageTitle === '当前页面' && typeof window !== 'undefined' && window.location) {
+            const url = window.location.href;
+            if (url.includes('github.com')) {
+                pageTitle = 'GitHub页面';
+            } else if (url.includes('stackoverflow.com')) {
+                pageTitle = 'Stack Overflow页面';
+            } else if (url.includes('youtube.com')) {
+                pageTitle = 'YouTube页面';
+            } else if (url.includes('reddit.com')) {
+                pageTitle = 'Reddit页面';
+            } else if (url.includes('wikipedia.org')) {
+                pageTitle = 'Wikipedia页面';
+            }
+        }
+
         // --- Construct XML System Prompt ---
         let xmlSystemPrompt = `
 <instructions>
@@ -139,25 +172,26 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
     <markdown>Format your entire response using Markdown.</markdown>
   </output_format>
   <context_handling>
-    <general>You will be provided with several pieces of context: the main page content, additional selected web pages, and the ongoing chat history. Integrate information from all relevant sources to formulate your response.</general>
-    <source_attribution>
-      <guideline>When your answer incorporates information directly from the 'main_page_content' or any 'additional_page_context', you should briefly mention the source by its title. This helps the user understand the basis of your answer.</guideline>
-      <format_examples>
-        <example>For instance: "According to the 'Summarized Page Title A' document,..."</example>
-        <example>Or: "Regarding X, the page 'Summarized Page Title B' suggests that..."</example>
-        <example>When referring to the current page: "On this page, it mentions that..." or "根据当前页面的信息..."</example>
-      </format_examples>
-      <natural_integration>Strive for natural integration of these attributions. Avoid rigid, repetitive attributions for every sentence unless crucial for clarity. A single attribution for a paragraph drawing from one source is often sufficient.</natural_integration>
-    </source_attribution>
+    <general>You have access to the current page content, additional web pages (if selected), and ongoing chat history. Use this information naturally to provide comprehensive and relevant answers.</general>
+    <natural_response_style>
+      <guideline>Answer questions naturally and conversationally. When information comes from the provided page content, integrate it seamlessly without mechanical attribution phrases. You know where the information comes from - just use it naturally.</guideline>
+      <avoid_mechanical_phrases>Do not use rigid phrases like "根据Current Page Document" or "According to the provided document". Instead, when appropriate, use natural language like "这个页面提到", "从内容来看", "页面上显示", or simply present the information directly without attribution if it flows naturally.</avoid_mechanical_phrases>
+      <when_to_attribute>Only mention sources explicitly when:
+        1. There are multiple conflicting sources
+        2. The user specifically asks about source verification
+        3. It's crucial for understanding which specific document/page you're referencing
+        Otherwise, let the information speak for itself.</when_to_attribute>
+    </natural_response_style>
     <information_usage>
       <accuracy>Prioritize answering based on the provided context documents. If a question cannot be directly answered from these documents and pertains to general knowledge, you may use your broader knowledge base. Base your answers strictly on verifiable information.</accuracy>
       <conciseness>Be concise yet comprehensive. When appropriate, synthesize information from multiple provided documents or different parts of a single document, rather than listing disparate facts. Aim to provide a cohesive understanding and avoid unnecessary verbosity or repetition.</conciseness>
       <no_fabrication>If an answer cannot be found in the provided contexts or your general knowledge, clearly state this. Do not invent information.</no_fabrication>
-      <important_content_source_clarification>
-        You have been given the full text content for the 'main_page_content' and any pages listed under 'additional_page_contexts'.\\n      When answering questions about these specific documents, you MUST rely exclusively on the text provided within their respective \`<content>\` tags.\\n      DO NOT attempt to access or fetch any external URLs for these documents, even if their titles ('source_title') or any part of the user's query seems to mention a URL related to them.\\n      Your knowledge for these provided documents is the text embedded here. Treat this embedded text as the definitive source.\\n      </important_content_source_clarification>
+      <content_source_handling>
+        You have been given the full text content for the current page and any additional pages selected by the user. When answering questions about these specific documents, rely exclusively on the text provided. Do not attempt to access external URLs. Your knowledge for these provided documents is the embedded text content.
+      </content_source_handling>
     </information_usage>
     <ambiguity_handling>
-      <guideline>If the user's query is unclear or open to multiple interpretations even after considering the chat history and provided page contexts, first try to identify the most probable intent and answer accordingly, perhaps briefly acknowledging the ambiguity. If no single interpretation is significantly more probable, ask the user for clarification before providing a detailed response. Avoid making broad assumptions based on ambiguous queries.</guideline>
+      <guideline>If the user's query is unclear or open to multiple interpretations, first try to identify the most probable intent and answer accordingly. If no single interpretation is significantly more probable, ask for clarification. Avoid making broad assumptions based on ambiguous queries.</guideline>
     </ambiguity_handling>
   </context_handling>
   <multi_turn_dialogue>
@@ -169,15 +203,15 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 </instructions>
 
 <provided_contexts>
-  <main_page_content source_title="Current Page Document">
+  <current_page source_title="${escapeXml(pageTitle)}">
     <content>
-      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No main page content was loaded or provided.'}
+      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No page content was loaded or provided.'}
     </content>
-  </main_page_content>
+  </current_page>
 `;
 
         if (explicitContextTabs && explicitContextTabs.length > 0) {
-            xmlSystemPrompt += `  <additional_page_contexts>
+            xmlSystemPrompt += `  <additional_pages>
 `;
             explicitContextTabs.forEach(tab => {
                 if (tab.content) {
@@ -186,10 +220,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                     xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>Content for this tab was not loaded or is empty.</content>\n    </page>\n`;
                 }
             });
-            xmlSystemPrompt += `  </additional_page_contexts>
-`;
-        } else {
-            xmlSystemPrompt += `  <additional_page_contexts_status>No additional pages were selected for context.</additional_page_contexts_status>
+            xmlSystemPrompt += `  </additional_pages>
 `;
         }
         xmlSystemPrompt += `</provided_contexts>`;
