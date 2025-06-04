@@ -796,3 +796,293 @@ input[type=number] { /* For Firefox */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
 }
 /* JS controls display based on active tab */
+
+/* --- Selection Assistant Settings --- */
+#selection-assistant-settings-section h2 {
+  /* Using existing .settings-sub-content h2 style, but can be overridden if needed */
+}
+
+.foldable-card {
+  background-color: var(--card-background); /* Use card background for the card itself */
+  border-radius: var(--radius-lg); /* Consistent rounded corners */
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid var(--border-color); /* Consistent border */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03); /* Softer shadow */
+  overflow: hidden; /* Ensures content clipping if needed */
+}
+
+.foldable-card-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid transparent; /* Transparent when closed */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.foldable-card-header:hover {
+  background-color: var(--button-hover-bg); /* Subtle hover */
+}
+
+.foldable-card-header.open {
+  border-bottom-color: var(--border-color); /* Visible border when open */
+}
+
+.foldable-card-title {
+  font-weight: 600;
+  font-size: clamp(13px, 3.5vw, 15px); /* Slightly larger title */
+  color: var(--text-color);
+}
+
+.foldable-card-toggle {
+  font-size: 1.3em; /* Larger toggle arrow */
+  transition: transform 0.3s ease;
+  color: var(--text-secondary);
+  padding: 4px; /* Make it easier to click */
+}
+
+.foldable-card-header.open .foldable-card-toggle {
+  transform: rotate(90deg);
+}
+
+.foldable-card-content {
+  padding: var(--spacing-lg);
+  display: none; /* Hidden by default */
+  background-color: var(--background-color); /* Slightly different bg for content area */
+  border-top: 1px solid var(--border-color); /* Separator if header is not bordered when open */
+}
+/* Alternative: If header.open has border, content doesn't need one if same bg */
+.foldable-card-header.open + .foldable-card-content {
+   border-top: none; /* Remove top border if header.open has bottom border */
+}
+
+
+.foldable-card-content.open {
+  display: block;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Styling for form elements within cards, inheriting .setting-group styles */
+.foldable-card-content .setting-group {
+  /* Uses existing .setting-group styles for margin, label etc. */
+  /* Override if specific layout needed, e.g., for side-by-side temp + value */
+}
+
+.foldable-card-content .setting-group select,
+.foldable-card-content .setting-group textarea,
+.foldable-card-content .setting-group input[type="number"] {
+  /* Inherits from .setting-group input/select/textarea */
+  /* Add specific overrides if needed */
+  font-size: clamp(12px, 3vw, 13px); /* Match other settings inputs */
+}
+
+.foldable-card-content .setting-group textarea {
+  min-height: 70px; /* Slightly smaller default for these textareas */
+}
+
+.foldable-card-content .setting-group .temperature-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.foldable-card-content .setting-group .temperature-control input[type="range"] {
+  flex-grow: 1;
+}
+.foldable-card-content .setting-group .temperature-value {
+  min-width: 35px; /* Ensure space for "0.00" */
+  text-align: right;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+
+/* Info text style for "对话" settings explanation */
+.selection-assistant-info-text {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: clamp(11px, 2.8vw, 12px);
+  color: var(--text-secondary);
+  background-color: var(--background-color-secondary); /* Use a subtle background */
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
+  border: 1px solid var(--border-color-soft);
+  line-height: 1.5;
+}
+
+/* --- Selection Assistant Options List Styling --- */
+#selection-options-list-container {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-sm) 0; /* Add some padding around the list */
+}
+
+.selection-option-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.selection-option-item:hover {
+  border-color: var(--primary-color-translucent);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.selection-option-name {
+  font-weight: 500;
+  color: var(--text-color);
+  font-size: clamp(13px, 3.2vw, 14px);
+  flex-grow: 1;
+  margin-right: var(--spacing-md); /* Space before buttons */
+}
+
+.selection-option-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  margin-left: var(--spacing-xs);
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+  border-radius: var(--radius-sm); /* Slight rounding for hover bg */
+}
+.selection-option-actions button:hover {
+  color: var(--text-color);
+  background-color: var(--button-hover-bg);
+}
+
+.selection-option-actions .delete-option-btn:hover {
+  color: var(--error-color);
+  background-color: rgba(234, 67, 53, 0.1);
+}
+
+/* SVG icon styling for buttons */
+.selection-option-actions button svg {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+
+#add-new-selection-option-btn {
+  display: block; /* Make it a block to take full width or specific width */
+  width: 100%; /* Example: full width button */
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  background-color: var(--primary-color-translucent); /* Lighter primary or specific add color */
+  color: var(--primary-color);
+  border: 1px dashed var(--primary-color); /* Dashed border */
+  border-radius: var(--radius-md);
+  text-align: center;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#add-new-selection-option-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-style: solid;
+}
+
+#add-new-selection-option-btn svg { /* If using an icon */
+  margin-right: var(--spacing-xs);
+  vertical-align: middle;
+}
+
+/* --- Styling for Editable Content in Selection Option Item --- */
+.selection-option-item .selection-option-edit-content {
+  display: none; /* Hidden by default */
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--border-color-soft);
+  margin-top: var(--spacing-md);
+  background-color: var(--background-color); /* Slightly different from item bg if item has card-bg */
+}
+
+.selection-option-item .selection-option-edit-content.open {
+  display: block;
+  animation: fadeInOptionEdit 0.3s ease forwards;
+}
+
+@keyframes fadeInOptionEdit {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Use existing .setting-group for layout within edit content */
+.selection-option-edit-content .setting-group {
+  margin-bottom: var(--spacing-md);
+}
+.selection-option-edit-content .setting-group label {
+  font-size: clamp(11px, 2.8vw, 12px); /* Slightly smaller labels */
+  margin-bottom: var(--spacing-xs);
+}
+.selection-option-edit-content .setting-group input[type="text"],
+.selection-option-edit-content .setting-group select,
+.selection-option-edit-content .setting-group textarea,
+.selection-option-edit-content .setting-group input[type="number"] {
+  font-size: clamp(12px, 3vw, 13px);
+  padding: var(--spacing-xs) var(--spacing-sm); /* Smaller padding */
+}
+.selection-option-edit-content .setting-group textarea {
+  min-height: 60px;
+}
+.selection-option-edit-content .setting-group .temperature-control {
+  /* Uses existing .temperature-control styles */
+}
+
+.selection-option-edit-content .chat-type-info {
+  font-size: clamp(12px, 3vw, 13px);
+  color: var(--text-secondary);
+  padding: var(--spacing-sm);
+  background-color: var(--background-color-tertiary);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+/* --- Drag and Drop Styling for Selection Options List --- */
+.selection-option-item .drag-handle {
+  cursor: grab;
+  padding: 0 var(--spacing-sm); /* Adjust padding as needed */
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+.selection-option-item .drag-handle:hover {
+  color: var(--text-color);
+}
+
+.selection-option-item.dragging {
+  opacity: 0.5;
+  background-color: var(--primary-color-translucent); /* Highlight while dragging */
+}
+
+.selection-option-item.drag-over-top {
+  border-top: 2px dashed var(--primary-color);
+}
+
+.selection-option-item.drag-over-bottom {
+  border-bottom: 2px dashed var(--primary-color);
+}
+
+/* Ensure the main header content (name + actions) is grouped correctly */
+.selection-option-item-header-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.selection-option-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-grow: 1;
+}

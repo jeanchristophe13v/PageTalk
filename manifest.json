@@ -26,8 +26,8 @@
   "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["js/lib/Readability.js", "js/content.js"],
-        "css": ["css/content-panel.css"],
+        "js": ["js/lib/Readability.js", "js/translations.js", "js/content.js"],
+        "css": ["css/content-panel.css", "css/options_bar.css", "css/chat_modal.css"],
         "run_at": "document_start"
       }
     ],

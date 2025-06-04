@@ -1,0 +1,421 @@
+/* Options Bar Styling */
+#pagetalk-options-bar {
+  position: absolute;
+  display: none; /* Initially hidden */
+  background-color: rgba(255, 255, 255, 0.9); /* Light mode frosted glass */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* For Safari */
+  border-radius: 16px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2147483647; /* Higher than the mini icon, same as panel container */
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.95) translateY(5px); /* Initial state for animation */
+  transform-origin: top center; /* Animation origin */
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif; /* Common system fonts */
+}
+
+#pagetalk-options-bar.visible {
+  display: flex; /* Will be set to flex by JS when visible */
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+#pagetalk-options-bar img.pagetalk-bar-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  border-radius: 4px; /* Slightly rounded icon */
+}
+
+#pagetalk-options-bar .pagetalk-option-button {
+  padding: 6px 12px;
+  margin: 0 4px;
+  border-radius: 12px; /* Updated to 12px for a softer look */
+  cursor: pointer;
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.05); /* Light mode */
+  color: #333; /* Light mode text */
+  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+#pagetalk-options-bar .pagetalk-option-button:hover {
+  background-color: rgba(0, 0, 0, 0.1); /* Light mode hover */
+  color: #000; /* Light mode text hover */
+}
+
+/* Dark Mode Styles (Placeholder - to be refined with actual theme detection) */
+/* Assuming a class 'pagetalk-dark-mode' is added to html or body */
+.pagetalk-dark-mode #pagetalk-options-bar {
+  background-color: rgba(40, 40, 40, 0.9); /* Dark mode frosted glass */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pagetalk-dark-mode #pagetalk-options-bar .pagetalk-option-button {
+  background-color: rgba(255, 255, 255, 0.1); /* Dark mode */
+  color: #eee; /* Dark mode text */
+}
+
+.pagetalk-dark-mode #pagetalk-options-bar .pagetalk-option-button:hover {
+  background-color: rgba(255, 255, 255, 0.2); /* Dark mode hover */
+  color: #fff; /* Dark mode text hover */
+}
+
+/* Add a class for when the options bar is positioned above the icon */
+#pagetalk-options-bar.positioned-above {
+  transform-origin: bottom center; /* Animation origin for appearing above */
+}
+
+/* Styling for the mini-icon itself, if it needs adjustment when bar is active */
+#pagetalk-selection-magic-icon.active {
+  /* Example: could make it slightly more prominent or change appearance */
+  /* box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.5); */
+}
+
+/* --- Interpret Modal Styling --- */
+#pagetalk-interpret-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  display: none; /* Initially hidden */
+  width: 450px; /* Default width */
+  max-width: 90vw; /* Max width related to viewport */
+  max-height: 60vh; /* Default max height */
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  z-index: 2147483648; /* Higher than options bar and panel */
+  opacity: 0;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  display: flex; /* Use flex for internal layout */
+  flex-direction: column; /* Stack header, content, footer */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+#pagetalk-interpret-modal.visible {
+  display: flex;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#pagetalk-interpret-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+#pagetalk-interpret-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+#pagetalk-interpret-modal-close {
+  font-size: 24px;
+  font-weight: 300;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 5px; /* Easier to click */
+}
+#pagetalk-interpret-modal-close:hover {
+  color: #333;
+}
+
+
+#pagetalk-interpret-modal-content {
+  flex-grow: 1; /* Takes available space */
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap; /* Respect newlines and spaces from AI */
+  padding-right: 10px; /* For scrollbar */
+}
+
+#pagetalk-interpret-modal-content .loading-indicator {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+}
+/* Simple dot animation for loading */
+.loading-indicator::after {
+  content: ' .';
+  animation: dots 1s steps(5, end) infinite;
+}
+@keyframes dots {
+  0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+  40% { color: #777; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0);}
+  60% { text-shadow: .25em 0 0 #777, .5em 0 0 rgba(0,0,0,0);}
+  80%, 100% { text-shadow: .25em 0 0 #777, .5em 0 0 #777;}
+}
+
+
+#pagetalk-interpret-modal-footer {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: flex-end; /* Align buttons to the right */
+  gap: 8px;
+}
+
+#pagetalk-interpret-modal-footer button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+#pagetalk-interpret-modal-footer button.copy-button {
+  background-color: #007aff; /* Blue */
+  color: white;
+}
+#pagetalk-interpret-modal-footer button.copy-button:hover {
+  background-color: #005ecb;
+}
+
+#pagetalk-interpret-modal-footer button.regenerate-button {
+  background-color: #f0f0f0; /* Light gray */
+  color: #333;
+}
+#pagetalk-interpret-modal-footer button.regenerate-button:hover {
+  background-color: #e0e0e0;
+}
+
+
+/* Dark Mode for Modal */
+.pagetalk-dark-mode #pagetalk-interpret-modal {
+  background-color: rgba(40, 40, 40, 0.9);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-header {
+  border-bottom-color: rgba(255,255,255,0.15);
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-title {
+  color: #eee;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-close {
+  color: #aaa;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-close:hover {
+  color: #eee;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-content {
+  color: #ddd;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-content .loading-indicator {
+  color: #bbb;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-footer {
+  border-top-color: rgba(255,255,255,0.15);
+}
+
+.pagetalk-dark-mode #pagetalk-interpret-modal-footer button.copy-button {
+  background-color: #0a84ff;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-footer button.copy-button:hover {
+  background-color: #0060df;
+}
+
+.pagetalk-dark-mode #pagetalk-interpret-modal-footer button.regenerate-button {
+  background-color: #555;
+  color: #eee;
+}
+.pagetalk-dark-mode #pagetalk-interpret-modal-footer button.regenerate-button:hover {
+  background-color: #666;
+}
+
+/* --- Translate Modal Styling (Similar to Interpret Modal) --- */
+#pagetalk-translate-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.95);
+  display: none; /* Initially hidden */
+  width: 450px;
+  max-width: 90vw;
+  max-height: 60vh;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  z-index: 2147483648; /* Same as interpret modal, manage visibility in JS */
+  opacity: 0;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+#pagetalk-translate-modal.visible {
+  display: flex;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#pagetalk-translate-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+#pagetalk-translate-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+#pagetalk-translate-modal-close {
+  font-size: 24px;
+  font-weight: 300;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 5px;
+}
+#pagetalk-translate-modal-close:hover {
+  color: #333;
+}
+
+#pagetalk-translate-modal-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  padding-right: 10px;
+}
+
+#pagetalk-translate-modal-content .loading-indicator {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+}
+#pagetalk-translate-modal-content .loading-indicator::after { /* Re-use dot animation */
+  content: ' .';
+  animation: dots 1s steps(5, end) infinite;
+}
+
+
+#pagetalk-translate-modal-footer {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#pagetalk-translate-modal-footer button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+#pagetalk-translate-modal-footer button.copy-button {
+  background-color: #007aff;
+  color: white;
+}
+#pagetalk-translate-modal-footer button.copy-button:hover {
+  background-color: #005ecb;
+}
+
+#pagetalk-translate-modal-footer button.regenerate-button {
+  background-color: #f0f0f0;
+  color: #333;
+}
+#pagetalk-translate-modal-footer button.regenerate-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Dark Mode for Translate Modal */
+.pagetalk-dark-mode #pagetalk-translate-modal {
+  background-color: rgba(40, 40, 40, 0.9);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-header {
+  border-bottom-color: rgba(255,255,255,0.15);
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-title {
+  color: #eee;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-close {
+  color: #aaa;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-close:hover {
+  color: #eee;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-content {
+  color: #ddd;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-content .loading-indicator {
+  color: #bbb;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-footer {
+  border-top-color: rgba(255,255,255,0.15);
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-footer button.copy-button {
+  background-color: #0a84ff;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-footer button.copy-button:hover {
+  background-color: #0060df;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-footer button.regenerate-button {
+  background-color: #555;
+  color: #eee;
+}
+.pagetalk-dark-mode #pagetalk-translate-modal-footer button.regenerate-button:hover {
+  background-color: #666;
+}
+
+/* --- Generic Modal Resize Handle --- */
+.modal-resize-handle {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  /* background-color: rgba(0,0,0,0.1); For debugging handle position */
+  z-index: 1; /* Ensure it's above other modal content if overlapping */
+}
+/* Optional: Style with an icon or a specific look */
+.modal-resize-handle::after {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 10px 10px; /* Creates a triangle */
+  border-color: transparent transparent rgba(0,0,0,0.3) transparent;
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+}
+
+.pagetalk-dark-mode .modal-resize-handle::after {
+  border-color: transparent transparent rgba(255,255,255,0.3) transparent;
+}

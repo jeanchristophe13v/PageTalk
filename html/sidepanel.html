@@ -126,9 +126,10 @@
                 <div class="settings-container">
                     <!-- 设置内部导航 -->
                     <div class="settings-nav">
-                        <button class="settings-nav-btn" data-subtab="agent">助手</button>
-                        <button class="settings-nav-btn" data-subtab="model">模型</button>
-                        <button class="settings-nav-btn active" data-subtab="general">通用</button>
+                        <button class="settings-nav-btn active" data-subtab="general" data-i18n="generalSettingsNav">通用</button>
+                        <button class="settings-nav-btn" data-subtab="selection-assistant-settings" data-i18n="selectionAssistantSettingsNav">划词助手</button>
+                        <button class="settings-nav-btn" data-subtab="model" data-i18n="modelSettingsNav">模型</button>
+                        <button class="settings-nav-btn" data-subtab="agent" data-i18n="agentSettingsNav">助手</button>
                         <!-- 添加关闭按钮 -->
                          <button id="close-panel-settings" title="关闭面板" class="action-button close-panel-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -139,31 +140,36 @@
 
                     <!-- 通用设置 -->
                     <div id="settings-general" class="settings-sub-content active">
-                        <h2>通用设置</h2>
+                        <h2 data-i18n="generalSettingsTitle">通用设置</h2>
                         <div class="setting-group">
-                            <label for="language-select">语言：</label>
+                            <label for="language-select" data-i18n="languageLabel">语言：</label>
                             <div class="export-controls">
                                 <select id="language-select">
-                                    <option value="zh-CN">简体中文</option>
-                                    <option value="en">English</option>
+                                    <option value="zh-CN" data-i18n="languageChinese">简体中文</option>
+                                    <option value="en" data-i18n="languageEnglish">English</option>
                                 </select>
                             </div>
                         </div>
                         <div class="setting-group export-setting">
-                            <label for="export-format">导出聊天记录：</label>
+                            <label for="export-format" data-i18n="exportChatHistoryLabel">导出聊天记录：</label>
                             <div class="export-controls">
                                 <select id="export-format">
-                                    <option value="markdown">Markdown</option>
-                                    <option value="text">Text</option>
+                                    <option value="markdown" data-i18n="exportMarkdown">Markdown</option>
+                                    <option value="text" data-i18n="exportText">Text</option>
                                 </select>
-                                <button id="export-chat-history" class="action-button">导出</button>
+                                <button id="export-chat-history" class="action-button" data-i18n="exportButtonLabel">导出</button>
                             </div>
                         </div>
                     </div>
 
+                    <!-- 划词助手设置 -->
+                    <div id="selection-assistant-settings-section" class="settings-sub-content">
+                        <!-- Content will be populated by js/settings.js -->
+                    </div>
+
                     <!-- Agent 设置 -->
                     <div id="settings-agent" class="settings-sub-content">
-                        <h2>助手设置</h2>
+                        <h2 data-i18n="agentSettingsTitle">助手设置</h2>
                         <!-- 助手列表区域 -->
                         <div class="agents-list-container">
                             <div class="agents-list-header">
@@ -206,10 +212,10 @@
                         <h2>模型设置</h2>
                         <div class="model-settings-group-box">
                             <div class="setting-group">
-                                <label for="api-key">Gemini API Key:</label>
+                                <label for="api-key" data-i18n="apiKeyLabel">Gemini API Key:</label>
                                 <div class="api-key-input-container">
-                                    <input type="password" id="api-key" placeholder="输入您的API Key">
-                                    <button id="toggle-api-key" class="toggle-api-key-button" type="button" title="Toggle API Key visibility">
+                                    <input type="password" id="api-key" data-i18n-placeholder="apiKeyInputPlaceholder">
+                                    <button id="toggle-api-key" class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitle">
                                         <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
                                             <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
                                             <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
@@ -224,20 +230,14 @@
                                 <p class="hint"><span data-i18n="apiKeyHint"></span>  <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
                             </div>
                             <div class="setting-group">
-                                <label for="model-selection">模型：</label>
+                                <label for="model-selection" data-i18n="modelLabel">模型：</label>
                                 <select id="model-selection">
-                                    <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                                    <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking</option>
-                                    <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05</option>
-                                    <option value="gemini-exp-1206">gemini-exp-1206</option>
-                                    <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
-                                    <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
-                                    <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
+                                    <!-- Options will be populated by js/settings.js -->
                                 </select>
                             </div>
                         </div>
                         <div class="model-save-area">
-                            <button id="save-model-settings" class="save-btn">保存</button>
+                            <button id="save-model-settings" class="save-btn" data-i18n="saveButtonLabel">保存</button>
                             <div id="connection-status" class="connection-status"></div>
                         </div>
                     </div>
