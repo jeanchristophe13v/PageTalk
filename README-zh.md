@@ -95,3 +95,6 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
     *   **通用:** 切换语言/主题，导出聊天记录。
     *   **助手:** 管理助手，导入/导出配置。
     *   **模型:** 设置 API 密钥，选择默认模型。
+
+## 💗感谢DartNode的支持 ~
+[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
