@@ -98,3 +98,6 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
     *   **General:** Switch Language/Theme, Export Chat History.
     *   **Agents:** Manage agents, Import/Export configurations.
     *   **Model:** Set API Key, select default model.
+ 
+
+[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
