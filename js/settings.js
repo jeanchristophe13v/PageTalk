@@ -47,13 +47,17 @@ function detectUserLanguage() {
  * @param {function} applyThemeCallback - Callback
  */
 export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback) {
-    chrome.storage.sync.get(['apiKey', 'model', 'language'], (syncResult) => {
+    chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress'], (syncResult) => {
         // API Key and Model
         if (syncResult.apiKey) state.apiKey = syncResult.apiKey;
         if (syncResult.model) state.model = syncResult.model;
         if (elements.apiKey) elements.apiKey.value = state.apiKey;
         if (elements.modelSelection) elements.modelSelection.value = state.model;
         if (elements.chatModelSelection) elements.chatModelSelection.value = state.model;
+
+        // Proxy Address
+        if (syncResult.proxyAddress) state.proxyAddress = syncResult.proxyAddress;
+        if (elements.proxyAddress) elements.proxyAddress.value = state.proxyAddress || '';
 
         // Language - 检测浏览器语言
         if (syncResult.language) {
@@ -92,9 +96,23 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
 export async function saveModelSettings(showToastNotification = true, state, elements, showConnectionStatusCallback, showToastCallback, updateConnectionIndicatorCallback, currentTranslations) {
     const apiKey = elements.apiKey.value.trim();
     const model = elements.modelSelection.value;
+    const proxyAddress = elements.proxyAddress ? elements.proxyAddress.value.trim() : ''; // Get proxy address
+
+    // Update state with proxy address regardless of API key presence
+    state.proxyAddress = proxyAddress;
 
     if (!apiKey) {
-        showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error'); // Changed to showToastCallback
+        // Still save proxy address if API key is missing, but show API key error
+        chrome.storage.sync.set({ proxyAddress: state.proxyAddress }, () => {
+            if (chrome.runtime.lastError) {
+                console.error("Error saving proxy address:", chrome.runtime.lastError);
+                showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
+            } else {
+                // Optionally, notify that proxy was saved if desired, but primary error is API key
+                console.log('Proxy address saved while API key is missing.');
+            }
+        });
+        showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
         return;
     }
 
@@ -105,39 +123,61 @@ export async function saveModelSettings(showToastNotification = true, state, ele
 
     let testResult;
     try {
-        testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model);
+        // Pass proxyAddress to testAndVerifyApiKey
+        testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model, proxyAddress);
 
         if (testResult.success) {
             state.apiKey = apiKey;
             state.model = model;
             state.isConnected = true;
 
-            chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, () => {
+            // Save all three settings: API key, model, and proxy address
+            chrome.storage.sync.set({
+                apiKey: state.apiKey,
+                model: state.model,
+                proxyAddress: state.proxyAddress
+            }, () => {
                 if (chrome.runtime.lastError) {
-                    console.error("Error saving model settings:", chrome.runtime.lastError);
-                    showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
-                    state.isConnected = false; // Revert status
+                    console.error("Error saving model and proxy settings:", chrome.runtime.lastError);
+                    showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
+                    state.isConnected = false; // Revert connection status on save error
                 } else {
                     if (showToastNotification) {
-                        showToastCallback(testResult.message, 'success'); // 仅在需要时弹出API验证成功提示
-                        // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // 可选：额外的“已保存”提示
+                        // Show API verification success, then general saved message
+                        showToastCallback(testResult.message, 'success');
+                        // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // Redundant if testResult.message is clear
                     }
-                    // Sync chat model selector
                     if (elements.chatModelSelection) {
                         elements.chatModelSelection.value = state.model;
                     }
                 }
-                updateConnectionIndicatorCallback(); // Update footer indicator
+                updateConnectionIndicatorCallback();
             });
         } else {
-            // Test failed
+            // Test failed, but still save proxy if it was entered
             state.isConnected = false;
-            showToastCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error'); // Changed to showToastCallback
+            chrome.storage.sync.set({ proxyAddress: state.proxyAddress }, () => {
+                 if (chrome.runtime.lastError) {
+                    console.error("Error saving proxy address after failed API test:", chrome.runtime.lastError);
+                    // Potentially show a more specific error for proxy save failure here
+                } else {
+                    console.log('Proxy address saved even though API test failed.');
+                }
+            });
+            showToastCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error');
             updateConnectionIndicatorCallback();
         }
     } catch (error) {
         console.error("Error during API key test:", error);
         state.isConnected = false;
+        // Also save proxy in case of exception during API test
+        chrome.storage.sync.set({ proxyAddress: state.proxyAddress }, () => {
+            if (chrome.runtime.lastError) {
+               console.error("Error saving proxy address after API test exception:", chrome.runtime.lastError);
+           } else {
+               console.log('Proxy address saved after API test exception.');
+           }
+       });
         showToastCallback(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
         updateConnectionIndicatorCallback();
     } finally {

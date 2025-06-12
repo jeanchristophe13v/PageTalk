@@ -78,7 +78,8 @@ const state = {
     selectedContextTabs: [], // 新增：存储用户选择的用于上下文的标签页
     availableTabsForSelection: [], // 新增：存储查询到的供用户选择的标签页
     isTabSelectionPopupOpen: false, // 新增：跟踪标签页选择弹窗的状态
-    locallyIgnoredTabs: {}, // 新增: 跟踪用户从特定消息上下文中移除的标签页 { messageId: [tabId1, tabId2] }
+        locallyIgnoredTabs: {}, // 新增: 跟踪用户从特定消息上下文中移除的标签页 { messageId: [tabId1, tabId2] },
+        proxyAddress: '', // Ensure this line is present or added
 };
 
 // Default settings (used by agent module)
@@ -159,6 +160,7 @@ const elements = {
     // Footer Status Bar
     contextStatus: document.getElementById('context-status'),
     connectionIndicator: document.getElementById('connection-indicator'),
+    proxyAddress: document.getElementById('proxy-address'), // Ensure this line is present or added
 };
 
 // --- Translation ---

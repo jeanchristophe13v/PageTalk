@@ -8,47 +8,81 @@ const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
  * Internal helper to test API key and model validity.
  * @param {string} apiKey - The API key to test.
  * @param {string} model - The model to test against. Can be a "logical" model name.
+ * @param {string} [proxyAddress] - Optional proxy address.
  * @returns {Promise<{success: boolean, message: string}>} - Object indicating success and a message.
  */
-async function _testAndVerifyApiKey(apiKey, model) {
-    try {
-        let apiTestModel = model;
-        // Map logical model names to actual API model names for testing if necessary
-        if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
-            apiTestModel = 'gemini-2.5-flash-preview-05-20';
-        }
+function _testAndVerifyApiKey(apiKey, model, proxyAddress) {
+    // Determine the actual model name for the API test
+    let apiTestModel = model;
+    if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
+        apiTestModel = 'gemini-2.5-flash-preview-05-20';
+    }
 
-        const requestBody = {
-            contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
-        };
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+    const requestBody = {
+        contents: [{ role: 'user', parts: [{ text: 'test' }] }]
+    };
+    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${apiKey}`;
+
+    if (proxyAddress && proxyAddress.trim() !== '') {
+        // Use proxy via background script
+        return new Promise((resolve, reject) => {
+            const fetchOptions = {
+                url: targetUrl,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            };
+
+            chrome.runtime.sendMessage(
+                { action: 'proxyFetch', fetchOptions: fetchOptions, proxyAddress: proxyAddress },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('Error sending/receiving from background for API test:', chrome.runtime.lastError.message);
+                        reject({ success: false, message: `Proxy communication error: ${chrome.runtime.lastError.message}` });
+                        return;
+                    }
+                    if (response && response.success) {
+                        // Assuming background's success means the fetch itself was OK.
+                        // Further validation of 'response.data' might be needed if the proxy can return 200 for proxy errors.
+                        // For now, this aligns with the simplified success check.
+                        resolve({ success: true, message: 'Connection established via proxy! API Key potentially verified.' });
+                    } else {
+                        reject({ success: false, message: `Connection failed via proxy: ${response.error || 'Unknown error'}` });
+                    }
+                }
+            );
         });
+    } else {
+        // Direct fetch (original logic, but ensured it returns a Promise for consistency)
+        return (async () => {
+            try {
+                const response = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody)
+                });
 
-        if (response.ok) {
-            return { success: true, message: 'Connection established ! API Key verified.' };
-        } else {
-            // Try to parse error, provide fallback message
-            const error = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
-            const errorMessage = error.error?.message || `HTTP error ${response.status}`;
-            // Check for specific API key related errors if possible (example)
-            if (errorMessage.includes('API key not valid')) {
-                return { success: false, message: 'Connection failed: API key not valid. Please check your key.' };
+                if (response.ok) {
+                    return { success: true, message: 'Connection established! API Key verified.' };
+                } else {
+                    const error = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
+                    const errorMessage = error.error?.message || `HTTP error ${response.status}`;
+                    if (errorMessage.includes('API key not valid')) {
+                        return { success: false, message: 'Connection failed: API key not valid. Please check your key.' };
+                    }
+                    return { success: false, message: `Connection failed: ${errorMessage}` };
+                }
+            } catch (error) {
+                console.error('Direct API Test Error:', error);
+                let friendlyMessage = 'Connection failed: Network error or server unreachable.';
+                if (error instanceof TypeError && error.message.includes('fetch')) {
+                    friendlyMessage = 'Connection failed: Could not reach the server. Check your internet connection.';
+                } else if (error.message) {
+                    friendlyMessage = `Connection failed: ${error.message}`;
+                }
+                return { success: false, message: friendlyMessage };
             }
-            return { success: false, message: `Connection failed: ${errorMessage}` };
-        }
-    } catch (error) {
-        console.error('API Test Error:', error);
-        // Provide a more user-friendly network error message
-        let friendlyMessage = 'Connection failed: Network error or server unreachable.';
-        if (error instanceof TypeError && error.message.includes('fetch')) {
-            friendlyMessage = 'Connection failed: Could not reach the server. Check your internet connection.';
-        } else if (error.message) {
-            friendlyMessage = `Connection failed: ${error.message}`;
-        }
-        return { success: false, message: friendlyMessage };
+        })();
     }
 }
 
@@ -272,24 +306,112 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             return;
         }
 
-        const endpoint = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`; // Use actual apiModelName
+        const proxyAddress = stateRef.proxyAddress;
 
+        if (proxyAddress && proxyAddress.trim() !== '') {
+            // Using proxy via background script - NO SSE STREAMING
+            const endpointForBackground = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`;
+            const fetchOptions = {
+                url: endpointForBackground,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            };
+
+            // No AbortController signal for proxied fetch in this version
+            if (window.GeminiAPI.currentAbortController) {
+                // Detach from global scope as we can't abort this specific proxied call easily
+                window.GeminiAPI.currentAbortController = null;
+                console.log("AbortController detached for proxied call.");
+            }
+
+            chrome.runtime.sendMessage(
+                { action: 'proxyFetch', fetchOptions: fetchOptions, proxyAddress: proxyAddress },
+                (response) => {
+                    if (thinkingElement && thinkingElement.parentNode) {
+                        thinkingElement.remove();
+                    }
+
+                    if (chrome.runtime.lastError) {
+                        console.error('Proxy fetch message error:', chrome.runtime.lastError.message);
+                        const errorMsg = `Proxy communication error: ${chrome.runtime.lastError.message}`;
+                        const errorElement = uiCallbacks.addMessageToChat(errorMsg, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
+                        if (errorElement && errorElement.dataset.messageId) {
+                             stateRef.chatHistory.push({ role: 'model', parts: [{text: errorMsg}], id: errorElement.dataset.messageId});
+                        } else {
+                             stateRef.chatHistory.push({ role: 'model', parts: [{text: errorMsg}]}); // Fallback
+                        }
+                        if (uiCallbacks.restoreSendButtonAndInput) uiCallbacks.restoreSendButtonAndInput();
+                        return;
+                    }
+
+                    if (response && response.success) {
+                        const fullTextResponse = response.data;
+
+                        let msgElement = uiCallbacks.addMessageToChat(null, 'bot', { isStreaming: false, insertAfterElement: insertResponse ? insertAfterElement : null });
+                        uiCallbacks.updateStreamingMessage(msgElement, fullTextResponse); // Show full response at once
+                        uiCallbacks.finalizeBotMessage(msgElement, fullTextResponse);
+
+                        const botMsgId = msgElement.dataset.messageId;
+                        const newAiResponse = { role: 'model', parts: [{ text: fullTextResponse }], id: botMsgId };
+
+                        if (insertResponse && targetInsertionIndex !== null) {
+                            // If inserting, we assume a placeholder might not exist or needs replacement.
+                            // Check if a placeholder with the same ID was already added
+                            const existingPlaceholderIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMsgId);
+                            if (existingPlaceholderIndex !== -1) {
+                                stateRef.chatHistory[existingPlaceholderIndex] = newAiResponse;
+                            } else {
+                                stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponse);
+                            }
+                        } else {
+                            // If appending, check if a placeholder was added
+                             const existingPlaceholderIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMsgId);
+                            if (existingPlaceholderIndex !== -1 && stateRef.chatHistory[existingPlaceholderIndex].parts[0].text === '') { // Check if it's an empty placeholder
+                                stateRef.chatHistory[existingPlaceholderIndex] = newAiResponse;
+                            } else {
+                                stateRef.chatHistory.push(newAiResponse);
+                            }
+                        }
+
+                    } else {
+                        const errorMsg = `Error via proxy: ${response.error || 'Unknown error'}`;
+                        const errorElement = uiCallbacks.addMessageToChat(errorMsg, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
+                         if (errorElement && errorElement.dataset.messageId) {
+                             stateRef.chatHistory.push({ role: 'model', parts: [{text: errorMsg}], id: errorElement.dataset.messageId});
+                        } else {
+                             stateRef.chatHistory.push({ role: 'model', parts: [{text: errorMsg}]}); // Fallback
+                        }
+                    }
+                    if (uiCallbacks.restoreSendButtonAndInput) uiCallbacks.restoreSendButtonAndInput();
+                     // Clear images/videos if this was an initial send (not a regeneration)
+                    if ((stateRef.images.length > 0 || stateRef.videos.length > 0) && !insertResponse && historyForApi === null) {
+                        if (stateRef.images.length > 0) uiCallbacks.clearImages();
+                        if (stateRef.videos.length > 0) uiCallbacks.clearVideos();
+                    }
+                }
+            );
+            // Important: Since sendMessage is async, and this path doesn't use the original SSE loop,
+            // we must return here to prevent the original SSE logic from executing.
+            return;
+        }
+
+        // Original direct fetch logic with SSE streaming (if no proxy)
+        const endpoint = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`;
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
-            signal: controller.signal // Pass signal to fetch
+            signal: controller.signal
         });
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}, unable to parse error response.` } }));
             const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
-            // Log the actual model being used and the error for debugging
             console.error(`API Error with model ${apiModelName} (selected: ${stateRef.model}): ${errorMessage}`, errorData);
             throw new Error(errorMessage);
         }
 
-        // 处理 SSE 流
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
