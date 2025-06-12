@@ -105,7 +105,10 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
 - **Settings Tab:** (Contains General, Agents, Model sub-tabs)
     *   **General:** Switch Language/Theme, Export Chat History.
     *   **Agents:** Manage agents, Import/Export configurations.
-    *   **Model:** Set API Key, select default model.
+    *   **Model:** Set API Key, select default model, and optionally configure a **Custom API Endpoint**.
+        *   **Custom API Endpoint:** This setting allows you to route Google Gemini API requests through an intermediary service (e.g., OneAPI). This can be useful for users in regions with restricted access to Google's direct APIs or for those who wish to leverage features like API key rotation, caching, or advanced logging provided by such services.
+        *   **Example:** `https://my-oneapi-instance.com/v1beta` (ensure the path matches what your intermediary service expects for Gemini).
+        *   **Default:** If left empty, the extension uses `https://generativelanguage.googleapis.com/v1beta`.
  
 ## 💗 Thanks support from DartNode 
 

@@ -47,13 +47,24 @@ function detectUserLanguage() {
  * @param {function} applyThemeCallback - Callback
  */
 export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback) {
-    chrome.storage.sync.get(['apiKey', 'model', 'language'], (syncResult) => {
+    chrome.storage.sync.get(['apiKey', 'model', 'language', 'customApiEndpoint'], (syncResult) => {
         // API Key and Model
         if (syncResult.apiKey) state.apiKey = syncResult.apiKey;
         if (syncResult.model) state.model = syncResult.model;
         if (elements.apiKey) elements.apiKey.value = state.apiKey;
         if (elements.modelSelection) elements.modelSelection.value = state.model;
         if (elements.chatModelSelection) elements.chatModelSelection.value = state.model;
+
+        // Custom API Endpoint
+        const defaultEndpoint = 'https://generativelanguage.googleapis.com/v1beta';
+        if (syncResult.customApiEndpoint) {
+            state.customApiEndpoint = syncResult.customApiEndpoint;
+        } else {
+            state.customApiEndpoint = defaultEndpoint;
+        }
+        if (elements.customApiEndpointInput) {
+            elements.customApiEndpointInput.value = state.customApiEndpoint;
+        }
 
         // Language - 检测浏览器语言
         if (syncResult.language) {
@@ -92,6 +103,12 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
 export async function saveModelSettings(showToastNotification = true, state, elements, showConnectionStatusCallback, showToastCallback, updateConnectionIndicatorCallback, currentTranslations) {
     const apiKey = elements.apiKey.value.trim();
     const model = elements.modelSelection.value;
+    let customApiEndpoint = elements.customApiEndpointInput.value.trim();
+
+    if (!customApiEndpoint) {
+        customApiEndpoint = 'https://generativelanguage.googleapis.com/v1beta';
+    }
+    state.customApiEndpoint = customApiEndpoint; // Update state
 
     if (!apiKey) {
         showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error'); // Changed to showToastCallback
@@ -105,14 +122,18 @@ export async function saveModelSettings(showToastNotification = true, state, ele
 
     let testResult;
     try {
-        testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model);
+        // Pass customApiEndpoint to the test function if it's designed to accept it.
+        // Assuming for now that testAndVerifyApiKey might be enhanced separately
+        // or that the API object (window.GeminiAPI) will internally use state.customApiEndpoint if set.
+        testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model, state.customApiEndpoint);
 
         if (testResult.success) {
             state.apiKey = apiKey;
             state.model = model;
+            // state.customApiEndpoint is already updated above
             state.isConnected = true;
 
-            chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, () => {
+            chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model, customApiEndpoint: state.customApiEndpoint }, () => {
                 if (chrome.runtime.lastError) {
                     console.error("Error saving model settings:", chrome.runtime.lastError);
                     showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback

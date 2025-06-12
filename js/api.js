@@ -8,9 +8,10 @@ const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
  * Internal helper to test API key and model validity.
  * @param {string} apiKey - The API key to test.
  * @param {string} model - The model to test against. Can be a "logical" model name.
+ * @param {string} [customApiEndpoint] - Optional custom API endpoint.
  * @returns {Promise<{success: boolean, message: string}>} - Object indicating success and a message.
  */
-async function _testAndVerifyApiKey(apiKey, model) {
+async function _testAndVerifyApiKey(apiKey, model, customApiEndpoint) {
     try {
         let apiTestModel = model;
         // Map logical model names to actual API model names for testing if necessary
@@ -18,10 +19,12 @@ async function _testAndVerifyApiKey(apiKey, model) {
             apiTestModel = 'gemini-2.5-flash-preview-05-20';
         }
 
+        const baseUrlToUse = (customApiEndpoint && customApiEndpoint.trim() !== '') ? customApiEndpoint.trim() : API_BASE_URL;
+
         const requestBody = {
             contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
         };
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${apiKey}`, {
+        const response = await fetch(`${baseUrlToUse}/models/${apiTestModel}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -272,7 +275,8 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             return;
         }
 
-        const endpoint = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`; // Use actual apiModelName
+        const baseUrlToUse = (stateRef.customApiEndpoint && stateRef.customApiEndpoint.trim() !== '') ? stateRef.customApiEndpoint.trim() : API_BASE_URL;
+        const endpoint = `${baseUrlToUse}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`; // Use actual apiModelName
 
         const response = await fetch(endpoint, {
             method: 'POST',

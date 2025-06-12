@@ -104,7 +104,10 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
 - **设置标签页:** (包含通用、助手、模型子标签页)
     *   **通用:** 切换语言/主题，导出聊天记录。
     *   **助手:** 管理助手，导入/导出配置。
-    *   **模型:** 设置 API 密钥，选择默认模型。
+    *   **模型:** 设置 API 密钥，选择默认模型，以及可选的 **自定义 API 端点**。
+        *   **自定义 API 端点 (Custom API Endpoint):** 此设置允许您将 Google Gemini API 请求通过中间服务（例如 OneAPI）进行路由。这对于那些所在地区直接访问 Google API 受限的用户，或者希望利用这类中间服务提供的 API 密钥轮换、缓存或高级日志记录等功能的用户来说非常有用。
+        *   **示例:** `https://your-oneapi-instance.com/v1beta` (请确保路径与您的中间服务为 Gemini API 所期望的路径一致)。
+        *   **默认值:** 如果留空，插件将使用默认端点 `https://generativelanguage.googleapis.com/v1beta`。
 
 ## 💗感谢DartNode的支持 ~
 [![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
