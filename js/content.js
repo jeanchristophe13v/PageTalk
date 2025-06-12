@@ -174,6 +174,13 @@ function showPanel() {
   if (panel) {
     panel.style.display = 'block';
     panel.style.width = `${panelWidth}px`;
+
+    // Defensively re-apply essential styles
+    panel.style.position = 'fixed';
+    panel.style.top = '0px';
+    panel.style.right = '0px';
+    panel.style.height = '100vh';
+
     document.body.classList.add('pagetalk-panel-open');
 
     const currentUrl = window.location.href;
