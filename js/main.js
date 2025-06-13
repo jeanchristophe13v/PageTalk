@@ -25,6 +25,7 @@ import {
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
 import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection } from './settings.js';
+import { initTextSelectionHelperSettings } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction } from './chat.js';
 import {
     switchTab,
@@ -208,6 +209,7 @@ function init() {
 
     // Setup core features
     initModelSelection(state, elements); // Populate model dropdowns
+    initTextSelectionHelperSettings(elements, currentTranslations); // Initialize text selection helper settings
     setupEventListeners(); // Setup all event listeners
     setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
     setupAutoresizeTextarea(elements); // Setup textarea resize

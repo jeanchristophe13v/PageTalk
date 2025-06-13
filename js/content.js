@@ -11,6 +11,9 @@ let maxPanelWidthPercentage = 0.8; // 最大宽度为窗口的80%
 let resizing = false;
 let messageShownForThisPageView = false; // 新增：跟踪当前页面视图是否已显示过提取成功消息
 
+// 划词助手相关变量
+let textSelectionHelperLoaded = false;
+
 // 新增：封装 PDF.js 的加载和初始化
 let pdfjsLibPromise = null;
 
@@ -39,6 +42,20 @@ async function getInitializedPdfjsLib() {
   return pdfjsLibPromise;
 }
 
+
+// 初始化划词助手
+function initTextSelectionHelper() {
+  if (textSelectionHelperLoaded) return;
+
+  // 直接初始化划词助手（现在通过 content script 加载）
+  if (window.TextSelectionHelper) {
+    window.TextSelectionHelper.init();
+    textSelectionHelperLoaded = true;
+    console.log('[PageTalk] Text Selection Helper initialized');
+  } else {
+    console.warn('[PageTalk] TextSelectionHelper not available');
+  }
+}
 
 // 初始化函数 - 创建面板DOM
 function initPagetalkPanel() {
@@ -305,11 +322,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // 这是异步的，尽管 togglePanel 本身不是
   }
 
+  // 处理来自background.js的流式更新消息（用于划词助手）
+  else if (message.action === "streamUpdate") {
+    // 直接转发给划词助手的监听器
+    // 这个消息会被text-selection-helper.js中的监听器接收
+    // 不需要sendResponse，因为这是单向消息
+    return false; // 不需要异步响应
+  }
+
   // 确保为其他可能的消息处理器也返回 true（如果它们是异步的）
   // 如果没有其他异步处理器，可以在这里返回 false 或 undefined
   // 为了保险起见，如果这个 listener 包含任何异步操作，最好总是返回 true
   return true;
 });
+
+// 页面加载完成后初始化划词助手
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTextSelectionHelper);
+} else {
+  initTextSelectionHelper();
+}
 
 // 提取页面的主要内容 - 现在是异步函数
 async function extractPageContent() {

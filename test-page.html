@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageTalk 划词助手测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            border: 1px solid #e9ecef;
+        }
+        
+        .instructions {
+            background: #d1ecf1;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+        }
+        
+        .test-text {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px dashed #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>PageTalk 划词助手测试页面</h1>
+        
+        <div class="instructions">
+            <h2>📋 测试说明</h2>
+            <p><strong>如何测试划词助手功能：</strong></p>
+            <ol>
+                <li>确保 PageTalk 扩展已安装并启用</li>
+                <li>在下方的文本中选中任意文字</li>
+                <li>选中后应该会在文字右下角出现 PageTalk 的 mini icon</li>
+                <li>点击 mini icon 查看选项栏</li>
+                <li>点击选项栏中的"解读"、"翻译"或"对话"按钮</li>
+                <li>观察功能窗口是否正常显示</li>
+            </ol>
+        </div>
+
+        <h2>🌟 中文测试文本</h2>
+        <div class="test-text">
+            <p>人工智能（Artificial Intelligence，简称AI）是计算机科学的一个分支，它企图了解智能的实质，并生产出一种新的能以人类智能相似的方式做出反应的智能机器。该领域的研究包括机器人、语言识别、图像识别、自然语言处理和专家系统等。</p>
+            
+            <p>机器学习是人工智能的一个重要分支，它使计算机能够在没有明确编程的情况下学习。机器学习专注于开发能够访问数据并使用它来为自己学习的计算机程序。</p>
+        </div>
+
+        <h2>🌍 English Test Text</h2>
+        <div class="test-text">
+            <p>Machine learning is a method of data analysis that automates analytical model building. It is a branch of artificial intelligence based on the idea that systems can learn from data, identify patterns and make decisions with minimal human intervention.</p>
+            
+            <p>Deep learning is part of a broader family of machine learning methods based on artificial neural networks with representation learning. Learning can be supervised, semi-supervised or unsupervised.</p>
+        </div>
+
+        <h2>🔬 技术术语测试</h2>
+        <div class="test-text">
+            <p>神经网络（Neural Network）是一种模仿生物神经网络结构和功能的数学模型。它由大量的节点（或称神经元）相互连接构成。每个节点代表一种特定的输出函数，称为激活函数（activation function）。</p>
+            
+            <p>卷积神经网络（Convolutional Neural Network，CNN）是一种前馈神经网络，它的人工神经元可以响应一部分覆盖范围内的周围单元，对于大型图像处理有出色表现。</p>
+        </div>
+
+        <div class="highlight">
+            <h2>💡 测试提示</h2>
+            <p>尝试选中不同长度的文本，包括：</p>
+            <ul>
+                <li>单个词语：如"人工智能"</li>
+                <li>短句：如"机器学习是人工智能的一个重要分支"</li>
+                <li>段落：选中整个段落进行测试</li>
+                <li>英文文本：测试翻译功能</li>
+                <li>技术术语：测试解读功能</li>
+            </ul>
+        </div>
+
+        <h2>🧪 代码测试</h2>
+        <div class="code-block">
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// 计算斐波那契数列的第10项
+console.log(fibonacci(10)); // 输出: 55
+        </div>
+
+        <h2>📊 数据测试</h2>
+        <div class="test-text">
+            <p>根据最新的研究报告，全球人工智能市场规模预计将从2021年的387.1亿美元增长到2028年的1394.7亿美元，复合年增长率为20.1%。其中，机器学习领域占据了最大的市场份额。</p>
+            
+            <p>在应用领域方面，医疗保健、金融服务、零售和汽车行业是人工智能技术应用最为广泛的领域。预计到2025年，这些行业的AI应用将带来数万亿美元的经济价值。</p>
+        </div>
+
+        <div class="instructions">
+            <h2>🔧 开发者信息</h2>
+            <p>如果您是开发者，可以打开浏览器的开发者工具（F12）查看控制台输出，了解划词助手的工作状态和调试信息。</p>
+            <p>划词助手的相关日志会以 <code>[TextSelectionHelper]</code> 前缀显示。</p>
+        </div>
+    </div>
+
+    <div class="content">
+        <h2>🎯 功能验证清单</h2>
+        <div class="test-text">
+            <h3>基础功能</h3>
+            <ul>
+                <li>☐ 文本选中后显示 mini icon</li>
+                <li>☐ 点击 mini icon 显示选项栏</li>
+                <li>☐ 选项栏包含"解读"、"翻译"、"对话"选项</li>
+                <li>☐ 点击选项后显示功能窗口</li>
+            </ul>
+            
+            <h3>解读功能</h3>
+            <ul>
+                <li>☐ 解读窗口正常显示</li>
+                <li>☐ 显示加载状态</li>
+                <li>☐ AI 响应正常显示</li>
+                <li>☐ 复制和重新生成按钮可用</li>
+            </ul>
+            
+            <h3>翻译功能</h3>
+            <ul>
+                <li>☐ 翻译窗口正常显示</li>
+                <li>☐ 中英文翻译功能正常</li>
+                <li>☐ 翻译结果准确</li>
+            </ul>
+            
+            <h3>对话功能</h3>
+            <ul>
+                <li>☐ 对话窗口正常显示</li>
+                <li>☐ 显示选中文本的引用</li>
+                <li>☐ 可以发送消息</li>
+                <li>☐ 模型和助手选择器可用</li>
+                <li>☐ 清除上下文功能正常</li>
+            </ul>
+            
+            <h3>UI/UX</h3>
+            <ul>
+                <li>☐ 毛玻璃效果正常</li>
+                <li>☐ 动画效果流畅</li>
+                <li>☐ 窗口可拖拽</li>
+                <li>☐ 窗口可调整大小</li>
+                <li>☐ 点击外部区域关闭窗口</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

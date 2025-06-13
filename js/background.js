@@ -140,10 +140,114 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return true; // 必须返回 true 以表明 sendResponse 将会异步调用
     }
+    // 处理来自划词助手的 generateContent 请求
+    else if (message.action === "generateContent") {
+        handleGenerateContentRequest(message.data, sendResponse, sender.tab?.id);
+        return true; // 异步响应
+    }
     // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
     // 但如果整个 onMessage 可能处理异步操作，最好总是返回 true
     return true;
 });
+
+/**
+ * 处理来自划词助手的 generateContent 请求
+ */
+async function handleGenerateContentRequest(requestData, sendResponse, senderTabId) {
+    try {
+        // 从存储中获取 API Key
+        const result = await chrome.storage.sync.get(['apiKey']);
+        const apiKey = result.apiKey;
+
+        if (!apiKey) {
+            sendResponse({ success: false, error: 'API Key not configured' });
+            return;
+        }
+
+        // 获取模型名称，映射逻辑模型名到实际 API 模型名
+        let apiModelName = requestData.model || 'gemini-2.5-flash';
+        if (apiModelName === 'gemini-2.5-flash' || apiModelName === 'gemini-2.5-flash-thinking') {
+            apiModelName = 'gemini-2.5-flash-preview-05-20';
+        }
+
+        // 构建请求体
+        const requestBody = {
+            contents: requestData.contents,
+            generationConfig: requestData.generationConfig
+        };
+
+        // 调用 Gemini API (流式输出)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const jsonData = JSON.parse(line.slice(6));
+                                const text = jsonData.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (text) {
+                                    accumulatedText += text;
+                                    // 直接发送到指定标签页，避免查询延迟
+                                    if (senderTabId) {
+                                        chrome.tabs.sendMessage(senderTabId, {
+                                            action: 'streamUpdate',
+                                            requestId: requestData.requestId,
+                                            text: accumulatedText,
+                                            isComplete: false
+                                        }).catch(() => {
+                                            // 忽略发送失败的错误
+                                        });
+                                    }
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+
+                // 发送完成信号
+                if (senderTabId) {
+                    chrome.tabs.sendMessage(senderTabId, {
+                        action: 'streamUpdate',
+                        requestId: requestData.requestId,
+                        text: accumulatedText,
+                        isComplete: true
+                    }).catch(() => {
+                        // 忽略发送失败的错误
+                    });
+                }
+
+                sendResponse({ success: true, data: accumulatedText });
+            } catch (streamError) {
+                sendResponse({ success: false, error: streamError.message });
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
+            const errorMessage = errorData.error?.message || `HTTP error ${response.status}`;
+            sendResponse({ success: false, error: errorMessage });
+        }
+    } catch (error) {
+        console.error('[Background] Generate content error:', error);
+        sendResponse({ success: false, error: error.message });
+    }
+}
 
 // 移除 getPageContentForExtraction 函数，因为它不再被使用
 // function getPageContentForExtraction() { ... } // REMOVED

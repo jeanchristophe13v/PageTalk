@@ -147,6 +147,31 @@ const translations = {
     'containsNImages': '[包含 {count} 张图片]', // For text export
     'tabContentLoadedSuccess': '页面已加载',
     'tabContentLoadFailed': '无法加载页面 \'{title}...\' 内容: {error}',
+
+    // --- 划词助手相关翻译 ---
+    'textSelectionHelper': '划词助手',
+    'interpret': '解读',
+    'translate': '翻译',
+    'chat': '对话',
+    'interpretSystemPrompt': '解读一下',
+    'translateSystemPrompt': '翻译一下',
+    'interpretSettings': '解读设置',
+    'translateSettings': '翻译设置',
+    'customOptions': '自定义选项',
+    'addCustomOption': '添加自定义选项',
+    'optionName': '选项名称',
+    'systemPrompt': '系统提示词',
+    'temperature': '温度',
+    'model': '模型',
+    'optionOrder': '选项顺序',
+    'dragToReorder': '拖拽调整顺序',
+    'deleteOption': '删除选项',
+    'editOption': '编辑选项',
+    'saveOption': '保存选项',
+    'cancelEdit': '取消编辑',
+    'copy': '复制',
+    'regenerateResponse': '重新生成',
+    'textSelectionHelperSettings': '划词助手设置',
   },
   'en': {
     // --- General UI ---
@@ -297,6 +322,31 @@ const translations = {
     'containsNImages': '[Contains {count} image(s)]', // For text export
     'tabContentLoadedSuccess': 'Page content loaded',
     'tabContentLoadFailed': 'Failed to load content for tab \'{title}...\': {error}',
+
+    // --- Text Selection Helper Related Translations ---
+    'textSelectionHelper': 'Text Selection Helper',
+    'interpret': 'Interpret',
+    'translate': 'Translate',
+    'chat': 'Chat',
+    'interpretSystemPrompt': 'Interpret this',
+    'translateSystemPrompt': 'Translate this',
+    'interpretSettings': 'Interpret Settings',
+    'translateSettings': 'Translate Settings',
+    'customOptions': 'Custom Options',
+    'addCustomOption': 'Add Custom Option',
+    'optionName': 'Option Name',
+    'systemPrompt': 'System Prompt',
+    'temperature': 'Temperature',
+    'model': 'Model',
+    'optionOrder': 'Option Order',
+    'dragToReorder': 'Drag to reorder',
+    'deleteOption': 'Delete Option',
+    'editOption': 'Edit Option',
+    'saveOption': 'Save Option',
+    'cancelEdit': 'Cancel Edit',
+    'copy': 'Copy',
+    'regenerateResponse': 'Regenerate',
+    'textSelectionHelperSettings': 'Text Selection Helper Settings',
   }
 };
 
