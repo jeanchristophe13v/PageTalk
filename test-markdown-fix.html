@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageTalk 划词助手 Markdown 渲染测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-top: 0;
+            border-bottom: 2px solid #4674ff;
+            padding-bottom: 10px;
+        }
+        .markdown-content {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #4674ff;
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .test-text {
+            background: #fff3e0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border: 1px dashed #ff9800;
+            cursor: pointer;
+            user-select: text;
+        }
+        .test-text:hover {
+            background: #ffe0b2;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>PageTalk 划词助手 Markdown 渲染测试</h1>
+        
+        <div class="instructions">
+            <h3>测试说明</h3>
+            <p>1. 确保PageTalk插件已加载</p>
+            <p>2. 选中下面的测试文本</p>
+            <p>3. 点击划词助手的"解读"功能</p>
+            <p>4. 观察输出的段落间距是否正常（应该与主面板一致）</p>
+            <p><strong>修复内容：</strong>移除了.pagetalk-response-content的white-space: pre-wrap属性，添加了段落基础样式</p>
+        </div>
+
+        <div class="test-section">
+            <h2>测试文本 1：多段落文本</h2>
+            <div class="test-text">
+                人工智能（Artificial Intelligence，AI）是计算机科学的一个分支，它企图了解智能的实质，并生产出一种新的能以人类智能相似的方式做出反应的智能机器。
+
+                该领域的研究包括机器人、语言识别、图像识别、自然语言处理和专家系统等。人工智能从诞生以来，理论和技术日益成熟，应用领域也不断扩大。
+
+                可以设想，未来人工智能带来的科技产品，将会是人类智慧的"容器"。人工智能可以对人的意识、思维的信息过程的模拟。
+
+                人工智能不是人的智能，但能像人那样思考、也可能超过人的智能。
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试文本 2：包含列表的文本</h2>
+            <div class="test-text">
+                机器学习的主要类型包括：
+
+                1. 监督学习：使用标记的训练数据来学习输入到输出的映射
+                2. 无监督学习：从未标记的数据中发现隐藏的模式
+                3. 强化学习：通过与环境交互来学习最优行为
+
+                每种类型都有其特定的应用场景和优势。监督学习适用于分类和回归问题，无监督学习用于聚类和降维，强化学习则在游戏和机器人控制中表现出色。
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>测试文本 3：包含代码的文本</h2>
+            <div class="test-text">
+                Python是一种高级编程语言，语法简洁明了。
+
+                下面是一个简单的Python函数示例：
+
+                ```python
+                def hello_world():
+                    print("Hello, World!")
+                    return "Success"
+                ```
+
+                这个函数演示了Python的基本语法特点。Python的设计哲学强调代码的可读性和简洁的语法。
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>预期结果</h2>
+            <div class="markdown-content">
+                <p><strong>修复前的问题：</strong></p>
+                <ul>
+                    <li>段落之间间距过大</li>
+                    <li>看起来像是手动调整的换行</li>
+                    <li>与主面板的渲染效果不一致</li>
+                </ul>
+                
+                <p><strong>修复后的预期效果：</strong></p>
+                <ul>
+                    <li>段落间距适中（0.6em）</li>
+                    <li>与主面板渲染效果完全一致</li>
+                    <li>markdown渲染正常，无多余空白</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 添加一些调试信息
+        console.log('测试页面已加载');
+        console.log('MarkdownRenderer 可用性:', typeof window.MarkdownRenderer);
+        
+        // 监听选择事件
+        document.addEventListener('mouseup', function() {
+            const selection = window.getSelection();
+            if (selection.toString().trim()) {
+                console.log('选中文本:', selection.toString().trim());
+            }
+        });
+    </script>
+</body>
+</html>

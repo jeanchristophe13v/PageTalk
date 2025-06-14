@@ -201,6 +201,23 @@
     margin-bottom: 0.4em;
 }
 
+/* 基础段落样式 - 与主面板保持一致 */
+.pagetalk-function-window .markdown-rendered p {
+    margin-top: 0;
+    margin-bottom: 0.6em; /* 与主面板 .bot-message p 保持一致的段落间距 */
+    line-height: 1.4;
+}
+
+.pagetalk-function-window .markdown-rendered p:last-child {
+    margin-bottom: 0;
+}
+
+.pagetalk-function-window .markdown-rendered p + p::before {
+    content: none;
+    display: none;
+    height: 0;
+}
+
 .pagetalk-function-window .markdown-rendered li p {
     margin: 0.3em 0;
 }
@@ -493,7 +510,7 @@
     line-height: 1.5;
     color: #333;
     font-size: 14px;
-    white-space: pre-wrap;
+    /* 移除 white-space: pre-wrap; 以支持正确的markdown渲染 */
     word-wrap: break-word;
 }
 
