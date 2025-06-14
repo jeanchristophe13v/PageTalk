@@ -132,19 +132,43 @@ function shouldExcludeSelection(selection) {
 }
 
 /**
- * 提取选择文本的上下文
+ * 提取选择文本的上下文 - 优化版本，只获取局部上下文
  */
 function extractSelectionContext(selection) {
     try {
         if (!selection.rangeCount) return '';
-        
+
         const range = selection.getRangeAt(0);
         const container = range.commonAncestorContainer;
         const element = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
-        
-        // 获取包含选中文本的段落或容器的文本内容
+
+        // 获取包含选中文本的段落或容器
         const contextElement = element.closest('p, div, article, section') || element;
-        return contextElement.textContent || '';
+        let contextText = contextElement.textContent || '';
+
+        // 限制上下文长度，避免传递过大的内容
+        const maxContextLength = 1000; // 限制为1000字符
+        if (contextText.length > maxContextLength) {
+            // 尝试找到选中文本在上下文中的位置
+            const selectedText = selection.toString();
+            const selectedIndex = contextText.indexOf(selectedText);
+
+            if (selectedIndex !== -1) {
+                // 以选中文本为中心，提取前后各500字符
+                const start = Math.max(0, selectedIndex - 500);
+                const end = Math.min(contextText.length, selectedIndex + selectedText.length + 500);
+                contextText = contextText.substring(start, end);
+
+                // 如果截断了开头或结尾，添加省略号
+                if (start > 0) contextText = '...' + contextText;
+                if (end < contextText.length) contextText = contextText + '...';
+            } else {
+                // 如果找不到选中文本，只取前1000字符
+                contextText = contextText.substring(0, maxContextLength) + '...';
+            }
+        }
+
+        return contextText;
     } catch (error) {
         console.warn('[TextSelectionHelper] Error extracting context:', error);
         return '';
@@ -597,9 +621,8 @@ async function createFunctionWindowContent(windowElement, optionId) {
     let content = '';
 
     if (optionId === 'chat') {
-        // 获取主面板的模型和助手设置
+        // 获取主面板的模型设置
         const currentModel = await getCurrentMainPanelModel();
-        const currentAgent = await getCurrentMainPanelAgent();
 
         // 构建模型选项
         const modelOptions = [
@@ -748,8 +771,15 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
             throw new Error(`Settings not found for option: ${optionId}`);
         }
 
-        // 构建消息
-        const message = `${optionSettings.systemPrompt}\n\n选中文本：${selectedText}\n\n页面上下文：${selectionContext}`;
+        // 构建优化的消息，减少不必要的上下文
+        let message;
+        if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText && selectionContext.length < 500) {
+            // 只有当上下文与选中文本不同、有意义且不太长时才包含
+            message = `${optionSettings.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}`;
+        } else {
+            // 如果上下文无意义、与选中文本相同或太长，只使用选中文本
+            message = `${optionSettings.systemPrompt}\n\n${selectedText}`;
+        }
 
         // 准备响应区域
         const responseArea = windowElement.querySelector('.pagetalk-response-area');
@@ -785,14 +815,12 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
             if (responseContent) {
                 // 使用主面板相同的 markdown 渲染器
                 let renderedContent = '';
-                if (window.MarkdownRenderer && window.MarkdownRenderer.render) {
+                if (window.MarkdownRenderer && typeof window.MarkdownRenderer.render === 'function') {
+                    // 使用主面板的MarkdownRenderer.render函数
                     renderedContent = window.MarkdownRenderer.render(text);
-                } else if (window.markdownit) {
-                    const md = window.markdownit();
-                    renderedContent = md.render(text);
                 } else {
-                    // 备用方案：使用简化渲染
-                    renderedContent = renderSimpleMarkdown(text);
+                    // 备用方案：简单的HTML转义
+                    renderedContent = `<p>${escapeHtml(text)}</p>`;
                 }
 
                 // 如果还在流式输出中，添加光标
@@ -803,8 +831,11 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
                 responseContent.innerHTML = renderedContent;
 
                 // 添加代码块复制按钮（模仿主面板逻辑）
-                const codeBlocks = responseContent.querySelectorAll('.code-block');
+                const codeBlocks = responseContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
+
+                // 自动调整窗口高度
+                adjustWindowHeight(windowElement);
             }
         });
 
@@ -976,11 +1007,15 @@ async function sendChatMessage(windowElement) {
     addChatMessage(windowElement, message, 'user');
 
     try {
-        // 构建完整的消息，包含上下文
-        const fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n页面上下文：${selectionContext}\n\n用户问题：${message}`;
-
-        // 获取设置
-        const settings = await getTextSelectionHelperSettings();
+        // 构建优化的消息，减少不必要的上下文
+        let fullMessage;
+        if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
+            // 只有当上下文与选中文本不同且有意义时才包含
+            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
+        } else {
+            // 如果上下文无意义或与选中文本相同，只使用选中文本
+            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+        }
 
         // 添加思考动画
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
@@ -1044,13 +1079,12 @@ async function sendChatMessage(windowElement) {
             if (messageContent) {
                 // 使用主面板相同的 markdown 渲染器
                 let renderedContent = '';
-                if (window.MarkdownRenderer && window.MarkdownRenderer.render) {
+                if (window.MarkdownRenderer && typeof window.MarkdownRenderer.render === 'function') {
+                    // 使用主面板的MarkdownRenderer.render函数
                     renderedContent = window.MarkdownRenderer.render(text);
-                } else if (window.markdownit) {
-                    const md = window.markdownit();
-                    renderedContent = md.render(text);
                 } else {
-                    renderedContent = text.replace(/\n/g, '<br>');
+                    // 备用方案：简单的HTML转义
+                    renderedContent = `<p>${escapeHtml(text)}</p>`;
                 }
 
                 // 如果还在流式输出中，添加光标
@@ -1061,8 +1095,11 @@ async function sendChatMessage(windowElement) {
                 messageContent.innerHTML = renderedContent;
 
                 // 添加代码块复制按钮（模仿主面板逻辑）
-                const codeBlocks = messageContent.querySelectorAll('.code-block');
+                const codeBlocks = messageContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
+
+                // 自动调整窗口高度
+                adjustWindowHeight(windowElement);
             }
 
             if (isComplete) {
@@ -1234,8 +1271,15 @@ function setupChatMessageActions(messageElement, message) {
  */
 async function regenerateChatMessage(windowElement, userMessage) {
     try {
-        // 构建完整的消息，包含上下文
-        const fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n页面上下文：${selectionContext}\n\n用户问题：${userMessage}`;
+        // 构建优化的消息，减少不必要的上下文
+        let fullMessage;
+        if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
+            // 只有当上下文与选中文本不同且有意义时才包含
+            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
+        } else {
+            // 如果上下文无意义或与选中文本相同，只使用选中文本
+            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+        }
 
         // 添加思考动画
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
@@ -1299,13 +1343,12 @@ async function regenerateChatMessage(windowElement, userMessage) {
             if (messageContent) {
                 // 使用主面板相同的 markdown 渲染器
                 let renderedContent = '';
-                if (window.MarkdownRenderer && window.MarkdownRenderer.render) {
+                if (window.MarkdownRenderer && typeof window.MarkdownRenderer.render === 'function') {
+                    // 使用主面板的MarkdownRenderer.render函数
                     renderedContent = window.MarkdownRenderer.render(text);
-                } else if (window.markdownit) {
-                    const md = window.markdownit();
-                    renderedContent = md.render(text);
                 } else {
-                    renderedContent = text.replace(/\n/g, '<br>');
+                    // 备用方案：简单的HTML转义
+                    renderedContent = `<p>${escapeHtml(text)}</p>`;
                 }
 
                 // 如果还在流式输出中，添加光标
@@ -1316,8 +1359,11 @@ async function regenerateChatMessage(windowElement, userMessage) {
                 messageContent.innerHTML = renderedContent;
 
                 // 添加代码块复制按钮（模仿主面板逻辑）
-                const codeBlocks = messageContent.querySelectorAll('.code-block');
+                const codeBlocks = messageContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
+
+                // 自动调整窗口高度
+                adjustWindowHeight(windowElement);
             }
 
             if (isComplete) {
@@ -1331,7 +1377,6 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
     } catch (error) {
         console.error('[TextSelectionHelper] Regenerate chat error:', error);
-        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
         addChatMessage(windowElement, `错误：${error.message}`, 'assistant');
     }
 }
@@ -1339,140 +1384,72 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
 
 /**
- * 简化的markdown渲染器，避免过大的段落间距
+ * HTML转义函数
  */
-function renderSimpleMarkdown(text) {
+function escapeHtml(text) {
     return text
-        // 处理粗体
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // 处理斜体
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        // 处理代码块
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        // 处理行内代码
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        // 处理标题
-        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-        // 处理列表项
-        .replace(/^\* (.*$)/gm, '<li>$1</li>')
-        .replace(/^- (.*$)/gm, '<li>$1</li>')
-        .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
-        // 处理换行，使用更紧凑的间距
-        .replace(/\n\n/g, '<br><br>')
-        .replace(/\n/g, '<br>')
-        // 包装列表项
-        .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
-        // 清理多余的ul标签
-        .replace(/<\/ul>\s*<ul>/g, '');
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 /**
- * 调用 AI API (支持流式输出) - 使用与主面板相同的直接调用方式
+ * 调用 AI API - 通过 background.js 统一处理
  */
 async function callAIAPI(message, model, temperature, onStream = null) {
     try {
-        // 获取API Key
-        const result = await new Promise(resolve => {
-            chrome.storage.sync.get(['apiKey'], resolve);
-        });
+        // 生成唯一的请求ID
+        const requestId = 'text-selection-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
 
-        const apiKey = result.apiKey;
-        if (!apiKey) {
-            throw new Error('API Key not configured');
-        }
-
-        // 映射模型名称（与主面板保持一致）
-        let apiModelName = model || 'gemini-2.5-flash';
-        if (apiModelName === 'gemini-2.5-flash' || apiModelName === 'gemini-2.5-flash-thinking') {
-            apiModelName = 'gemini-2.5-flash-preview-05-20';
-        }
-
-        // 构建请求体
-        const requestBody = {
+        // 构建请求数据
+        const requestData = {
+            requestId: requestId,
             contents: [{
                 parts: [{ text: message }]
             }],
             generationConfig: {
                 temperature: temperature,
-                maxOutputTokens: 2048
+                maxOutputTokens: 65536, // 设置为65536
+                topP: 0.95
+            },
+            model: model
+        };
+
+        // 为gemini-2.5-flash添加thinking配置
+        if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
+            requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+        }
+
+        // 设置流式更新监听器
+        const streamListener = (message) => {
+            if (message.action === 'streamUpdate' && message.requestId === requestId) {
+                if (onStream) {
+                    onStream(message.text, message.isComplete);
+                }
             }
         };
 
-        // 直接调用 Gemini API (与主面板相同的方式)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+        // 添加消息监听器
+        chrome.runtime.onMessage.addListener(streamListener);
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
-            const errorMessage = errorData.error?.message || `HTTP error ${response.status}`;
-            throw new Error(errorMessage);
-        }
+        try {
+            // 发送请求到 background.js
+            const response = await chrome.runtime.sendMessage({
+                action: 'generateContent',
+                data: requestData
+            });
 
-        // 处理 SSE 流（与主面板相同的逻辑）
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let accumulatedText = '';
-
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
-
-            for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                    const jsonString = line.substring(6).trim();
-                    if (jsonString) {
-                        try {
-                            const chunkData = JSON.parse(jsonString);
-                            const textChunk = chunkData.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (textChunk !== undefined && textChunk !== null) {
-                                accumulatedText += textChunk;
-                                if (onStream) {
-                                    onStream(accumulatedText, false);
-                                }
-                            }
-                        } catch (e) {
-                            console.error('Failed to parse JSON chunk:', jsonString, e);
-                        }
-                    }
-                }
+            if (!response.success) {
+                throw new Error(response.error || 'API调用失败');
             }
-        }
 
-        // 处理可能剩余的 buffer
-        if (buffer.startsWith('data: ')) {
-            const jsonString = buffer.substring(6).trim();
-            if (jsonString) {
-                try {
-                    const chunkData = JSON.parse(jsonString);
-                    const textChunk = chunkData.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (textChunk !== undefined && textChunk !== null) {
-                        accumulatedText += textChunk;
-                        if (onStream) {
-                            onStream(accumulatedText, false);
-                        }
-                    }
-                } catch (e) {
-                    console.error('Failed to parse final JSON chunk:', jsonString, e);
-                }
-            }
+            return response.data;
+        } finally {
+            // 确保移除监听器
+            chrome.runtime.onMessage.removeListener(streamListener);
         }
-
-        // 发送完成信号
-        if (onStream) {
-            onStream(accumulatedText, true);
-        }
-
-        return accumulatedText;
     } catch (error) {
         console.error('[TextSelectionHelper] API call error:', error);
         throw error;
@@ -1605,4 +1582,52 @@ function addCopyButtonToCodeBlock(codeBlock) {
     codeBlock.addEventListener('mouseleave', () => {
         copyButton.style.opacity = '0.7';
     });
+}
+
+
+
+/**
+ * 自动调整窗口高度以适应内容
+ */
+function adjustWindowHeight(windowElement) {
+    try {
+        // 获取窗口的当前高度
+        const currentHeight = windowElement.offsetHeight;
+
+        // 临时移除高度限制以测量内容高度
+        const originalHeight = windowElement.style.height;
+        const originalMaxHeight = windowElement.style.maxHeight;
+
+        windowElement.style.height = 'auto';
+        windowElement.style.maxHeight = 'none';
+
+        // 测量内容的实际高度
+        const contentHeight = windowElement.scrollHeight;
+
+        // 设置合理的最大高度（视窗高度的80%）
+        const maxHeight = Math.min(contentHeight, window.innerHeight * 0.8);
+
+        // 确保不小于最小高度
+        const minHeight = 250;
+        const finalHeight = Math.max(minHeight, Math.min(maxHeight, contentHeight));
+
+        // 恢复原始样式
+        windowElement.style.height = originalHeight;
+        windowElement.style.maxHeight = originalMaxHeight;
+
+        // 如果需要调整高度
+        if (Math.abs(finalHeight - currentHeight) > 10) {
+            // 平滑调整高度
+            windowElement.style.height = `${finalHeight}px`;
+
+            // 确保窗口不会超出视窗边界
+            const rect = windowElement.getBoundingClientRect();
+            if (rect.bottom > window.innerHeight) {
+                const newTop = Math.max(10, window.innerHeight - finalHeight - 10);
+                windowElement.style.top = `${newTop}px`;
+            }
+        }
+    } catch (error) {
+        console.warn('[TextSelectionHelper] Error adjusting window height:', error);
+    }
 }

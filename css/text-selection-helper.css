@@ -117,9 +117,274 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
     resize: both;
-    min-width: 300px;
-    min-height: 200px;
+    min-width: 400px; /* 增加最小宽度 */
+    min-height: 250px; /* 增加最小高度 */
+    max-width: 600px; /* 设置最大宽度 */
+    width: 480px; /* 设置默认宽度 */
+    height: auto; /* 允许高度自动调整 */
+    transition: height 0.3s ease; /* 添加高度变化动画 */
 }
+
+/* --- Start of Fix: Scoped CSS variables and styles --- */
+/*
+ * Injected CSS Variables for Text Selection Helper.
+ * These variables mimic the main panel's theme to ensure consistent styling
+ * for markdown and code blocks, which are rendered in the host page's DOM.
+ */
+.pagetalk-function-window {
+    /* Light Mode Variables (Default) */
+    --primary-color: #4674ff;
+    --text-color: #343a40e5;
+    --text-secondary: #868E96;
+    --border-color: #E9ECEF;
+    --code-background: #F1F3F5;
+    --code-text-color: #343A40;
+    --code-border: #DEE2E6;
+    --table-header-bg: #F1F3F5;
+    --table-even-row-bg: #F8F9FA;
+    --link-color: var(--primary-color);
+    --blockquote-bg: rgba(175, 184, 193, 0.1);
+    --blockquote-text: #6a737d;
+    --inline-code-bg: rgba(175, 184, 193, 0.2);
+    --inline-code-text: #24292e;
+    --inline-code-border: rgba(175, 184, 193, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+    .pagetalk-function-window {
+        /* Dark Mode Variable Overrides */
+        --primary-color: #748FFC;
+        --text-color: #e9ecefdb;
+        --text-secondary: #ADB5BD;
+        --border-color: #343A40;
+        --code-background: #343A40;
+        --code-text-color: #e9ecefdb;
+        --code-border: #495057;
+        --table-header-bg: var(--primary-color);
+        --table-even-row-bg: rgba(255, 255, 255, 0.04);
+        --link-color: var(--primary-color);
+        --blockquote-bg: rgba(116, 143, 252, 0.1);
+        --blockquote-text: var(--text-secondary);
+        --inline-code-bg: rgba(110, 118, 129, 0.4);
+        --inline-code-text: var(--text-color);
+        --inline-code-border: transparent;
+    }
+}
+
+/*
+ * Scoped Markdown and Code Highlighting Styles.
+ * All selectors are prefixed with `.pagetalk-function-window` to prevent conflicts
+ * with the host webpage's styles. These styles are copied and adapted from
+ * _markdown.css, github.min.css, and github-dark-dimmed.min.css.
+ */
+
+/* Scoped Markdown Styles from _markdown.css */
+.pagetalk-function-window .markdown-rendered h1,
+.pagetalk-function-window .markdown-rendered h2,
+.pagetalk-function-window .markdown-rendered h3,
+.pagetalk-function-window .markdown-rendered h4,
+.pagetalk-function-window .markdown-rendered h5,
+.pagetalk-function-window .markdown-rendered h6 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    line-height: 1.3;
+    color: var(--text-color);
+}
+
+.pagetalk-function-window .markdown-rendered ul,
+.pagetalk-function-window .markdown-rendered ol {
+    margin: 0.6em 0;
+    padding-left: 1.8em;
+}
+
+.pagetalk-function-window .markdown-rendered li {
+    margin-bottom: 0.4em;
+}
+
+.pagetalk-function-window .markdown-rendered li p {
+    margin: 0.3em 0;
+}
+
+.pagetalk-function-window .markdown-rendered p + ul,
+.pagetalk-function-window .markdown-rendered p + ol {
+    margin-top: 0.4em;
+}
+
+.pagetalk-function-window .markdown-rendered ul + p,
+.pagetalk-function-window .markdown-rendered ol + p {
+    margin-top: 0.6em;
+}
+
+.pagetalk-function-window .markdown-rendered h1 + p,
+.pagetalk-function-window .markdown-rendered h2 + p,
+.pagetalk-function-window .markdown-rendered h3 + p,
+.pagetalk-function-window .markdown-rendered h4 + p {
+    margin-top: 0.3em;
+}
+
+.pagetalk-function-window .markdown-rendered .table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin: 0.8em 0;
+    border-radius: 4px; /* --radius-sm */
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pagetalk-function-window .markdown-rendered table {
+    border-collapse: collapse;
+    margin: 0;
+    width: 100%;
+    font-size: 0.9em;
+}
+
+.pagetalk-function-window .markdown-rendered thead {
+    background-color: var(--table-header-bg);
+    color: var(--table-header-bg-text, white); /* Default to white text on colored bg */
+    text-align: left;
+}
+@media (prefers-color-scheme: light) {
+    .pagetalk-function-window .markdown-rendered thead {
+         color: var(--text-color);
+    }
+}
+
+
+.pagetalk-function-window .markdown-rendered th {
+    font-weight: 600;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    text-align: left;
+    background-color: var(--table-header-bg);
+    white-space: pre-wrap;
+}
+
+.pagetalk-function-window .markdown-rendered td {
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    white-space: pre-wrap;
+}
+
+.pagetalk-function-window .markdown-rendered tr:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pagetalk-function-window .markdown-rendered tr:nth-child(even) {
+    background-color: var(--table-even-row-bg);
+}
+
+.pagetalk-function-window .markdown-rendered pre {
+    background-color: var(--code-background);
+    border-radius: 4px; /* --radius-sm */
+    padding: 0.8em 1em;
+    margin: 0.8em 0;
+    overflow-x: auto;
+    border: 1px solid var(--code-border);
+    position: relative;
+    border-left: 3px solid var(--primary-color);
+}
+
+.pagetalk-function-window .markdown-rendered pre code {
+    background-color: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    display: block;
+    line-height: 1.4;
+    color: var(--code-text-color);
+    font-family: Consolas, 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 1em;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.pagetalk-function-window .markdown-rendered a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+
+.pagetalk-function-window .markdown-rendered a:hover {
+    text-decoration: none;
+}
+
+.pagetalk-function-window .markdown-rendered blockquote {
+    border-left: 4px solid var(--primary-color);
+    margin: 0.7em 0;
+    padding: 0.4em 0.8em;
+    color: var(--blockquote-text);
+    background-color: var(--blockquote-bg);
+}
+
+.pagetalk-function-window .markdown-rendered blockquote > :first-child {
+    margin-top: 0;
+}
+
+.pagetalk-function-window .markdown-rendered blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+.pagetalk-function-window .markdown-rendered hr {
+    height: 1px;
+    padding: 0;
+    margin: 1em 0;
+    background-color: var(--border-color);
+    border: 0;
+}
+
+.pagetalk-function-window .markdown-rendered code:not(pre code) {
+    background-color: var(--inline-code-bg);
+    border-radius: 4px;
+    font-family: Consolas, 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 0.9em;
+    padding: 0.15em 0.3em;
+    margin: 0 0.1em;
+    border: 1px solid var(--inline-code-border);
+    color: var(--inline-code-text);
+    white-space: break-spaces;
+    word-break: break-all;
+}
+
+/* Scoped Code Highlighting Styles (github.min.css - Light Theme) */
+.pagetalk-function-window pre code.hljs { display: block; overflow-x: auto; padding: 1em; }
+.pagetalk-function-window code.hljs { padding: 3px 5px; }
+.pagetalk-function-window .hljs { color: #24292e; background: #ffffff; }
+.pagetalk-function-window .hljs-doctag, .pagetalk-function-window .hljs-keyword, .pagetalk-function-window .hljs-meta .hljs-keyword, .pagetalk-function-window .hljs-template-tag, .pagetalk-function-window .hljs-template-variable, .pagetalk-function-window .hljs-type, .pagetalk-function-window .hljs-variable.language_ { color: #d73a49; }
+.pagetalk-function-window .hljs-title, .pagetalk-function-window .hljs-title.class_, .pagetalk-function-window .hljs-title.class_.inherited__, .pagetalk-function-window .hljs-title.function_ { color: #6f42c1; }
+.pagetalk-function-window .hljs-attr, .pagetalk-function-window .hljs-attribute, .pagetalk-function-window .hljs-literal, .pagetalk-function-window .hljs-meta, .pagetalk-function-window .hljs-number, .pagetalk-function-window .hljs-operator, .pagetalk-function-window .hljs-variable, .pagetalk-function-window .hljs-selector-attr, .pagetalk-function-window .hljs-selector-class, .pagetalk-function-window .hljs-selector-id { color: #005cc5; }
+.pagetalk-function-window .hljs-regexp, .pagetalk-function-window .hljs-string, .pagetalk-function-window .hljs-meta .hljs-string { color: #032f62; }
+.pagetalk-function-window .hljs-built_in, .pagetalk-function-window .hljs-symbol { color: #e36209; }
+.pagetalk-function-window .hljs-code, .pagetalk-function-window .hljs-comment, .pagetalk-function-window .hljs-formula { color: #6a737d; }
+.pagetalk-function-window .hljs-name, .pagetalk-function-window .hljs-quote, .pagetalk-function-window .hljs-selector-tag, .pagetalk-function-window .hljs-selector-pseudo { color: #22863a; }
+.pagetalk-function-window .hljs-subst { color: #24292e; }
+.pagetalk-function-window .hljs-section { color: #005cc5; font-weight: bold; }
+.pagetalk-function-window .hljs-bullet { color: #735c0f; }
+.pagetalk-function-window .hljs-emphasis { color: #24292e; font-style: italic; }
+.pagetalk-function-window .hljs-strong { color: #24292e; font-weight: bold; }
+.pagetalk-function-window .hljs-addition { color: #22863a; background-color: #f0fff4; }
+.pagetalk-function-window .hljs-deletion { color: #b31d28; background-color: #ffeef0; }
+
+
+/* Scoped Code Highlighting Styles (github-dark-dimmed.min.css - Dark Theme) */
+@media (prefers-color-scheme: dark) {
+    .pagetalk-function-window .hljs { color: #adbac7; background: #22272e; }
+    .pagetalk-function-window .hljs-doctag, .pagetalk-function-window .hljs-keyword, .pagetalk-function-window .hljs-meta .hljs-keyword, .pagetalk-function-window .hljs-template-tag, .pagetalk-function-window .hljs-template-variable, .pagetalk-function-window .hljs-type, .pagetalk-function-window .hljs-variable.language_ { color: #f47067; }
+    .pagetalk-function-window .hljs-title, .pagetalk-function-window .hljs-title.class_, .pagetalk-function-window .hljs-title.class_.inherited__, .pagetalk-function-window .hljs-title.function_ { color: #dcbdfb; }
+    .pagetalk-function-window .hljs-attr, .pagetalk-function-window .hljs-attribute, .pagetalk-function-window .hljs-literal, .pagetalk-function-window .hljs-meta, .pagetalk-function-window .hljs-number, .pagetalk-function-window .hljs-operator, .pagetalk-function-window .hljs-selector-attr, .pagetalk-function-window .hljs-selector-class, .pagetalk-function-window .hljs-selector-id, .pagetalk-function-window .hljs-variable { color: #6cb6ff; }
+    .pagetalk-function-window .hljs-meta .hljs-string, .pagetalk-function-window .hljs-regexp, .pagetalk-function-window .hljs-string { color: #96d0ff; }
+    .pagetalk-function-window .hljs-built_in, .pagetalk-function-window .hljs-symbol { color: #f69d50; }
+    .pagetalk-function-window .hljs-code, .pagetalk-function-window .hljs-comment, .pagetalk-function-window .hljs-formula { color: #768390; }
+    .pagetalk-function-window .hljs-name, .pagetalk-function-window .hljs-quote, .pagetalk-function-window .hljs-selector-pseudo, .pagetalk-function-window .hljs-selector-tag { color: #8ddb8c; }
+    .pagetalk-function-window .hljs-subst { color: #adbac7; }
+    .pagetalk-function-window .hljs-section { color: #316dca; font-weight: bold; }
+    .pagetalk-function-window .hljs-bullet { color: #eac55f; }
+    .pagetalk-function-window .hljs-emphasis { color: #adbac7; font-style: italic; }
+    .pagetalk-function-window .hljs-strong { color: #adbac7; font-weight: bold; }
+    .pagetalk-function-window .hljs-addition { color: #b4f1b4; background-color: #1b4721; }
+    .pagetalk-function-window .hljs-deletion { color: #ffd8d3; background-color: #78191b; }
+}
+
+/* --- End of Fix --- */
 
 /* 窗口头部 */
 .pagetalk-window-header {
@@ -230,62 +495,6 @@
     font-size: 14px;
     white-space: pre-wrap;
     word-wrap: break-word;
-}
-
-/* 紧凑的markdown样式 */
-.pagetalk-response-content h1,
-.pagetalk-response-content h2,
-.pagetalk-response-content h3 {
-    margin: 8px 0 4px 0;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.pagetalk-response-content h1 {
-    font-size: 18px;
-}
-
-.pagetalk-response-content h2 {
-    font-size: 16px;
-}
-
-.pagetalk-response-content h3 {
-    font-size: 15px;
-}
-
-.pagetalk-response-content p {
-    margin: 6px 0;
-}
-
-.pagetalk-response-content ul,
-.pagetalk-response-content ol {
-    margin: 6px 0;
-    padding-left: 20px;
-}
-
-.pagetalk-response-content li {
-    margin: 2px 0;
-}
-
-.pagetalk-response-content code {
-    background: rgba(0, 0, 0, 0.05);
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
-}
-
-.pagetalk-response-content pre {
-    background: rgba(0, 0, 0, 0.05);
-    padding: 8px;
-    border-radius: 4px;
-    margin: 8px 0;
-    overflow-x: auto;
-}
-
-.pagetalk-response-content pre code {
-    background: none;
-    padding: 0;
 }
 
 .pagetalk-response-actions {
@@ -694,40 +903,7 @@
         color: #fff;
     }
 
-    /* 深色模式下的 Markdown 样式 */
-    .pagetalk-function-window .markdown-rendered code {
-        background: rgba(255, 255, 255, 0.1);
-        color: #fff;
-    }
 
-    .pagetalk-function-window .markdown-rendered pre {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .pagetalk-function-window .markdown-rendered blockquote {
-        background: rgba(0, 122, 255, 0.1);
-        border-left-color: #007AFF;
-        color: #ccc;
-    }
-
-    .pagetalk-function-window .markdown-rendered th,
-    .pagetalk-function-window .markdown-rendered td {
-        border-color: rgba(255, 255, 255, 0.2);
-    }
-
-    .pagetalk-function-window .markdown-rendered th {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .pagetalk-function-window .copy-button {
-        background: rgba(30, 30, 30, 0.9);
-        color: #ccc;
-    }
-
-    .pagetalk-function-window .copy-button:hover {
-        background: rgba(30, 30, 30, 1);
-        color: #fff;
-    }
 
     /* 深色模式下的思考动画 */
     .pagetalk-function-window .thinking-dots span {
@@ -738,127 +914,6 @@
     .pagetalk-streaming-cursor {
         background-color: #007AFF;
     }
-}
-
-/* Markdown 渲染样式 - 与主面板保持一致 */
-.pagetalk-function-window .markdown-rendered {
-    line-height: 1.6;
-    color: inherit;
-}
-
-.pagetalk-function-window .markdown-rendered h1,
-.pagetalk-function-window .markdown-rendered h2,
-.pagetalk-function-window .markdown-rendered h3,
-.pagetalk-function-window .markdown-rendered h4,
-.pagetalk-function-window .markdown-rendered h5,
-.pagetalk-function-window .markdown-rendered h6 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-weight: 600;
-    line-height: 1.25;
-}
-
-.pagetalk-function-window .markdown-rendered h1 { font-size: 1.5em; }
-.pagetalk-function-window .markdown-rendered h2 { font-size: 1.3em; }
-.pagetalk-function-window .markdown-rendered h3 { font-size: 1.1em; }
-
-.pagetalk-function-window .markdown-rendered p {
-    margin-bottom: 1em;
-    line-height: 1.6;
-}
-
-.pagetalk-function-window .markdown-rendered ul,
-.pagetalk-function-window .markdown-rendered ol {
-    margin: 1em 0;
-    padding-left: 2em;
-}
-
-.pagetalk-function-window .markdown-rendered li {
-    margin-bottom: 0.5em;
-    line-height: 1.5;
-}
-
-.pagetalk-function-window .markdown-rendered blockquote {
-    margin: 1em 0;
-    padding: 0.5em 1em;
-    border-left: 4px solid #007AFF;
-    background: rgba(0, 122, 255, 0.05);
-    font-style: italic;
-}
-
-.pagetalk-function-window .markdown-rendered code {
-    background: rgba(0, 0, 0, 0.1);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-.pagetalk-function-window .markdown-rendered pre {
-    background: rgba(0, 0, 0, 0.05);
-    padding: 1em;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 1em 0;
-    position: relative;
-}
-
-.pagetalk-function-window .markdown-rendered pre code {
-    background: none;
-    padding: 0;
-    border-radius: 0;
-}
-
-.pagetalk-function-window .markdown-rendered table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
-}
-
-.pagetalk-function-window .markdown-rendered th,
-.pagetalk-function-window .markdown-rendered td {
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    padding: 0.5em;
-    text-align: left;
-}
-
-.pagetalk-function-window .markdown-rendered th {
-    background: rgba(0, 0, 0, 0.05);
-    font-weight: 600;
-}
-
-.pagetalk-function-window .markdown-rendered a {
-    color: #007AFF;
-    text-decoration: none;
-}
-
-.pagetalk-function-window .markdown-rendered a:hover {
-    text-decoration: underline;
-}
-
-/* 代码块复制按钮样式 */
-.pagetalk-function-window .copy-button {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-    z-index: 1;
-    color: #666;
-}
-
-.pagetalk-function-window .copy-button:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 1);
 }
 
 /* 设置面板样式 */
