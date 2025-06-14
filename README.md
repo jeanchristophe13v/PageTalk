@@ -82,12 +82,13 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 **Get API Key:** Before using the extension, please obtain your Gemini API key from [Google AI Studio](https://aistudio.google.com).
 
 ### For common use
-1. chrome: https://chromewebstore.google.com/detail/pagetalk-your-gemini-brow/pjmpcpolpfejiacaemgjnjnknlcfcami?authuser=0
+1. Chrome: https://chromewebstore.google.com/detail/pagetalk-your-gemini-brow/pjmpcpolpfejiacaemgjnjnknlcfcami?authuser=0
   
-2. edge： https://microsoftedge.microsoft.com/addons/detail/pagetalk-your-gemini-br/mpmohgpcggkkbjdamcnmmnkblkmpldmi
+2. Edge： https://microsoftedge.microsoft.com/addons/detail/pagetalk-your-gemini-br/mpmohgpcggkkbjdamcnmmnkblkmpldmi
 
-Firefox is not available yet. 
-Stay tuned~
+3. Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/pagetalk-gemini-assistant/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search
+
+> ps: PageTalk in Firefox is yet incomplete for some reasons, but it's still good for summary and conversation. Stay tuned~
 
 ### For development 
 1. **Clone the repository or download the ZIP and unzip**
