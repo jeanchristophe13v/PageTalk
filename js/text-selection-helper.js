@@ -17,10 +17,15 @@ let shouldAdjustHeight = true; // 用于控制是否继续调整窗口高度（�
 
 // 用户手动调整状态管理
 let userHasManuallyResized = false; // 用于跟踪用户是否手动调整过窗口尺寸
+let isProgrammaticResize = false; // 用于标记程序自动调整，避免被误判为用户手动调整
 
 // 配置
 const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移
-const FUNCTION_WINDOW_DEFAULT_SIZE = { width: 400, height: 300 };
+const FUNCTION_WINDOW_DEFAULT_SIZE = {
+    width: () => window.innerWidth * 0.35, // 动态计算：屏幕宽度的35%
+    height: 300, // 解读/翻译窗口默认高度
+    chatHeight: 450 // 对话窗口默认高度（更高）
+};
 
 // SVG 图标定义
 const SVG_ICONS = {
@@ -470,11 +475,21 @@ async function showFunctionWindow(optionId) {
 
     // 重置用户手动调整状态（新窗口开始）
     userHasManuallyResized = false;
+    isProgrammaticResize = false;
 
     // 创建功能窗口
     const functionWindow = document.createElement('div');
     functionWindow.className = 'pagetalk-selection-helper pagetalk-function-window';
     functionWindow.dataset.option = optionId;
+
+    // 修改：根据是否为对话窗口来设置初始宽度和高度
+    const isChatWindow = optionId === 'chat';
+    const defaultWidth = isChatWindow
+        ? Math.min(FUNCTION_WINDOW_DEFAULT_SIZE.width(), 900) // 对话窗口使用最大宽度，但不超过900px
+        : 480; // 其他窗口使用固定的较小宽度
+    const defaultHeight = isChatWindow
+        ? FUNCTION_WINDOW_DEFAULT_SIZE.chatHeight // 对话窗口使用更高的默认高度
+        : FUNCTION_WINDOW_DEFAULT_SIZE.height; // 其他窗口使用标准高度
 
     // 添加关闭按钮
     const closeButton = document.createElement('button');
@@ -503,8 +518,8 @@ async function showFunctionWindow(optionId) {
     functionWindow.style.cssText = `
         position: fixed;
         z-index: 2147483647;
-        width: ${FUNCTION_WINDOW_DEFAULT_SIZE.width}px;
-        height: ${FUNCTION_WINDOW_DEFAULT_SIZE.height}px;
+        width: ${defaultWidth}px;
+        height: ${defaultHeight}px;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(15px);
         border-radius: 16px;
@@ -522,8 +537,8 @@ async function showFunctionWindow(optionId) {
     `;
 
     // 设置初始位置（屏幕中央）
-    const x = (window.innerWidth - FUNCTION_WINDOW_DEFAULT_SIZE.width) / 2;
-    const y = (window.innerHeight - FUNCTION_WINDOW_DEFAULT_SIZE.height) / 2;
+    const x = (window.innerWidth - defaultWidth) / 2;
+    const y = (window.innerHeight - defaultHeight) / 2;
 
     functionWindow.style.left = `${x}px`;
     functionWindow.style.top = `${y}px`;
@@ -581,7 +596,7 @@ async function showFunctionWindow(optionId) {
     if (window.ResizeObserver) {
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
-                if (initialSize && userHasManuallyResized === false) {
+                if (initialSize && userHasManuallyResized === false && !isProgrammaticResize) {
                     const currentWidth = entry.contentRect.width;
                     const currentHeight = entry.contentRect.height;
 
@@ -590,8 +605,9 @@ async function showFunctionWindow(optionId) {
                         Math.abs(currentHeight - initialSize.height) > 5) {
                         // 延迟检查，避免程序自动调整被误判
                         setTimeout(() => {
-                            if (Math.abs(functionWindow.offsetWidth - initialSize.width) > 5 ||
-                                Math.abs(functionWindow.offsetHeight - initialSize.height) > 5) {
+                            if (!isProgrammaticResize &&
+                                (Math.abs(functionWindow.offsetWidth - initialSize.width) > 5 ||
+                                Math.abs(functionWindow.offsetHeight - initialSize.height) > 5)) {
                                 console.log('[TextSelectionHelper] User manual resize detected via ResizeObserver');
                                 userHasManuallyResized = true;
                             }
@@ -765,7 +781,7 @@ async function createFunctionWindowContent(windowElement, optionId) {
                 <div class="pagetalk-window-drag-handle"></div>
             </div>
             <div class="pagetalk-quote-area">
-                <div class="pagetalk-quote-text">"${selectedText}"</div>
+                <div class="pagetalk-quote-text" id="quote-text-${Date.now()}">"${selectedText}"</div>
             </div>
             <div class="pagetalk-chat-messages"></div>
             <div class="pagetalk-chat-input">
@@ -786,7 +802,7 @@ async function createFunctionWindowContent(windowElement, optionId) {
                 <div class="pagetalk-window-drag-handle"></div>
             </div>
             <div class="pagetalk-quote-area">
-                <div class="pagetalk-quote-text">"${selectedText}"</div>
+                <div class="pagetalk-quote-text" id="quote-text-${Date.now()}">"${selectedText}"</div>
             </div>
             <div class="pagetalk-response-area">
                 <div class="thinking">
@@ -804,6 +820,9 @@ async function createFunctionWindowContent(windowElement, optionId) {
 
     // 添加事件监听器
     setupFunctionWindowEvents(windowElement, optionId);
+
+    // 初始化引用区域的折叠功能
+    initQuoteCollapse(windowElement);
 
     // 如果是解读或翻译，立即发送请求
     if (optionId === 'interpret' || optionId === 'translate') {
@@ -1236,7 +1255,10 @@ async function sendChatMessage(windowElement) {
 
                 // 条件调整窗口尺寸：在流式输出过程中始终调整
                 if (!userHasManuallyResized) {
+                    console.log('[TextSelectionHelper] Calling adjustWindowSize for chat window during streaming');
                     adjustWindowSize(windowElement);
+                } else {
+                    console.log('[TextSelectionHelper] Skipping adjustWindowSize: user has manually resized');
                 }
             }
 
@@ -1746,100 +1768,220 @@ function addCopyButtonToCodeBlock(codeBlock) {
  */
 function adjustWindowSize(windowElement) {
     try {
-        // 如果用户已经手动调整过尺寸，则不进行自动调整
         if (userHasManuallyResized) {
             console.log('[TextSelectionHelper] Skipping auto-resize: user has manually resized');
             return;
         }
 
+        // 检查是否是对话窗口
+        const isChatWindow = windowElement.querySelector('.pagetalk-chat-messages') !== null;
+        console.log(`[TextSelectionHelper] adjustWindowSize called for ${isChatWindow ? 'chat' : 'translate/interpret'} window`);
+
         // 保存滚动位置
-        const scrollContainers = [];
-        const responseArea = windowElement.querySelector('.pagetalk-response-area');
-        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+        const scrollContainer = windowElement.querySelector('.pagetalk-chat-messages, .pagetalk-response-area');
+        const originalScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
 
-        if (responseArea) {
-            scrollContainers.push({
-                element: responseArea,
-                scrollTop: responseArea.scrollTop
-            });
+        // --- 高度计算 ---
+        let contentHeight;
+
+        if (isChatWindow) {
+            // 对话窗口特殊处理：计算所有组件的高度总和
+            const header = windowElement.querySelector('.pagetalk-window-header');
+            const quoteArea = windowElement.querySelector('.pagetalk-quote-area');
+            const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+            const inputArea = windowElement.querySelector('.pagetalk-chat-input');
+
+            let totalHeight = 0;
+
+            // 计算固定高度的组件
+            if (header) totalHeight += header.offsetHeight;
+            if (quoteArea && quoteArea.style.display !== 'none') totalHeight += quoteArea.offsetHeight;
+            if (inputArea) totalHeight += inputArea.offsetHeight;
+
+            // 计算消息区域的内容高度
+            if (messagesArea) {
+                // 临时移除高度限制来测量内容
+                const originalHeight = messagesArea.style.height;
+                const originalMaxHeight = messagesArea.style.maxHeight;
+                const originalOverflow = messagesArea.style.overflowY;
+
+                messagesArea.style.height = 'auto';
+                messagesArea.style.maxHeight = 'none';
+                messagesArea.style.overflowY = 'visible';
+
+                // 获取消息区域的实际内容高度
+                const messagesContentHeight = messagesArea.scrollHeight;
+                totalHeight += messagesContentHeight;
+
+                // 恢复原始样式
+                messagesArea.style.height = originalHeight;
+                messagesArea.style.maxHeight = originalMaxHeight;
+                messagesArea.style.overflowY = originalOverflow;
+
+                console.log('[TextSelectionHelper] Chat window height calculation:', {
+                    headerHeight: header ? header.offsetHeight : 0,
+                    quoteHeight: quoteArea && quoteArea.style.display !== 'none' ? quoteArea.offsetHeight : 0,
+                    inputHeight: inputArea ? inputArea.offsetHeight : 0,
+                    messagesContentHeight,
+                    totalHeight
+                });
+            }
+
+            contentHeight = totalHeight;
+        } else {
+            // 解读/翻译窗口的原有逻辑
+            const originalHeight = windowElement.style.height;
+            windowElement.style.height = 'auto';
+            contentHeight = windowElement.scrollHeight;
+            windowElement.style.height = originalHeight;
+            console.log('[TextSelectionHelper] Translate/Interpret window - contentHeight:', contentHeight);
         }
-        if (messagesArea) {
-            scrollContainers.push({
-                element: messagesArea,
-                scrollTop: messagesArea.scrollTop
-            });
-        }
 
-        // 保存原始样式
-        const originalWidth = windowElement.style.width;
-        const originalHeight = windowElement.style.height;
-        const originalMaxWidth = windowElement.style.maxWidth;
-        const originalMaxHeight = windowElement.style.maxHeight;
-
-        // 临时设置为auto以测量内容尺寸
-        windowElement.style.width = 'auto';
-        windowElement.style.height = 'auto';
-        windowElement.style.maxWidth = 'none';
-        windowElement.style.maxHeight = 'none';
-
-        // 测量内容的实际尺寸
-        const contentWidth = windowElement.scrollWidth;
-        const contentHeight = windowElement.scrollHeight;
-
-        // 计算最大尺寸（基于屏幕尺寸的百分比）
-        const maxWidth = window.innerWidth * 0.35;  // 屏幕宽度的35%
-        const maxHeight = window.innerHeight * 0.85; // 屏幕高度的80%
-
-        // 计算最终尺寸
-        const finalWidth = Math.min(contentWidth, maxWidth);
-        const finalHeight = Math.min(contentHeight, maxHeight);
-
-        // 确保不小于最小尺寸
-        const minWidth = 400;
+        const maxHeight = window.innerHeight * 0.85;
         const minHeight = 250;
-        const adjustedWidth = Math.max(minWidth, finalWidth);
-        const adjustedHeight = Math.max(minHeight, finalHeight);
+        const finalHeight = Math.max(minHeight, Math.min(contentHeight, maxHeight));
 
-        // 恢复原始样式
-        windowElement.style.width = originalWidth;
-        windowElement.style.height = originalHeight;
-        windowElement.style.maxWidth = originalMaxWidth;
-        windowElement.style.maxHeight = originalMaxHeight;
+        console.log('[TextSelectionHelper] Height calculation:', {
+            contentHeight,
+            maxHeight,
+            minHeight,
+            finalHeight,
+            currentHeight: windowElement.style.height
+        });
 
-        // 应用新的尺寸
-        windowElement.style.width = `${adjustedWidth}px`;
-        windowElement.style.height = `${adjustedHeight}px`;
+        // --- 宽度处理 ---
+        // 对话窗口宽度保持不变（已在创建时设为最大宽度）
+        // 解读/翻译窗口根据内容调整宽度
+        if (!isChatWindow) {
+            const originalWidth = windowElement.style.width;
+            windowElement.style.width = 'auto';
+            const contentWidth = windowElement.scrollWidth;
+            windowElement.style.width = originalWidth;
 
-        // 确保窗口不会超出视窗边界
+            const maxWidth = window.innerWidth * 0.35;
+            const minWidth = 400;
+            const finalWidth = Math.max(minWidth, Math.min(contentWidth, maxWidth));
+            windowElement.style.width = `${finalWidth}px`;
+        }
+
+        // 标记为程序自动调整
+        isProgrammaticResize = true;
+
+        // 应用新的高度
+        windowElement.style.height = `${finalHeight}px`;
+
+        // 确保窗口位置在屏幕内
         const rect = windowElement.getBoundingClientRect();
         let newLeft = parseInt(windowElement.style.left);
         let newTop = parseInt(windowElement.style.top);
 
-        // 调整位置以确保窗口完全可见
         if (rect.right > window.innerWidth) {
-            newLeft = Math.max(10, window.innerWidth - adjustedWidth - 10);
+            newLeft = Math.max(10, window.innerWidth - rect.width - 10);
         }
         if (rect.bottom > window.innerHeight) {
-            newTop = Math.max(10, window.innerHeight - adjustedHeight - 10);
+            newTop = Math.max(10, window.innerHeight - finalHeight - 10);
         }
 
         windowElement.style.left = `${newLeft}px`;
         windowElement.style.top = `${newTop}px`;
 
-        // 恢复滚动位置（延迟执行以确保布局完成）
+        // 恢复滚动位置
         requestAnimationFrame(() => {
-            scrollContainers.forEach(container => {
-                if (container.element && container.scrollTop > 0) {
-                    container.element.scrollTop = container.scrollTop;
-                }
-            });
+            if (scrollContainer && originalScrollTop > 0) {
+                scrollContainer.scrollTop = originalScrollTop;
+            }
+            // 重置程序调整标志
+            setTimeout(() => {
+                isProgrammaticResize = false;
+            }, 300);
         });
 
-        console.log(`[TextSelectionHelper] Auto-adjusted window size: ${adjustedWidth}x${adjustedHeight}`);
+        console.log(`[TextSelectionHelper] Auto-adjusted window ${isChatWindow ? '(chat)' : '(translate/interpret)'} height: ${finalHeight}px`);
 
     } catch (error) {
         console.warn('[TextSelectionHelper] Error adjusting window size:', error);
+        // 确保在出错时也重置标志
+        isProgrammaticResize = false;
     }
+}
+
+/**
+ * 初始化引用区域的折叠功能
+ */
+function initQuoteCollapse(windowElement) {
+    // 延迟执行，确保DOM完全渲染
+    setTimeout(() => {
+        const quoteArea = windowElement.querySelector('.pagetalk-quote-area');
+        const quoteText = windowElement.querySelector('.pagetalk-quote-text');
+
+        console.log('[TextSelectionHelper] initQuoteCollapse - elements found:', {
+            quoteArea: !!quoteArea,
+            quoteText: !!quoteText
+        });
+
+        if (!quoteArea || !quoteText) {
+            console.warn('[TextSelectionHelper] Quote elements not found');
+            return;
+        }
+
+        // 获取文本内容
+        const textContent = quoteText.textContent || '';
+
+        console.log('[TextSelectionHelper] Quote collapse calculation:', {
+            textLength: textContent.length,
+            textContent: textContent.substring(0, 100) + '...'
+        });
+
+        // 简单的行数估算：基于字符数和容器宽度
+        // 对于中文，一般每行约30-40个字符，我们使用保守估计
+        const estimatedLines = Math.ceil(textContent.length / 35);
+        const needsCollapse = estimatedLines > 4 || textContent.length > 140; // 超过4行或140字符
+
+        console.log('[TextSelectionHelper] Line estimation:', {
+            estimatedLines,
+            needsCollapse
+        });
+
+        if (needsCollapse) {
+            // 文本超过4行，添加折叠功能
+            quoteText.classList.add('collapsed');
+
+            // 创建展开/折叠按钮
+            const toggleBtn = document.createElement('div');
+            toggleBtn.className = 'pagetalk-quote-toggle';
+            toggleBtn.textContent = '展开';
+
+            console.log('[TextSelectionHelper] Adding collapse toggle button');
+
+            // 添加点击事件
+            toggleBtn.addEventListener('click', () => {
+                if (quoteText.classList.contains('collapsed')) {
+                    // 展开
+                    quoteText.classList.remove('collapsed');
+                    quoteText.classList.add('expanded');
+                    toggleBtn.textContent = '折叠';
+                    console.log('[TextSelectionHelper] Quote expanded');
+                } else {
+                    // 折叠
+                    quoteText.classList.remove('expanded');
+                    quoteText.classList.add('collapsed');
+                    toggleBtn.textContent = '展开';
+                    console.log('[TextSelectionHelper] Quote collapsed');
+                }
+
+                // 触发窗口尺寸重新计算
+                if (!userHasManuallyResized) {
+                    setTimeout(() => {
+                        adjustWindowSize(windowElement);
+                    }, 300); // 等待CSS动画完成
+                }
+            });
+
+            quoteArea.appendChild(toggleBtn);
+        } else {
+            console.log('[TextSelectionHelper] Text is short enough, no collapse needed');
+        }
+    }, 100); // 延迟100ms确保DOM渲染完成
 }
 
 /**
