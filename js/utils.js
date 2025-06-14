@@ -20,12 +20,14 @@ export function escapeHtml(text) {
         console.warn('escapeHtml received non-string input:', text);
         return ''; // Return empty string or handle as appropriate
     }
-    return text
-        .replace(/&/g, '&')
-        .replace(/</g, '<')
-        .replace(/>/g, '>')
-        .replace(/"/g, '"')
-        .replace(/'/g, '\\\'');
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
 // 可以添加其他通用辅助函数

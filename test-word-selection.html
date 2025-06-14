@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PageTalk 划词助手测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+        }
+        
+        .test-section h2 {
+            color: #333;
+            border-bottom: 2px solid #007AFF;
+            padding-bottom: 10px;
+        }
+        
+        .highlight-text {
+            background: linear-gradient(120deg, #a8e6cf 0%, #dcedc1 100%);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .wide-content {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h3>📝 测试说明</h3>
+        <p>这个页面用于测试 PageTalk 划词助手的新尺寸自适应功能：</p>
+        <ol>
+            <li>选择下面的文本，会出现划词助手图标</li>
+            <li>点击图标选择功能（解读/翻译/对话）</li>
+            <li>观察窗口是否能自动调整宽度和高度</li>
+            <li>尝试手动调整窗口大小，然后再次使用功能</li>
+            <li>验证手动调整后，自动调整功能是否停止</li>
+        </ol>
+    </div>
+
+    <div class="test-content">
+        <div class="test-section">
+            <h2>🔤 短文本测试</h2>
+            <p>选择这段<span class="highlight-text">简短的文本</span>来测试基本功能。</p>
+            <p>这是一个<span class="highlight-text">普通长度的句子</span>，用于测试窗口的默认尺寸。</p>
+        </div>
+
+        <div class="test-section">
+            <h2>📄 长文本测试</h2>
+            <p>选择下面这段较长的文本来测试窗口的宽度自适应功能：</p>
+            <p class="highlight-text">
+                人工智能（Artificial Intelligence，简称AI）是计算机科学的一个分支，它企图了解智能的实质，并生产出一种新的能以人类智能相似的方式做出反应的智能机器。该领域的研究包括机器人、语言识别、图像识别、自然语言处理和专家系统等。人工智能从诞生以来，理论和技术日益成熟，应用领域也不断扩大，可以设想，未来人工智能带来的科技产品，将会是人类智慧的"容器"。
+            </p>
+        </div>
+
+        <div class="test-section">
+            <h2>💻 代码文本测试</h2>
+            <p>选择下面的代码块来测试宽内容的处理：</p>
+            <div class="code-block highlight-text">
+function adjustWindowSize(windowElement) {
+    if (userHasManuallyResized) return;
+    const maxWidth = window.innerWidth * 0.8;
+    const maxHeight = window.innerHeight * 0.85;
+    const finalWidth = Math.min(contentWidth, maxWidth);
+    const finalHeight = Math.min(contentHeight, maxHeight);
+    windowElement.style.width = `${finalWidth}px`;
+    windowElement.style.height = `${finalHeight}px`;
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 表格数据测试</h2>
+            <p>选择下面的表格数据来测试宽内容：</p>
+            <div class="wide-content highlight-text">
+                产品名称 | 价格 | 库存数量 | 供应商 | 生产日期 | 保质期 | 产品描述
+                苹果 | ¥5.99/kg | 1000kg | 山东果园 | 2024-01-15 | 30天 | 新鲜红富士苹果，口感脆甜
+                香蕉 | ¥3.99/kg | 800kg | 海南农场 | 2024-01-20 | 7天 | 进口香蕉，营养丰富
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 多语言测试</h2>
+            <p>选择不同语言的文本：</p>
+            <p><span class="highlight-text">Hello, this is an English text for testing the word selection helper functionality.</span></p>
+            <p><span class="highlight-text">Bonjour, ceci est un texte français pour tester la fonctionnalité d'aide à la sélection de mots.</span></p>
+            <p><span class="highlight-text">こんにちは、これは単語選択ヘルパー機能をテストするための日本語のテキストです。</span></p>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 技术文档测试</h2>
+            <p>选择技术性内容：</p>
+            <p class="highlight-text">
+                在现代Web开发中，响应式设计已成为不可或缺的技术。通过使用CSS媒体查询、弹性布局（Flexbox）和网格布局（CSS Grid），开发者可以创建适应不同屏幕尺寸和设备类型的用户界面。JavaScript框架如React、Vue.js和Angular提供了组件化的开发模式，使得复杂应用的构建变得更加高效和可维护。
+            </p>
+        </div>
+    </div>
+
+    <div class="test-content">
+        <h2>🎯 测试重点</h2>
+        <ul>
+            <li><strong>自动宽度调整：</strong>选择不同长度的文本，观察窗口宽度是否自动适应</li>
+            <li><strong>最大宽度限制：</strong>选择很长的文本，验证窗口宽度不会超过屏幕的80%</li>
+            <li><strong>手动调整检测：</strong>手动拖拽调整窗口大小后，自动调整应该停止</li>
+            <li><strong>窗口位置：</strong>确保调整后的窗口不会超出屏幕边界</li>
+            <li><strong>流式输出：</strong>在AI回复过程中观察窗口尺寸的变化</li>
+        </ul>
+    </div>
+
+    <script>
+        // 模拟加载 PageTalk 扩展的相关脚本
+        console.log('测试页面已加载，请确保 PageTalk 扩展已启用');
+        
+        // 添加一些测试用的事件监听
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面DOM加载完成，可以开始测试划词助手功能');
+        });
+        
+        // 监听选择事件
+        document.addEventListener('selectionchange', () => {
+            const selection = window.getSelection();
+            if (selection.toString().trim()) {
+                console.log('检测到文本选择:', selection.toString().substring(0, 50) + '...');
+            }
+        });
+    </script>
+</body>
+</html>

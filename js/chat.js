@@ -201,6 +201,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
  */
 export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
     state.chatHistory = [];
+    state.locallyIgnoredTabs = {}; // 清空已忽略标签页的状态
     elements.chatMessages.innerHTML = ''; // Clear UI
 
     // Re-add welcome message
@@ -504,4 +505,23 @@ export function abortStreaming(state, restoreSendButtonAndInputCallback, showToa
     }
     // Always attempt to restore UI state after abort attempt
     restoreSendButtonAndInputCallback();
+}
+
+/**
+ * Handles removing a sent tab from a message's context.
+ * This updates the state to ignore the tab for future regenerations.
+ * @param {string} messageId - The ID of the user message.
+ * @param {string} tabId - The ID of the tab to remove from context.
+ * @param {object} state - Global state reference.
+ */
+export function handleRemoveSentTabContext(messageId, tabId, state) {
+    if (!state.locallyIgnoredTabs[messageId]) {
+        state.locallyIgnoredTabs[messageId] = [];
+    }
+    if (!state.locallyIgnoredTabs[messageId].includes(tabId)) {
+        state.locallyIgnoredTabs[messageId].push(tabId);
+        console.log(`Tab ${tabId} marked as ignored for message ${messageId}. Ignored:`, state.locallyIgnoredTabs);
+    } else {
+        console.log(`Tab ${tabId} was already marked as ignored for message ${messageId}.`);
+    }
 }

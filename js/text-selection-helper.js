@@ -11,6 +11,13 @@ let currentFunctionWindow = null;
 let selectedText = '';
 let selectionContext = '';
 
+// 滚动状态管理
+let functionWindowScrolledUp = false; // 用于跟踪用户是否主动向上滚动
+let shouldAdjustHeight = true; // 用于控制是否继续调整窗口高度（主要影响滚动行为）
+
+// 用户手动调整状态管理
+let userHasManuallyResized = false; // 用于跟踪用户是否手动调整过窗口尺寸
+
 // 配置
 const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移
 const FUNCTION_WINDOW_DEFAULT_SIZE = { width: 400, height: 300 };
@@ -461,6 +468,9 @@ async function showFunctionWindow(optionId) {
 
     console.log('[TextSelectionHelper] Showing function window for:', optionId);
 
+    // 重置用户手动调整状态（新窗口开始）
+    userHasManuallyResized = false;
+
     // 创建功能窗口
     const functionWindow = document.createElement('div');
     functionWindow.className = 'pagetalk-selection-helper pagetalk-function-window';
@@ -529,6 +539,75 @@ async function showFunctionWindow(optionId) {
 
     // 添加拖拽功能
     makeFunctionWindowDraggable(functionWindow);
+
+    // 添加用户手动调整检测
+    let initialSize = null;
+
+    // 记录初始尺寸
+    const recordInitialSize = () => {
+        initialSize = {
+            width: functionWindow.offsetWidth,
+            height: functionWindow.offsetHeight
+        };
+    };
+
+    // 检测尺寸变化
+    const checkSizeChange = () => {
+        if (initialSize) {
+            const currentWidth = functionWindow.offsetWidth;
+            const currentHeight = functionWindow.offsetHeight;
+
+            // 如果尺寸发生了显著变化（超过5px），认为是用户手动调整
+            if (Math.abs(currentWidth - initialSize.width) > 5 ||
+                Math.abs(currentHeight - initialSize.height) > 5) {
+                console.log('[TextSelectionHelper] User manual resize detected');
+                userHasManuallyResized = true;
+                initialSize = { width: currentWidth, height: currentHeight };
+            }
+        }
+    };
+
+    // 监听鼠标按下事件（开始可能的调整）
+    functionWindow.addEventListener('mousedown', (e) => {
+        recordInitialSize();
+    });
+
+    // 监听鼠标释放事件（结束可能的调整）
+    functionWindow.addEventListener('mouseup', () => {
+        setTimeout(checkSizeChange, 100); // 延迟检查以确保尺寸变化已完成
+    });
+
+    // 使用ResizeObserver监听尺寸变化（更准确的方法）
+    if (window.ResizeObserver) {
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                if (initialSize && userHasManuallyResized === false) {
+                    const currentWidth = entry.contentRect.width;
+                    const currentHeight = entry.contentRect.height;
+
+                    // 检查是否是用户手动调整（而非程序自动调整）
+                    if (Math.abs(currentWidth - initialSize.width) > 5 ||
+                        Math.abs(currentHeight - initialSize.height) > 5) {
+                        // 延迟检查，避免程序自动调整被误判
+                        setTimeout(() => {
+                            if (Math.abs(functionWindow.offsetWidth - initialSize.width) > 5 ||
+                                Math.abs(functionWindow.offsetHeight - initialSize.height) > 5) {
+                                console.log('[TextSelectionHelper] User manual resize detected via ResizeObserver');
+                                userHasManuallyResized = true;
+                            }
+                        }, 200);
+                    }
+                }
+            }
+        });
+
+        resizeObserver.observe(functionWindow);
+
+        // 在窗口关闭时清理observer
+        functionWindow.addEventListener('remove', () => {
+            resizeObserver.disconnect();
+        });
+    }
 
     // 添加淡入动画
     requestAnimationFrame(() => {
@@ -736,6 +815,10 @@ async function createFunctionWindowContent(windowElement, optionId) {
  * 设置功能窗口事件监听器
  */
 function setupFunctionWindowEvents(windowElement, optionId) {
+    // 重置滚动状态和调整状态
+    functionWindowScrolledUp = false;
+    shouldAdjustHeight = true;
+
     if (optionId === 'chat') {
         // 对话窗口事件
         const sendBtn = windowElement.querySelector('.pagetalk-send-btn');
@@ -755,7 +838,41 @@ function setupFunctionWindowEvents(windowElement, optionId) {
         if (clearBtn) {
             clearBtn.addEventListener('click', () => clearChatContext(windowElement));
         }
+
+        // 为聊天消息区域添加滚动监听器
+        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+        if (messagesArea) {
+            setupScrollListener(messagesArea);
+        }
+    } else {
+        // 为解读/翻译响应区域添加滚动监听器
+        const responseArea = windowElement.querySelector('.pagetalk-response-area');
+        if (responseArea) {
+            setupScrollListener(responseArea);
+        }
     }
+}
+
+/**
+ * 设置滚动监听器
+ */
+function setupScrollListener(scrollContainer) {
+    if (!scrollContainer) return;
+
+    scrollContainer.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+        const isNearBottom = scrollTop + clientHeight >= scrollHeight - 30; // 30px 阈值
+
+        if (isNearBottom) {
+            // 用户滚动到底部，恢复自动滚动
+            functionWindowScrolledUp = false;
+            shouldAdjustHeight = true; // 恢复高度调整
+        } else {
+            // 用户向上滚动，停止自动滚动
+            functionWindowScrolledUp = true;
+            // 注意：不再阻止尺寸调整，只是停止自动滚动
+        }
+    });
 }
 
 /**
@@ -763,6 +880,10 @@ function setupFunctionWindowEvents(windowElement, optionId) {
  */
 async function sendInterpretOrTranslateRequest(windowElement, optionId) {
     try {
+        // 重置滚动状态（新请求开始）
+        functionWindowScrolledUp = false;
+        shouldAdjustHeight = true;
+
         // 获取设置
         const settings = await getTextSelectionHelperSettings();
         const optionSettings = settings[optionId];
@@ -834,8 +955,17 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
                 const codeBlocks = responseContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
 
-                // 自动调整窗口高度
-                adjustWindowHeight(windowElement);
+                // 条件滚动：只有当用户没有向上滚动时才自动滚动
+                const responseArea = windowElement.querySelector('.pagetalk-response-area');
+                if (responseArea && !functionWindowScrolledUp) {
+                    responseArea.scrollTop = responseArea.scrollHeight;
+                }
+
+                // 优化的尺寸调整：在流式输出过程中始终调整尺寸
+                // 只有在输出完成或者用户没有手动调整过窗口时才进行尺寸调整
+                if (!userHasManuallyResized) {
+                    adjustWindowSize(windowElement);
+                }
             }
         });
 
@@ -1017,6 +1147,10 @@ async function sendChatMessage(windowElement) {
             fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
         }
 
+        // 重置滚动状态（新请求开始）
+        functionWindowScrolledUp = false;
+        shouldAdjustHeight = true;
+
         // 添加思考动画
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
         const thinkingElement = document.createElement('div');
@@ -1034,8 +1168,10 @@ async function sendChatMessage(windowElement) {
         `;
         messagesArea.appendChild(thinkingElement);
 
-        // 滚动到底部
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+        // 条件滚动到底部
+        if (!functionWindowScrolledUp) {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
 
         // 创建AI消息元素用于流式更新
         const aiMessageElement = document.createElement('div');
@@ -1098,8 +1234,10 @@ async function sendChatMessage(windowElement) {
                 const codeBlocks = messageContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
 
-                // 自动调整窗口高度
-                adjustWindowHeight(windowElement);
+                // 条件调整窗口尺寸：在流式输出过程中始终调整
+                if (!userHasManuallyResized) {
+                    adjustWindowSize(windowElement);
+                }
             }
 
             if (isComplete) {
@@ -1107,12 +1245,16 @@ async function sendChatMessage(windowElement) {
                 setupChatMessageActions(aiMessageElement, fullResponse);
             }
 
-            // 滚动到底部
-            messagesArea.scrollTop = messagesArea.scrollHeight;
+            // 条件滚动到底部
+            if (!functionWindowScrolledUp) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
         });
 
-        // 滚动到底部
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+        // 条件滚动到底部
+        if (!functionWindowScrolledUp) {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
 
     } catch (error) {
         console.error('[TextSelectionHelper] Chat error:', error);
@@ -1178,8 +1320,10 @@ function addChatMessage(windowElement, message, role) {
     // 设置按钮事件
     setupChatMessageActions(messageElement, message);
 
-    // 滚动到底部
-    messagesArea.scrollTop = messagesArea.scrollHeight;
+    // 条件滚动到底部
+    if (!functionWindowScrolledUp) {
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
 }
 
 /**
@@ -1298,8 +1442,14 @@ async function regenerateChatMessage(windowElement, userMessage) {
         `;
         messagesArea.appendChild(thinkingElement);
 
-        // 滚动到底部
-        messagesArea.scrollTop = messagesArea.scrollHeight;
+        // 重置滚动状态（新请求开始）
+        functionWindowScrolledUp = false;
+        shouldAdjustHeight = true;
+
+        // 条件滚动到底部
+        if (!functionWindowScrolledUp) {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
 
         // 创建AI消息元素用于流式更新
         const aiMessageElement = document.createElement('div');
@@ -1362,8 +1512,10 @@ async function regenerateChatMessage(windowElement, userMessage) {
                 const codeBlocks = messageContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
 
-                // 自动调整窗口高度
-                adjustWindowHeight(windowElement);
+                // 条件调整窗口尺寸：在流式输出过程中始终调整
+                if (!userHasManuallyResized) {
+                    adjustWindowSize(windowElement);
+                }
             }
 
             if (isComplete) {
@@ -1371,8 +1523,10 @@ async function regenerateChatMessage(windowElement, userMessage) {
                 setupChatMessageActions(aiMessageElement, fullResponse);
             }
 
-            // 滚动到底部
-            messagesArea.scrollTop = messagesArea.scrollHeight;
+            // 条件滚动到底部
+            if (!functionWindowScrolledUp) {
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
         });
 
     } catch (error) {
@@ -1587,47 +1741,112 @@ function addCopyButtonToCodeBlock(codeBlock) {
 
 
 /**
- * 自动调整窗口高度以适应内容
+ * 智能调整窗口尺寸以适应内容（宽度和高度）
+ * 如果用户已手动调整过尺寸，则跳过自动调整
  */
-function adjustWindowHeight(windowElement) {
+function adjustWindowSize(windowElement) {
     try {
-        // 获取窗口的当前高度
-        const currentHeight = windowElement.offsetHeight;
+        // 如果用户已经手动调整过尺寸，则不进行自动调整
+        if (userHasManuallyResized) {
+            console.log('[TextSelectionHelper] Skipping auto-resize: user has manually resized');
+            return;
+        }
 
-        // 临时移除高度限制以测量内容高度
+        // 保存滚动位置
+        const scrollContainers = [];
+        const responseArea = windowElement.querySelector('.pagetalk-response-area');
+        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+
+        if (responseArea) {
+            scrollContainers.push({
+                element: responseArea,
+                scrollTop: responseArea.scrollTop
+            });
+        }
+        if (messagesArea) {
+            scrollContainers.push({
+                element: messagesArea,
+                scrollTop: messagesArea.scrollTop
+            });
+        }
+
+        // 保存原始样式
+        const originalWidth = windowElement.style.width;
         const originalHeight = windowElement.style.height;
+        const originalMaxWidth = windowElement.style.maxWidth;
         const originalMaxHeight = windowElement.style.maxHeight;
 
+        // 临时设置为auto以测量内容尺寸
+        windowElement.style.width = 'auto';
         windowElement.style.height = 'auto';
+        windowElement.style.maxWidth = 'none';
         windowElement.style.maxHeight = 'none';
 
-        // 测量内容的实际高度
+        // 测量内容的实际尺寸
+        const contentWidth = windowElement.scrollWidth;
         const contentHeight = windowElement.scrollHeight;
 
-        // 设置合理的最大高度（视窗高度的80%）
-        const maxHeight = Math.min(contentHeight, window.innerHeight * 0.8);
+        // 计算最大尺寸（基于屏幕尺寸的百分比）
+        const maxWidth = window.innerWidth * 0.35;  // 屏幕宽度的35%
+        const maxHeight = window.innerHeight * 0.85; // 屏幕高度的80%
 
-        // 确保不小于最小高度
+        // 计算最终尺寸
+        const finalWidth = Math.min(contentWidth, maxWidth);
+        const finalHeight = Math.min(contentHeight, maxHeight);
+
+        // 确保不小于最小尺寸
+        const minWidth = 400;
         const minHeight = 250;
-        const finalHeight = Math.max(minHeight, Math.min(maxHeight, contentHeight));
+        const adjustedWidth = Math.max(minWidth, finalWidth);
+        const adjustedHeight = Math.max(minHeight, finalHeight);
 
         // 恢复原始样式
+        windowElement.style.width = originalWidth;
         windowElement.style.height = originalHeight;
+        windowElement.style.maxWidth = originalMaxWidth;
         windowElement.style.maxHeight = originalMaxHeight;
 
-        // 如果需要调整高度
-        if (Math.abs(finalHeight - currentHeight) > 10) {
-            // 平滑调整高度
-            windowElement.style.height = `${finalHeight}px`;
+        // 应用新的尺寸
+        windowElement.style.width = `${adjustedWidth}px`;
+        windowElement.style.height = `${adjustedHeight}px`;
 
-            // 确保窗口不会超出视窗边界
-            const rect = windowElement.getBoundingClientRect();
-            if (rect.bottom > window.innerHeight) {
-                const newTop = Math.max(10, window.innerHeight - finalHeight - 10);
-                windowElement.style.top = `${newTop}px`;
-            }
+        // 确保窗口不会超出视窗边界
+        const rect = windowElement.getBoundingClientRect();
+        let newLeft = parseInt(windowElement.style.left);
+        let newTop = parseInt(windowElement.style.top);
+
+        // 调整位置以确保窗口完全可见
+        if (rect.right > window.innerWidth) {
+            newLeft = Math.max(10, window.innerWidth - adjustedWidth - 10);
         }
+        if (rect.bottom > window.innerHeight) {
+            newTop = Math.max(10, window.innerHeight - adjustedHeight - 10);
+        }
+
+        windowElement.style.left = `${newLeft}px`;
+        windowElement.style.top = `${newTop}px`;
+
+        // 恢复滚动位置（延迟执行以确保布局完成）
+        requestAnimationFrame(() => {
+            scrollContainers.forEach(container => {
+                if (container.element && container.scrollTop > 0) {
+                    container.element.scrollTop = container.scrollTop;
+                }
+            });
+        });
+
+        console.log(`[TextSelectionHelper] Auto-adjusted window size: ${adjustedWidth}x${adjustedHeight}`);
+
     } catch (error) {
-        console.warn('[TextSelectionHelper] Error adjusting window height:', error);
+        console.warn('[TextSelectionHelper] Error adjusting window size:', error);
     }
+}
+
+/**
+ * 自动调整窗口高度以适应内容（保留原函数作为备用）
+ * @deprecated 使用 adjustWindowSize 替代
+ */
+function adjustWindowHeight(windowElement) {
+    // 调用新的智能尺寸调整函数
+    adjustWindowSize(windowElement);
 }

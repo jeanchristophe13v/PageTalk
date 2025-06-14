@@ -26,7 +26,7 @@ import {
 } from './agent.js';
 import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection } from './settings.js';
 import { initTextSelectionHelperSettings } from './text-selection-helper-settings.js';
-import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction } from './chat.js';
+import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
     switchTab,
     switchSettingsSubTab,
@@ -266,6 +266,12 @@ function init() {
         setTimeout(() => elements.userInput.focus(), 150); // 增加延迟以确保DOM完全准备好
     }
 
+    // Expose the handler on the window object so ui.js can call it
+    window.handleRemoveSentTabContext = (messageId, tabId) => {
+        handleRemoveSentTabContextAction(messageId, tabId, state);
+    };
+
+
     console.log("Pagetalk Initialized.");
 }
 
@@ -300,7 +306,13 @@ function setupEventListeners() {
     elements.userInput.addEventListener('keydown', handleUserInputKeydown);
     // 新增：监听用户输入框的 input 事件，用于检测 "@"
     elements.userInput.addEventListener('input', handleUserInputForTabSelection);
-    elements.clearContextBtn.addEventListener('click', () => clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations));
+    elements.clearContextBtn.addEventListener('click', () => {
+        clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations);
+        // Also clear the UI for selected tabs
+        state.selectedContextTabs = [];
+        updateSelectedTabsBarFromMain();
+    });
+
     elements.chatModelSelection.addEventListener('change', handleChatModelChange);
     elements.chatAgentSelection.addEventListener('change', handleChatAgentChange);
 
@@ -620,7 +632,7 @@ function sendUserMessageTrigger() {
 
 // Wrapper function to trigger abortStreaming
 function abortStreamingUI() {
-    abortStreamingAction(state, restoreSendButtonAndInputUI);
+    abortStreamingAction(state, restoreSendButtonAndInputUI, showToastUI, currentTranslations);
 }
 
 // Wrapper function to restore send button UI
@@ -958,45 +970,4 @@ function removeSelectedTabFromMain(tabId) {
 // 新增：用于更新已选标签栏UI的回调函数
 function updateSelectedTabsBarFromMain() {
     updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
-}
-
-export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
-    state.chatHistory = [];
-    elements.chatMessages.innerHTML = ''; // Clear UI
-    state.locallyIgnoredTabs = {}; // 新增：清空已忽略标签页的状态
-
-    // Re-add welcome message
-    const welcomeMessage = document.createElement('div');
-    welcomeMessage.className = 'welcome-message';
-    welcomeMessage.innerHTML = `
-        <h2>${_('welcomeHeading')}</h2>
-        <button class="quick-action-btn">${_('summarizeAction')}</button>
-    `;
-    elements.chatMessages.appendChild(welcomeMessage);
-
-    clearImagesCallback(); // Clear images using callback
-    clearVideosCallback(); // Clear videos using callback
-
-    // 新增：清空已选标签页并更新UI栏
-    state.selectedContextTabs = [];
-    updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
-
-    if (showToast) {
-        showToastCallback(_('contextClearedSuccess', {}, currentTranslations), 'success');
-    }
-}
-
-// 新增：处理从特定消息上下文中移除已发送标签页的逻辑
-function handleRemoveSentTabContext(messageId, tabId) {
-    if (!state.locallyIgnoredTabs[messageId]) {
-        state.locallyIgnoredTabs[messageId] = [];
-    }
-    if (!state.locallyIgnoredTabs[messageId].includes(tabId)) {
-        state.locallyIgnoredTabs[messageId].push(tabId);
-        console.log(`Tab ${tabId} marked as ignored for message ${messageId}. Ignored:`, state.locallyIgnoredTabs);
-        // 可选：显示一个toast通知用户该标签页的上下文不会用于此消息的后续重新生成
-        // showToastUI(`标签页上下文已从本次对话中移除 (重新生成时生效)`, 'info');
-    } else {
-        console.log(`Tab ${tabId} was already marked as ignored for message ${messageId}.`);
-    }
 }

@@ -117,12 +117,12 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
     resize: both;
-    min-width: 400px; /* 增加最小宽度 */
-    min-height: 250px; /* 增加最小高度 */
-    max-width: 600px; /* 设置最大宽度 */
+    min-width: 400px; /* 保留最小宽度 */
+    min-height: 250px; /* 保留最小高度 */
+    /* 移除 max-width 限制，由 JavaScript 动态控制 */
     width: 480px; /* 设置默认宽度 */
     height: auto; /* 允许高度自动调整 */
-    transition: height 0.3s ease; /* 添加高度变化动画 */
+    transition: width 0.3s ease, height 0.3s ease; /* 添加宽度和高度变化动画 */
 }
 
 /* --- Start of Fix: Scoped CSS variables and styles --- */
