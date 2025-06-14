@@ -88,7 +88,7 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 
 3. Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/pagetalk-gemini-assistant/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search
 
-> ps: PageTalk in Firefox is yet incomplete for some reasons, but it's still good for summary and conversation. Stay tuned~
+> ps: ⚠️PageTalk in Firefox is yet incomplete for some reasons, but it's still good for summary and conversation. Stay tuned~
 
 ### For development 
 1. **Clone the repository or download the ZIP and unzip**
