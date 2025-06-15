@@ -307,16 +307,16 @@ function extractSelectionContext(selection) {
         let contextText = contextElement.textContent || '';
 
         // 限制上下文长度，避免传递过大的内容
-        const maxContextLength = 1000; // 限制为1000字符
+        const maxContextLength = 2000; // 限制为2000字符
         if (contextText.length > maxContextLength) {
             // 尝试找到选中文本在上下文中的位置
             const selectedText = selection.toString();
             const selectedIndex = contextText.indexOf(selectedText);
 
             if (selectedIndex !== -1) {
-                // 以选中文本为中心，提取前后各500字符
-                const start = Math.max(0, selectedIndex - 500);
-                const end = Math.min(contextText.length, selectedIndex + selectedText.length + 500);
+                // 以选中文本为中心，提取前后各1000字符
+                const start = Math.max(0, selectedIndex - 1000);
+                const end = Math.min(contextText.length, selectedIndex + selectedText.length + 1000);
                 contextText = contextText.substring(start, end);
 
                 // 如果截断了开头或结尾，添加省略号
@@ -1755,10 +1755,10 @@ async function sendChatMessage(windowElement) {
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
             // 只有当上下文与选中文本不同且有意义时才包含
-            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
+            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
         } else {
             // 如果上下文无意义或与选中文本相同，只使用选中文本
-            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
         }
 
         // 重置滚动状态（新请求开始）
@@ -2154,10 +2154,10 @@ async function regenerateChatMessage(windowElement, userMessage) {
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
             // 只有当上下文与选中文本不同且有意义时才包含
-            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
+            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
         } else {
             // 如果上下文无意义或与选中文本相同，只使用选中文本
-            fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
         }
 
         // 设置流式状态
