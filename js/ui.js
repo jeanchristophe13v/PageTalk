@@ -605,6 +605,14 @@ export function updateUIElementsWithTranslations(currentTranslations) {
         }
     });
 
+    // Handle all elements with data-i18n-placeholder attribute
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+        const key = element.dataset.i18nPlaceholder;
+        if (key) {
+            element.placeholder = _tr(key);
+        }
+    });
+
     // Note: Dynamic elements like agent list items, status messages, etc.,
     // need to be updated when they are created or their state changes,
     // using the _ function with the currentTranslations.

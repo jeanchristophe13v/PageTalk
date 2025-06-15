@@ -291,14 +291,21 @@ function togglePanel() {
 
 // 监听来自background或面板的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('[Content] Received message:', message.action);
+
+  // 响应ping请求（用于检查content script是否活跃）
+  if (message.action === "ping") {
+    sendResponse && sendResponse({ success: true, alive: true });
+    return true;
+  }
   // 主动响应主题请求
-  if (message.action === "requestTheme") {
+  else if (message.action === "requestTheme") {
     detectAndSendTheme();
     sendResponse && sendResponse({ success: true });
     return true;
   }
   // 修改：处理来自 background.js 的内容提取请求
-  if (message.action === "getFullPageContentRequest") {
+  else if (message.action === "getFullPageContentRequest") {
     (async () => { // 使用 IIFE 来处理异步操作
       try {
         const content = await extractPageContent(); // extractPageContent 现在是异步的
@@ -310,9 +317,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
     return true; // 必须返回 true 来表明 sendResponse 将会异步调用
   }
-
   // 处理打开/关闭面板的请求
   else if (message.action === "togglePanel") {
+    // 检查必要的库是否可用
+    const librariesAvailable = checkLibrariesAvailability();
+    if (!librariesAvailable.allAvailable) {
+      console.warn('[Content] Some libraries missing when toggling panel:', librariesAvailable.missing);
+      sendResponse({
+        success: false,
+        error: 'Required libraries not available',
+        missing: librariesAvailable.missing
+      });
+      return true;
+    }
+
     // 初始化面板（如果尚未初始化）
     initPagetalkPanel();
 
@@ -321,13 +339,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true, panelActive });
     return true; // 这是异步的，尽管 togglePanel 本身不是
   }
-
   // 处理来自background.js的流式更新消息（用于划词助手）
   else if (message.action === "streamUpdate") {
     // 直接转发给划词助手的监听器
     // 这个消息会被text-selection-helper.js中的监听器接收
     // 不需要sendResponse，因为这是单向消息
     return false; // 不需要异步响应
+  }
+  // 实时同步机制 - 处理来自background的广播消息
+  else if (message.action === 'storageChanged') {
+    // 通用存储变化处理
+    console.log('[Content] Storage changed:', message.changes);
+    return false;
+  }
+  else if (message.action === 'languageChanged') {
+    console.log('[Content] Language changed from', message.oldLanguage, 'to', message.newLanguage);
+    handleLanguageChangeInContent(message.newLanguage);
+    return false;
+  }
+  else if (message.action === 'textSelectionHelperSettingsChanged') {
+    console.log('[Content] Text selection helper settings changed');
+    handleTextSelectionHelperSettingsChange(message.newSettings);
+    return false;
+  }
+  else if (message.action === 'extensionReloaded') {
+    console.log('[Content] Extension reloaded - reinitializing');
+    handleExtensionReload();
+    return false;
   }
 
   // 确保为其他可能的消息处理器也返回 true（如果它们是异步的）
@@ -663,6 +701,11 @@ window.addEventListener('message', (event) => {
     // 移除临时元素
     document.body.removeChild(textarea);
   }
+  // 处理主面板iframe请求主题检测（扩展重载后Chrome API失效时的代理）
+  else if (event.data.action === 'requestThemeFromIframe') {
+    console.log('[Content] Iframe requested theme detection');
+    detectAndSendTheme();
+  }
 });
 
 // 初始运行
@@ -671,3 +714,132 @@ window.addEventListener('load', () => {
   // initPagetalkPanel(); // 考虑是否在load时立即初始化，或者按需初始化
   detectAndSendTheme(); // 页面加载完成后立即发送主题
 });
+
+
+
+/**
+ * 处理语言变化
+ */
+function handleLanguageChangeInContent(newLanguage) {
+  // 更新划词助手的语言缓存
+  if (window.currentLanguageCache !== undefined) {
+    window.currentLanguageCache = newLanguage;
+    console.log('[Content] Updated language cache to:', newLanguage);
+  }
+
+  // 通知主面板语言变化
+  const iframe = document.getElementById('pagetalk-panel-iframe');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({
+      action: 'languageChanged',
+      newLanguage: newLanguage
+    }, '*');
+  }
+
+  // 通知划词助手语言变化
+  if (window.handleTextSelectionHelperLanguageChange) {
+    window.handleTextSelectionHelperLanguageChange(newLanguage);
+  }
+}
+
+/**
+ * 处理划词助手设置变化
+ */
+function handleTextSelectionHelperSettingsChange(newSettings) {
+  // 通知划词助手设置变化
+  if (window.handleTextSelectionHelperSettingsUpdate) {
+    window.handleTextSelectionHelperSettingsUpdate(newSettings);
+  }
+}
+
+/**
+ * 处理扩展重载
+ */
+function handleExtensionReload() {
+  // 重新初始化所有组件
+  console.log('[Content] Reinitializing after extension reload');
+
+  // 检查并重新初始化必要的库
+  checkAndReinitializeLibraries();
+
+  // 重新检测主题
+  detectAndSendTheme();
+
+  // 重新初始化划词助手（如果存在）
+  if (window.reinitializeTextSelectionHelper) {
+    window.reinitializeTextSelectionHelper();
+  } else {
+    // 如果划词助手函数不存在，尝试重新初始化
+    console.log('[Content] TextSelectionHelper not found, attempting to reinitialize');
+    if (typeof initTextSelectionHelper === 'function') {
+      initTextSelectionHelper();
+    }
+  }
+
+  // 通知主面板扩展已重载
+  const iframe = document.getElementById('pagetalk-panel-iframe');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({
+      action: 'extensionReloaded'
+    }, '*');
+  }
+}
+
+/**
+ * 检查库的可用性
+ */
+function checkLibrariesAvailability() {
+  const missing = [];
+
+  // 检查Readability库
+  if (typeof Readability === 'undefined') {
+    missing.push('Readability');
+  }
+
+  // 检查markdown-it库
+  if (typeof markdownit === 'undefined' && typeof window.markdownit === 'undefined') {
+    missing.push('markdown-it');
+  }
+
+  // 检查translations对象
+  if (typeof translations === 'undefined' && typeof window.translations === 'undefined') {
+    missing.push('translations');
+  }
+
+  // 检查MarkdownRenderer
+  if (typeof window.MarkdownRenderer === 'undefined') {
+    missing.push('MarkdownRenderer');
+  }
+
+  // 检查划词助手
+  if (typeof initTextSelectionHelper === 'undefined') {
+    missing.push('TextSelectionHelper');
+  }
+
+  return {
+    allAvailable: missing.length === 0,
+    missing: missing
+  };
+}
+
+/**
+ * 检查并重新初始化必要的库
+ */
+function checkAndReinitializeLibraries() {
+  console.log('[Content] Checking library availability...');
+
+  const availability = checkLibrariesAvailability();
+
+  if (availability.allAvailable) {
+    console.log('[Content] All libraries are available');
+  } else {
+    console.warn('[Content] Missing libraries after extension reload:', availability.missing);
+  }
+
+  // 检查划词助手
+  if (typeof initTextSelectionHelper === 'undefined') {
+    console.warn('[Content] TextSelectionHelper not available after extension reload');
+  } else {
+    console.log('[Content] TextSelectionHelper is available');
+  }
+}

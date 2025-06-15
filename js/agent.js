@@ -349,7 +349,9 @@ export function showDeleteConfirmDialog(agentId, state, elements, currentTransla
 
     const confirmPromptElement = elements.deleteConfirmDialog.querySelector('p');
     if (confirmPromptElement) {
-        confirmPromptElement.innerHTML = _('deleteConfirmPrompt', { agentName: `<strong>${agent.name}</strong>` }, currentTranslations);
+        // 对助手名称进行翻译处理
+        const translatedAgentName = _(agent.name, {}, currentTranslations);
+        confirmPromptElement.innerHTML = _('deleteConfirmPrompt', { agentName: `<strong>${translatedAgentName}</strong>` }, currentTranslations);
     }
     elements.deleteConfirmDialog.dataset.agentId = agentId;
     elements.deleteConfirmDialog.style.display = 'flex';
@@ -375,12 +377,21 @@ export function confirmDeleteAgent(state, elements, updateAgentsListCallback, up
         return;
     }
 
+    // 从助手列表中移除指定助手
     state.agents = state.agents.filter(a => a.id !== agentId);
 
-    // 无论删除的是否是当前选中的助手，都清除当前助手的设置，并保持折叠状态
+    // 如果删除的是当前选中的助手，需要选择一个新的助手
     if (state.currentAgentId === agentId) {
-        state.currentAgentId = null; // 清除当前选中的助手ID
-        loadCurrentAgentSettingsIntoState(state); // 这将重置为默认空设置
+        // 选择第一个可用的助手作为新的当前助手
+        if (state.agents.length > 0) {
+            state.currentAgentId = state.agents[0].id;
+            loadCurrentAgentSettingsIntoState(state); // 加载新助手的设置
+            saveCurrentAgentId(state); // 保存新的当前助手ID
+        } else {
+            // 如果没有助手了（理论上不应该发生，因为上面已经检查了长度）
+            state.currentAgentId = null;
+            loadCurrentAgentSettingsIntoState(state); // 重置为默认设置
+        }
     }
 
     updateAgentsListCallback();

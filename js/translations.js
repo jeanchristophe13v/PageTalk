@@ -172,6 +172,26 @@ const translations = {
     'copy': '复制',
     'regenerateResponse': '重新生成',
     'textSelectionHelperSettings': '划词助手设置',
+
+    // --- 划词助手默认提示词 ---
+    'defaultInterpretPrompt': '解读一下',
+    'defaultTranslatePrompt': `# 角色
+你是一个为中文用户服务的、强大的划词翻译与语言学习助手。
+
+# 规则
+根据用户所选择的文本，严格遵循以下规则，直接输出结果，无需任何互动。
+
+1.  **输入为外文单词（以英文为主）**：
+    以"单词卡"的格式，清晰地提供：
+    - **音标**：美式。
+    - **核心释义**：最常用最正宗的 1-3 个中文意思。
+    - **实用例句**：1-2 条地道例句，并附上翻译。
+    - **深度拓展 (可选)**：如果单词有有趣的来源、文化背景或易混淆点，用中文简要说明。
+
+2.  **输入为中文内容**：
+    将其翻译成英文，给出英文单词，并满足：
+    - **提供多种译文**：给出 2-3 个最地道翻译选项（若选中的是单词，则给出音标）。
+    - **辨析与语境**：用中文清晰解释每个译文的语气、侧重点及最适用的场景。`,
   },
   'en': {
     // --- General UI ---
@@ -347,8 +367,55 @@ const translations = {
     'copy': 'Copy',
     'regenerateResponse': 'Regenerate',
     'textSelectionHelperSettings': 'Text Selection Helper Settings',
+
+    // --- Text Selection Helper Default Prompts ---
+    'defaultInterpretPrompt': 'Interpret this',
+    'defaultTranslatePrompt': `# Role
+You are a powerful Polyglot Translator and Language Companion for an English-speaking user.
+
+# Rules
+Analyze the selected text and strictly follow the rules below. Provide the output directly, without any conversational interaction.
+
+1.  **If the input is English:**
+    Your goal is to provide a rich translation into Chinese, intended for language learning.
+    - **For a single word:** Display a "Chinese Word Card" with:
+        - **Pinyin:** The phonetic transcription.
+        - **Core Meanings:** The 1-3 most common definitions in English.
+        - **Examples:** 1-2 practical example sentences in Chinese, with their English translations.
+        - **Deep Dive (Optional):** Briefly explain in English any interesting character origins, cultural context, or common points of confusion.
+    - **For a phrase or sentence:** Translate it into Chinese.
+        - Provide 2-3 different translation options.
+        - Clearly explain in English the nuance, tone, and the most appropriate context for each option.
+
+2.  **If the input is any other language (e.g., Chinese, Spanish, Japanese):**
+    Your goal is to provide a clear and accurate English translation.
+    - Translate the text into natural, idiomatic English.
+    - If the input is a single, non-trivial word, you may also provide a brief explanation or a close synonym to clarify its meaning.`,
   }
 };
+
+/**
+ * 获取默认提示词
+ * @param {string} type - 提示词类型 ('interpret' 或 'translate')
+ * @param {string} language - 语言代码 ('zh-CN' 或 'en')
+ * @returns {string} 默认提示词
+ */
+function getDefaultPrompt(type, language = 'zh-CN') {
+  const key = type === 'interpret' ? 'defaultInterpretPrompt' : 'defaultTranslatePrompt';
+  return translations[language]?.[key] || translations['zh-CN']?.[key] || '';
+}
+
+/**
+ * 检查是否为默认提示词
+ * @param {string} prompt - 要检查的提示词
+ * @param {string} type - 提示词类型 ('interpret' 或 'translate')
+ * @returns {boolean} 是否为任何语言的默认提示词
+ */
+function isDefaultPrompt(prompt, type) {
+  const zhPrompt = getDefaultPrompt(type, 'zh-CN');
+  const enPrompt = getDefaultPrompt(type, 'en');
+  return prompt === zhPrompt || prompt === enPrompt;
+}
 
 // Function to get a translation string
 // function _(key, replacements = {}) {
@@ -362,5 +429,11 @@ const translations = {
 // }
 
 // Make translations globally accessible (or pass it around)
-// window.translations = translations;
+window.translations = translations;
 // window._ = _; // Optional: make the helper global too
+
+// 导出函数供其他模块使用
+if (typeof window !== 'undefined') {
+  window.getDefaultPrompt = getDefaultPrompt;
+  window.isDefaultPrompt = isDefaultPrompt;
+}

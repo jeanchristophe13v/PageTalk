@@ -56,10 +56,74 @@ const SVG_ICONS = {
 };
 
 /**
+ * 获取翻译函数
+ */
+function getTranslationFunction() {
+    // 尝试从主面板获取翻译函数
+    if (window.parent && window.parent._tr) {
+        return window.parent._tr;
+    }
+
+    // 尝试从当前窗口获取翻译函数
+    if (window._tr) {
+        return window._tr;
+    }
+
+    // 如果translations对象可用，创建翻译函数
+    if (typeof translations !== 'undefined') {
+        return function(key, replacements = {}) {
+            // 使用缓存的语言设置或默认中文
+            const currentLanguage = window.currentLanguageCache || 'zh-CN';
+            const translation = translations[currentLanguage]?.[key] || translations['zh-CN']?.[key] || key;
+
+            // 处理占位符替换
+            let result = translation;
+            for (const placeholder in replacements) {
+                result = result.replace(`{${placeholder}}`, replacements[placeholder]);
+            }
+            return result;
+        };
+    }
+
+    // 如果都没有，创建一个简单的回退函数
+    return function(key) {
+        // 简单的回退翻译映射
+        const fallbackTranslations = {
+            'interpret': '解读',
+            'translate': '翻译',
+            'chat': '对话',
+            'copy': '复制',
+            'regenerateResponse': '重新生成'
+        };
+        return fallbackTranslations[key] || key;
+    };
+}
+
+/**
+ * 获取当前语言设置
+ */
+function getCurrentLanguage() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['language'], (result) => {
+            resolve(result.language || 'zh-CN');
+        });
+    });
+}
+
+/**
  * 初始化划词助手
  */
 function initTextSelectionHelper() {
     console.log('[TextSelectionHelper] Initializing...');
+
+    // 初始化语言缓存
+    getCurrentLanguage().then(lang => {
+        window.currentLanguageCache = lang;
+        console.log('[TextSelectionHelper] Language cache initialized:', lang);
+    }).catch(err => {
+        console.warn('[TextSelectionHelper] Failed to initialize language cache:', err);
+        window.currentLanguageCache = 'zh-CN';
+    });
 
     // 确保markdown渲染器已初始化
     if (window.MarkdownRenderer && typeof window.MarkdownRenderer.render === 'function') {
@@ -597,16 +661,17 @@ async function showOptionsBar(triggerElement) {
         // 获取设置
         const settings = await getTextSelectionHelperSettings();
         const optionsOrder = settings.optionsOrder || ['interpret', 'translate', 'chat'];
+        const _tr = getTranslationFunction();
 
         // 构建选项列表
         const options = [];
         for (const optionId of optionsOrder) {
             if (optionId === 'interpret') {
-                options.push({ id: 'interpret', name: 'interpret', icon: SVG_ICONS.interpret });
+                options.push({ id: 'interpret', name: _tr('interpret'), icon: SVG_ICONS.interpret });
             } else if (optionId === 'translate') {
-                options.push({ id: 'translate', name: 'translate', icon: SVG_ICONS.translate });
+                options.push({ id: 'translate', name: _tr('translate'), icon: SVG_ICONS.translate });
             } else if (optionId === 'chat') {
-                options.push({ id: 'chat', name: 'chat', icon: SVG_ICONS.chat });
+                options.push({ id: 'chat', name: _tr('chat'), icon: SVG_ICONS.chat });
             }
         }
 
@@ -625,7 +690,7 @@ async function showOptionsBar(triggerElement) {
             optionsHTML += `
                 <div class="pagetalk-option" data-option="${option.id}">
                     <span class="pagetalk-option-icon">${option.icon}</span>
-                    <span class="pagetalk-option-text" data-i18n="${option.name}">${option.name}</span>
+                    <span class="pagetalk-option-text">${option.name}</span>
                 </div>
             `;
         });
@@ -698,10 +763,11 @@ async function showOptionsBar(triggerElement) {
 function showDefaultOptionsBar(triggerElement) {
     hideOptionsBar();
 
+    const _tr = getTranslationFunction();
     const defaultOptions = [
-        { id: 'interpret', name: 'interpret', icon: SVG_ICONS.interpret },
-        { id: 'translate', name: 'translate', icon: SVG_ICONS.translate },
-        { id: 'chat', name: 'chat', icon: SVG_ICONS.chat }
+        { id: 'interpret', name: _tr('interpret'), icon: SVG_ICONS.interpret },
+        { id: 'translate', name: _tr('translate'), icon: SVG_ICONS.translate },
+        { id: 'chat', name: _tr('chat'), icon: SVG_ICONS.chat }
     ];
 
     const optionsBar = document.createElement('div');
@@ -1156,7 +1222,10 @@ async function createFunctionWindowContent(windowElement, optionId) {
             if (result.agents && Array.isArray(result.agents)) {
                 result.agents.forEach(agent => {
                     const selected = agent.id === result.currentAgentId ? 'selected' : '';
-                    agentOptionsHTML += `<option value="${agent.id}" ${selected}>${agent.name}</option>`;
+                    // 对助手名称进行翻译处理
+                    const _tr = getTranslationFunction();
+                    const translatedName = _tr(agent.name);
+                    agentOptionsHTML += `<option value="${agent.id}" ${selected}>${translatedName}</option>`;
                 });
             }
         } catch (error) {
@@ -1202,7 +1271,8 @@ async function createFunctionWindowContent(windowElement, optionId) {
         `;
     } else {
         // 解读和翻译功能窗口
-        const title = optionId === 'interpret' ? '解读' : '翻译';
+        const _tr = getTranslationFunction();
+        const title = optionId === 'interpret' ? _tr('interpret') : _tr('translate');
         content = `
             <div class="pagetalk-window-header">
                 <div class="pagetalk-window-title">${title}</div>
@@ -2318,26 +2388,83 @@ async function callAIAPI(message, model, temperature, onStream = null, requestId
 /**
  * 获取划词助手设置
  */
-function getTextSelectionHelperSettings() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
-            const defaultSettings = {
-                interpret: {
-                    model: 'gemini-2.5-flash',
-                    systemPrompt: '解读一下',
-                    temperature: 0.7
-                },
-                translate: {
-                    model: 'gemini-2.5-flash',
-                    systemPrompt: '翻译一下',
-                    temperature: 0.2
-                },
-                optionsOrder: ['interpret', 'translate', 'chat']
-            };
+async function getTextSelectionHelperSettings() {
+    return new Promise(async (resolve) => {
+        try {
+            // 获取当前语言设置
+            const currentLanguage = await getCurrentLanguage();
 
-            const settings = result.textSelectionHelperSettings || defaultSettings;
-            resolve(settings);
-        });
+            chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
+                // 使用translations.js中的默认提示词
+                const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) : (currentLanguage === 'en' ? 'Interpret this' : '解读一下');
+                const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) : (currentLanguage === 'en' ? 'Translate this' : '翻译一下');
+
+                const defaultSettings = {
+                    interpret: {
+                        model: 'gemini-2.5-flash',
+                        systemPrompt: interpretPrompt,
+                        temperature: 0.7
+                    },
+                    translate: {
+                        model: 'gemini-2.5-flash',
+                        systemPrompt: translatePrompt,
+                        temperature: 0.2
+                    },
+                    optionsOrder: ['interpret', 'translate', 'chat']
+                };
+
+                const settings = result.textSelectionHelperSettings || defaultSettings;
+
+                // 智能更新默认提示词：只有当前提示词是默认提示词时才更新
+                if (settings.interpret && window.isDefaultPrompt && window.isDefaultPrompt(settings.interpret.systemPrompt, 'interpret')) {
+                    settings.interpret.systemPrompt = window.getDefaultPrompt('interpret', currentLanguage);
+                }
+                if (settings.translate && window.isDefaultPrompt && window.isDefaultPrompt(settings.translate.systemPrompt, 'translate')) {
+                    settings.translate.systemPrompt = window.getDefaultPrompt('translate', currentLanguage);
+                }
+
+                resolve(settings);
+            });
+        } catch (error) {
+            console.error('[TextSelectionHelper] Error getting settings:', error);
+            // 回退到默认设置，使用当前语言
+            try {
+                const currentLanguage = await getCurrentLanguage();
+                const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) : '解读一下';
+                const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) : '翻译一下';
+
+                const defaultSettings = {
+                    interpret: {
+                        model: 'gemini-2.5-flash',
+                        systemPrompt: interpretPrompt,
+                        temperature: 0.7
+                    },
+                    translate: {
+                        model: 'gemini-2.5-flash',
+                        systemPrompt: translatePrompt,
+                        temperature: 0.2
+                    },
+                    optionsOrder: ['interpret', 'translate', 'chat']
+                };
+                resolve(defaultSettings);
+            } catch (langError) {
+                // 最终回退
+                const defaultSettings = {
+                    interpret: {
+                        model: 'gemini-2.5-flash',
+                        systemPrompt: '解读一下',
+                        temperature: 0.7
+                    },
+                    translate: {
+                        model: 'gemini-2.5-flash',
+                        systemPrompt: '翻译一下',
+                        temperature: 0.2
+                    },
+                    optionsOrder: ['interpret', 'translate', 'chat']
+                };
+                resolve(defaultSettings);
+            }
+        }
     });
 }
 
@@ -2822,3 +2949,112 @@ function adjustWindowHeight(windowElement) {
     // 调用新的智能尺寸调整函数
     adjustWindowSize(windowElement);
 }
+
+/**
+ * 实时同步机制 - 处理语言变化
+ */
+window.handleTextSelectionHelperLanguageChange = function(newLanguage) {
+    console.log('[TextSelectionHelper] Handling language change to:', newLanguage);
+
+    // 更新语言缓存
+    window.currentLanguageCache = newLanguage;
+
+    // 重新获取翻译函数
+    const _tr = getTranslationFunction();
+
+    // 如果选项栏正在显示，重新渲染
+    if (currentOptionsBar) {
+        console.log('[TextSelectionHelper] Updating options bar for language change');
+        hideOptionsBar();
+        showOptionsBar();
+    }
+
+    // 如果功能窗口正在显示，更新其中的文本
+    if (currentFunctionWindow) {
+        console.log('[TextSelectionHelper] Updating function window for language change');
+        updateFunctionWindowLanguage(currentFunctionWindow, newLanguage);
+    }
+};
+
+/**
+ * 处理划词助手设置变化
+ */
+window.handleTextSelectionHelperSettingsUpdate = function(newSettings) {
+    console.log('[TextSelectionHelper] Handling settings update:', newSettings);
+
+    // 如果选项栏正在显示，重新渲染以反映新的选项顺序
+    if (currentOptionsBar) {
+        console.log('[TextSelectionHelper] Updating options bar for settings change');
+        hideOptionsBar();
+        showOptionsBar();
+    }
+};
+
+/**
+ * 重新初始化划词助手
+ */
+window.reinitializeTextSelectionHelper = function() {
+    console.log('[TextSelectionHelper] Reinitializing after extension reload');
+
+    // 清除现有状态
+    hideAllInterfaces();
+
+    // 重新初始化
+    initTextSelectionHelper();
+};
+
+/**
+ * 更新功能窗口的语言
+ */
+function updateFunctionWindowLanguage(windowElement, newLanguage) {
+    const _tr = getTranslationFunction();
+
+    // 更新窗口标题
+    const titleElement = windowElement.querySelector('.pagetalk-window-title');
+    if (titleElement) {
+        const optionType = windowElement.dataset.option;
+        if (optionType) {
+            titleElement.textContent = _tr(optionType);
+        }
+    }
+
+    // 更新按钮文本
+    const copyButtons = windowElement.querySelectorAll('.pagetalk-copy-btn');
+    copyButtons.forEach(btn => {
+        btn.textContent = _tr('copy');
+        btn.title = _tr('copy');
+    });
+
+    const regenerateButtons = windowElement.querySelectorAll('.pagetalk-regenerate-btn');
+    regenerateButtons.forEach(btn => {
+        btn.textContent = _tr('regenerateResponse');
+        btn.title = _tr('regenerateResponse');
+    });
+
+    // 更新输入框占位符（对话功能）
+    const inputElement = windowElement.querySelector('.pagetalk-chat-input');
+    if (inputElement) {
+        inputElement.placeholder = _tr('userInputPlaceholder');
+    }
+
+    // 更新发送按钮标题
+    const sendButton = windowElement.querySelector('.pagetalk-send-btn');
+    if (sendButton) {
+        sendButton.title = _tr('sendMessageTitle');
+    }
+
+    // 更新模型选择器标签
+    const modelLabel = windowElement.querySelector('.pagetalk-model-label');
+    if (modelLabel) {
+        modelLabel.textContent = _tr('modelLabel');
+    }
+
+    // 更新助手选择器标签
+    const agentLabel = windowElement.querySelector('.pagetalk-agent-label');
+    if (agentLabel) {
+        agentLabel.textContent = _tr('agentLabel');
+    }
+}
+
+// 初始化划词助手
+initTextSelectionHelper();

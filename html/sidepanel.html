@@ -126,10 +126,10 @@
                 <div class="settings-container">
                     <!-- 设置内部导航 -->
                     <div class="settings-nav">
-                        <button class="settings-nav-btn" data-subtab="agent">助手</button>
-                        <button class="settings-nav-btn" data-subtab="model">模型</button>
-                        <button class="settings-nav-btn" data-subtab="text-selection-helper">划词助手</button>
-                        <button class="settings-nav-btn active" data-subtab="general">通用</button>
+                        <button class="settings-nav-btn" data-subtab="agent" data-i18n="agentSettingsNav">助手</button>
+                        <button class="settings-nav-btn" data-subtab="model" data-i18n="modelSettingsNav">模型</button>
+                        <button class="settings-nav-btn" data-subtab="text-selection-helper" data-i18n="textSelectionHelper">划词助手</button>
+                        <button class="settings-nav-btn active" data-subtab="general" data-i18n="generalSettingsNav">通用</button>
                         <!-- 添加关闭按钮 -->
                          <button id="close-panel-settings" title="关闭面板" class="action-button close-panel-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -204,7 +204,7 @@
 
                     <!-- 划词助手设置 -->
                     <div id="settings-text-selection-helper" class="settings-sub-content">
-                        <h2>划词助手设置</h2>
+                        <h2 data-i18n="textSelectionHelperSettings">划词助手设置</h2>
 
                         <!-- 解读设置卡片 -->
                         <div class="setting-card">
@@ -215,7 +215,7 @@
                                         <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
                                         <path d="M12 6v6l4 2"/>
                                     </svg>
-                                    解读设置
+                                    <span data-i18n="interpretSettings">解读设置</span>
                                 </h3>
                                 <button class="setting-card-toggle" type="button">
                                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -225,17 +225,17 @@
                             </div>
                             <div class="setting-card-content">
                                 <div class="setting-group">
-                                    <label for="interpret-model">模型：</label>
+                                    <label for="interpret-model" data-i18n="model">模型：</label>
                                     <select id="interpret-model">
                                         <!-- 选项将通过 JavaScript 动态填充 -->
                                     </select>
                                 </div>
                                 <div class="setting-group">
-                                    <label for="interpret-system-prompt">系统提示词：</label>
-                                    <textarea id="interpret-system-prompt" rows="3" placeholder="解读一下"></textarea>
+                                    <label for="interpret-system-prompt" data-i18n="systemPrompt">系统提示词：</label>
+                                    <textarea id="interpret-system-prompt" rows="3" data-i18n-placeholder="interpretSystemPrompt" placeholder="解读一下"></textarea>
                                 </div>
                                 <div class="setting-group">
-                                    <label for="interpret-temperature">温度：</label>
+                                    <label for="interpret-temperature" data-i18n="temperature">温度：</label>
                                     <div class="temperature-control">
                                         <input type="range" id="interpret-temperature" min="0" max="1" step="0.1" value="0.7">
                                         <span class="temperature-value">0.7</span>
@@ -256,7 +256,7 @@
                                         <path d="M22 22l-5-10-5 10"/>
                                         <path d="M14 18h6"/>
                                     </svg>
-                                    翻译设置
+                                    <span data-i18n="translateSettings">翻译设置</span>
                                 </h3>
                                 <button class="setting-card-toggle" type="button">
                                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -266,17 +266,17 @@
                             </div>
                             <div class="setting-card-content">
                                 <div class="setting-group">
-                                    <label for="translate-model">模型：</label>
+                                    <label for="translate-model" data-i18n="model">模型：</label>
                                     <select id="translate-model">
                                         <!-- 选项将通过 JavaScript 动态填充 -->
                                     </select>
                                 </div>
                                 <div class="setting-group">
-                                    <label for="translate-system-prompt">系统提示词：</label>
-                                    <textarea id="translate-system-prompt" rows="3" placeholder="翻译一下"></textarea>
+                                    <label for="translate-system-prompt" data-i18n="systemPrompt">系统提示词：</label>
+                                    <textarea id="translate-system-prompt" rows="3" data-i18n-placeholder="translateSystemPrompt" placeholder="翻译一下"></textarea>
                                 </div>
                                 <div class="setting-group">
-                                    <label for="translate-temperature">温度：</label>
+                                    <label for="translate-temperature" data-i18n="temperature">温度：</label>
                                     <div class="temperature-control">
                                         <input type="range" id="translate-temperature" min="0" max="1" step="0.1" value="0.2">
                                         <span class="temperature-value">0.2</span>
@@ -294,14 +294,14 @@
                                         <path d="M3 12h18"/>
                                         <path d="M3 18h18"/>
                                     </svg>
-                                    选项顺序
+                                    <span data-i18n="optionOrder">选项顺序</span>
                                 </h3>
                             </div>
                             <div class="setting-card-content">
                                 <div class="options-order-list" id="options-order-list">
                                     <!-- 选项顺序将通过 JavaScript 动态添加 -->
                                 </div>
-                                <p class="hint">拖拽调整选项在选项栏中的显示顺序</p>
+                                <p class="hint" data-i18n="dragToReorder">拖拽调整选项在选项栏中的显示顺序</p>
                             </div>
                         </div>
                     </div>

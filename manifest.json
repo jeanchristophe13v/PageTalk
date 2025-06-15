@@ -26,7 +26,7 @@
   "content_scripts": [
       {
         "matches": ["<all_urls>"],
-        "js": ["js/lib/Readability.js", "js/lib/markdown-it.min.js", "js/markdown-renderer.js", "js/text-selection-helper.js", "js/content.js"],
+        "js": ["js/lib/Readability.js", "js/lib/markdown-it.min.js", "js/translations.js", "js/markdown-renderer.js", "js/text-selection-helper.js", "js/content.js"],
         "css": ["css/content-panel.css", "css/text-selection-helper.css"],
         "run_at": "document_start"
       }

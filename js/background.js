@@ -55,29 +55,39 @@ async function togglePagetalkPanel(tabId) {
         // --- 原有代码（稍作调整，仅在受支持页面执行）---
         try {
             // 尝试切换面板
-            await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
-        } catch (error) {
-            // console.warn('初次 sendMessage 失败，尝试注入脚本:', error); // 改为 warn 或 debug
+            const response = await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
 
-            // 如果出错可能是因为content script还未加载，尝试注入脚本
-            try {
-                await chrome.scripting.executeScript({
-                    target: { tabId: tabId },
-                    files: ['js/content.js']
-                });
+            // 检查响应，如果库缺失则重新注入
+            if (response && !response.success && response.missing) {
+                console.log('[Background] Libraries missing, reinjecting scripts:', response.missing);
+                await reinjectScriptsToTab(tabId);
 
                 // 再次尝试发送消息
                 setTimeout(async () => {
                     try {
                         await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
                     } catch (e) {
-                        console.error('重试切换面板失败:', e);
+                        console.error('[Background] 重试切换面板失败:', e);
                     }
-                }, 100); // 注入后稍作等待
+                }, 1000);
+            }
+        } catch (error) {
+            console.log('[Background] Content script not responding, reinjecting all scripts');
+
+            // 如果出错可能是因为content script还未加载或已失效，重新注入所有必要脚本
+            try {
+                await reinjectScriptsToTab(tabId);
+
+                // 再次尝试发送消息
+                setTimeout(async () => {
+                    try {
+                        await chrome.tabs.sendMessage(tabId, { action: "togglePanel" });
+                    } catch (e) {
+                        console.error('[Background] 重试切换面板失败:', e);
+                    }
+                }, 1000); // 给更多时间让脚本完全加载
             } catch (e) {
-                // 理论上，因为前面的URL检查，这里不应该再捕捉到 'Cannot access a chrome:// URL' 错误了
-                // 如果还出错，可能是其他注入问题
-                console.error('注入脚本失败 (非URL访问权限问题):', e);
+                console.error('[Background] 重新注入脚本失败:', e);
             }
         }
     } catch (outerError) {
@@ -251,3 +261,154 @@ async function handleGenerateContentRequest(requestData, sendResponse, senderTab
 
 // 移除 getPageContentForExtraction 函数，因为它不再被使用
 // function getPageContentForExtraction() { ... } // REMOVED
+
+/**
+ * 实时同步机制 - 监听存储变化并广播到所有标签页
+ */
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync') {
+        console.log('[Background] Storage changed:', changes);
+
+        // 获取所有标签页并广播变化
+        chrome.tabs.query({}, (tabs) => {
+            tabs.forEach(tab => {
+                // 检查标签页是否支持content script
+                if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
+                    // 广播通用存储变化
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: 'storageChanged',
+                        changes: changes,
+                        namespace: namespace
+                    }).catch(() => {
+                        // 忽略没有content script的标签页
+                    });
+
+                    // 特殊处理语言变化
+                    if (changes.language) {
+                        console.log('[Background] Broadcasting language change to tab:', tab.id);
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: 'languageChanged',
+                            newLanguage: changes.language.newValue,
+                            oldLanguage: changes.language.oldValue
+                        }).catch(() => {
+                            // 忽略错误
+                        });
+                    }
+
+                    // 特殊处理划词助手设置变化
+                    if (changes.textSelectionHelperSettings) {
+                        console.log('[Background] Broadcasting text selection helper settings change to tab:', tab.id);
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: 'textSelectionHelperSettingsChanged',
+                            newSettings: changes.textSelectionHelperSettings.newValue,
+                            oldSettings: changes.textSelectionHelperSettings.oldValue
+                        }).catch(() => {
+                            // 忽略错误
+                        });
+                    }
+                }
+            });
+        });
+    }
+});
+
+/**
+ * 处理扩展更新/重载 - 通知所有标签页重新初始化
+ */
+chrome.runtime.onStartup.addListener(() => {
+    console.log('[Background] Extension startup - broadcasting to all tabs');
+    setTimeout(broadcastExtensionReload, 1000);
+});
+
+// 当扩展重新安装或更新时也广播
+chrome.runtime.onInstalled.addListener((details) => {
+    if (details.reason === 'update' || details.reason === 'install') {
+        console.log('[Background] Extension updated/installed - broadcasting to all tabs');
+        setTimeout(broadcastExtensionReload, 1000); // 延迟一秒确保所有服务准备就绪
+    }
+});
+
+/**
+ * 广播扩展重载事件到所有标签页，并重新注入必要的脚本
+ */
+function broadcastExtensionReload() {
+    chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+            if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
+                // 首先尝试发送消息检查content script是否还活跃
+                chrome.tabs.sendMessage(tab.id, {
+                    action: 'ping'
+                }).then(() => {
+                    // Content script响应了，发送重载通知
+                    chrome.tabs.sendMessage(tab.id, {
+                        action: 'extensionReloaded'
+                    });
+                }).catch(() => {
+                    // Content script没有响应，需要重新注入
+                    console.log('[Background] Content script not responding for tab', tab.id, 'reinject scripts');
+                    reinjectScriptsToTab(tab.id);
+                });
+            }
+        });
+    });
+}
+
+/**
+ * 重新注入所有必要的脚本到指定标签页
+ */
+async function reinjectScriptsToTab(tabId) {
+    try {
+        console.log('[Background] Reinjecting scripts to tab:', tabId);
+
+        // 首先注入CSS文件
+        try {
+            await chrome.scripting.insertCSS({
+                target: { tabId: tabId },
+                files: ['css/content-panel.css', 'css/text-selection-helper.css']
+            });
+            console.log('[Background] Successfully injected CSS files');
+        } catch (error) {
+            console.warn('[Background] Failed to inject CSS files:', error);
+        }
+
+        // 按顺序注入所有必要的脚本（与manifest.json中的顺序保持一致）
+        const scriptsToInject = [
+            'js/lib/Readability.js',
+            'js/lib/markdown-it.min.js',
+            'js/translations.js',
+            'js/markdown-renderer.js',
+            'js/text-selection-helper.js',
+            'js/content.js'
+        ];
+
+        for (const script of scriptsToInject) {
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    files: [script]
+                });
+                console.log('[Background] Successfully injected:', script);
+
+                // 在关键脚本之间添加小延迟，确保依赖关系正确
+                if (script.includes('translations.js') || script.includes('markdown-renderer.js')) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            } catch (error) {
+                console.warn('[Background] Failed to inject script:', script, error);
+                // 继续注入其他脚本，不要因为一个脚本失败就停止
+            }
+        }
+
+        // 等待一小段时间确保脚本加载完成，然后发送重载通知
+        setTimeout(() => {
+            chrome.tabs.sendMessage(tabId, {
+                action: 'extensionReloaded'
+            }).catch(() => {
+                console.warn('[Background] Failed to send extensionReloaded message after reinject');
+            });
+        }, 800); // 增加等待时间
+
+    } catch (error) {
+        console.error('[Background] Error reinjecting scripts to tab:', tabId, error);
+    }
+}

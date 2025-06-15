@@ -3,20 +3,31 @@
  * 划词助手设置管理模块
  */
 
-// 默认设置
-const DEFAULT_SETTINGS = {
-    interpret: {
-        model: 'gemini-2.5-flash',
-        systemPrompt: '解读一下',
-        temperature: 0.7
-    },
-    translate: {
-        model: 'gemini-2.5-flash',
-        systemPrompt: '翻译一下',
-        temperature: 0.2
-    },
-    optionsOrder: ['interpret', 'translate', 'chat']
-};
+/**
+ * 获取默认设置（根据语言动态生成）
+ */
+function getDefaultSettings(language = 'zh-CN') {
+    // 使用translations.js中的默认提示词
+    const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', language) : (language === 'en' ? 'Interpret this' : '解读一下');
+    const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', language) : (language === 'en' ? 'Translate this' : '翻译一下');
+
+    return {
+        interpret: {
+            model: 'gemini-2.5-flash',
+            systemPrompt: interpretPrompt,
+            temperature: 0.7
+        },
+        translate: {
+            model: 'gemini-2.5-flash',
+            systemPrompt: translatePrompt,
+            temperature: 0.2
+        },
+        optionsOrder: ['interpret', 'translate', 'chat']
+    };
+}
+
+// 默认设置（中文）
+const DEFAULT_SETTINGS = getDefaultSettings('zh-CN');
 
 // 当前设置
 let currentSettings = { ...DEFAULT_SETTINGS };
@@ -38,6 +49,9 @@ export async function initTextSelectionHelperSettings(elements, translations) {
 
     // 设置事件监听器
     setupEventListeners(elements, translations);
+
+    // 监听语言切换事件
+    setupLanguageChangeListener();
 
     console.log('[TextSelectionHelperSettings] Initialized');
 }
@@ -93,20 +107,35 @@ function loadSettings() {
         }
 
         try {
-            chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
+            // 首先获取当前语言设置
+            chrome.storage.sync.get(['language', 'textSelectionHelperSettings'], (result) => {
                 if (chrome.runtime.lastError) {
                     console.error('[TextSelectionHelperSettings] Error loading settings:', chrome.runtime.lastError);
                     currentSettings = { ...DEFAULT_SETTINGS };
-                } else if (result.textSelectionHelperSettings) {
-                    currentSettings = { ...DEFAULT_SETTINGS, ...result.textSelectionHelperSettings };
-                    // 清理可能存在的自定义选项残留
-                    delete currentSettings.customOptions;
-                    // 确保选项顺序只包含默认选项
-                    currentSettings.optionsOrder = currentSettings.optionsOrder.filter(id =>
-                        ['interpret', 'translate', 'chat'].includes(id)
-                    );
                 } else {
-                    currentSettings = { ...DEFAULT_SETTINGS };
+                    const currentLanguage = result.language || 'zh-CN';
+                    const dynamicDefaults = getDefaultSettings(currentLanguage);
+
+                    if (result.textSelectionHelperSettings) {
+                        currentSettings = { ...dynamicDefaults, ...result.textSelectionHelperSettings };
+
+                        // 智能更新默认提示词：只有当前提示词是默认提示词时才更新
+                        if (currentSettings.interpret && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.interpret.systemPrompt, 'interpret')) {
+                            currentSettings.interpret.systemPrompt = window.getDefaultPrompt('interpret', currentLanguage);
+                        }
+                        if (currentSettings.translate && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.translate.systemPrompt, 'translate')) {
+                            currentSettings.translate.systemPrompt = window.getDefaultPrompt('translate', currentLanguage);
+                        }
+
+                        // 清理可能存在的自定义选项残留
+                        delete currentSettings.customOptions;
+                        // 确保选项顺序只包含默认选项
+                        currentSettings.optionsOrder = currentSettings.optionsOrder.filter(id =>
+                            ['interpret', 'translate', 'chat'].includes(id)
+                        );
+                    } else {
+                        currentSettings = { ...dynamicDefaults };
+                    }
                 }
                 console.log('[TextSelectionHelperSettings] Settings loaded:', currentSettings);
                 resolve();
@@ -117,6 +146,106 @@ function loadSettings() {
             resolve();
         }
     });
+}
+
+/**
+ * 获取当前语言设置（用于设置模块）
+ */
+function getCurrentLanguageForSettings() {
+    return new Promise((resolve) => {
+        if (chrome && chrome.storage && chrome.storage.sync) {
+            chrome.storage.sync.get(['language'], (result) => {
+                resolve(result.language || 'zh-CN');
+            });
+        } else {
+            resolve('zh-CN');
+        }
+    });
+}
+
+/**
+ * 设置语言切换监听器
+ */
+function setupLanguageChangeListener() {
+    // 监听Chrome存储变化
+    if (chrome && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'sync' && changes.language) {
+                const newLanguage = changes.language.newValue;
+                const oldLanguage = changes.language.oldValue;
+
+                if (newLanguage !== oldLanguage) {
+                    console.log('[TextSelectionHelperSettings] Language changed from', oldLanguage, 'to', newLanguage);
+                    handleLanguageChange(newLanguage);
+                }
+            }
+        });
+    }
+}
+
+/**
+ * 处理语言切换
+ */
+function handleLanguageChange(newLanguage) {
+    console.log('[TextSelectionHelperSettings] Handling language change to:', newLanguage);
+
+    // 只更新默认提示词，保留用户自定义的提示词
+    const needsUpdate = updateDefaultPromptsForLanguage(newLanguage);
+
+    // 总是尝试更新UI，不管设置页面是否打开
+    const settingsContainer = document.querySelector('#settings-text-selection-helper');
+    if (settingsContainer) {
+        console.log('[TextSelectionHelperSettings] Updating UI for language change');
+
+        // 获取当前语言的翻译对象
+        const translations = window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {};
+        console.log('[TextSelectionHelperSettings] Using translations:', translations);
+
+        // 重新加载设置到UI
+        const elements = {
+            textSelectionHelperSettings: settingsContainer
+        };
+        loadSettingsToUI(elements);
+
+        // 更新选项顺序UI以反映新语言
+        updateOptionsOrderUI(elements, translations);
+    } else {
+        console.log('[TextSelectionHelperSettings] Settings container not found, UI update skipped');
+    }
+
+    if (needsUpdate) {
+        // 保存更新后的设置
+        saveSettings();
+    }
+}
+
+/**
+ * 为新语言更新默认提示词
+ */
+function updateDefaultPromptsForLanguage(language) {
+    let updated = false;
+
+    // 检查并更新解读提示词
+    if (currentSettings.interpret && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.interpret.systemPrompt, 'interpret')) {
+        const newPrompt = window.getDefaultPrompt('interpret', language);
+        if (currentSettings.interpret.systemPrompt !== newPrompt) {
+            currentSettings.interpret.systemPrompt = newPrompt;
+            updated = true;
+            console.log('[TextSelectionHelperSettings] Updated interpret prompt for language:', language);
+        }
+    }
+
+    // 检查并更新翻译提示词
+    if (currentSettings.translate && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.translate.systemPrompt, 'translate')) {
+        const newPrompt = window.getDefaultPrompt('translate', language);
+        if (currentSettings.translate.systemPrompt !== newPrompt) {
+            currentSettings.translate.systemPrompt = newPrompt;
+            updated = true;
+            console.log('[TextSelectionHelperSettings] Updated translate prompt for language:', language);
+        }
+    }
+
+    return updated;
 }
 
 /**
@@ -215,8 +344,8 @@ function initSettingCards(elements) {
 
         console.log(`[TextSelectionHelperSettings] Card ${index}: "${cardTitle}"`);
 
-        // 检查是否是"选项顺序"卡片
-        const isOptionsOrderCard = cardTitle === '选项顺序';
+        // 检查是否是"选项顺序"卡片（支持中英文）
+        const isOptionsOrderCard = cardTitle === '选项顺序' || cardTitle === 'Option Order';
 
         if (isOptionsOrderCard) {
             console.log('[TextSelectionHelperSettings] Setting up options order card');
@@ -384,18 +513,18 @@ function updateOptionsOrderUI(elements, translations) {
         item.dataset.optionId = optionId;
 
         let optionName = optionId;
-        let optionType = '默认';
+        let optionType = translations && translations.defaultAgentName ? translations.defaultAgentName : '默认';
         let optionIcon = '';
 
         if (optionId === 'interpret') {
-            optionName = '解读';
+            optionName = translations && translations.interpret ? translations.interpret : '解读';
             optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path d="M9 12l2 2 4-4"/>
                 <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
                 <path d="M12 6v6l4 2"/>
             </svg>`;
         } else if (optionId === 'translate') {
-            optionName = '翻译';
+            optionName = translations && translations.translate ? translations.translate : '翻译';
             optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path d="M5 8l6 6"/>
                 <path d="M4 14l6-6 2-3"/>
@@ -405,7 +534,7 @@ function updateOptionsOrderUI(elements, translations) {
                 <path d="M14 18h6"/>
             </svg>`;
         } else if (optionId === 'chat') {
-            optionName = '对话';
+            optionName = translations && translations.chat ? translations.chat : '对话';
             optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>`;
@@ -510,8 +639,14 @@ function setupDragAndDrop(container) {
 
                 saveSettings();
 
-                // 重新渲染列表
-                updateOptionsOrderUI(document, {});
+                // 重新渲染列表 - 获取当前语言的翻译对象
+                getCurrentLanguageForSettings().then(currentLanguage => {
+                    const translations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
+                    updateOptionsOrderUI(document, translations);
+                }).catch(err => {
+                    console.warn('[TextSelectionHelperSettings] Failed to get current language for drag reorder, using fallback');
+                    updateOptionsOrderUI(document, {});
+                });
             }
 
             item.classList.remove('drag-over');

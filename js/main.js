@@ -818,6 +818,14 @@ function handleContentScriptMessages(event) {
                 console.log(`Ignoring non-explicit webpage theme: ${message.theme}`);
             }
             break;
+        case 'languageChanged':
+            console.log(`[main.js] Received language change: ${message.newLanguage}`);
+            handleLanguageChangeFromContent(message.newLanguage);
+            break;
+        case 'extensionReloaded':
+            console.log(`[main.js] Extension reloaded - reinitializing`);
+            handleExtensionReloadFromContent();
+            break;
     }
 }
 
@@ -827,8 +835,39 @@ function requestPageContent() {
 }
 
 function requestThemeFromContentScript() {
+    // 检查是否在iframe中
+    if (window.parent !== window) {
+        // 在iframe中，检查Chrome API是否可用
+        if (!chrome || !chrome.tabs || !chrome.runtime) {
+            console.log("[main.js] In iframe context with invalidated extension context, requesting theme via content script message");
+            // 通过content script代理请求主题
+            window.parent.postMessage({ action: 'requestThemeFromIframe' }, '*');
+            return;
+        }
+    }
+
+    // 检查Chrome API的可用性，避免在失效状态下调用
+    if (!chrome || !chrome.tabs || !chrome.runtime) {
+        console.log("[main.js] Chrome API not available, applying system theme preference");
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        state.darkMode = prefersDark;
+        applyTheme(state.darkMode, elements);
+        updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+        return;
+    }
+
     try {
-        chrome.tabs && chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        // 如果Chrome API可用，直接使用
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            if (chrome.runtime.lastError) {
+                console.log("[main.js] Chrome API context invalidated, applying system theme preference");
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                state.darkMode = prefersDark;
+                applyTheme(state.darkMode, elements);
+                updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+                return;
+            }
+
             if (tabs && tabs[0] && tabs[0].id) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: "requestTheme" }, (response) => {
                     if (chrome.runtime.lastError) {
@@ -854,17 +893,69 @@ function requestThemeFromContentScript() {
             }
         });
     } catch (e) {
-        console.error("Error requesting theme:", e);
-        // Apply default theme based on system preference
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        state.darkMode = prefersDark;
-        applyTheme(state.darkMode, elements);
-        updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+        // 如果在iframe中且Chrome API失效，使用代理方式
+        if (window.parent !== window) {
+            console.log("[main.js] Chrome API failed in iframe, using content script proxy");
+            window.parent.postMessage({ action: 'requestThemeFromIframe' }, '*');
+        } else {
+            console.log("[main.js] Error requesting theme, applying system theme preference");
+            // Apply default theme based on system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            state.darkMode = prefersDark;
+            applyTheme(state.darkMode, elements);
+            updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+        }
     }
 }
 
 function closePanel() {
     window.parent.postMessage({ action: 'closePanel' }, '*');
+}
+
+/**
+ * 处理来自content script的语言变化通知
+ */
+function handleLanguageChangeFromContent(newLanguage) {
+    console.log(`[main.js] Handling language change from content: ${newLanguage}`);
+
+    // 更新状态
+    state.language = newLanguage;
+
+    // 重新加载并应用翻译
+    loadAndApplyTranslations(newLanguage);
+
+    // 重新初始化划词助手设置（如果设置页面打开）
+    if (window.initTextSelectionHelperSettings && elements.textSelectionHelperSettings) {
+        const settingsContainer = elements.textSelectionHelperSettings;
+        if (settingsContainer && settingsContainer.style.display !== 'none') {
+            console.log('[main.js] Reinitializing text selection helper settings for language change');
+            const translations = window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {};
+            window.initTextSelectionHelperSettings(elements, translations);
+        }
+    }
+}
+
+/**
+ * 处理来自content script的扩展重载通知
+ */
+function handleExtensionReloadFromContent() {
+    console.log(`[main.js] Handling extension reload from content`);
+
+    // 扩展重载后，content script会自动重新检测主题，所以这里不需要主动请求
+    // 只在必要时才请求主题（比如用户手动触发）
+    console.log('[main.js] Extension reloaded, theme will be auto-detected by content script');
+
+    // 重新加载当前语言的翻译
+    if (state.language) {
+        loadAndApplyTranslations(state.language);
+    }
+
+    // 重新初始化所有设置
+    if (window.initTextSelectionHelperSettings && elements.textSelectionHelperSettings) {
+        console.log('[main.js] Reinitializing text selection helper settings after extension reload');
+        const translations = window.translations && window.translations[state.language] ? window.translations[state.language] : {};
+        window.initTextSelectionHelperSettings(elements, translations);
+    }
 }
 
 // --- Translation Loading ---
