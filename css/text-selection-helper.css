@@ -10,9 +10,9 @@
     padding: 0;
 }
 
-/* Mini Icon 样式 */
+/* Mini Icon 样式 (改为 absolute 定位) */
 .pagetalk-mini-icon {
-    position: fixed;
+    position: absolute; /* 改动：从 fixed 改为 absolute */
     z-index: 2147483646;
     width: 32px;
     height: 32px;
@@ -40,9 +40,9 @@
     pointer-events: none;
 }
 
-/* 选项栏样式 */
+/* 选项栏样式 (改为 absolute 定位) */
 .pagetalk-options-bar {
-    position: fixed;
+    position: absolute; /* 改动：从 fixed 改为 absolute */
     z-index: 2147483647;
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
@@ -439,8 +439,8 @@
 
 .pagetalk-window-controls button {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: center;     /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
     width: 28px;
     height: 28px;
     border: none;
@@ -449,11 +449,20 @@
     cursor: pointer;
     transition: all 0.2s ease;
     color: #666;
+    padding: 0; /* 新增：移除可能导致偏移的内边距 */
 }
 
 .pagetalk-window-controls button:hover {
     background: rgba(0, 0, 0, 0.1);
     color: #333;
+}
+
+.pagetalk-window-close { /* 确保通用关闭按钮也居中 */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    line-height: 1 !important; /* 确保行高不会影响垂直对齐 */
 }
 
 .pagetalk-window-drag-handle {

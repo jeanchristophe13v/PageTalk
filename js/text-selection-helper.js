@@ -10,6 +10,8 @@ let currentOptionsBar = null;
 let currentFunctionWindow = null;
 let selectedText = '';
 let selectionContext = '';
+let currentSelectionRange = null; // 新增：存储当前选择的Range对象，作为滚动时的锚点
+let isScrolling = false; // 新增：用于滚动事件的节流
 
 // 滚动状态管理
 let functionWindowScrolledUp = false; // 用于跟踪用户是否主动向上滚动
@@ -76,6 +78,9 @@ function initTextSelectionHelper() {
     // 监听窗口大小变化
     window.addEventListener('resize', handleWindowResize);
 
+    // 新增：监听滚动事件，用于动态更新UI位置或显隐
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
     // 监听ESC键关闭功能窗口
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && currentFunctionWindow) {
@@ -89,7 +94,7 @@ function initTextSelectionHelper() {
 /**
  * 处理文本选择事件
  */
-function handleTextSelection(event) {
+function handleTextSelection() {
     // 延迟处理，确保选择状态稳定
     setTimeout(() => {
         const selection = window.getSelection();
@@ -107,12 +112,15 @@ function handleTextSelection(event) {
                 return;
             }
 
+            // 存储选中的文本和锚点
             selectedText = text;
+            currentSelectionRange = selection.getRangeAt(0).cloneRange(); // 存储Range对象
             selectionContext = extractSelectionContext(selection);
             console.log('[TextSelectionHelper] Showing mini icon for selection');
-            showMiniIcon(selection);
+            showMiniIcon();
         } else {
-            // 文本选择为空时，只隐藏mini icon和选项栏，不隐藏功能窗口
+            // 如果没有选择文本，清除锚点并隐藏UI
+            currentSelectionRange = null;
             hideMiniIcon();
             hideOptionsBar();
         }
@@ -120,30 +128,21 @@ function handleTextSelection(event) {
 }
 
 /**
- * 检查是否应该排除显示划词助手
+ * 检查是否应该排除显示划词助手 - 逻辑已放宽
  */
 function shouldExcludeSelection(selection) {
     if (!selection.rangeCount) return true;
-    
+
     const range = selection.getRangeAt(0);
     const container = range.commonAncestorContainer;
     const element = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
-    
-    // 排除密码输入框
-    if (element.closest('input[type="password"]')) {
+
+    // 只排除密码输入框和插件自身的UI
+    if (element.closest('input[type="password"], .pagetalk-selection-helper, .pagetalk-function-window')) {
         return true;
     }
-    
-    // 排除 PageTalk 插件界面和功能窗口
-    if (element.closest('#pagetalk-panel-container, .pagetalk-selection-helper, .pagetalk-function-window')) {
-        return true;
-    }
-    
-    // 排除其他不适合的元素
-    if (element.closest('script, style, noscript')) {
-        return true;
-    }
-    
+
+    // 允许在 textarea 和 contenteditable 元素中使用
     return false;
 }
 
@@ -192,50 +191,35 @@ function extractSelectionContext(selection) {
 }
 
 /**
- * 显示 mini icon
+ * 显示 mini icon (已修改为绝对定位)
  */
-function showMiniIcon(selection) {
+function showMiniIcon() {
     console.log('[TextSelectionHelper] showMiniIcon called');
     hideMiniIcon();
 
-    if (!selection.rangeCount) {
+    if (!currentSelectionRange) {
         console.log('[TextSelectionHelper] No selection range found');
         return;
     }
 
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
+    const rect = currentSelectionRange.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+        console.warn('[TextSelectionHelper] Selection has no dimensions, cannot show icon.');
+        return;
+    }
     console.log('[TextSelectionHelper] Selection rect:', rect);
-    
+
     // 创建 mini icon 元素
     const miniIcon = document.createElement('div');
     miniIcon.className = 'pagetalk-selection-helper pagetalk-mini-icon';
-    miniIcon.innerHTML = `
-        <img src="${chrome.runtime.getURL('magic.png')}" alt="PageTalk" width="20" height="20">
-    `;
-    
-    // 设置位置
-    const x = rect.right + MINI_ICON_OFFSET.x;
-    const y = rect.bottom + MINI_ICON_OFFSET.y;
-    
-    miniIcon.style.cssText = `
-        position: fixed;
-        left: ${x}px;
-        top: ${y}px;
-        z-index: 2147483646;
-        width: 32px;
-        height: 32px;
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.2s ease;
-    `;
+    miniIcon.innerHTML = `<img src="${chrome.runtime.getURL('magic.png')}" alt="PageTalk" width="20" height="20">`;
+
+    // 计算绝对位置 (关键改动)
+    const x = rect.right + window.scrollX + MINI_ICON_OFFSET.x;
+    const y = rect.bottom + window.scrollY + MINI_ICON_OFFSET.y;
+
+    miniIcon.style.left = `${x}px`;
+    miniIcon.style.top = `${y}px`;
     
     // 添加悬停效果
     miniIcon.addEventListener('mouseenter', () => {
@@ -326,7 +310,7 @@ async function showOptionsBar(triggerElement) {
 
         // 设置样式
         optionsBar.style.cssText = `
-            position: fixed;
+            position: absolute;
             z-index: 2147483647;
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(10px);
@@ -342,16 +326,15 @@ async function showOptionsBar(triggerElement) {
             transform: translateY(10px);
         `;
 
-        // 设置位置（居中显示在 mini icon 正下方）
-        const iconRect = triggerElement.getBoundingClientRect();
-
         // 先添加到 DOM 以获取选项栏的实际宽度
         document.body.appendChild(optionsBar);
+
+        // 计算绝对位置 (关键改动)
+        const iconRect = triggerElement.getBoundingClientRect();
         const optionsBarRect = optionsBar.getBoundingClientRect();
 
-        // 计算居中位置
-        const x = iconRect.left + (iconRect.width / 2) - (optionsBarRect.width / 2);
-        const y = iconRect.bottom + 8;
+        const x = iconRect.left + window.scrollX + (iconRect.width / 2) - (optionsBarRect.width / 2);
+        const y = iconRect.bottom + window.scrollY + 8; // 在图标下方8px
 
         optionsBar.style.left = `${x}px`;
         optionsBar.style.top = `${y}px`;
@@ -407,7 +390,7 @@ function showDefaultOptionsBar(triggerElement) {
     optionsBar.innerHTML = optionsHTML;
 
     optionsBar.style.cssText = `
-        position: fixed;
+        position: absolute;
         z-index: 2147483647;
         background: rgba(255, 255, 255, 0.9);
         backdrop-filter: blur(10px);
@@ -423,14 +406,17 @@ function showDefaultOptionsBar(triggerElement) {
         transform: translateY(10px);
     `;
 
+    document.body.appendChild(optionsBar);
+
+    // 计算绝对位置 (关键改动)
     const iconRect = triggerElement.getBoundingClientRect();
-    const x = iconRect.left;
-    const y = iconRect.bottom + 8;
+    const optionsBarRect = optionsBar.getBoundingClientRect();
+
+    const x = iconRect.left + window.scrollX + (iconRect.width / 2) - (optionsBarRect.width / 2);
+    const y = iconRect.bottom + window.scrollY + 8;
 
     optionsBar.style.left = `${x}px`;
     optionsBar.style.top = `${y}px`;
-
-    document.body.appendChild(optionsBar);
     currentOptionsBar = optionsBar;
 
     optionsBar.addEventListener('click', handleOptionClick);
@@ -587,7 +573,7 @@ async function showFunctionWindow(optionId) {
     };
 
     // 监听鼠标按下事件（开始可能的调整）
-    functionWindow.addEventListener('mousedown', (e) => {
+    functionWindow.addEventListener('mousedown', () => {
         recordInitialSize();
     });
 
@@ -646,12 +632,61 @@ window.TextSelectionHelper = {
 console.log('[TextSelectionHelper] Module loaded');
 
 /**
- * 隐藏所有界面
+ * 新增：处理页面滚动
+ */
+function handleScroll() {
+    if (!currentSelectionRange || isScrolling) {
+        return;
+    }
+
+    isScrolling = true;
+    requestAnimationFrame(() => {
+        const rect = currentSelectionRange.getBoundingClientRect();
+        const isInViewport = rect.bottom > 0 && rect.top < window.innerHeight;
+
+        // 如果UI元素存在，根据锚点是否在视口内来更新其可见性
+        if (currentMiniIcon) {
+            if (isInViewport) {
+                currentMiniIcon.style.display = 'flex';
+                // 更新位置，以防页面布局变化
+                const x = rect.right + window.scrollX + MINI_ICON_OFFSET.x;
+                const y = rect.bottom + window.scrollY + MINI_ICON_OFFSET.y;
+                currentMiniIcon.style.left = `${x}px`;
+                currentMiniIcon.style.top = `${y}px`;
+            } else {
+                currentMiniIcon.style.display = 'none';
+            }
+        }
+
+        if (currentOptionsBar) {
+            if (isInViewport) {
+                currentOptionsBar.style.display = 'flex';
+                // 更新位置
+                const iconRect = currentMiniIcon ? currentMiniIcon.getBoundingClientRect() : rect;
+                const optionsBarRect = currentOptionsBar.getBoundingClientRect();
+                const x = iconRect.left + window.scrollX + (iconRect.width / 2) - (optionsBarRect.width / 2);
+                const y = iconRect.bottom + window.scrollY + 8;
+                currentOptionsBar.style.left = `${x}px`;
+                currentOptionsBar.style.top = `${y}px`;
+            } else {
+                currentOptionsBar.style.display = 'none';
+            }
+        }
+
+        // 功能窗口的逻辑类似，但通常它打开后用户会交互，可以不强制随滚动更新位置
+
+        isScrolling = false;
+    });
+}
+
+/**
+ * 隐藏所有界面，并清除状态
  */
 function hideAllInterfaces() {
     hideMiniIcon();
     hideOptionsBar();
     hideFunctionWindow();
+    currentSelectionRange = null; // 关键：清除锚点
 }
 
 /**
@@ -847,6 +882,7 @@ function setupFunctionWindowEvents(windowElement, optionId) {
         const sendBtn = windowElement.querySelector('.pagetalk-send-btn');
         const textarea = windowElement.querySelector('textarea');
         const clearBtn = windowElement.querySelector('.pagetalk-clear-context');
+        const modelSelect = windowElement.querySelector('.pagetalk-model-select');
 
         if (sendBtn && textarea) {
             sendBtn.addEventListener('click', () => sendChatMessage(windowElement));
@@ -856,10 +892,23 @@ function setupFunctionWindowEvents(windowElement, optionId) {
                     sendChatMessage(windowElement);
                 }
             });
+
+            // 自动聚焦输入框
+            setTimeout(() => {
+                textarea.focus();
+            }, 100); // 延迟100ms确保窗口完全渲染后再聚焦
         }
 
         if (clearBtn) {
             clearBtn.addEventListener('click', () => clearChatContext(windowElement));
+        }
+
+        // 为模型选择器添加事件监听器（对话功能需要响应模型变化）
+        if (modelSelect) {
+            modelSelect.addEventListener('change', (e) => {
+                console.log('[TextSelectionHelper] Chat model changed to:', e.target.value);
+                // 模型变化时不需要特殊处理，下次发送消息时会自动使用新模型
+            });
         }
 
         // 为聊天消息区域添加滚动监听器
@@ -1250,8 +1299,9 @@ async function sendChatMessage(windowElement) {
         const messageContent = aiMessageElement.querySelector('.pagetalk-message-content');
         let fullResponse = '';
 
-        // 获取当前主面板的模型设置
-        const currentModel = await getCurrentMainPanelModel();
+        // 获取当前窗口选择的模型
+        const modelSelect = windowElement.querySelector('.pagetalk-model-select');
+        const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
         // 发送到 AI (流式输出)
         await callAIAPI(fullMessage, currentModel, 0.7, (text, isComplete) => {
@@ -1331,6 +1381,19 @@ async function sendChatMessage(windowElement) {
 
     } catch (error) {
         console.error('[TextSelectionHelper] Chat error:', error);
+
+        // 清除思考动画（如果存在）
+        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+        if (messagesArea) {
+            const thinkingElements = messagesArea.querySelectorAll('.thinking');
+            thinkingElements.forEach(element => {
+                const thinkingMessage = element.closest('.pagetalk-chat-message');
+                if (thinkingMessage) {
+                    thinkingMessage.remove();
+                }
+            });
+        }
+
         addChatMessage(windowElement, `错误：${error.message}`, 'assistant');
 
         // 出错时也要清除流式状态并恢复按钮
@@ -1643,8 +1706,9 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const messageContent = aiMessageElement.querySelector('.pagetalk-message-content');
         let fullResponse = '';
 
-        // 获取当前主面板的模型设置
-        const currentModel = await getCurrentMainPanelModel();
+        // 获取当前窗口选择的模型
+        const modelSelect = windowElement.querySelector('.pagetalk-model-select');
+        const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
         // 发送到 AI (流式输出)
         await callAIAPI(fullMessage, currentModel, 0.7, (text, isComplete) => {
@@ -1716,6 +1780,19 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
     } catch (error) {
         console.error('[TextSelectionHelper] Regenerate chat error:', error);
+
+        // 清除思考动画（如果存在）
+        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+        if (messagesArea) {
+            const thinkingElements = messagesArea.querySelectorAll('.thinking');
+            thinkingElements.forEach(element => {
+                const thinkingMessage = element.closest('.pagetalk-chat-message');
+                if (thinkingMessage) {
+                    thinkingMessage.remove();
+                }
+            });
+        }
+
         addChatMessage(windowElement, `错误：${error.message}`, 'assistant');
 
         // 出错时也要清除流式状态并恢复按钮
