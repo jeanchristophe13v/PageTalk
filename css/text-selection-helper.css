@@ -340,10 +340,10 @@
     word-break: break-all;
 }
 
-/* Scoped Code Highlighting Styles (github.min.css - Light Theme) */
+/* Scoped Code Highlighting Styles (支持深色模式) */
 .pagetalk-function-window pre code.hljs { display: block; overflow-x: auto; padding: 1em; }
 .pagetalk-function-window code.hljs { padding: 3px 5px; }
-.pagetalk-function-window .hljs { color: #24292e; background: #ffffff; }
+.pagetalk-function-window .hljs { color: var(--code-text-color); background: var(--code-background); }
 .pagetalk-function-window .hljs-doctag, .pagetalk-function-window .hljs-keyword, .pagetalk-function-window .hljs-meta .hljs-keyword, .pagetalk-function-window .hljs-template-tag, .pagetalk-function-window .hljs-template-variable, .pagetalk-function-window .hljs-type, .pagetalk-function-window .hljs-variable.language_ { color: #d73a49; }
 .pagetalk-function-window .hljs-title, .pagetalk-function-window .hljs-title.class_, .pagetalk-function-window .hljs-title.class_.inherited__, .pagetalk-function-window .hljs-title.function_ { color: #6f42c1; }
 .pagetalk-function-window .hljs-attr, .pagetalk-function-window .hljs-attribute, .pagetalk-function-window .hljs-literal, .pagetalk-function-window .hljs-meta, .pagetalk-function-window .hljs-number, .pagetalk-function-window .hljs-operator, .pagetalk-function-window .hljs-variable, .pagetalk-function-window .hljs-selector-attr, .pagetalk-function-window .hljs-selector-class, .pagetalk-function-window .hljs-selector-id { color: #005cc5; }
@@ -356,8 +356,8 @@
 .pagetalk-function-window .hljs-bullet { color: #735c0f; }
 .pagetalk-function-window .hljs-emphasis { color: #24292e; font-style: italic; }
 .pagetalk-function-window .hljs-strong { color: #24292e; font-weight: bold; }
-.pagetalk-function-window .hljs-addition { color: #22863a; background-color: #f0fff4; }
-.pagetalk-function-window .hljs-deletion { color: #b31d28; background-color: #ffeef0; }
+.pagetalk-function-window .hljs-addition { color: #22863a; background-color: var(--success-bg, #f0fff4); }
+.pagetalk-function-window .hljs-deletion { color: #b31d28; background-color: var(--error-bg, #ffeef0); }
 
 
 
@@ -583,17 +583,17 @@
 }
 
 .pagetalk-error-message {
-    color: #ff4444;
+    color: var(--error-color, #ff4444);
     font-size: 14px;
     text-align: center;
 }
 
 .pagetalk-retry-btn {
     padding: 8px 16px;
-    border: 1px solid #ff4444;
+    border: 1px solid var(--error-color, #ff4444);
     border-radius: 6px;
     background: rgba(255, 68, 68, 0.1);
-    color: #ff4444;
+    color: var(--error-color, #ff4444);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -647,10 +647,10 @@
 }
 
 .pagetalk-chat-message-assistant .pagetalk-message-content {
-    background: white;
-    color: #333;
+    background: var(--card-background);
+    color: var(--text-color);
     border-bottom-left-radius: 4px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
     padding: 8px 12px 30px 12px; /* 助手消息底部增加padding为按钮留出空间 */
 }
 
@@ -977,32 +977,159 @@
 
 
 
-/* 设置面板样式 */
-.setting-card {
+/* 设置面板样式 - 主面板中的划词助手设置界面 */
+#settings-text-selection-helper .setting-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md); /* 使用中等圆角，与 .agent-item 保持一致 */
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    width: calc(100% - 4px); /* 为阴影预留 2px 左右空间，与 .agent-item 保持一致 */
+    margin: 2px 2px var(--spacing-md) 2px; /* 减少底部间距，使卡片更紧凑 */
+    transform: scale(1);
+    opacity: 1;
+    overflow: hidden;
+}
+
+#settings-text-selection-helper .setting-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.15);
+    transform: translateY(-1px) scale(1.005);
+    z-index: 1;
+}
+
+#settings-text-selection-helper .setting-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    background-color: transparent; /* 初始背景透明，与 .agent-item-header 保持一致 */
+    border-bottom: 1px solid transparent;
+}
+
+/* 注意：header 不设置悬浮背景色变化，因为整个卡片已经有悬浮效果了 */
+
+/* 设置面板样式 - 划词助手功能窗口内的设置界面 */
+.pagetalk-function-window .setting-card {
     margin-bottom: 16px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     overflow: hidden;
 }
 
-.setting-card-header {
+.pagetalk-function-window .setting-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.02);
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    background-color: transparent; /* 初始背景透明，与 .agent-item-header 保持一致 */
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pagetalk-function-window .setting-card-header:hover {
+    background-color: var(--button-hover-bg); /* Primary color transparent hover，与 .agent-item-header:hover 保持一致 */
+}
+
+#settings-text-selection-helper .setting-card-header h3 {
+    margin: 0;
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    margin-right: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+#settings-text-selection-helper .setting-card-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--primary-color);
+}
+
+#settings-text-selection-helper .setting-card-toggle {
+    flex-shrink: 0;
+    margin-left: auto;
+    margin-right: var(--spacing-sm);
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
     cursor: pointer;
 }
 
-.setting-card-header h3 {
+#settings-text-selection-helper .setting-card-toggle:hover {
+    color: var(--text-color);
+}
+
+#settings-text-selection-helper .setting-card.collapsed .setting-card-toggle {
+    transform: rotate(-90deg);
+}
+
+#settings-text-selection-helper .setting-card.expanded .setting-card-toggle {
+    transform: rotate(0deg);
+}
+
+#settings-text-selection-helper .setting-card-content {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 var(--spacing-lg);
+    border-top: 1px solid transparent;
+    background-color: var(--card-background); /* 使用主题变量，支持深色模式 */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+}
+
+#settings-text-selection-helper .setting-card.expanded .setting-card-content {
+    max-height: 800px; /* 足够大的高度 */
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top-color: var(--border-color);
+    opacity: 1;
+}
+
+#settings-text-selection-helper .setting-card.collapsed .setting-card-content {
+    max-height: 0;
+    padding: 0 var(--spacing-lg);
+    border-top-color: transparent;
+    opacity: 0;
+}
+
+/* 不可折叠的卡片样式（如选项顺序） */
+#settings-text-selection-helper .setting-card.no-collapse .setting-card-header {
+    cursor: default !important;
+    pointer-events: none !important; /* 禁用所有点击事件 */
+}
+
+#settings-text-selection-helper .setting-card.no-collapse .setting-card-content {
+    max-height: none !important;
+    padding: var(--spacing-md) var(--spacing-lg) !important;
+    border-top-color: var(--border-color) !important;
+    opacity: 1 !important;
+    display: block !important; /* 确保始终显示 */
+}
+
+.pagetalk-function-window .setting-card-header h3 {
     margin: 0;
     font-size: 14px;
     font-weight: 600;
     color: #333;
 }
 
-.setting-card-toggle {
+.pagetalk-function-window .setting-card-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1015,32 +1142,81 @@
     color: #666;
 }
 
-.setting-card-toggle:hover {
+.pagetalk-function-window .setting-card-toggle:hover {
     color: #333;
 }
 
-.setting-card.collapsed .setting-card-toggle {
+.pagetalk-function-window .setting-card.collapsed .setting-card-toggle {
     transform: rotate(-90deg);
 }
 
-.setting-card-content {
+.pagetalk-function-window .setting-card-content {
     padding: 16px;
     display: block;
 }
 
-.setting-card.collapsed .setting-card-content {
+.pagetalk-function-window .setting-card.collapsed .setting-card-content {
     display: none;
 }
 
-.setting-group {
+#settings-text-selection-helper .setting-group {
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+}
+
+#settings-text-selection-helper .setting-group:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+#settings-text-selection-helper .setting-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-size: clamp(12px, 3vw, 13px);
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+#settings-text-selection-helper .setting-group input[type="text"],
+#settings-text-selection-helper .setting-group input[type="number"],
+#settings-text-selection-helper .setting-group textarea,
+#settings-text-selection-helper .setting-group select {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg); /* 16px 圆角，与主面板保持一致 */
+    font-size: clamp(12px, 3vw, 13px);
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--input-background);
+    transform: translateY(0);
+}
+
+#settings-text-selection-helper .setting-group input:focus,
+#settings-text-selection-helper .setting-group textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1), 0 2px 8px rgba(49, 123, 245, 0.05);
+    background-color: var(--card-background);
+    transform: translateY(-1px);
+}
+
+#settings-text-selection-helper .setting-group select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
+    background-color: var(--card-background);
+    transform: none; /* 取消选择框的上抬效果 */
+}
+
+.pagetalk-function-window .setting-group {
     margin-bottom: 16px;
 }
 
-.setting-group:last-child {
+.pagetalk-function-window .setting-group:last-child {
     margin-bottom: 0;
 }
 
-.setting-group label {
+.pagetalk-function-window .setting-group label {
     display: block;
     margin-bottom: 6px;
     font-size: 13px;
@@ -1048,8 +1224,8 @@
     color: #333;
 }
 
-.setting-group select,
-.setting-group textarea {
+.pagetalk-function-window .setting-group select,
+.pagetalk-function-window .setting-group textarea {
     width: 100%;
     padding: 8px 12px;
     border: 1px solid rgba(0, 0, 0, 0.2);
@@ -1061,33 +1237,87 @@
     transition: border-color 0.2s ease;
 }
 
-.setting-group select:focus,
-.setting-group textarea:focus {
+.pagetalk-function-window .setting-group select:focus,
+.pagetalk-function-window .setting-group textarea:focus {
     border-color: #007AFF;
     box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
-.setting-group textarea {
+#settings-text-selection-helper .setting-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+#settings-text-selection-helper .temperature-control {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+}
+
+#settings-text-selection-helper .temperature-control input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+    outline: none;
+    position: relative;
+    margin: 10px 0;
+}
+
+#settings-text-selection-helper .temperature-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--card-background);
+    border: 2px solid var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    margin-top: -6px;
+}
+
+#settings-text-selection-helper .temperature-control input[type="range"]::-webkit-slider-thumb:hover,
+#settings-text-selection-helper .temperature-control input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+#settings-text-selection-helper .temperature-control span {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: clamp(12px, 3.5vw, 14px);
+}
+
+.pagetalk-function-window .setting-group textarea {
     resize: vertical;
     min-height: 60px;
 }
 
-.temperature-control {
+.pagetalk-function-window .temperature-control {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.temperature-control input[type="range"] {
+.pagetalk-function-window .temperature-control input[type="range"] {
     flex: 1;
     height: 4px;
     background: rgba(0, 0, 0, 0.1);
     border-radius: 2px;
     outline: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
-.temperature-control input[type="range"]::-webkit-slider-thumb {
+.pagetalk-function-window .temperature-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 16px;
     height: 16px;
@@ -1096,7 +1326,7 @@
     cursor: pointer;
 }
 
-.temperature-control input[type="range"]::-moz-range-thumb {
+.pagetalk-function-window .temperature-control input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
     background: #007AFF;
@@ -1105,7 +1335,7 @@
     border: none;
 }
 
-.temperature-value {
+.pagetalk-function-window .temperature-value {
     font-size: 13px;
     font-weight: 500;
     color: #666;
@@ -1113,11 +1343,11 @@
     text-align: center;
 }
 
-.custom-options-list {
+.pagetalk-function-window .custom-options-list {
     margin-bottom: 16px;
 }
 
-.custom-option-item {
+.pagetalk-function-window .custom-option-item {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1128,23 +1358,23 @@
     background: rgba(255, 255, 255, 0.5);
 }
 
-.custom-option-item:last-child {
+.pagetalk-function-window .custom-option-item:last-child {
     margin-bottom: 0;
 }
 
-.custom-option-name {
+.pagetalk-function-window .custom-option-name {
     flex: 1;
     font-size: 13px;
     font-weight: 500;
     color: #333;
 }
 
-.custom-option-actions {
+.pagetalk-function-window .custom-option-actions {
     display: flex;
     gap: 4px;
 }
 
-.custom-option-actions button {
+.pagetalk-function-window .custom-option-actions button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1158,16 +1388,91 @@
     color: #666;
 }
 
-.custom-option-actions button:hover {
+.pagetalk-function-window .custom-option-actions button:hover {
     background: rgba(0, 0, 0, 0.2);
     color: #333;
 }
 
-.options-order-list {
+#settings-text-selection-helper .options-order-list {
+    margin-bottom: var(--spacing-md);
+}
+
+#settings-text-selection-helper .order-option-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 4px;
+    background: var(--card-background);
+    transition: all 0.2s ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#settings-text-selection-helper .order-option-item:hover {
+    background: var(--button-hover-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#settings-text-selection-helper .order-option-item:last-child {
+    margin-bottom: 0;
+}
+
+#settings-text-selection-helper .order-option-item.drag-over {
+    background: rgba(76, 110, 245, 0.1);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(76, 110, 245, 0.2);
+}
+
+#settings-text-selection-helper .order-option-item[draggable="true"] {
+    cursor: grab;
+}
+
+#settings-text-selection-helper .order-option-item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+#settings-text-selection-helper .order-option-name {
+    flex: 1;
+    font-size: clamp(12px, 3vw, 13px);
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+#settings-text-selection-helper .order-option-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--primary-color);
+}
+
+#settings-text-selection-helper .order-option-type {
+    font-size: clamp(10px, 2.5vw, 11px);
+    color: var(--text-secondary);
+    background: var(--button-hover-bg);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+#settings-text-selection-helper .hint {
+    font-size: clamp(10px, 2.5vw, 11px);
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    padding-left: var(--spacing-md);
+    font-style: italic;
+}
+
+.pagetalk-function-window .options-order-list {
     margin-bottom: 16px;
 }
 
-.order-option-item {
+.pagetalk-function-window .order-option-item {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1181,44 +1486,38 @@
     user-select: none;
 }
 
-.order-option-item:hover {
+.pagetalk-function-window .order-option-item:hover {
     background: rgba(0, 0, 0, 0.02);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.order-option-item:last-child {
+.pagetalk-function-window .order-option-item:last-child {
     margin-bottom: 0;
 }
 
-.order-option-item.drag-over {
+.pagetalk-function-window .order-option-item.drag-over {
     background: rgba(0, 122, 255, 0.1);
     border-color: #007AFF;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 122, 255, 0.2);
 }
 
-.order-option-item[draggable="true"] {
-    cursor: move;
+.pagetalk-function-window .order-option-item[draggable="true"] {
+    cursor: grab;
 }
 
-.order-option-drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 16px;
-    height: 16px;
-    color: #999;
-    cursor: move;
+.pagetalk-function-window .order-option-item[draggable="true"]:active {
+    cursor: grabbing;
 }
 
-.order-option-name {
+.pagetalk-function-window .order-option-name {
     flex: 1;
     font-size: 13px;
     color: #333;
 }
 
-.order-option-type {
+.pagetalk-function-window .order-option-type {
     font-size: 11px;
     color: #666;
     background: rgba(0, 0, 0, 0.05);
@@ -1226,10 +1525,275 @@
     border-radius: 3px;
 }
 
-.hint {
+.pagetalk-function-window .hint {
     font-size: 12px;
     color: #666;
     margin: 0;
     font-style: italic;
+}
+
+/* ===== 深色模式适配 ===== */
+
+/* 划词助手设置界面深色模式 */
+body.dark-mode #settings-text-selection-helper .setting-card {
+    background-color: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(116, 143, 252, 0.15);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-card-header h3 {
+    color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-card-icon {
+    color: var(--primary-color);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-card-toggle {
+    color: var(--text-secondary);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-card-toggle:hover {
+    color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-card-content {
+    background-color: var(--background-color); /* 使用主背景色，与深色模式保持一致 */
+}
+
+body.dark-mode #settings-text-selection-helper .setting-group label {
+    color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-group input[type="text"],
+body.dark-mode #settings-text-selection-helper .setting-group input[type="number"],
+body.dark-mode #settings-text-selection-helper .setting-group textarea,
+body.dark-mode #settings-text-selection-helper .setting-group select {
+    background-color: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode #settings-text-selection-helper .setting-group input:focus,
+body.dark-mode #settings-text-selection-helper .setting-group textarea:focus,
+body.dark-mode #settings-text-selection-helper .setting-group select:focus {
+    background-color: var(--card-background);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2);
+}
+
+body.dark-mode #settings-text-selection-helper .temperature-control input[type="range"] {
+    background: var(--border-color);
+}
+
+body.dark-mode #settings-text-selection-helper .temperature-control input[type="range"]::-webkit-slider-thumb {
+    background-color: var(--input-background);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode #settings-text-selection-helper .temperature-control input[type="range"]::-webkit-slider-thumb:hover,
+body.dark-mode #settings-text-selection-helper .temperature-control input[type="range"]:active::-webkit-slider-thumb {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode #settings-text-selection-helper .temperature-control span {
+    color: var(--primary-color);
+}
+
+body.dark-mode #settings-text-selection-helper .order-option-item {
+    background: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-mode #settings-text-selection-helper .order-option-item:hover {
+    background: var(--button-hover-bg);
+}
+
+body.dark-mode #settings-text-selection-helper .order-option-item.drag-over {
+    background: rgba(116, 143, 252, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(116, 143, 252, 0.2);
+}
+
+body.dark-mode #settings-text-selection-helper .order-option-name {
+    color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .order-option-icon {
+    color: var(--primary-color);
+}
+
+body.dark-mode #settings-text-selection-helper .order-option-type {
+    color: var(--text-secondary);
+    background: var(--button-hover-bg);
+}
+
+body.dark-mode #settings-text-selection-helper .hint {
+    color: var(--text-secondary);
+}
+
+/* 划词助手功能窗口深色模式 */
+body.dark-mode .pagetalk-function-window {
+    background: var(--card-background);
+    border-color: var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .pagetalk-window-header {
+    background: var(--background-color);
+    border-bottom-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .pagetalk-window-close {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .pagetalk-window-close:hover {
+    color: var(--error-color);
+    background-color: rgba(255, 135, 135, 0.15);
+}
+
+body.dark-mode .pagetalk-content {
+    background: var(--card-background);
+    color: var(--text-color);
+}
+
+body.dark-mode .pagetalk-quote-area {
+    background: var(--background-color);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+body.dark-mode .pagetalk-quote-text {
+    color: var(--text-color);
+}
+
+body.dark-mode .pagetalk-quote-toggle {
+    color: var(--primary-color);
+}
+
+body.dark-mode .pagetalk-quote-toggle:hover {
+    color: var(--secondary-color);
+}
+
+body.dark-mode .pagetalk-chat-messages {
+    background: var(--card-background);
+}
+
+body.dark-mode .pagetalk-chat-message-user .pagetalk-message-content {
+    background: var(--primary-color);
+    color: #FFFFFF;
+    border-color: var(--primary-color);
+}
+
+body.dark-mode .pagetalk-chat-message-assistant .pagetalk-message-content {
+    background: var(--background-color);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .pagetalk-chat-input {
+    background: var(--background-color);
+    border-top-color: var(--border-color);
+}
+
+body.dark-mode .pagetalk-chat-input textarea {
+    background: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .pagetalk-chat-input textarea:focus {
+    background: var(--card-background);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2);
+}
+
+body.dark-mode .pagetalk-chat-input textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .pagetalk-send-btn {
+    background: var(--primary-color);
+    color: #FFFFFF;
+}
+
+body.dark-mode .pagetalk-send-btn:hover {
+    background: var(--secondary-color);
+}
+
+body.dark-mode .pagetalk-send-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+}
+
+body.dark-mode .pagetalk-model-selector select,
+body.dark-mode .pagetalk-assistant-selector select {
+    background: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .pagetalk-model-selector select:focus,
+body.dark-mode .pagetalk-assistant-selector select:focus {
+    background: var(--card-background);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode .pagetalk-clear-btn {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .pagetalk-clear-btn:hover {
+    color: var(--error-color);
+    background-color: rgba(255, 135, 135, 0.15);
+}
+
+body.dark-mode .pagetalk-message-actions .pagetalk-action-btn {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+body.dark-mode .pagetalk-message-actions .pagetalk-action-btn:hover {
+    background: rgba(85, 93, 102, 0.5);
+    color: var(--primary-color);
+}
+
+body.dark-mode .pagetalk-user-message .pagetalk-message-actions .pagetalk-action-btn {
+    color: #C9D1D9;
+}
+
+body.dark-mode .pagetalk-user-message .pagetalk-message-actions .pagetalk-action-btn:hover {
+    background: rgba(116, 143, 252, 0.2);
+    color: #FFFFFF;
+}
+
+body.dark-mode .pagetalk-thinking-bubble {
+    background: var(--background-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .pagetalk-thinking-dots span {
+    background-color: var(--primary-color);
+}
+
+body.dark-mode .pagetalk-error-message {
+    color: var(--error-color);
+}
+
+body.dark-mode .pagetalk-retry-btn {
+    border-color: var(--error-color);
+    color: var(--error-color);
+    background: rgba(255, 135, 135, 0.15);
+}
+
+body.dark-mode .pagetalk-retry-btn:hover {
+    background: rgba(255, 135, 135, 0.25);
 }
 

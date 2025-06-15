@@ -24,14 +24,14 @@ let currentSettings = { ...DEFAULT_SETTINGS };
 /**
  * 初始化划词助手设置
  */
-export function initTextSelectionHelperSettings(elements, translations) {
+export async function initTextSelectionHelperSettings(elements, translations) {
     console.log('[TextSelectionHelperSettings] Initializing...');
 
     // 清理可能存在的错误数据
     cleanupStorageData();
 
-    // 加载设置
-    loadSettings();
+    // 加载设置（等待完成）
+    await loadSettings();
 
     // 初始化UI
     initSettingsUI(elements, translations);
@@ -83,17 +83,39 @@ function cleanupStorageData() {
  * 加载设置
  */
 function loadSettings() {
-    chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
-        if (result.textSelectionHelperSettings) {
-            currentSettings = { ...DEFAULT_SETTINGS, ...result.textSelectionHelperSettings };
-            // 清理可能存在的自定义选项残留
-            delete currentSettings.customOptions;
-            // 确保选项顺序只包含默认选项
-            currentSettings.optionsOrder = currentSettings.optionsOrder.filter(id =>
-                ['interpret', 'translate', 'chat'].includes(id)
-            );
+    return new Promise((resolve) => {
+        // 检查Chrome存储API是否可用
+        if (!chrome || !chrome.storage || !chrome.storage.sync) {
+            console.warn('[TextSelectionHelperSettings] Chrome storage API not available, using default settings');
+            currentSettings = { ...DEFAULT_SETTINGS };
+            resolve();
+            return;
         }
-        console.log('[TextSelectionHelperSettings] Settings loaded:', currentSettings);
+
+        try {
+            chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
+                if (chrome.runtime.lastError) {
+                    console.error('[TextSelectionHelperSettings] Error loading settings:', chrome.runtime.lastError);
+                    currentSettings = { ...DEFAULT_SETTINGS };
+                } else if (result.textSelectionHelperSettings) {
+                    currentSettings = { ...DEFAULT_SETTINGS, ...result.textSelectionHelperSettings };
+                    // 清理可能存在的自定义选项残留
+                    delete currentSettings.customOptions;
+                    // 确保选项顺序只包含默认选项
+                    currentSettings.optionsOrder = currentSettings.optionsOrder.filter(id =>
+                        ['interpret', 'translate', 'chat'].includes(id)
+                    );
+                } else {
+                    currentSettings = { ...DEFAULT_SETTINGS };
+                }
+                console.log('[TextSelectionHelperSettings] Settings loaded:', currentSettings);
+                resolve();
+            });
+        } catch (error) {
+            console.error('[TextSelectionHelperSettings] Exception loading settings:', error);
+            currentSettings = { ...DEFAULT_SETTINGS };
+            resolve();
+        }
     });
 }
 
@@ -101,6 +123,12 @@ function loadSettings() {
  * 保存设置
  */
 function saveSettings() {
+    // 检查Chrome存储API是否可用
+    if (!chrome || !chrome.storage || !chrome.storage.sync) {
+        console.warn('[TextSelectionHelperSettings] Chrome storage API not available, cannot save settings');
+        return;
+    }
+
     // 确保保存前清理自定义选项
     const settingsToSave = { ...currentSettings };
     delete settingsToSave.customOptions;
@@ -108,13 +136,17 @@ function saveSettings() {
         ['interpret', 'translate', 'chat'].includes(id)
     );
 
-    chrome.storage.sync.set({ textSelectionHelperSettings: settingsToSave }, () => {
-        if (chrome.runtime.lastError) {
-            console.error('[TextSelectionHelperSettings] Error saving settings:', chrome.runtime.lastError);
-        } else {
-            console.log('[TextSelectionHelperSettings] Settings saved');
-        }
-    });
+    try {
+        chrome.storage.sync.set({ textSelectionHelperSettings: settingsToSave }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('[TextSelectionHelperSettings] Error saving settings:', chrome.runtime.lastError);
+            } else {
+                console.log('[TextSelectionHelperSettings] Settings saved');
+            }
+        });
+    } catch (error) {
+        console.error('[TextSelectionHelperSettings] Exception saving settings:', error);
+    }
 }
 
 /**
@@ -172,15 +204,60 @@ function initModelSelectors(elements) {
  * 初始化设置卡片（折叠功能）
  */
 function initSettingCards(elements) {
-    const cards = document.querySelectorAll('.setting-card');
-    cards.forEach(card => {
+    console.log('[TextSelectionHelperSettings] initSettingCards called');
+    const cards = document.querySelectorAll('#settings-text-selection-helper .setting-card');
+    console.log('[TextSelectionHelperSettings] Found', cards.length, 'cards');
+
+    cards.forEach((card, index) => {
         const header = card.querySelector('.setting-card-header');
         const toggle = card.querySelector('.setting-card-toggle');
-        
-        if (header && toggle) {
-            header.addEventListener('click', () => {
-                card.classList.toggle('collapsed');
-            });
+        const cardTitle = header?.querySelector('h3')?.textContent?.trim();
+
+        console.log(`[TextSelectionHelperSettings] Card ${index}: "${cardTitle}"`);
+
+        // 检查是否是"选项顺序"卡片
+        const isOptionsOrderCard = cardTitle === '选项顺序';
+
+        if (isOptionsOrderCard) {
+            console.log('[TextSelectionHelperSettings] Setting up options order card');
+            // 选项顺序卡片默认展开且不可折叠
+            card.classList.add('expanded');
+            card.classList.add('no-collapse'); // 添加标记类
+            if (toggle) {
+                console.log('[TextSelectionHelperSettings] Removing toggle button');
+                toggle.remove(); // 直接移除折叠按钮
+            }
+            if (header) {
+                header.style.cursor = 'default'; // 移除点击光标
+                header.style.pointerEvents = 'none'; // 禁用点击事件
+            }
+            console.log('[TextSelectionHelperSettings] Options order card setup complete');
+        } else {
+            // 其他卡片默认设置为折叠状态
+            card.classList.add('collapsed');
+
+            if (header && toggle) {
+                header.addEventListener('click', () => {
+                    const isExpanded = card.classList.contains('expanded');
+
+                    // 折叠其他可折叠的卡片
+                    cards.forEach(otherCard => {
+                        if (otherCard !== card && !otherCard.classList.contains('no-collapse')) {
+                            otherCard.classList.remove('expanded');
+                            otherCard.classList.add('collapsed');
+                        }
+                    });
+
+                    // 切换当前卡片状态
+                    if (isExpanded) {
+                        card.classList.remove('expanded');
+                        card.classList.add('collapsed');
+                    } else {
+                        card.classList.remove('collapsed');
+                        card.classList.add('expanded');
+                    }
+                });
+            }
         }
     });
 }
@@ -282,12 +359,23 @@ function setupEventListeners(elements, translations) {
 /**
  * 更新选项顺序UI
  */
-
 function updateOptionsOrderUI(elements, translations) {
+    console.log('[TextSelectionHelperSettings] updateOptionsOrderUI called');
     const container = document.getElementById('options-order-list');
-    if (!container) return;
+    if (!container) {
+        console.error('[TextSelectionHelperSettings] Container element not found: options-order-list');
+        return;
+    }
+
+    console.log('[TextSelectionHelperSettings] Current settings:', currentSettings);
+    console.log('[TextSelectionHelperSettings] Options order:', currentSettings.optionsOrder);
 
     container.innerHTML = '';
+
+    if (!currentSettings.optionsOrder || currentSettings.optionsOrder.length === 0) {
+        console.warn('[TextSelectionHelperSettings] No options order found, using default');
+        currentSettings.optionsOrder = ['interpret', 'translate', 'chat'];
+    }
 
     currentSettings.optionsOrder.forEach((optionId, index) => {
         const item = document.createElement('div');
@@ -297,27 +385,42 @@ function updateOptionsOrderUI(elements, translations) {
 
         let optionName = optionId;
         let optionType = '默认';
+        let optionIcon = '';
 
         if (optionId === 'interpret') {
             optionName = '解读';
+            optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"/>
+                <path d="M12 6v6l4 2"/>
+            </svg>`;
         } else if (optionId === 'translate') {
             optionName = '翻译';
+            optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M5 8l6 6"/>
+                <path d="M4 14l6-6 2-3"/>
+                <path d="M2 5h12"/>
+                <path d="M7 2h1"/>
+                <path d="M22 22l-5-10-5 10"/>
+                <path d="M14 18h6"/>
+            </svg>`;
         } else if (optionId === 'chat') {
             optionName = '对话';
+            optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>`;
         }
 
         item.innerHTML = `
-            <div class="order-option-drag-handle">
-                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm2-6a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm2 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm2 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-                </svg>
-            </div>
-            <div class="order-option-name">${optionName}</div>
+            <div class="order-option-name">${optionIcon}${optionName}</div>
             <div class="order-option-type">${optionType}</div>
         `;
 
         container.appendChild(item);
     });
+
+    console.log('[TextSelectionHelperSettings] Added', currentSettings.optionsOrder.length, 'items to container');
+    console.log('[TextSelectionHelperSettings] Container children count:', container.children.length);
 
     // 添加拖拽功能
     setupDragAndDrop(container);
@@ -341,11 +444,8 @@ function setupDragAndDrop(container) {
 
     // 为每个拖拽项添加事件监听器
     container.querySelectorAll('.order-option-item').forEach(item => {
-        // 设置拖拽手柄的光标样式
-        const dragHandle = item.querySelector('.order-option-drag-handle');
-        if (dragHandle) {
-            dragHandle.style.cursor = 'grab';
-        }
+        // 设置整个项目的光标样式为可拖拽
+        item.style.cursor = 'grab';
 
         item.addEventListener('dragstart', (e) => {
             draggedElement = item;
@@ -354,16 +454,12 @@ function setupDragAndDrop(container) {
             e.dataTransfer.setData('text/html', item.outerHTML);
 
             // 改变光标样式
-            if (dragHandle) {
-                dragHandle.style.cursor = 'grabbing';
-            }
+            item.style.cursor = 'grabbing';
         });
 
         item.addEventListener('dragend', (e) => {
             item.style.opacity = '1';
-            if (dragHandle) {
-                dragHandle.style.cursor = 'grab';
-            }
+            item.style.cursor = 'grab';
 
             // 清除所有拖拽样式
             container.querySelectorAll('.order-option-item').forEach(el => {

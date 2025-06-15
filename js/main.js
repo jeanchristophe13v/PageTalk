@@ -178,7 +178,7 @@ const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 
 
 // --- Initialization ---
-function init() {
+async function init() {
     console.log("Pagetalk Initializing...");
 
     // Request theme early
@@ -209,7 +209,7 @@ function init() {
 
     // Setup core features
     initModelSelection(state, elements); // Populate model dropdowns
-    initTextSelectionHelperSettings(elements, currentTranslations); // Initialize text selection helper settings
+    await initTextSelectionHelperSettings(elements, currentTranslations); // Initialize text selection helper settings
     setupEventListeners(); // Setup all event listeners
     setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
     setupAutoresizeTextarea(elements); // Setup textarea resize
