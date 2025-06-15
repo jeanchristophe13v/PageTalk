@@ -1508,44 +1508,42 @@
 
 #settings-text-selection-helper .custom-option-actions {
     display: flex;
-    gap: var(--spacing-xs);
+    gap: var(--spacing-md);
 }
 
 #settings-text-selection-helper .custom-option-actions button {
-    padding: 4px 8px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
     border: none;
-    border-radius: 16px;
+    border-radius: 50%;
     cursor: pointer;
-    font-size: 12px;
     transition: all 0.2s ease;
     position: relative;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--text-secondary);
 }
 
-#settings-text-selection-helper .edit-custom-option-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border: 1px solid transparent;
+#settings-text-selection-helper .custom-option-actions button svg {
+    width: 16px;
+    height: 16px;
+    transition: all 0.2s ease;
 }
 
 #settings-text-selection-helper .edit-custom-option-btn:hover {
-    background-color: var(--secondary-color);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.3);
-}
-
-#settings-text-selection-helper .delete-custom-option-btn {
-    background-color: #dc3545;
-    color: white;
-    border: 1px solid transparent;
+    color: var(--primary-color);
+    background-color: rgba(70, 116, 255, 0.1);
+    transform: scale(1.1);
 }
 
 #settings-text-selection-helper .delete-custom-option-btn:hover {
-    background-color: #c82333;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    transform: scale(1.1);
 }
 
 #settings-text-selection-helper .custom-option-details {
@@ -2025,28 +2023,21 @@ body.dark-mode #settings-text-selection-helper .custom-option-detail-value {
     color: var(--text-color);
 }
 
-body.dark-mode #settings-text-selection-helper .edit-custom-option-btn {
-    background-color: var(--primary-color);
-    color: white;
+body.dark-mode #settings-text-selection-helper .custom-option-actions button {
+    color: var(--text-secondary);
+    background-color: transparent;
 }
 
 body.dark-mode #settings-text-selection-helper .edit-custom-option-btn:hover {
-    background-color: var(--secondary-color);
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.3);
-}
-
-body.dark-mode #settings-text-selection-helper .delete-custom-option-btn {
-    background-color: #dc3545;
-    color: white;
+    color: var(--primary-color);
+    background-color: rgba(116, 143, 252, 0.15);
+    transform: scale(1.1);
 }
 
 body.dark-mode #settings-text-selection-helper .delete-custom-option-btn:hover {
-    background-color: #c82333;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.15);
+    transform: scale(1.1);
 }
 
 body.dark-mode #settings-text-selection-helper .add-custom-option-btn {
