@@ -152,32 +152,13 @@
     --radius-full: 9999px;
 }
 
-@media (prefers-color-scheme: dark) {
-    .pagetalk-function-window {
-        /* Dark Mode Variable Overrides */
-        --primary-color: #748FFC;
-        --text-color: #e9ecefdb;
-        --text-secondary: #ADB5BD;
-        --border-color: #343A40;
-        --code-background: #343A40;
-        --code-text-color: #e9ecefdb;
-        --code-border: #495057;
-        --table-header-bg: var(--primary-color);
-        --table-even-row-bg: rgba(255, 255, 255, 0.04);
-        --link-color: var(--primary-color);
-        --blockquote-bg: rgba(116, 143, 252, 0.1);
-        --blockquote-text: var(--text-secondary);
-        --inline-code-bg: rgba(110, 118, 129, 0.4);
-        --inline-code-text: var(--text-color);
-        --inline-code-border: transparent;
-    }
-}
+
 
 /*
  * Scoped Markdown and Code Highlighting Styles.
  * All selectors are prefixed with `.pagetalk-function-window` to prevent conflicts
  * with the host webpage's styles. These styles are copied and adapted from
- * _markdown.css, github.min.css, and github-dark-dimmed.min.css.
+ * _markdown.css and github.min.css (light theme only).
  */
 
 /* Scoped Markdown Styles from _markdown.css */
@@ -259,13 +240,8 @@
 
 .pagetalk-function-window .markdown-rendered thead {
     background-color: var(--table-header-bg);
-    color: var(--table-header-bg-text, white); /* Default to white text on colored bg */
+    color: var(--text-color);
     text-align: left;
-}
-@media (prefers-color-scheme: light) {
-    .pagetalk-function-window .markdown-rendered thead {
-         color: var(--text-color);
-    }
 }
 
 
@@ -384,24 +360,7 @@
 .pagetalk-function-window .hljs-deletion { color: #b31d28; background-color: #ffeef0; }
 
 
-/* Scoped Code Highlighting Styles (github-dark-dimmed.min.css - Dark Theme) */
-@media (prefers-color-scheme: dark) {
-    .pagetalk-function-window .hljs { color: #adbac7; background: #22272e; }
-    .pagetalk-function-window .hljs-doctag, .pagetalk-function-window .hljs-keyword, .pagetalk-function-window .hljs-meta .hljs-keyword, .pagetalk-function-window .hljs-template-tag, .pagetalk-function-window .hljs-template-variable, .pagetalk-function-window .hljs-type, .pagetalk-function-window .hljs-variable.language_ { color: #f47067; }
-    .pagetalk-function-window .hljs-title, .pagetalk-function-window .hljs-title.class_, .pagetalk-function-window .hljs-title.class_.inherited__, .pagetalk-function-window .hljs-title.function_ { color: #dcbdfb; }
-    .pagetalk-function-window .hljs-attr, .pagetalk-function-window .hljs-attribute, .pagetalk-function-window .hljs-literal, .pagetalk-function-window .hljs-meta, .pagetalk-function-window .hljs-number, .pagetalk-function-window .hljs-operator, .pagetalk-function-window .hljs-selector-attr, .pagetalk-function-window .hljs-selector-class, .pagetalk-function-window .hljs-selector-id, .pagetalk-function-window .hljs-variable { color: #6cb6ff; }
-    .pagetalk-function-window .hljs-meta .hljs-string, .pagetalk-function-window .hljs-regexp, .pagetalk-function-window .hljs-string { color: #96d0ff; }
-    .pagetalk-function-window .hljs-built_in, .pagetalk-function-window .hljs-symbol { color: #f69d50; }
-    .pagetalk-function-window .hljs-code, .pagetalk-function-window .hljs-comment, .pagetalk-function-window .hljs-formula { color: #768390; }
-    .pagetalk-function-window .hljs-name, .pagetalk-function-window .hljs-quote, .pagetalk-function-window .hljs-selector-pseudo, .pagetalk-function-window .hljs-selector-tag { color: #8ddb8c; }
-    .pagetalk-function-window .hljs-subst { color: #adbac7; }
-    .pagetalk-function-window .hljs-section { color: #316dca; font-weight: bold; }
-    .pagetalk-function-window .hljs-bullet { color: #eac55f; }
-    .pagetalk-function-window .hljs-emphasis { color: #adbac7; font-style: italic; }
-    .pagetalk-function-window .hljs-strong { color: #adbac7; font-weight: bold; }
-    .pagetalk-function-window .hljs-addition { color: #b4f1b4; background-color: #1b4721; }
-    .pagetalk-function-window .hljs-deletion { color: #ffd8d3; background-color: #78191b; }
-}
+
 
 /* --- End of Fix --- */
 
@@ -1016,97 +975,7 @@
     pointer-events: none;
 }
 
-/* 深色模式适配 */
-@media (prefers-color-scheme: dark) {
-    .pagetalk-mini-icon,
-    .pagetalk-options-bar,
-    .pagetalk-function-window {
-        background: rgba(30, 30, 30, 0.9);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .pagetalk-option,
-    .pagetalk-window-title,
-    .pagetalk-response-content {
-        color: #fff;
-    }
-    
-    .pagetalk-option:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .pagetalk-window-header {
-        background: rgba(30, 30, 30, 0.5);
-        border-bottom-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .pagetalk-quote-area {
-        background: rgba(255, 255, 255, 0.05);
-        border-bottom-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .pagetalk-quote-text {
-        color: #ccc;
-    }
 
-    /* 深色模式下的渐变遮罩 */
-    .pagetalk-quote-text.collapsed::after {
-        background: linear-gradient(to right,
-            transparent 0%,
-            transparent 10%,
-            rgba(32, 32, 32, 0.2) 20%,
-            rgba(32, 32, 32, 0.5) 35%,
-            rgba(32, 32, 32, 0.8) 50%,
-            rgba(32, 32, 32, 0.95) 65%,
-            rgba(32, 32, 32, 1) 80%,
-            rgba(32, 32, 32, 1) 100%
-        );
-    }
-    
-    .pagetalk-chat-message-assistant .pagetalk-message-content {
-        background: white;
-        color: #333;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    .pagetalk-chat-input {
-        background: rgba(30, 30, 30, 0.5);
-        border-top-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .pagetalk-chat-input textarea,
-    .pagetalk-window-controls select {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #fff;
-    }
-
-
-
-    /* 深色模式下的思考动画 */
-    .pagetalk-function-window .thinking-dots span {
-        background: linear-gradient(135deg, #007AFF, rgba(49, 123, 245, 0.7));
-    }
-
-    /* 深色模式下的流式光标 */
-    .pagetalk-streaming-cursor {
-        background-color: #007AFF;
-    }
-
-    /* 深色模式下的展开按钮优化 */
-    .pagetalk-quote-toggle {
-        background: rgba(0, 122, 255, 0.15);
-        border-color: rgba(0, 122, 255, 0.5);
-        color: #4A9EFF;
-        box-shadow: 0 1px 3px rgba(0, 122, 255, 0.2);
-    }
-
-    .pagetalk-quote-toggle:hover {
-        background: rgba(0, 122, 255, 0.25);
-        border-color: rgba(0, 122, 255, 0.7);
-        box-shadow: 0 2px 6px rgba(0, 122, 255, 0.3);
-    }
-}
 
 /* 设置面板样式 */
 .setting-card {
@@ -1364,63 +1233,3 @@
     font-style: italic;
 }
 
-/* 深色模式适配 - 设置面板 */
-@media (prefers-color-scheme: dark) {
-    .setting-card {
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .setting-card-header {
-        background: rgba(255, 255, 255, 0.05);
-        border-bottom-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .setting-card-header h3,
-    .setting-group label,
-    .custom-option-name,
-    .order-option-name {
-        color: #fff;
-    }
-
-    .setting-card-toggle {
-        color: #ccc;
-    }
-
-    .setting-card-toggle:hover {
-        color: #fff;
-    }
-
-    .setting-group select,
-    .setting-group textarea {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #fff;
-    }
-
-    .temperature-control input[type="range"] {
-        background: rgba(255, 255, 255, 0.2);
-    }
-
-    .temperature-value {
-        color: #ccc;
-    }
-
-    .custom-option-item,
-    .order-option-item {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .order-option-item:hover {
-        background: rgba(255, 255, 255, 0.1);
-    }
-
-    .order-option-type {
-        background: rgba(255, 255, 255, 0.1);
-        color: #ccc;
-    }
-
-    .hint {
-        color: #999;
-    }
-}
