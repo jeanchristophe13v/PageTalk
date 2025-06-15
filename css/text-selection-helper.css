@@ -630,12 +630,11 @@
 }
 
 .pagetalk-message-content {
-    max-width: 100%; /* 修改：将最大宽度从80%改为100%，允许气泡撑满容器 */
     border-radius: 12px;
     font-size: 14px;
     line-height: 1.4;
     word-wrap: break-word;
-    width: fit-content; /* 新增：让气泡宽度由内容决定，但最大不超过100% */
+    width: fit-content; /* 让气泡宽度由内容决定 */
     position: relative; /* 为按钮定位提供参考 */
 }
 
@@ -651,12 +650,15 @@
     color: var(--text-color);
     border-bottom-left-radius: 4px;
     border: 1px solid var(--border-color);
-    padding: 8px 12px 30px 12px; /* 助手消息底部增加padding为按钮留出空间 */
+    padding: 12px; /* 标准内边距 */
+    padding-bottom: 30px; /* 底部增加padding为按钮留出空间 */
+    max-width: 95%;
+    min-width: 120px; /* 设置最小宽度确保按钮有足够空间 */
 }
 
 /* 思考动画特殊样式：通过负边距抵消额外的底部padding */
 .pagetalk-chat-message-assistant .pagetalk-message-content .thinking {
-    margin: 0 0 -22px 0; /* 通过负底边距抵消容器的额外底部padding (30px - 8px = 22px) */
+    margin: 0 0 -18px 0; /* 通过负底边距抵消容器的额外底部padding (30px - 12px = 18px) */
 }
 
 .pagetalk-message-actions {
@@ -675,13 +677,14 @@
     right: 0;
 }
 
-/* 助手消息按钮位置：气泡内右下角 */
-.pagetalk-chat-message-assistant .pagetalk-message-actions {
+/* 助手消息按钮位置：在气泡内容内部的右下角 */
+.pagetalk-chat-message-assistant .pagetalk-message-content .pagetalk-message-actions {
     bottom: 6px; /* 对应主面板的 var(--spacing-xs) */
     right: 6px; /* 对应主面板的 var(--spacing-xs) */
 }
 
-.pagetalk-chat-message:hover .pagetalk-message-actions {
+.pagetalk-chat-message:hover .pagetalk-message-actions,
+.pagetalk-message-content:hover .pagetalk-message-actions {
     opacity: 1;
     transform: translateY(2px) scale(1);
 }

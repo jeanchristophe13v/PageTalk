@@ -1755,10 +1755,10 @@ async function sendChatMessage(windowElement) {
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
             // 只有当上下文与选中文本不同且有意义时才包含
-            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
+            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
         } else {
             // 如果上下文无意义或与选中文本相同，只使用选中文本
-            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
         }
 
         // 重置滚动状态（新请求开始）
@@ -1792,29 +1792,30 @@ async function sendChatMessage(windowElement) {
         aiMessageElement.className = 'pagetalk-chat-message pagetalk-chat-message-assistant';
         aiMessageElement.dataset.messageId = `assistant-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         aiMessageElement.innerHTML = `
-            <div class="pagetalk-message-content markdown-rendered"></div>
-            <div class="pagetalk-message-actions">
-                <button class="pagetalk-copy-btn" title="复制">
-                    <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                    </svg>
-                    <svg class="check-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
-                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                    </svg>
-                </button>
-                <button class="pagetalk-regenerate-btn" title="重新生成">
-                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-                    </svg>
-                </button>
-                <button class="pagetalk-delete-btn" title="删除">
-                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                    </svg>
-                </button>
+            <div class="pagetalk-message-content markdown-rendered">
+                <div class="pagetalk-message-actions">
+                    <button class="pagetalk-copy-btn" title="复制">
+                        <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        <svg class="check-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                    </button>
+                    <button class="pagetalk-regenerate-btn" title="重新生成">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                    </button>
+                    <button class="pagetalk-delete-btn" title="删除">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
 
@@ -1857,7 +1858,16 @@ async function sendChatMessage(windowElement) {
                     renderedContent += '<span class="pagetalk-streaming-cursor"></span>';
                 }
 
+                // 保存按钮容器
+                const actionsContainer = messageContent.querySelector('.pagetalk-message-actions');
+
+                // 更新内容，但保留按钮容器
                 messageContent.innerHTML = renderedContent;
+
+                // 重新添加按钮容器
+                if (actionsContainer) {
+                    messageContent.appendChild(actionsContainer);
+                }
 
                 // 添加代码块复制按钮（模仿主面板逻辑）
                 const codeBlocks = messageContent.querySelectorAll('pre');
@@ -1972,8 +1982,9 @@ function addChatMessage(windowElement, message, role) {
     messageElement.className = `pagetalk-chat-message pagetalk-chat-message-${role}`;
     messageElement.dataset.messageId = `${role}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     messageElement.innerHTML = `
-        <div class="pagetalk-message-content">${message}</div>
-        <div class="pagetalk-message-actions">
+        <div class="pagetalk-message-content">
+            ${message}
+            <div class="pagetalk-message-actions">
             <button class="pagetalk-copy-btn" title="复制">
                 <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
@@ -1995,6 +2006,7 @@ function addChatMessage(windowElement, message, role) {
                     <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                 </svg>
             </button>
+            </div>
         </div>
     `;
 
@@ -2154,10 +2166,10 @@ async function regenerateChatMessage(windowElement, userMessage) {
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
             // 只有当上下文与选中文本不同且有意义时才包含
-            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
+            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
         } else {
             // 如果上下文无意义或与选中文本相同，只使用选中文本
-            fullMessage = `基于选中文本、上下文进行对话（但不局限于选中文本和上下文）：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
         }
 
         // 设置流式状态
@@ -2199,29 +2211,30 @@ async function regenerateChatMessage(windowElement, userMessage) {
         aiMessageElement.className = 'pagetalk-chat-message pagetalk-chat-message-assistant';
         aiMessageElement.dataset.messageId = `assistant-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         aiMessageElement.innerHTML = `
-            <div class="pagetalk-message-content markdown-rendered"></div>
-            <div class="pagetalk-message-actions">
-                <button class="pagetalk-copy-btn" title="复制">
-                    <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                    </svg>
-                    <svg class="check-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
-                        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-                    </svg>
-                </button>
-                <button class="pagetalk-regenerate-btn" title="重新生成">
-                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
-                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
-                    </svg>
-                </button>
-                <button class="pagetalk-delete-btn" title="删除">
-                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                    </svg>
-                </button>
+            <div class="pagetalk-message-content markdown-rendered">
+                <div class="pagetalk-message-actions">
+                    <button class="pagetalk-copy-btn" title="复制">
+                        <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        <svg class="check-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                    </button>
+                    <button class="pagetalk-regenerate-btn" title="重新生成">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                    </button>
+                    <button class="pagetalk-delete-btn" title="删除">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
 
@@ -2264,7 +2277,16 @@ async function regenerateChatMessage(windowElement, userMessage) {
                     renderedContent += '<span class="pagetalk-streaming-cursor"></span>';
                 }
 
+                // 保存按钮容器
+                const actionsContainer = messageContent.querySelector('.pagetalk-message-actions');
+
+                // 更新内容，但保留按钮容器
                 messageContent.innerHTML = renderedContent;
+
+                // 重新添加按钮容器
+                if (actionsContainer) {
+                    messageContent.appendChild(actionsContainer);
+                }
 
                 // 添加代码块复制按钮（模仿主面板逻辑）
                 const codeBlocks = messageContent.querySelectorAll('pre');
