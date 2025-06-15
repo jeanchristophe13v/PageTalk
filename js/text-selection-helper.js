@@ -19,6 +19,10 @@ let shouldAdjustHeight = true; // 用于控制是否继续调整窗口高度（�
 let userHasManuallyResized = false; // 用于跟踪用户是否手动调整过窗口尺寸
 let isProgrammaticResize = false; // 用于标记程序自动调整，避免被误判为用户手动调整
 
+// 流式输出状态管理
+let streamingStates = new Map(); // 存储每个窗口的流式状态 {windowId: {isStreaming: boolean, requestId: string, streamListener: function}}
+let abortControllers = new Map(); // 存储每个窗口的中断控制器 {windowId: AbortController}
+
 // 配置
 const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移
 const FUNCTION_WINDOW_DEFAULT_SIZE = {
@@ -1143,9 +1147,22 @@ function makeFunctionWindowDraggable(windowElement) {
  */
 async function sendChatMessage(windowElement) {
     const textarea = windowElement.querySelector('textarea');
+    const sendBtn = windowElement.querySelector('.pagetalk-send-btn');
     const message = textarea.value.trim();
 
     if (!message) return;
+
+    // 获取窗口ID
+    const windowId = windowElement.dataset.windowId || Date.now().toString();
+    windowElement.dataset.windowId = windowId;
+
+    // 检查是否正在流式输出
+    const streamingState = streamingStates.get(windowId);
+    if (streamingState && streamingState.isStreaming) {
+        // 如果正在流式输出，则中断当前输出
+        abortStreaming(windowId);
+        return;
+    }
 
     console.log('[TextSelectionHelper] Sending chat message:', message);
 
@@ -1154,6 +1171,13 @@ async function sendChatMessage(windowElement) {
 
     // 添加用户消息到聊天区域
     addChatMessage(windowElement, message, 'user');
+
+    // 设置流式状态
+    const requestId = 'chat-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+    streamingStates.set(windowId, { isStreaming: true, requestId: requestId, streamListener: null });
+
+    // 更新发送按钮为暂停状态
+    updateSendButtonToStopState(sendBtn, windowId);
 
     try {
         // 构建优化的消息，减少不必要的上下文
@@ -1195,6 +1219,7 @@ async function sendChatMessage(windowElement) {
         // 创建AI消息元素用于流式更新
         const aiMessageElement = document.createElement('div');
         aiMessageElement.className = 'pagetalk-chat-message pagetalk-chat-message-assistant';
+        aiMessageElement.dataset.messageId = `assistant-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         aiMessageElement.innerHTML = `
             <div class="pagetalk-message-content markdown-rendered"></div>
             <div class="pagetalk-message-actions">
@@ -1213,6 +1238,12 @@ async function sendChatMessage(windowElement) {
                         <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                     </svg>
                 </button>
+                <button class="pagetalk-delete-btn" title="删除">
+                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                </button>
             </div>
         `;
 
@@ -1224,6 +1255,13 @@ async function sendChatMessage(windowElement) {
 
         // 发送到 AI (流式输出)
         await callAIAPI(fullMessage, currentModel, 0.7, (text, isComplete) => {
+            // 检查流式状态是否仍然有效（可能已被中断）
+            const currentStreamingState = streamingStates.get(windowId);
+            if (!currentStreamingState || !currentStreamingState.isStreaming) {
+                console.log('[TextSelectionHelper] Streaming was aborted, ignoring update');
+                return;
+            }
+
             // 首次收到响应时，移除思考动画并添加AI消息
             if (!aiMessageElement.parentNode) {
                 thinkingElement.remove();
@@ -1265,13 +1303,26 @@ async function sendChatMessage(windowElement) {
             if (isComplete) {
                 // 设置复制按钮事件
                 setupChatMessageActions(aiMessageElement, fullResponse);
+
+                // 清除流式状态并恢复发送按钮
+                const currentState = streamingStates.get(windowId);
+                if (currentState && currentState.streamListener) {
+                    try {
+                        chrome.runtime.onMessage.removeListener(currentState.streamListener);
+                        console.log('[TextSelectionHelper] Removed completed stream listener for window:', windowId);
+                    } catch (error) {
+                        console.log('[TextSelectionHelper] Failed to remove completed listener:', error.message);
+                    }
+                }
+                streamingStates.delete(windowId);
+                restoreSendButtonToNormalState(windowElement);
             }
 
             // 条件滚动到底部
             if (!functionWindowScrolledUp) {
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             }
-        });
+        }, requestId, windowId);
 
         // 条件滚动到底部
         if (!functionWindowScrolledUp) {
@@ -1281,6 +1332,19 @@ async function sendChatMessage(windowElement) {
     } catch (error) {
         console.error('[TextSelectionHelper] Chat error:', error);
         addChatMessage(windowElement, `错误：${error.message}`, 'assistant');
+
+        // 出错时也要清除流式状态并恢复按钮
+        const currentState = streamingStates.get(windowId);
+        if (currentState && currentState.streamListener) {
+            try {
+                chrome.runtime.onMessage.removeListener(currentState.streamListener);
+                console.log('[TextSelectionHelper] Removed error stream listener for window:', windowId);
+            } catch (listenerError) {
+                console.log('[TextSelectionHelper] Failed to remove error listener:', listenerError.message);
+            }
+        }
+        streamingStates.delete(windowId);
+        restoreSendButtonToNormalState(windowElement);
     }
 }
 
@@ -1288,17 +1352,28 @@ async function sendChatMessage(windowElement) {
  * 清除聊天上下文
  */
 function clearChatContext(windowElement) {
+    // 获取窗口ID
+    const windowId = windowElement.dataset.windowId;
+
+    // 如果正在流式输出，先中断并删除消息
+    if (windowId) {
+        const streamingState = streamingStates.get(windowId);
+        if (streamingState && streamingState.isStreaming) {
+            console.log('[TextSelectionHelper] Aborting streaming and clearing messages');
+            // 传递 keepMessages=false 来删除消息
+            abortStreaming(windowId, false);
+            return; // abortStreaming已经清除了消息，直接返回
+        }
+    }
+
+    // 如果没有流式输出，正常清除消息
     const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
     if (messagesArea) {
         messagesArea.innerHTML = '';
     }
 
-    // 恢复引用区域
-    const quoteArea = windowElement.querySelector('.pagetalk-quote-area');
-    if (quoteArea) {
-        quoteArea.style.display = 'block';
-        quoteArea.innerHTML = `<div class="pagetalk-quote-text">"${selectedText}"</div>`;
-    }
+    // 引用区域始终保持显示，不需要恢复操作
+    // 因为我们已经改为始终显示引用区域，所以这里不需要任何恢复逻辑
 }
 
 /**
@@ -1310,6 +1385,7 @@ function addChatMessage(windowElement, message, role) {
 
     const messageElement = document.createElement('div');
     messageElement.className = `pagetalk-chat-message pagetalk-chat-message-${role}`;
+    messageElement.dataset.messageId = `${role}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     messageElement.innerHTML = `
         <div class="pagetalk-message-content">${message}</div>
         <div class="pagetalk-message-actions">
@@ -1328,16 +1404,23 @@ function addChatMessage(windowElement, message, role) {
                     <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                 </svg>
             </button>
+            <button class="pagetalk-delete-btn" title="删除">
+                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+            </button>
         </div>
     `;
 
     messagesArea.appendChild(messageElement);
 
-    // 隐藏引用区域（首次发送消息后）
-    const quoteArea = windowElement.querySelector('.pagetalk-quote-area');
-    if (quoteArea && role === 'user') {
-        quoteArea.style.display = 'none';
-    }
+    // 保持引用区域始终显示，不再隐藏
+    // 注释掉原有的隐藏逻辑，让用户始终能看到对话的上下文
+    // const quoteArea = windowElement.querySelector('.pagetalk-quote-area');
+    // if (quoteArea && role === 'user') {
+    //     quoteArea.style.display = 'none';
+    // }
 
     // 设置按钮事件
     setupChatMessageActions(messageElement, message);
@@ -1352,11 +1435,20 @@ function addChatMessage(windowElement, message, role) {
  * 设置聊天消息按钮事件
  */
 function setupChatMessageActions(messageElement, message) {
+    // 检查是否已经设置过事件（避免重复绑定）
+    if (messageElement.dataset.actionsSetup === 'true') {
+        console.log('[TextSelectionHelper] Actions already setup for message');
+        return;
+    }
+
     const copyBtn = messageElement.querySelector('.pagetalk-copy-btn');
+    const deleteBtn = messageElement.querySelector('.pagetalk-delete-btn');
     const regenerateBtn = messageElement.querySelector('.pagetalk-regenerate-btn');
 
     if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
+        copyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             navigator.clipboard.writeText(message);
 
             // 显示绿色对勾
@@ -1376,6 +1468,14 @@ function setupChatMessageActions(messageElement, message) {
         });
     }
 
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            deleteChatMessage(messageElement);
+        });
+    }
+
     if (regenerateBtn) {
         regenerateBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1384,52 +1484,76 @@ function setupChatMessageActions(messageElement, message) {
             // 找到包含此消息的窗口
             const windowElement = messageElement.closest('.pagetalk-function-window');
             if (windowElement) {
-                // 判断是用户消息还是助手消息
-                const isUserMessage = messageElement.classList.contains('pagetalk-chat-message-user');
-                const isAssistantMessage = messageElement.classList.contains('pagetalk-chat-message-assistant');
-
-                if (isUserMessage) {
-                    // 用户消息：重新发送这条消息
-                    const userText = messageElement.querySelector('.pagetalk-message-content').textContent;
-
-                    // 移除当前消息及其后的所有消息
-                    const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
-                    const allMessages = Array.from(messagesArea.querySelectorAll('.pagetalk-chat-message'));
-                    const currentIndex = allMessages.indexOf(messageElement);
-
-                    // 移除当前消息及其后的所有消息
-                    for (let i = currentIndex; i < allMessages.length; i++) {
-                        allMessages[i].remove();
+                // 获取窗口ID并检查是否正在流式输出
+                const windowId = windowElement.dataset.windowId;
+                if (windowId) {
+                    const streamingState = streamingStates.get(windowId);
+                    if (streamingState && streamingState.isStreaming) {
+                        console.log('[TextSelectionHelper] Aborting streaming before regenerating');
+                        // 重新生成时保留消息，但会在后续逻辑中删除相关消息
+                        abortStreaming(windowId, true);
+                        // 等待一小段时间确保中断完成
+                        setTimeout(() => {
+                            performRegenerate();
+                        }, 200);
+                        return;
                     }
+                }
 
-                    // 重新发送用户消息
-                    addChatMessage(windowElement, userText, 'user');
+                performRegenerate();
 
-                    // 延迟执行，避免事件冲突
-                    setTimeout(() => {
-                        regenerateChatMessage(windowElement, userText);
-                    }, 100);
+                function performRegenerate() {
+                    // 判断是用户消息还是助手消息
+                    const isUserMessage = messageElement.classList.contains('pagetalk-chat-message-user');
+                    const isAssistantMessage = messageElement.classList.contains('pagetalk-chat-message-assistant');
 
-                } else if (isAssistantMessage) {
-                    // 助手消息：重新生成回复
-                    messageElement.remove();
+                    if (isUserMessage) {
+                        // 用户消息：重新发送这条消息
+                        const userText = messageElement.querySelector('.pagetalk-message-content').textContent;
 
-                    // 获取最后一个用户消息
-                    const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
-                    const userMessages = messagesArea.querySelectorAll('.pagetalk-chat-message-user');
-                    if (userMessages.length > 0) {
-                        const lastUserMessage = userMessages[userMessages.length - 1];
-                        const userText = lastUserMessage.querySelector('.pagetalk-message-content').textContent;
+                        // 移除当前消息及其后的所有消息
+                        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+                        const allMessages = Array.from(messagesArea.querySelectorAll('.pagetalk-chat-message'));
+                        const currentIndex = allMessages.indexOf(messageElement);
+
+                        // 移除当前消息及其后的所有消息
+                        for (let i = currentIndex; i < allMessages.length; i++) {
+                            allMessages[i].remove();
+                        }
+
+                        // 重新发送用户消息
+                        addChatMessage(windowElement, userText, 'user');
 
                         // 延迟执行，避免事件冲突
                         setTimeout(() => {
                             regenerateChatMessage(windowElement, userText);
                         }, 100);
+
+                    } else if (isAssistantMessage) {
+                        // 助手消息：重新生成回复
+                        messageElement.remove();
+
+                        // 获取最后一个用户消息
+                        const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+                        const userMessages = messagesArea.querySelectorAll('.pagetalk-chat-message-user');
+                        if (userMessages.length > 0) {
+                            const lastUserMessage = userMessages[userMessages.length - 1];
+                            const userText = lastUserMessage.querySelector('.pagetalk-message-content').textContent;
+
+                            // 延迟执行，避免事件冲突
+                            setTimeout(() => {
+                                regenerateChatMessage(windowElement, userText);
+                            }, 100);
+                        }
                     }
                 }
             }
         });
     }
+
+    // 标记已设置事件，避免重复绑定
+    messageElement.dataset.actionsSetup = 'true';
+    console.log('[TextSelectionHelper] Actions setup completed for message');
 }
 
 /**
@@ -1437,6 +1561,10 @@ function setupChatMessageActions(messageElement, message) {
  */
 async function regenerateChatMessage(windowElement, userMessage) {
     try {
+        // 获取窗口ID
+        const windowId = windowElement.dataset.windowId || Date.now().toString();
+        windowElement.dataset.windowId = windowId;
+
         // 构建优化的消息，减少不必要的上下文
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
@@ -1446,6 +1574,14 @@ async function regenerateChatMessage(windowElement, userMessage) {
             // 如果上下文无意义或与选中文本相同，只使用选中文本
             fullMessage = `基于以下选中文本进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
         }
+
+        // 设置流式状态
+        const requestId = 'regenerate-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+        streamingStates.set(windowId, { isStreaming: true, requestId: requestId, streamListener: null });
+
+        // 更新发送按钮为暂停状态
+        const sendBtn = windowElement.querySelector('.pagetalk-send-btn');
+        updateSendButtonToStopState(sendBtn, windowId);
 
         // 添加思考动画
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
@@ -1476,6 +1612,7 @@ async function regenerateChatMessage(windowElement, userMessage) {
         // 创建AI消息元素用于流式更新
         const aiMessageElement = document.createElement('div');
         aiMessageElement.className = 'pagetalk-chat-message pagetalk-chat-message-assistant';
+        aiMessageElement.dataset.messageId = `assistant-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
         aiMessageElement.innerHTML = `
             <div class="pagetalk-message-content markdown-rendered"></div>
             <div class="pagetalk-message-actions">
@@ -1494,6 +1631,12 @@ async function regenerateChatMessage(windowElement, userMessage) {
                         <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                     </svg>
                 </button>
+                <button class="pagetalk-delete-btn" title="删除">
+                    <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                </button>
             </div>
         `;
 
@@ -1505,6 +1648,13 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
         // 发送到 AI (流式输出)
         await callAIAPI(fullMessage, currentModel, 0.7, (text, isComplete) => {
+            // 检查流式状态是否仍然有效（可能已被中断）
+            const currentStreamingState = streamingStates.get(windowId);
+            if (!currentStreamingState || !currentStreamingState.isStreaming) {
+                console.log('[TextSelectionHelper] Regenerate streaming was aborted, ignoring update');
+                return;
+            }
+
             // 首次收到响应时，移除思考动画并添加AI消息
             if (!aiMessageElement.parentNode) {
                 thinkingElement.remove();
@@ -1543,21 +1693,85 @@ async function regenerateChatMessage(windowElement, userMessage) {
             if (isComplete) {
                 // 设置复制按钮事件
                 setupChatMessageActions(aiMessageElement, fullResponse);
+
+                // 清除流式状态并恢复发送按钮
+                const currentState = streamingStates.get(windowId);
+                if (currentState && currentState.streamListener) {
+                    try {
+                        chrome.runtime.onMessage.removeListener(currentState.streamListener);
+                        console.log('[TextSelectionHelper] Removed completed regenerate stream listener for window:', windowId);
+                    } catch (error) {
+                        console.log('[TextSelectionHelper] Failed to remove completed regenerate listener:', error.message);
+                    }
+                }
+                streamingStates.delete(windowId);
+                restoreSendButtonToNormalState(windowElement);
             }
 
             // 条件滚动到底部
             if (!functionWindowScrolledUp) {
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             }
-        });
+        }, requestId, windowId);
 
     } catch (error) {
         console.error('[TextSelectionHelper] Regenerate chat error:', error);
         addChatMessage(windowElement, `错误：${error.message}`, 'assistant');
+
+        // 出错时也要清除流式状态并恢复按钮
+        const currentState = streamingStates.get(windowId);
+        if (currentState && currentState.streamListener) {
+            try {
+                chrome.runtime.onMessage.removeListener(currentState.streamListener);
+                console.log('[TextSelectionHelper] Removed regenerate error stream listener for window:', windowId);
+            } catch (listenerError) {
+                console.log('[TextSelectionHelper] Failed to remove regenerate error listener:', listenerError.message);
+            }
+        }
+        streamingStates.delete(windowId);
+        restoreSendButtonToNormalState(windowElement);
     }
 }
 
 
+
+/**
+ * 删除聊天消息
+ */
+function deleteChatMessage(messageElement) {
+    if (!messageElement) return;
+
+    const windowElement = messageElement.closest('.pagetalk-function-window');
+    if (!windowElement) return;
+
+    const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+    if (!messagesArea) return;
+
+    // 判断是用户消息还是助手消息
+    const isUserMessage = messageElement.classList.contains('pagetalk-chat-message-user');
+    const isAssistantMessage = messageElement.classList.contains('pagetalk-chat-message-assistant');
+
+    if (isUserMessage) {
+        // 删除用户消息：需要删除该消息及其后的所有消息（包括对应的助手回复）
+        const allMessages = Array.from(messagesArea.querySelectorAll('.pagetalk-chat-message'));
+        const currentIndex = allMessages.indexOf(messageElement);
+
+        // 删除当前消息及其后的所有消息
+        for (let i = currentIndex; i < allMessages.length; i++) {
+            allMessages[i].remove();
+        }
+
+        // 引用区域始终保持显示，不需要恢复操作
+
+    } else if (isAssistantMessage) {
+        // 删除助手消息：只删除这一条消息
+        messageElement.remove();
+
+        // 引用区域始终保持显示，不需要恢复操作
+    }
+
+    console.log('[TextSelectionHelper] Message deleted');
+}
 
 /**
  * HTML转义函数
@@ -1574,10 +1788,12 @@ function escapeHtml(text) {
 /**
  * 调用 AI API - 通过 background.js 统一处理
  */
-async function callAIAPI(message, model, temperature, onStream = null) {
+async function callAIAPI(message, model, temperature, onStream = null, requestId = null, windowId = null) {
     try {
-        // 生成唯一的请求ID
-        const requestId = 'text-selection-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+        // 使用传入的requestId或生成新的
+        if (!requestId) {
+            requestId = 'text-selection-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+        }
 
         // 构建请求数据
         const requestData = {
@@ -1607,6 +1823,25 @@ async function callAIAPI(message, model, temperature, onStream = null) {
             }
         };
 
+        // 如果有windowId，将监听器保存到状态中（用于后续清理）
+        if (windowId) {
+            const currentState = streamingStates.get(windowId);
+            if (currentState) {
+                // 如果已有旧的监听器，先移除
+                if (currentState.streamListener) {
+                    try {
+                        chrome.runtime.onMessage.removeListener(currentState.streamListener);
+                        console.log('[TextSelectionHelper] Removed old stream listener for window:', windowId);
+                    } catch (error) {
+                        console.log('[TextSelectionHelper] Failed to remove old listener:', error.message);
+                    }
+                }
+                // 更新状态中的监听器
+                currentState.streamListener = streamListener;
+                streamingStates.set(windowId, currentState);
+            }
+        }
+
         // 添加消息监听器
         chrome.runtime.onMessage.addListener(streamListener);
 
@@ -1623,8 +1858,11 @@ async function callAIAPI(message, model, temperature, onStream = null) {
 
             return response.data;
         } finally {
-            // 确保移除监听器
-            chrome.runtime.onMessage.removeListener(streamListener);
+            // 如果没有windowId或请求完成，移除监听器
+            if (!windowId) {
+                chrome.runtime.onMessage.removeListener(streamListener);
+            }
+            // 如果有windowId，监听器会在abortStreaming或完成时被移除
         }
     } catch (error) {
         console.error('[TextSelectionHelper] API call error:', error);
@@ -1683,6 +1921,153 @@ function getCurrentMainPanelAgent() {
             }
         });
     });
+}
+
+/**
+ * 更新发送按钮为暂停状态
+ */
+function updateSendButtonToStopState(sendBtn, windowId) {
+    if (!sendBtn) return;
+
+    sendBtn.classList.add('pagetalk-stop-streaming');
+    sendBtn.title = '停止生成';
+    sendBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+        </svg>
+    `;
+
+    // 移除原有的点击事件监听器
+    const newSendBtn = sendBtn.cloneNode(true);
+    sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
+
+    // 添加中断事件监听器
+    newSendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 点击暂停按钮时，保留消息（keepMessages=true）
+        abortStreaming(windowId, true);
+    });
+}
+
+/**
+ * 恢复发送按钮为正常状态
+ */
+function restoreSendButtonToNormalState(windowElement) {
+    const sendBtn = windowElement.querySelector('.pagetalk-send-btn');
+    if (!sendBtn) return;
+
+    sendBtn.classList.remove('pagetalk-stop-streaming');
+    sendBtn.title = '发送';
+    sendBtn.innerHTML = `
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+        </svg>
+    `;
+
+    // 移除原有的点击事件监听器
+    const newSendBtn = sendBtn.cloneNode(true);
+    sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
+
+    // 重新添加发送消息事件监听器
+    newSendBtn.addEventListener('click', () => sendChatMessage(windowElement));
+}
+
+/**
+ * 中断流式输出
+ * @param {string} windowId - 窗口ID
+ * @param {boolean} keepMessages - 是否保留消息（true=仅停止输出，false=删除消息）
+ */
+function abortStreaming(windowId, keepMessages = true) {
+    console.log('[TextSelectionHelper] Aborting streaming for window:', windowId, 'keepMessages:', keepMessages);
+
+    // 获取流式状态
+    const streamingState = streamingStates.get(windowId);
+    if (!streamingState || !streamingState.isStreaming) {
+        console.log('[TextSelectionHelper] No active streaming to abort');
+        return;
+    }
+
+    // 发送中断消息到background.js
+    if (streamingState.requestId) {
+        try {
+            chrome.runtime.sendMessage({
+                action: 'abortRequest',
+                requestId: streamingState.requestId
+            }).catch(error => {
+                // 忽略通信错误，可能是插件重启或background script未准备好
+                console.log('[TextSelectionHelper] Abort message failed (expected during restart):', error.message);
+            });
+        } catch (error) {
+            // 忽略同步错误
+            console.log('[TextSelectionHelper] Chrome runtime not available:', error.message);
+        }
+    }
+
+    // 移除流式监听器（重要：防止竞态条件）
+    if (streamingState.streamListener) {
+        try {
+            chrome.runtime.onMessage.removeListener(streamingState.streamListener);
+            console.log('[TextSelectionHelper] Removed stream listener for window:', windowId);
+        } catch (error) {
+            console.log('[TextSelectionHelper] Failed to remove listener:', error.message);
+        }
+    }
+
+    // 清除流式状态
+    streamingStates.delete(windowId);
+
+    // 获取窗口元素
+    const windowElement = document.querySelector(`.pagetalk-function-window[data-window-id="${windowId}"]`);
+    if (windowElement) {
+        // 恢复发送按钮状态
+        restoreSendButtonToNormalState(windowElement);
+
+        if (!keepMessages) {
+            // 如果不保留消息，清除所有聊天消息
+            const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+            if (messagesArea) {
+                messagesArea.innerHTML = '';
+            }
+        } else {
+            // 如果保留消息，移除正在输出的消息中的流式光标和思考动画
+            const streamingCursors = windowElement.querySelectorAll('.pagetalk-streaming-cursor');
+            streamingCursors.forEach(cursor => cursor.remove());
+
+            // 移除思考动画（如果存在）
+            const thinkingElements = windowElement.querySelectorAll('.thinking');
+            thinkingElements.forEach(thinking => {
+                const thinkingMessage = thinking.closest('.pagetalk-chat-message');
+                if (thinkingMessage) {
+                    thinkingMessage.remove();
+                }
+            });
+
+            // 确保未完成的AI消息有按钮事件（重要：让用户能点击重新生成）
+            const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
+            if (messagesArea) {
+                const assistantMessages = messagesArea.querySelectorAll('.pagetalk-chat-message-assistant');
+                assistantMessages.forEach(messageElement => {
+                    // 检查是否已经设置过事件
+                    if (messageElement.dataset.actionsSetup !== 'true') {
+                        const regenerateBtn = messageElement.querySelector('.pagetalk-regenerate-btn');
+                        const copyBtn = messageElement.querySelector('.pagetalk-copy-btn');
+                        const deleteBtn = messageElement.querySelector('.pagetalk-delete-btn');
+
+                        // 如果按钮存在但没有事件，重新设置
+                        if (regenerateBtn || copyBtn || deleteBtn) {
+                            const messageContent = messageElement.querySelector('.pagetalk-message-content');
+                            const messageText = messageContent ? messageContent.textContent : '';
+                            console.log('[TextSelectionHelper] Setting up actions for incomplete message');
+                            setupChatMessageActions(messageElement, messageText);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    console.log('[TextSelectionHelper] Streaming aborted');
 }
 
 /**
@@ -1935,7 +2320,7 @@ function initQuoteCollapse(windowElement) {
         // 简单的行数估算：基于字符数和容器宽度
         // 对于中文，一般每行约30-40个字符，我们使用保守估计
         const estimatedLines = Math.ceil(textContent.length / 35);
-        const needsCollapse = estimatedLines > 4 || textContent.length > 140; // 超过4行或140字符
+        const needsCollapse = estimatedLines > 2 || textContent.length > 70; // 超过2行或70字符
 
         console.log('[TextSelectionHelper] Line estimation:', {
             estimatedLines,
@@ -1943,7 +2328,7 @@ function initQuoteCollapse(windowElement) {
         });
 
         if (needsCollapse) {
-            // 文本超过4行，添加折叠功能
+            // 文本超过2行，添加折叠功能
             quoteText.classList.add('collapsed');
 
             // 创建展开/折叠按钮

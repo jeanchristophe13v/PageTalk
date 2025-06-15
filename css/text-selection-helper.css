@@ -483,7 +483,7 @@
 }
 
 .pagetalk-quote-text.collapsed {
-    max-height: 5.6em; /* 约4行的高度 (1.4 * 4) */
+    max-height: 2.8em; /* 约2行的高度 (1.4 * 2) */
     position: relative;
 }
 
@@ -641,17 +641,19 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px; /* 增加消息间距，为用户消息下方的按钮留出更多空间 */
 }
 
 .pagetalk-chat-message {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    position: relative; /* 为按钮定位提供参考 */
 }
 
 .pagetalk-chat-message-user {
     align-items: flex-end;
+    margin-bottom: 24px; /* 为用户消息下方的按钮留出空间 */
 }
 
 .pagetalk-chat-message-assistant {
@@ -661,18 +663,19 @@
 
 .pagetalk-message-content {
     max-width: 100%; /* 修改：将最大宽度从80%改为100%，允许气泡撑满容器 */
-    padding: 8px 12px;
     border-radius: 12px;
     font-size: 14px;
     line-height: 1.4;
     word-wrap: break-word;
     width: fit-content; /* 新增：让气泡宽度由内容决定，但最大不超过100% */
+    position: relative; /* 为按钮定位提供参考 */
 }
 
 .pagetalk-chat-message-user .pagetalk-message-content {
     background: #007AFF;
     color: white;
     border-bottom-right-radius: 4px;
+    padding: 8px 12px; /* 用户消息保持原有padding */
 }
 
 .pagetalk-chat-message-assistant .pagetalk-message-content {
@@ -680,17 +683,39 @@
     color: #333;
     border-bottom-left-radius: 4px;
     border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 12px 30px 12px; /* 助手消息底部增加padding为按钮留出空间 */
+}
+
+/* 思考动画特殊样式：通过负边距抵消额外的底部padding */
+.pagetalk-chat-message-assistant .pagetalk-message-content .thinking {
+    margin: 0 0 -22px 0; /* 通过负底边距抵消容器的额外底部padding (30px - 8px = 22px) */
 }
 
 .pagetalk-message-actions {
+    position: absolute;
     display: flex;
     gap: 4px;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(2px) scale(0.9);
+    z-index: 5;
+}
+
+/* 用户消息按钮位置：气泡下方 */
+.pagetalk-chat-message-user .pagetalk-message-actions {
+    bottom: -24px;
+    right: 0;
+}
+
+/* 助手消息按钮位置：气泡内右下角 */
+.pagetalk-chat-message-assistant .pagetalk-message-actions {
+    bottom: 6px; /* 对应主面板的 var(--spacing-xs) */
+    right: 6px; /* 对应主面板的 var(--spacing-xs) */
 }
 
 .pagetalk-chat-message:hover .pagetalk-message-actions {
     opacity: 1;
+    transform: translateY(2px) scale(1);
 }
 
 .pagetalk-message-actions button {
@@ -730,6 +755,17 @@
 .pagetalk-user-message .pagetalk-message-actions button:hover {
     background-color: rgba(255, 255, 255, 0.6);
     color: var(--primary-color); /* User message action buttons also hover to primary */
+}
+
+/* 删除按钮特殊样式 */
+.pagetalk-message-actions .pagetalk-delete-btn:hover {
+    color: #dc3545 !important; /* 删除按钮悬停时显示红色 */
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.pagetalk-user-message .pagetalk-message-actions .pagetalk-delete-btn:hover {
+    color: #dc3545 !important; /* 用户消息中的删除按钮也显示红色 */
+    background-color: rgba(220, 53, 69, 0.15) !important;
 }
 
 /* 聊天输入区域 */
@@ -787,6 +823,18 @@
     background: #ccc;
     cursor: not-allowed;
     transform: none;
+}
+
+/* 流式输出暂停按钮样式 */
+.pagetalk-send-btn.pagetalk-stop-streaming {
+    background: #007AFF; /* 保持蓝色背景 */
+    transform: none; /* 重置悬停变换 */
+}
+
+.pagetalk-send-btn.pagetalk-stop-streaming:hover {
+    background: #DC3545; /* 悬停时变成红色 */
+    color: white;
+    transform: scale(1.05);
 }
 
 /* 思考动画样式 - 与主面板保持一致，调整大小匹配用户气泡 */
