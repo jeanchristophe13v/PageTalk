@@ -191,7 +191,309 @@ function extractSelectionContext(selection) {
 }
 
 /**
- * 显示 mini icon (已修改为绝对定位)
+ * 诊断页面的定位环境
+ */
+function diagnosePage() {
+    const info = {
+        url: window.location.href,
+        scrollMethod: 'unknown',
+        scrollX: 0,
+        scrollY: 0,
+        bodyTransform: 'none',
+        htmlTransform: 'none',
+        bodyPosition: 'static',
+        htmlPosition: 'static',
+        viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight
+        },
+        visualViewport: null
+    };
+
+    // 检测滚动方法
+    if (window.pageXOffset !== undefined) {
+        info.scrollMethod = 'pageOffset';
+        info.scrollX = window.pageXOffset;
+        info.scrollY = window.pageYOffset;
+    } else if (window.scrollX !== undefined) {
+        info.scrollMethod = 'scrollXY';
+        info.scrollX = window.scrollX;
+        info.scrollY = window.scrollY;
+    } else {
+        info.scrollMethod = 'documentElement';
+        info.scrollX = document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+        info.scrollY = document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+
+    // 检测CSS变换
+    try {
+        info.bodyTransform = window.getComputedStyle(document.body).transform;
+        info.htmlTransform = window.getComputedStyle(document.documentElement).transform;
+        info.bodyPosition = window.getComputedStyle(document.body).position;
+        info.htmlPosition = window.getComputedStyle(document.documentElement).position;
+    } catch (e) {
+        console.warn('[TextSelectionHelper] Error getting computed styles:', e);
+    }
+
+    // 检测Visual Viewport API
+    if (window.visualViewport) {
+        info.visualViewport = {
+            scale: window.visualViewport.scale,
+            offsetLeft: window.visualViewport.offsetLeft,
+            offsetTop: window.visualViewport.offsetTop
+        };
+    }
+
+    console.log('[TextSelectionHelper] Page diagnosis:', info);
+    return info;
+}
+
+/**
+ * 获取页面的真实滚动偏移量（处理复杂滚动容器）
+ */
+function getPageScrollOffset() {
+    try {
+        // 方法1: 标准方法
+        let scrollX = window.pageXOffset || window.scrollX || 0;
+        let scrollY = window.pageYOffset || window.scrollY || 0;
+
+        // 方法2: 检查document.documentElement
+        if (scrollX === 0 && scrollY === 0) {
+            scrollX = document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+            scrollY = document.documentElement.scrollTop || document.body.scrollTop || 0;
+        }
+
+        // 确保返回数字类型
+        return {
+            x: Number(scrollX) || 0,
+            y: Number(scrollY) || 0
+        };
+    } catch (error) {
+        console.warn('[TextSelectionHelper] Error getting scroll offset:', error);
+        return { x: 0, y: 0 };
+    }
+}
+
+/**
+ * 检测博客网站特殊情况
+ */
+function detectBlogSiteIssues() {
+    const issues = [];
+
+    // 检测常见的博客平台
+    const hostname = window.location.hostname.toLowerCase();
+    const blogPlatforms = ['wordpress', 'blogger', 'medium', 'ghost', 'hexo', 'jekyll', 'csdn', 'cnblogs', 'jianshu'];
+    const isBlogSite = blogPlatforms.some(platform => hostname.includes(platform));
+
+    if (isBlogSite) {
+        issues.push('blog-platform');
+    }
+
+    // 检测可能影响定位的CSS属性
+    try {
+        const bodyStyle = window.getComputedStyle(document.body);
+        const htmlStyle = window.getComputedStyle(document.documentElement);
+
+        // 检测margin/padding偏移
+        if (parseFloat(bodyStyle.marginTop) !== 0 || parseFloat(bodyStyle.marginLeft) !== 0) {
+            issues.push('body-margin');
+        }
+
+        if (parseFloat(htmlStyle.marginTop) !== 0 || parseFloat(htmlStyle.marginLeft) !== 0) {
+            issues.push('html-margin');
+        }
+
+        // 检测overflow设置
+        if (bodyStyle.overflow !== 'visible' || htmlStyle.overflow !== 'visible') {
+            issues.push('overflow-hidden');
+        }
+
+        // 检测是否有容器使用了transform-origin
+        const containers = document.querySelectorAll('div, main, article, section');
+        for (let i = 0; i < Math.min(containers.length, 10); i++) {
+            const containerStyle = window.getComputedStyle(containers[i]);
+            if (containerStyle.transform !== 'none' || containerStyle.transformOrigin !== '50% 50% 0px') {
+                issues.push('container-transform');
+                break;
+            }
+        }
+
+    } catch (error) {
+        console.warn('[TextSelectionHelper] Error detecting blog issues:', error);
+    }
+
+    return issues;
+}
+
+/**
+ * 智能检测最佳定位策略（简化版，优先稳定性）
+ */
+function detectBestPositioningStrategy(rect) {
+    const scroll = getPageScrollOffset();
+    const blogIssues = detectBlogSiteIssues();
+
+    // 默认策略：标准absolute定位
+    let strategy = {
+        name: 'absolute',
+        x: rect.right + scroll.x + MINI_ICON_OFFSET.x,
+        y: rect.bottom + scroll.y + MINI_ICON_OFFSET.y,
+        useFixed: false
+    };
+
+    try {
+        const bodyStyle = window.getComputedStyle(document.body);
+        const htmlStyle = window.getComputedStyle(document.documentElement);
+
+        // 检测是否需要特殊处理
+        const hasTransforms = bodyStyle.transform !== 'none' || htmlStyle.transform !== 'none';
+        const hasComplexPositioning = bodyStyle.position !== 'static' || htmlStyle.position !== 'static';
+        const hasViewportScaling = window.visualViewport && window.visualViewport.scale !== 1;
+        const isBlogSiteWithIssues = blogIssues.includes('blog-platform') && blogIssues.length > 1;
+
+        // 优先级1: Visual Viewport缩放
+        if (hasViewportScaling) {
+            const vv = window.visualViewport;
+            strategy = {
+                name: 'visualViewport',
+                x: (rect.right + MINI_ICON_OFFSET.x - vv.offsetLeft) / vv.scale,
+                y: (rect.bottom + MINI_ICON_OFFSET.y - vv.offsetTop) / vv.scale,
+                useFixed: true
+            };
+            console.log('[TextSelectionHelper] Using visualViewport positioning');
+        }
+        // 优先级2: CSS变换或复杂定位
+        else if (hasTransforms || hasComplexPositioning) {
+            strategy = {
+                name: 'fixed',
+                x: rect.right + MINI_ICON_OFFSET.x,
+                y: rect.bottom + MINI_ICON_OFFSET.y,
+                useFixed: true
+            };
+            console.log('[TextSelectionHelper] Using fixed positioning due to transforms/positioning');
+        }
+        // 优先级3: 博客网站优化
+        else if (isBlogSiteWithIssues) {
+            let adjustedX = rect.right + scroll.x + MINI_ICON_OFFSET.x;
+            let adjustedY = rect.bottom + scroll.y + MINI_ICON_OFFSET.y;
+
+            // 补偿body和html的margin
+            adjustedX -= parseFloat(bodyStyle.marginLeft) || 0;
+            adjustedY -= parseFloat(bodyStyle.marginTop) || 0;
+            adjustedX -= parseFloat(htmlStyle.marginLeft) || 0;
+            adjustedY -= parseFloat(htmlStyle.marginTop) || 0;
+
+            strategy = {
+                name: 'blog-optimized',
+                x: adjustedX,
+                y: adjustedY,
+                useFixed: false
+            };
+            console.log('[TextSelectionHelper] Using blog-optimized positioning');
+        }
+        // 默认: 标准absolute定位（已设置）
+        else {
+            console.log('[TextSelectionHelper] Using standard absolute positioning');
+        }
+
+    } catch (error) {
+        console.warn('[TextSelectionHelper] Error detecting positioning strategy:', error);
+        // 出错时使用最安全的fixed定位
+        strategy = {
+            name: 'fixed-fallback',
+            x: rect.right + MINI_ICON_OFFSET.x,
+            y: rect.bottom + MINI_ICON_OFFSET.y,
+            useFixed: true
+        };
+    }
+
+    return strategy;
+}
+
+/**
+ * 获取元素相对于页面的绝对位置（兼容各种定位上下文）
+ */
+function getAbsolutePosition(rect) {
+    return detectBestPositioningStrategy(rect);
+}
+
+/**
+ * 计算选项栏的绝对位置（简化版，与mini icon保持一致）
+ */
+function getOptionsBarPosition(iconRect, optionsBarRect) {
+    const scroll = getPageScrollOffset();
+
+    // 计算选项栏应该出现的位置（图标下方居中）
+    const targetX = iconRect.left + (iconRect.width / 2) - (optionsBarRect.width / 2);
+    const targetY = iconRect.bottom + 8;
+
+    // 使用与mini icon相同的策略检测逻辑
+    const blogIssues = detectBlogSiteIssues();
+
+    try {
+        const bodyStyle = window.getComputedStyle(document.body);
+        const htmlStyle = window.getComputedStyle(document.documentElement);
+
+        const hasTransforms = bodyStyle.transform !== 'none' || htmlStyle.transform !== 'none';
+        const hasComplexPositioning = bodyStyle.position !== 'static' || htmlStyle.position !== 'static';
+        const hasViewportScaling = window.visualViewport && window.visualViewport.scale !== 1;
+        const isBlogSiteWithIssues = blogIssues.includes('blog-platform') && blogIssues.length > 1;
+
+        // 与mini icon使用相同的优先级逻辑
+        if (hasViewportScaling) {
+            const vv = window.visualViewport;
+            return {
+                name: 'visualViewport',
+                x: (targetX - vv.offsetLeft) / vv.scale,
+                y: (targetY - vv.offsetTop) / vv.scale,
+                useFixed: true
+            };
+        } else if (hasTransforms || hasComplexPositioning) {
+            return {
+                name: 'fixed',
+                x: targetX,
+                y: targetY,
+                useFixed: true
+            };
+        } else if (isBlogSiteWithIssues) {
+            let adjustedX = targetX + scroll.x;
+            let adjustedY = targetY + scroll.y;
+
+            // 补偿body和html的margin
+            adjustedX -= parseFloat(bodyStyle.marginLeft) || 0;
+            adjustedY -= parseFloat(bodyStyle.marginTop) || 0;
+            adjustedX -= parseFloat(htmlStyle.marginLeft) || 0;
+            adjustedY -= parseFloat(htmlStyle.marginTop) || 0;
+
+            return {
+                name: 'blog-optimized',
+                x: adjustedX,
+                y: adjustedY,
+                useFixed: false
+            };
+        }
+
+    } catch (error) {
+        console.warn('[TextSelectionHelper] Error detecting options bar positioning strategy:', error);
+        // 出错时使用fixed定位
+        return {
+            name: 'fixed-fallback',
+            x: targetX,
+            y: targetY,
+            useFixed: true
+        };
+    }
+
+    // 默认使用absolute定位
+    return {
+        name: 'absolute',
+        x: targetX + scroll.x,
+        y: targetY + scroll.y,
+        useFixed: false
+    };
+}
+
+/**
+ * 显示 mini icon (改进的定位算法)
  */
 function showMiniIcon() {
     console.log('[TextSelectionHelper] showMiniIcon called');
@@ -209,17 +511,39 @@ function showMiniIcon() {
     }
     console.log('[TextSelectionHelper] Selection rect:', rect);
 
+    // 诊断页面环境（仅在第一次显示时）
+    if (!window.pagetalkDiagnosed) {
+        diagnosePage();
+        window.pagetalkDiagnosed = true;
+    }
+
     // 创建 mini icon 元素
     const miniIcon = document.createElement('div');
     miniIcon.className = 'pagetalk-selection-helper pagetalk-mini-icon';
     miniIcon.innerHTML = `<img src="${chrome.runtime.getURL('magic.png')}" alt="PageTalk" width="20" height="20">`;
 
-    // 计算绝对位置 (关键改动)
-    const x = rect.right + window.scrollX + MINI_ICON_OFFSET.x;
-    const y = rect.bottom + window.scrollY + MINI_ICON_OFFSET.y;
+    // 使用改进的定位算法
+    const position = getAbsolutePosition(rect);
 
-    miniIcon.style.left = `${x}px`;
-    miniIcon.style.top = `${y}px`;
+    // 防御性编程：确保position对象包含必要的属性
+    if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+        console.error('[TextSelectionHelper] Invalid position object:', position);
+        return;
+    }
+
+    if (position.useFixed) {
+        // 如果检测到复杂变换，使用fixed定位
+        miniIcon.style.position = 'fixed';
+        miniIcon.style.left = `${position.x}px`;
+        miniIcon.style.top = `${position.y}px`;
+        console.log('[TextSelectionHelper] Using fixed positioning due to CSS transforms');
+    } else {
+        // 正常情况使用absolute定位
+        miniIcon.style.left = `${position.x}px`;
+        miniIcon.style.top = `${position.y}px`;
+    }
+
+    console.log('[TextSelectionHelper] Mini icon positioned at:', position);
     
     // 添加悬停效果
     miniIcon.addEventListener('mouseenter', () => {
@@ -240,7 +564,7 @@ function showMiniIcon() {
     
     document.body.appendChild(miniIcon);
     currentMiniIcon = miniIcon;
-    console.log('[TextSelectionHelper] Mini icon added to DOM at position:', x, y);
+    console.log('[TextSelectionHelper] Mini icon added to DOM at position:', position.x, position.y);
 
     // 添加淡入动画
     requestAnimationFrame(() => {
@@ -329,15 +653,26 @@ async function showOptionsBar(triggerElement) {
         // 先添加到 DOM 以获取选项栏的实际宽度
         document.body.appendChild(optionsBar);
 
-        // 计算绝对位置 (关键改动)
+        // 使用专用的选项栏定位算法
         const iconRect = triggerElement.getBoundingClientRect();
         const optionsBarRect = optionsBar.getBoundingClientRect();
 
-        const x = iconRect.left + window.scrollX + (iconRect.width / 2) - (optionsBarRect.width / 2);
-        const y = iconRect.bottom + window.scrollY + 8; // 在图标下方8px
+        const position = getOptionsBarPosition(iconRect, optionsBarRect);
 
-        optionsBar.style.left = `${x}px`;
-        optionsBar.style.top = `${y}px`;
+        // 防御性编程：确保position对象包含必要的属性
+        if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+            console.error('[TextSelectionHelper] Invalid options bar position object:', position);
+            return;
+        }
+
+        if (position.useFixed) {
+            optionsBar.style.position = 'fixed';
+            optionsBar.style.left = `${position.x}px`;
+            optionsBar.style.top = `${position.y}px`;
+        } else {
+            optionsBar.style.left = `${position.x}px`;
+            optionsBar.style.top = `${position.y}px`;
+        }
 
         currentOptionsBar = optionsBar;
 
@@ -408,15 +743,26 @@ function showDefaultOptionsBar(triggerElement) {
 
     document.body.appendChild(optionsBar);
 
-    // 计算绝对位置 (关键改动)
+    // 使用专用的选项栏定位算法
     const iconRect = triggerElement.getBoundingClientRect();
     const optionsBarRect = optionsBar.getBoundingClientRect();
 
-    const x = iconRect.left + window.scrollX + (iconRect.width / 2) - (optionsBarRect.width / 2);
-    const y = iconRect.bottom + window.scrollY + 8;
+    const position = getOptionsBarPosition(iconRect, optionsBarRect);
 
-    optionsBar.style.left = `${x}px`;
-    optionsBar.style.top = `${y}px`;
+    // 防御性编程：确保position对象包含必要的属性
+    if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+        console.error('[TextSelectionHelper] Invalid default options bar position object:', position);
+        return;
+    }
+
+    if (position.useFixed) {
+        optionsBar.style.position = 'fixed';
+        optionsBar.style.left = `${position.x}px`;
+        optionsBar.style.top = `${position.y}px`;
+    } else {
+        optionsBar.style.left = `${position.x}px`;
+        optionsBar.style.top = `${position.y}px`;
+    }
     currentOptionsBar = optionsBar;
 
     optionsBar.addEventListener('click', handleOptionClick);
@@ -648,11 +994,21 @@ function handleScroll() {
         if (currentMiniIcon) {
             if (isInViewport) {
                 currentMiniIcon.style.display = 'flex';
-                // 更新位置，以防页面布局变化
-                const x = rect.right + window.scrollX + MINI_ICON_OFFSET.x;
-                const y = rect.bottom + window.scrollY + MINI_ICON_OFFSET.y;
-                currentMiniIcon.style.left = `${x}px`;
-                currentMiniIcon.style.top = `${y}px`;
+                // 更新位置，使用改进的定位算法
+                const position = getAbsolutePosition(rect);
+                if (position && typeof position.x === 'number' && typeof position.y === 'number') {
+                    if (position.useFixed) {
+                        currentMiniIcon.style.position = 'fixed';
+                        currentMiniIcon.style.left = `${position.x}px`;
+                        currentMiniIcon.style.top = `${position.y}px`;
+                    } else {
+                        currentMiniIcon.style.position = 'absolute';
+                        currentMiniIcon.style.left = `${position.x}px`;
+                        currentMiniIcon.style.top = `${position.y}px`;
+                    }
+                } else {
+                    console.warn('[TextSelectionHelper] Invalid position in scroll handler:', position);
+                }
             } else {
                 currentMiniIcon.style.display = 'none';
             }
@@ -664,10 +1020,22 @@ function handleScroll() {
                 // 更新位置
                 const iconRect = currentMiniIcon ? currentMiniIcon.getBoundingClientRect() : rect;
                 const optionsBarRect = currentOptionsBar.getBoundingClientRect();
-                const x = iconRect.left + window.scrollX + (iconRect.width / 2) - (optionsBarRect.width / 2);
-                const y = iconRect.bottom + window.scrollY + 8;
-                currentOptionsBar.style.left = `${x}px`;
-                currentOptionsBar.style.top = `${y}px`;
+
+                const position = getOptionsBarPosition(iconRect, optionsBarRect);
+
+                if (position && typeof position.x === 'number' && typeof position.y === 'number') {
+                    if (position.useFixed) {
+                        currentOptionsBar.style.position = 'fixed';
+                        currentOptionsBar.style.left = `${position.x}px`;
+                        currentOptionsBar.style.top = `${position.y}px`;
+                    } else {
+                        currentOptionsBar.style.position = 'absolute';
+                        currentOptionsBar.style.left = `${position.x}px`;
+                        currentOptionsBar.style.top = `${position.y}px`;
+                    }
+                } else {
+                    console.warn('[TextSelectionHelper] Invalid options bar position in scroll handler:', position);
+                }
             } else {
                 currentOptionsBar.style.display = 'none';
             }
