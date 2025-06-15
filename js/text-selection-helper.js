@@ -57,6 +57,9 @@ const SVG_ICONS = {
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         <path d="M8 9h8"/>
         <path d="M8 13h6"/>
+    </svg>`,
+    custom: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
     </svg>`
 };
 
@@ -163,6 +166,9 @@ function initTextSelectionHelper() {
     // 监听设置变化
     setupSettingsChangeListener();
 
+    // 监听语言变化事件
+    setupLanguageChangeListener();
+
     console.log('[TextSelectionHelper] Initialized');
 }
 
@@ -228,6 +234,50 @@ function setupSettingsChangeListener() {
 }
 
 /**
+ * 监听语言变化事件
+ */
+function setupLanguageChangeListener() {
+    // 监听来自主面板的语言变化事件
+    document.addEventListener('pagetalk:languageChanged', (event) => {
+        const newLanguage = event.detail?.newLanguage;
+        if (newLanguage) {
+            console.log('[TextSelectionHelper] Received language change event:', newLanguage);
+            handleTextSelectionHelperLanguageChange(newLanguage);
+        }
+    });
+}
+
+/**
+ * 处理语言变化
+ */
+function handleTextSelectionHelperLanguageChange(newLanguage) {
+    console.log('[TextSelectionHelper] Handling language change to:', newLanguage);
+
+    // 更新语言缓存
+    window.currentLanguageCache = newLanguage;
+
+    // 重新获取翻译函数
+    const _tr = getTranslationFunction();
+
+    // 如果当前有选项栏显示，重新渲染以更新语言
+    if (currentOptionsBar) {
+        const triggerElement = currentMiniIcon;
+        if (triggerElement) {
+            hideOptionsBar();
+            // 延迟重新显示，确保翻译已更新
+            setTimeout(() => {
+                showOptionsBar(triggerElement);
+            }, 100);
+        }
+    }
+
+    console.log('[TextSelectionHelper] Language change handled');
+}
+
+// 导出语言变化处理函数供其他模块使用
+window.handleTextSelectionHelperLanguageChange = handleTextSelectionHelperLanguageChange;
+
+/**
  * 处理文本选择事件
  */
 function handleTextSelection() {
@@ -259,7 +309,8 @@ function handleTextSelection() {
             // 存储选中的文本和锚点
             selectedText = text;
             currentSelectionRange = selection.getRangeAt(0).cloneRange(); // 存储Range对象
-            selectionContext = extractSelectionContext(selection);
+            // 使用默认上下文窗口提取上下文，具体的上下文窗口会在发送请求时根据选项设置调整
+            selectionContext = extractSelectionContext(selection, 500, 500);
             console.log('[TextSelectionHelper] Showing mini icon for selection');
             showMiniIcon();
         } else {
@@ -291,11 +342,16 @@ function shouldExcludeSelection(selection) {
 }
 
 /**
- * 提取选择文本的上下文 - 优化版本，只获取局部上下文
+ * 提取选择文本的上下文 - 支持自定义上下文窗口
  */
-function extractSelectionContext(selection) {
+function extractSelectionContext(selection, contextBefore = 500, contextAfter = 500) {
     try {
         if (!selection.rangeCount) return '';
+
+        // 如果上下文窗口都为0，直接返回空字符串
+        if (contextBefore === 0 && contextAfter === 0) {
+            return '';
+        }
 
         const range = selection.getRangeAt(0);
         const container = range.commonAncestorContainer;
@@ -305,25 +361,27 @@ function extractSelectionContext(selection) {
         const contextElement = element.closest('p, div, article, section') || element;
         let contextText = contextElement.textContent || '';
 
-        // 限制上下文长度，避免传递过大的内容
-        const maxContextLength = 2000; // 限制为2000字符
-        if (contextText.length > maxContextLength) {
-            // 尝试找到选中文本在上下文中的位置
+        // 如果上下文窗口参数有效，使用自定义窗口大小
+        if (contextBefore > 0 || contextAfter > 0) {
             const selectedText = selection.toString();
             const selectedIndex = contextText.indexOf(selectedText);
 
             if (selectedIndex !== -1) {
-                // 以选中文本为中心，提取前后各1000字符
-                const start = Math.max(0, selectedIndex - 1000);
-                const end = Math.min(contextText.length, selectedIndex + selectedText.length + 1000);
+                // 使用自定义的前后上下文窗口大小
+                const start = Math.max(0, selectedIndex - contextBefore);
+                const end = Math.min(contextText.length, selectedIndex + selectedText.length + contextAfter);
                 contextText = contextText.substring(start, end);
 
                 // 如果截断了开头或结尾，添加省略号
                 if (start > 0) contextText = '...' + contextText;
-                if (end < contextText.length) contextText = contextText + '...';
+                if (end < contextElement.textContent.length) contextText = contextText + '...';
             } else {
-                // 如果找不到选中文本，只取前1000字符
-                contextText = contextText.substring(0, maxContextLength) + '...';
+                // 如果找不到选中文本，使用前置上下文窗口大小
+                const maxLength = Math.max(contextBefore, contextAfter, 500);
+                contextText = contextText.substring(0, maxLength);
+                if (contextText.length < contextElement.textContent.length) {
+                    contextText = contextText + '...';
+                }
             }
         }
 
@@ -752,6 +810,18 @@ async function showOptionsBar(triggerElement) {
                 options.push({ id: 'translate', name: _tr('translate'), icon: SVG_ICONS.translate });
             } else if (optionId === 'chat') {
                 options.push({ id: 'chat', name: _tr('chat'), icon: SVG_ICONS.chat });
+            } else {
+                // 检查是否是自定义选项
+                const customOption = settings.customOptions?.find(opt => opt.id === optionId);
+                if (customOption) {
+                    options.push({
+                        id: customOption.id,
+                        name: customOption.name,
+                        icon: SVG_ICONS.custom || `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>`
+                    });
+                }
             }
         }
 
@@ -1273,6 +1343,10 @@ function handleWindowResize() {
 async function createFunctionWindowContent(windowElement, optionId) {
     let content = '';
 
+    // 检查是否是自定义选项
+    const settings = await getTextSelectionHelperSettings();
+    const customOption = settings.customOptions?.find(opt => opt.id === optionId);
+
     if (optionId === 'chat') {
         // 获取主面板的模型设置
         const currentModel = await getCurrentMainPanelModel();
@@ -1355,9 +1429,20 @@ async function createFunctionWindowContent(windowElement, optionId) {
             </div>
         `;
     } else {
-        // 解读和翻译功能窗口
+        // 解读、翻译和自定义选项功能窗口
         const _tr = getTranslationFunction();
-        const title = optionId === 'interpret' ? _tr('interpret') : _tr('translate');
+        let title;
+
+        if (customOption) {
+            title = customOption.name;
+        } else if (optionId === 'interpret') {
+            title = _tr('interpret');
+        } else if (optionId === 'translate') {
+            title = _tr('translate');
+        } else {
+            title = optionId; // 回退方案
+        }
+
         content = `
             <div class="pagetalk-window-header">
                 <div class="pagetalk-window-title">${title}</div>
@@ -1386,8 +1471,8 @@ async function createFunctionWindowContent(windowElement, optionId) {
     // 初始化引用区域的折叠功能
     initQuoteCollapse(windowElement);
 
-    // 如果是解读或翻译，立即发送请求
-    if (optionId === 'interpret' || optionId === 'translate') {
+    // 如果是解读、翻译或自定义选项，立即发送请求
+    if (optionId === 'interpret' || optionId === 'translate' || customOption) {
         sendInterpretOrTranslateRequest(windowElement, optionId);
     }
 }
@@ -1489,20 +1574,41 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
 
         // 获取设置
         const settings = await getTextSelectionHelperSettings();
-        const optionSettings = settings[optionId];
+        let optionSettings;
+
+        // 检查是否是自定义选项
+        const customOption = settings.customOptions?.find(opt => opt.id === optionId);
+        if (customOption) {
+            optionSettings = customOption;
+        } else {
+            optionSettings = settings[optionId];
+        }
 
         if (!optionSettings) {
             throw new Error(`Settings not found for option: ${optionId}`);
         }
 
-        // 构建优化的消息，减少不必要的上下文
+        // 根据自定义上下文窗口重新提取上下文
+        const contextBefore = optionSettings.contextBefore || 500;
+        const contextAfter = optionSettings.contextAfter || 500;
+        let contextForThisRequest = '';
+
+        if (contextBefore > 0 || contextAfter > 0) {
+            // 重新提取上下文，使用当前选项的上下文窗口设置
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                contextForThisRequest = extractSelectionContext(selection, contextBefore, contextAfter);
+            }
+        }
+
+        // 构建优化的消息，支持空上下文
         let message;
-        if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText && selectionContext.length < 500) {
-            // 只有当上下文与选中文本不同、有意义且不太长时才包含
-            message = `${optionSettings.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}`;
+        if (contextForThisRequest && contextForThisRequest.length > 0 && contextForThisRequest !== selectedText) {
+            // 有有效上下文时包含上下文
+            message = `${optionSettings.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForThisRequest}`;
         } else {
-            // 如果上下文无意义、与选中文本相同或太长，只使用选中文本
-            message = `${optionSettings.systemPrompt}\n\n${selectedText}`;
+            // 无上下文或上下文无效时，告知AI上下文可能为空
+            message = `${optionSettings.systemPrompt}\n\n注意：以下是用户选中的文本，可能没有额外的上下文信息，请基于文本本身和你的知识进行回答。\n\n选中文本：${selectedText}`;
         }
 
         // 准备响应区域
@@ -1764,14 +1870,14 @@ async function sendChatMessage(windowElement) {
     updateSendButtonToStopState(sendBtn, windowId);
 
     try {
-        // 构建优化的消息，减少不必要的上下文
+        // 构建优化的消息，支持空上下文
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
-            // 只有当上下文与选中文本不同且有意义时才包含
+            // 有有效上下文时包含上下文
             fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
         } else {
-            // 如果上下文无意义或与选中文本相同，只使用选中文本
-            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+            // 无上下文或上下文无效时，告知AI上下文可能为空
+            fullMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
         }
 
         // 重置滚动状态（新请求开始）
@@ -2170,14 +2276,14 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const windowId = windowElement.dataset.windowId || Date.now().toString();
         windowElement.dataset.windowId = windowId;
 
-        // 构建优化的消息，减少不必要的上下文
+        // 构建优化的消息，支持空上下文
         let fullMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
-            // 只有当上下文与选中文本不同且有意义时才包含
+            // 有有效上下文时包含上下文
             fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
         } else {
-            // 如果上下文无意义或与选中文本相同，只使用选中文本
-            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+            // 无上下文或上下文无效时，告知AI上下文可能为空
+            fullMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
         }
 
         // 设置流式状态
@@ -3064,31 +3170,7 @@ function adjustWindowHeight(windowElement) {
     adjustWindowSize(windowElement);
 }
 
-/**
- * 实时同步机制 - 处理语言变化
- */
-window.handleTextSelectionHelperLanguageChange = function(newLanguage) {
-    console.log('[TextSelectionHelper] Handling language change to:', newLanguage);
 
-    // 更新语言缓存
-    window.currentLanguageCache = newLanguage;
-
-    // 重新获取翻译函数
-    const _tr = getTranslationFunction();
-
-    // 如果选项栏正在显示，重新渲染
-    if (currentOptionsBar) {
-        console.log('[TextSelectionHelper] Updating options bar for language change');
-        hideOptionsBar();
-        showOptionsBar();
-    }
-
-    // 如果功能窗口正在显示，更新其中的文本
-    if (currentFunctionWindow) {
-        console.log('[TextSelectionHelper] Updating function window for language change');
-        updateFunctionWindowLanguage(currentFunctionWindow, newLanguage);
-    }
-};
 
 /**
  * 处理划词助手设置变化

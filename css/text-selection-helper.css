@@ -1470,6 +1470,294 @@
     color: #333;
 }
 
+/* 自定义选项列表样式 */
+#settings-text-selection-helper .custom-options-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+#settings-text-selection-helper .custom-option-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-md);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+#settings-text-selection-helper .custom-option-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.1);
+}
+
+#settings-text-selection-helper .custom-option-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+#settings-text-selection-helper .custom-option-name {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+#settings-text-selection-helper .custom-option-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+#settings-text-selection-helper .custom-option-actions button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+#settings-text-selection-helper .edit-custom-option-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: 1px solid transparent;
+}
+
+#settings-text-selection-helper .edit-custom-option-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.3);
+}
+
+#settings-text-selection-helper .delete-custom-option-btn {
+    background-color: #dc3545;
+    color: white;
+    border: 1px solid transparent;
+}
+
+#settings-text-selection-helper .delete-custom-option-btn:hover {
+    background-color: #c82333;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+#settings-text-selection-helper .custom-option-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--spacing-sm);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+#settings-text-selection-helper .custom-option-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+#settings-text-selection-helper .custom-option-detail-label {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+#settings-text-selection-helper .custom-option-detail-value {
+    color: var(--text-color);
+}
+
+#settings-text-selection-helper .add-custom-option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+#settings-text-selection-helper .add-custom-option-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.3);
+}
+
+/* 自定义选项对话框样式 */
+.custom-option-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.custom-option-dialog {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+}
+
+.custom-option-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--background-color);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.custom-option-dialog-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.custom-option-dialog-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.custom-option-dialog-close:hover {
+    background-color: var(--button-hover-bg);
+    color: var(--text-color);
+    transform: scale(1.1);
+}
+
+.custom-option-dialog-content {
+    padding: var(--spacing-lg);
+    background: var(--card-background);
+}
+
+.custom-option-dialog-footer {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+    justify-content: flex-end;
+    background: var(--background-color);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.custom-option-dialog-cancel,
+.custom-option-dialog-save {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.custom-option-dialog-cancel {
+    background-color: var(--button-hover-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.custom-option-dialog-cancel:hover {
+    background-color: var(--border-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-option-dialog-save {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.custom-option-dialog-save:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.3);
+}
+
+/* 自定义选项对话框中的温度控制样式 */
+.custom-option-dialog .temperature-control {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin: var(--spacing-sm) 0;
+}
+
+.custom-option-dialog .temperature-control input[type="range"] {
+    flex: 1;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border-color);
+    border-radius: var(--radius-full);
+    outline: none;
+    position: relative;
+    margin: 10px 0;
+}
+
+.custom-option-dialog .temperature-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--card-background);
+    border: 2px solid var(--primary-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    margin-top: -6px;
+}
+
+.custom-option-dialog .temperature-control input[type="range"]::-webkit-slider-thumb:hover,
+.custom-option-dialog .temperature-control input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.custom-option-dialog .temperature-control .temperature-value {
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: clamp(12px, 3.5vw, 14px);
+}
+
 #settings-text-selection-helper .options-order-list {
     margin-bottom: var(--spacing-md);
 }
@@ -1712,6 +2000,211 @@ body.dark-mode #settings-text-selection-helper .order-option-type {
 
 body.dark-mode #settings-text-selection-helper .hint {
     color: var(--text-secondary);
+}
+
+/* 深色模式下的自定义选项样式 */
+body.dark-mode #settings-text-selection-helper .custom-option-item {
+    background: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-mode #settings-text-selection-helper .custom-option-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.15);
+}
+
+body.dark-mode #settings-text-selection-helper .custom-option-name {
+    color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .custom-option-detail-label {
+    color: var(--text-secondary);
+}
+
+body.dark-mode #settings-text-selection-helper .custom-option-detail-value {
+    color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .edit-custom-option-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode #settings-text-selection-helper .edit-custom-option-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.3);
+}
+
+body.dark-mode #settings-text-selection-helper .delete-custom-option-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+body.dark-mode #settings-text-selection-helper .delete-custom-option-btn:hover {
+    background-color: #c82333;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+body.dark-mode #settings-text-selection-helper .add-custom-option-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode #settings-text-selection-helper .add-custom-option-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.3);
+}
+
+/* 深色模式下的自定义选项对话框样式 */
+body.dark-mode .custom-option-dialog {
+    background: var(--card-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .custom-option-dialog-header {
+    background: var(--background-color);
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .custom-option-dialog-header h3 {
+    color: var(--text-color);
+}
+
+body.dark-mode .custom-option-dialog-close:hover {
+    background-color: var(--button-hover-bg);
+    color: var(--text-color);
+}
+
+body.dark-mode .custom-option-dialog-content {
+    background: var(--card-background);
+    color: var(--text-color);
+}
+
+body.dark-mode .custom-option-dialog-content label {
+    color: var(--text-color);
+}
+
+body.dark-mode .custom-option-dialog-content input,
+body.dark-mode .custom-option-dialog-content select,
+body.dark-mode .custom-option-dialog-content textarea {
+    background: var(--input-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .custom-option-dialog-content input:focus,
+body.dark-mode .custom-option-dialog-content select:focus,
+body.dark-mode .custom-option-dialog-content textarea:focus {
+    background: var(--card-background);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2);
+}
+
+body.dark-mode .custom-option-dialog-footer {
+    background: var(--background-color);
+    border-top-color: var(--border-color);
+}
+
+body.dark-mode .custom-option-dialog-cancel {
+    background-color: var(--button-hover-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .custom-option-dialog-cancel:hover {
+    background-color: var(--border-color);
+}
+
+body.dark-mode .custom-option-dialog-save {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode .custom-option-dialog-save:hover {
+    background-color: var(--secondary-color);
+}
+
+/* 深色模式下的温度控制样式 */
+body.dark-mode .custom-option-dialog .temperature-control input[type="range"] {
+    background: var(--border-color);
+}
+
+body.dark-mode .custom-option-dialog .temperature-control input[type="range"]::-webkit-slider-thumb {
+    background-color: var(--input-background);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode .custom-option-dialog .temperature-control input[type="range"]::-webkit-slider-thumb:hover,
+body.dark-mode .custom-option-dialog .temperature-control input[type="range"]:active::-webkit-slider-thumb {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode .custom-option-dialog .temperature-control .temperature-value {
+    color: var(--primary-color);
+}
+
+body.dark-mode .custom-option-dialog-close {
+    color: var(--text-secondary) !important;
+}
+
+body.dark-mode .custom-option-dialog-close:hover {
+    background-color: var(--button-hover-bg) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .custom-option-dialog-footer {
+    border-top-color: var(--border-color) !important;
+    background: var(--card-background) !important;
+}
+
+body.dark-mode .custom-option-dialog-cancel {
+    background-color: var(--button-hover-bg) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .custom-option-dialog-cancel:hover {
+    background-color: var(--border-color) !important;
+    color: var(--text-color) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+body.dark-mode .custom-option-dialog-save {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+body.dark-mode .custom-option-dialog-save:hover {
+    background-color: var(--secondary-color);
+    color: white;
+    opacity: 1;
+    visibility: visible;
+}
+
+/* 通用按钮悬浮修复 - 确保所有自定义选项相关按钮在悬浮时可见 */
+#settings-text-selection-helper .custom-option-actions button:hover,
+.custom-option-dialog button:hover,
+#settings-text-selection-helper .add-custom-option-btn:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+body.dark-mode #settings-text-selection-helper .custom-option-actions button:hover,
+body.dark-mode .custom-option-dialog button:hover,
+body.dark-mode #settings-text-selection-helper .add-custom-option-btn:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
 }
 
 /* 划词助手功能窗口深色模式 */

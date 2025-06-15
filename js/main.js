@@ -980,6 +980,17 @@ function loadAndApplyTranslations(language) {
     updateAgentsListUIAllArgs(); // Re-render agent list with translated labels/placeholders
     updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
     updateConnectionIndicator(state.isConnected, elements, currentTranslations); // Re-render connection status text
+
+    // 广播语言变化事件给动态创建的UI组件（如自定义选项对话框）
+    try {
+        const languageChangeEvent = new CustomEvent('pagetalk:languageChanged', {
+            detail: { newLanguage: language }
+        });
+        document.dispatchEvent(languageChangeEvent);
+        console.log(`[main.js] Language change event dispatched for: ${language}`);
+    } catch (error) {
+        console.warn('[main.js] Error dispatching language change event:', error);
+    }
     // Update context status based on current state.pageContext
     let contextKey = 'contextStatusNone';
     let contextReplacements = {};
