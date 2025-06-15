@@ -150,6 +150,7 @@ const translations = {
 
     // --- 划词助手相关翻译 ---
     'textSelectionHelper': '划词助手',
+    'textSelectionHelperEnabled': '启用划词助手',
     'interpret': '解读',
     'translate': '翻译',
     'chat': '对话',
@@ -344,7 +345,8 @@ const translations = {
     'tabContentLoadFailed': 'Failed to load content for tab \'{title}...\': {error}',
 
     // --- Text Selection Helper Related Translations ---
-    'textSelectionHelper': 'Text Selection Helper',
+    'textSelectionHelper': 'Selection Tool',
+    'textSelectionHelperEnabled': 'Enable Selection Tool',
     'interpret': 'Interpret',
     'translate': 'Translate',
     'chat': 'Chat',
@@ -366,7 +368,7 @@ const translations = {
     'cancelEdit': 'Cancel Edit',
     'copy': 'Copy',
     'regenerateResponse': 'Regenerate',
-    'textSelectionHelperSettings': 'Text Selection Helper Settings',
+    'textSelectionHelperSettings': 'Selection Tool Settings',
 
     // --- Text Selection Helper Default Prompts ---
     'defaultInterpretPrompt': 'Interpret this',

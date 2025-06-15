@@ -3,8 +3,14 @@
  * 用于从网页中提取内容并与面板通信
  */
 
+// 防止重复初始化
+if (window.contentScriptInitialized) {
+    console.log('[Content] Already initialized, skipping...');
+} else {
+    window.contentScriptInitialized = true;
+
 // 全局变量，跟踪面板状态
-let panelActive = false;
+let panelActive = window.panelActive || false;
 let panelWidth = 520; // 默认宽度
 let minPanelWidth = 280; // 新增最小宽度限制
 let maxPanelWidthPercentage = 0.8; // 最大宽度为窗口的80%
@@ -843,3 +849,8 @@ function checkAndReinitializeLibraries() {
     console.log('[Content] TextSelectionHelper is available');
   }
 }
+
+// 保存全局状态变量到window对象，防止重复声明
+window.panelActive = panelActive;
+
+} // 结束防重复初始化检查

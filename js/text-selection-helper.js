@@ -3,8 +3,14 @@
  * 划词助手功能模块
  */
 
+// 防止重复初始化
+if (window.textSelectionHelperInitialized) {
+    console.log('[TextSelectionHelper] Already initialized, skipping...');
+} else {
+    window.textSelectionHelperInitialized = true;
+
 // 全局状态
-let isSelectionHelperActive = false;
+let isSelectionHelperActive = window.isSelectionHelperActive || false;
 let currentMiniIcon = null;
 let currentOptionsBar = null;
 let currentFunctionWindow = null;
@@ -125,6 +131,9 @@ function initTextSelectionHelper() {
         window.currentLanguageCache = 'zh-CN';
     });
 
+    // 初始化启用状态缓存
+    initEnabledStateCache();
+
     // 确保markdown渲染器已初始化
     if (window.MarkdownRenderer && typeof window.MarkdownRenderer.render === 'function') {
         console.log('[TextSelectionHelper] MarkdownRenderer is available');
@@ -152,13 +161,85 @@ function initTextSelectionHelper() {
         }
     });
 
+    // 监听设置变化
+    setupSettingsChangeListener();
+
     console.log('[TextSelectionHelper] Initialized');
+}
+
+// 缓存的启用状态
+let cachedEnabledState = true; // 默认启用
+
+/**
+ * 初始化启用状态缓存
+ */
+function initEnabledStateCache() {
+    if (chrome && chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
+            if (result.textSelectionHelperSettings && typeof result.textSelectionHelperSettings.enabled !== 'undefined') {
+                cachedEnabledState = result.textSelectionHelperSettings.enabled;
+                console.log('[TextSelectionHelper] Enabled state cache initialized:', cachedEnabledState);
+            } else {
+                cachedEnabledState = true; // 默认启用
+                console.log('[TextSelectionHelper] No saved enabled state, using default: true');
+            }
+        });
+    }
+}
+
+/**
+ * 检查划词助手是否启用
+ */
+function isHelperEnabled() {
+    // 尝试从设置模块获取状态
+    if (window.isTextSelectionHelperEnabled && typeof window.isTextSelectionHelperEnabled === 'function') {
+        const currentState = window.isTextSelectionHelperEnabled();
+        cachedEnabledState = currentState; // 更新缓存
+        return currentState;
+    }
+
+    // 使用缓存的状态
+    return cachedEnabledState;
+}
+
+/**
+ * 监听设置变化，更新缓存状态
+ */
+function setupSettingsChangeListener() {
+    if (chrome && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, namespace) => {
+            if (namespace === 'sync' && changes.textSelectionHelperSettings) {
+                const newSettings = changes.textSelectionHelperSettings.newValue;
+                if (newSettings && typeof newSettings.enabled !== 'undefined') {
+                    const wasEnabled = cachedEnabledState;
+                    cachedEnabledState = newSettings.enabled;
+                    console.log('[TextSelectionHelper] Settings changed, enabled state:', cachedEnabledState);
+
+                    // 如果从启用变为禁用，立即隐藏所有UI
+                    if (wasEnabled && !cachedEnabledState) {
+                        hideMiniIcon();
+                        hideOptionsBar();
+                        hideFunctionWindow();
+                        console.log('[TextSelectionHelper] Helper disabled, hiding all UI');
+                    }
+                }
+            }
+        });
+    }
 }
 
 /**
  * 处理文本选择事件
  */
 function handleTextSelection() {
+    // 检查划词助手是否启用
+    if (!isHelperEnabled()) {
+        console.log('[TextSelectionHelper] Helper is disabled, skipping text selection');
+        hideMiniIcon();
+        hideOptionsBar();
+        return;
+    }
+
     // 延迟处理，确保选择状态稳定
     setTimeout(() => {
         const selection = window.getSelection();
@@ -1039,6 +1120,9 @@ window.TextSelectionHelper = {
     init: initTextSelectionHelper,
     hide: hideAllInterfaces
 };
+
+// 保存全局状态变量到window对象，防止重复声明
+window.isSelectionHelperActive = isSelectionHelperActive;
 
 // 确保在页面加载完成后可以初始化
 console.log('[TextSelectionHelper] Module loaded');
@@ -3058,3 +3142,5 @@ function updateFunctionWindowLanguage(windowElement, newLanguage) {
 
 // 初始化划词助手
 initTextSelectionHelper();
+
+} // 结束防重复初始化检查

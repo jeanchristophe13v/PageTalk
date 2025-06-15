@@ -12,6 +12,7 @@ function getDefaultSettings(language = 'zh-CN') {
     const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', language) : (language === 'en' ? 'Translate this' : '翻译一下');
 
     return {
+        enabled: true, // 默认启用划词助手
         interpret: {
             model: 'gemini-2.5-flash',
             systemPrompt: interpretPrompt,
@@ -395,25 +396,31 @@ function initSettingCards(elements) {
  * 加载设置到UI
  */
 function loadSettingsToUI(elements) {
+    // 加载开关状态
+    const enabledToggle = document.getElementById('text-selection-helper-enabled');
+    if (enabledToggle) {
+        enabledToggle.checked = currentSettings.enabled !== false; // 默认为true
+    }
+
     // 解读设置
     const interpretModel = document.getElementById('interpret-model');
     const interpretPrompt = document.getElementById('interpret-system-prompt');
     const interpretTemp = document.getElementById('interpret-temperature');
     const interpretTempValue = interpretTemp?.parentElement.querySelector('.temperature-value');
-    
+
     if (interpretModel) interpretModel.value = currentSettings.interpret.model;
     if (interpretPrompt) interpretPrompt.value = currentSettings.interpret.systemPrompt;
     if (interpretTemp) {
         interpretTemp.value = currentSettings.interpret.temperature;
         if (interpretTempValue) interpretTempValue.textContent = currentSettings.interpret.temperature;
     }
-    
+
     // 翻译设置
     const translateModel = document.getElementById('translate-model');
     const translatePrompt = document.getElementById('translate-system-prompt');
     const translateTemp = document.getElementById('translate-temperature');
     const translateTempValue = translateTemp?.parentElement.querySelector('.temperature-value');
-    
+
     if (translateModel) translateModel.value = currentSettings.translate.model;
     if (translatePrompt) translatePrompt.value = currentSettings.translate.systemPrompt;
     if (translateTemp) {
@@ -426,6 +433,16 @@ function loadSettingsToUI(elements) {
  * 设置事件监听器
  */
 function setupEventListeners(elements, translations) {
+    // 开关状态变化
+    const enabledToggle = document.getElementById('text-selection-helper-enabled');
+    if (enabledToggle) {
+        enabledToggle.addEventListener('change', () => {
+            currentSettings.enabled = enabledToggle.checked;
+            saveSettings();
+            console.log('[TextSelectionHelperSettings] Helper enabled state changed:', currentSettings.enabled);
+        });
+    }
+
     // 解读设置变化
     const interpretModel = document.getElementById('interpret-model');
     const interpretPrompt = document.getElementById('interpret-system-prompt');
@@ -490,6 +507,19 @@ function setupEventListeners(elements, translations) {
  */
 function updateOptionsOrderUI(elements, translations) {
     console.log('[TextSelectionHelperSettings] updateOptionsOrderUI called');
+    console.log('[TextSelectionHelperSettings] Received translations:', translations);
+
+    // 如果传入的翻译对象为空，尝试从全局获取当前语言的翻译
+    if (!translations || Object.keys(translations).length === 0) {
+        getCurrentLanguageForSettings().then(currentLanguage => {
+            console.log('[TextSelectionHelperSettings] Fallback: getting translations for language:', currentLanguage);
+            const fallbackTranslations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
+            console.log('[TextSelectionHelperSettings] Fallback translations:', fallbackTranslations);
+            updateOptionsOrderUI(elements, fallbackTranslations);
+        });
+        return;
+    }
+
     const container = document.getElementById('options-order-list');
     if (!container) {
         console.error('[TextSelectionHelperSettings] Container element not found: options-order-list');
@@ -560,6 +590,13 @@ function updateOptionsOrderUI(elements, translations) {
  */
 export function getTextSelectionHelperSettings() {
     return currentSettings;
+}
+
+/**
+ * 获取划词助手是否启用
+ */
+export function isTextSelectionHelperEnabled() {
+    return currentSettings.enabled !== false; // 默认为true
 }
 
 
@@ -641,7 +678,9 @@ function setupDragAndDrop(container) {
 
                 // 重新渲染列表 - 获取当前语言的翻译对象
                 getCurrentLanguageForSettings().then(currentLanguage => {
+                    console.log('[TextSelectionHelperSettings] Getting translations for language:', currentLanguage);
                     const translations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
+                    console.log('[TextSelectionHelperSettings] Available translations:', translations);
                     updateOptionsOrderUI(document, translations);
                 }).catch(err => {
                     console.warn('[TextSelectionHelperSettings] Failed to get current language for drag reorder, using fallback');

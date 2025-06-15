@@ -25,7 +25,7 @@ import {
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
 import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection } from './settings.js';
-import { initTextSelectionHelperSettings } from './text-selection-helper-settings.js';
+import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
     switchTab,
@@ -209,7 +209,12 @@ async function init() {
 
     // Setup core features
     initModelSelection(state, elements); // Populate model dropdowns
-    await initTextSelectionHelperSettings(elements, currentTranslations); // Initialize text selection helper settings
+
+    // 确保翻译已加载后再初始化划词助手设置
+    setTimeout(async () => {
+        console.log('[main.js] Initializing text selection helper with translations:', currentTranslations);
+        await initTextSelectionHelperSettings(elements, currentTranslations); // Initialize text selection helper settings
+    }, 100); // 给翻译加载一些时间
     setupEventListeners(); // Setup all event listeners
     setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
     setupAutoresizeTextarea(elements); // Setup textarea resize
@@ -271,6 +276,8 @@ async function init() {
         handleRemoveSentTabContextAction(messageId, tabId, state);
     };
 
+    // Expose text selection helper functions to global scope
+    window.isTextSelectionHelperEnabled = isTextSelectionHelperEnabled;
 
     console.log("Pagetalk Initialized.");
 }

@@ -2,8 +2,14 @@
  * Markdown渲染器 - 使用markdown-it库
  */
 
+// 防止重复初始化
+if (window.markdownRendererInitialized) {
+    console.log('[MarkdownRenderer] Already initialized, skipping...');
+} else {
+    window.markdownRendererInitialized = true;
+
 // 初始化markdown-it实例
-let markdownRenderer = null;
+let markdownRenderer = window.markdownRenderer || null;
 
 // 初始化渲染器
 function initMarkdownRenderer() {
@@ -182,3 +188,8 @@ window.MarkdownRenderer = {
     renderInline: renderMarkdownInline,
     escapeHtml: escapeHtml
 };
+
+// 保存markdownRenderer实例到window对象，防止重复声明
+window.markdownRenderer = markdownRenderer;
+
+} // 结束防重复初始化检查
