@@ -993,7 +993,9 @@ async function showFunctionWindow(optionId) {
         color: #666;
         z-index: 10;
     `;
-    closeButton.addEventListener('click', () => {
+    closeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         hideFunctionWindow();
     });
 
@@ -1407,7 +1409,11 @@ function setupFunctionWindowEvents(windowElement, optionId) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
 
         if (sendBtn && textarea) {
-            sendBtn.addEventListener('click', () => sendChatMessage(windowElement));
+            sendBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                sendChatMessage(windowElement);
+            });
             textarea.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -1422,7 +1428,11 @@ function setupFunctionWindowEvents(windowElement, optionId) {
         }
 
         if (clearBtn) {
-            clearBtn.addEventListener('click', () => clearChatContext(windowElement));
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                clearChatContext(windowElement);
+            });
         }
 
         // 为模型选择器添加事件监听器（对话功能需要响应模型变化）
@@ -1580,7 +1590,9 @@ function setupResponseActions(windowElement, response, optionId) {
     const regenerateBtn = windowElement.querySelector('.pagetalk-regenerate-btn');
 
     if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
+        copyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             navigator.clipboard.writeText(response);
 
             // 显示绿色对勾
@@ -1648,7 +1660,9 @@ function displayError(windowElement, errorMessage) {
 
     const retryBtn = responseArea.querySelector('.pagetalk-retry-btn');
     if (retryBtn) {
-        retryBtn.addEventListener('click', () => {
+        retryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const optionId = windowElement.dataset.option;
             sendInterpretOrTranslateRequest(windowElement, optionId);
         });
@@ -1765,18 +1779,16 @@ async function sendChatMessage(windowElement) {
         functionWindowScrolledUp = false;
         shouldAdjustHeight = true;
 
-        // 添加思考动画
+        // 添加独立的思考动画（不在聊天气泡内）
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
         const thinkingElement = document.createElement('div');
-        thinkingElement.className = 'pagetalk-chat-message pagetalk-chat-message-assistant';
+        thinkingElement.className = 'pagetalk-thinking-message';
         thinkingElement.innerHTML = `
-            <div class="pagetalk-message-content">
-                <div class="thinking">
-                    <div class="thinking-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
+            <div class="pagetalk-thinking-bubble">
+                <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             </div>
         `;
@@ -1917,12 +1929,9 @@ async function sendChatMessage(windowElement) {
         // 清除思考动画（如果存在）
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
         if (messagesArea) {
-            const thinkingElements = messagesArea.querySelectorAll('.thinking');
+            const thinkingElements = messagesArea.querySelectorAll('.pagetalk-thinking-message');
             thinkingElements.forEach(element => {
-                const thinkingMessage = element.closest('.pagetalk-chat-message');
-                if (thinkingMessage) {
-                    thinkingMessage.remove();
-                }
+                element.remove();
             });
         }
 
@@ -2180,18 +2189,16 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const sendBtn = windowElement.querySelector('.pagetalk-send-btn');
         updateSendButtonToStopState(sendBtn, windowId);
 
-        // 添加思考动画
+        // 添加独立的思考动画（不在聊天气泡内）
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
         const thinkingElement = document.createElement('div');
-        thinkingElement.className = 'pagetalk-chat-message pagetalk-chat-message-assistant';
+        thinkingElement.className = 'pagetalk-thinking-message';
         thinkingElement.innerHTML = `
-            <div class="pagetalk-message-content">
-                <div class="thinking">
-                    <div class="thinking-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
+            <div class="pagetalk-thinking-bubble">
+                <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             </div>
         `;
@@ -2328,12 +2335,9 @@ async function regenerateChatMessage(windowElement, userMessage) {
         // 清除思考动画（如果存在）
         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
         if (messagesArea) {
-            const thinkingElements = messagesArea.querySelectorAll('.thinking');
+            const thinkingElements = messagesArea.querySelectorAll('.pagetalk-thinking-message');
             thinkingElements.forEach(element => {
-                const thinkingMessage = element.closest('.pagetalk-chat-message');
-                if (thinkingMessage) {
-                    thinkingMessage.remove();
-                }
+                element.remove();
             });
         }
 
@@ -2648,7 +2652,11 @@ function restoreSendButtonToNormalState(windowElement) {
     sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
 
     // 重新添加发送消息事件监听器
-    newSendBtn.addEventListener('click', () => sendChatMessage(windowElement));
+    newSendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sendChatMessage(windowElement);
+    });
 }
 
 /**
@@ -2713,12 +2721,9 @@ function abortStreaming(windowId, keepMessages = true) {
             streamingCursors.forEach(cursor => cursor.remove());
 
             // 移除思考动画（如果存在）
-            const thinkingElements = windowElement.querySelectorAll('.thinking');
-            thinkingElements.forEach(thinking => {
-                const thinkingMessage = thinking.closest('.pagetalk-chat-message');
-                if (thinkingMessage) {
-                    thinkingMessage.remove();
-                }
+            const thinkingElements = windowElement.querySelectorAll('.pagetalk-thinking-message');
+            thinkingElements.forEach(element => {
+                element.remove();
             });
 
             // 确保未完成的AI消息有按钮事件（重要：让用户能点击重新生成）
@@ -2784,7 +2789,9 @@ function addCopyButtonToCodeBlock(codeBlock) {
         z-index: 1;
     `;
 
-    copyButton.addEventListener('click', () => {
+    copyButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const codeElement = codeBlock.querySelector('code');
         const code = codeElement ? codeElement.textContent : codeBlock.textContent;
 
@@ -3017,7 +3024,9 @@ function initQuoteCollapse(windowElement) {
             console.log('[TextSelectionHelper] Adding collapse toggle button');
 
             // 添加点击事件
-            toggleBtn.addEventListener('click', () => {
+            toggleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 if (quoteText.classList.contains('collapsed')) {
                     // 展开
                     quoteText.classList.remove('collapsed');

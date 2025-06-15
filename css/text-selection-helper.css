@@ -656,10 +656,7 @@
     min-width: 120px; /* 设置最小宽度确保按钮有足够空间 */
 }
 
-/* 思考动画特殊样式：通过负边距抵消额外的底部padding */
-.pagetalk-chat-message-assistant .pagetalk-message-content .thinking {
-    margin: 0 0 -18px 0; /* 通过负底边距抵消容器的额外底部padding (30px - 12px = 18px) */
-}
+/* 旧的思考动画样式已移除，现在使用独立的思考动画 */
 
 .pagetalk-message-actions {
     position: absolute;
@@ -808,17 +805,32 @@
     transform: scale(1.05);
 }
 
-/* 思考动画样式 - 与主面板保持一致，调整大小匹配用户气泡 */
-.pagetalk-function-window .thinking {
+/* 独立思考动画样式 - 完全复制主面板的样式 */
+.pagetalk-function-window .pagetalk-thinking-message {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* 左对齐，与助手消息一致 */
+    margin: 8px 0;
+    padding: 0;
+}
+
+.pagetalk-function-window .pagetalk-thinking-bubble {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 12px;
-    min-height: 20px;
+    padding: 16px 20px; /* 增加padding确保思考动画不会超出边界 */
+    min-height: 40px; /* 使用主面板相同的高度 */
+    min-width: 80px; /* 确保气泡足够宽以包含思考动画和光晕效果 */
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    border-bottom-left-radius: 4px; /* 与助手消息气泡一致 */
     animation: thinkingAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     position: relative;
     opacity: 1;
     transform: translateY(0) scale(1);
+    max-width: 95%;
+    width: fit-content; /* 让气泡根据内容调整大小 */
 }
 
 @keyframes thinkingAppear {
@@ -835,7 +847,7 @@
 .pagetalk-function-window .thinking-dots {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 8px; /* 使用主面板相同的间距 */
     position: relative;
 }
 
@@ -846,8 +858,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40px;
-    height: 20px;
+    width: 40px; /* 使用主面板相同的尺寸 */
+    height: 20px; /* 使用主面板相同的尺寸 */
     background: radial-gradient(ellipse, rgba(49, 123, 245, 0.15) 0%, transparent 70%);
     border-radius: 50%;
     animation: thinkingGlow 2s infinite ease-in-out;
@@ -866,14 +878,14 @@
 
 .pagetalk-function-window .thinking-dots span {
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 7px; /* 使用主面板相同的尺寸 */
+    height: 7px; /* 使用主面板相同的尺寸 */
     border-radius: 50%;
-    background: linear-gradient(135deg, #007AFF, rgba(49, 123, 245, 0.7));
-    transform: scale(0.8);
+    background: linear-gradient(135deg, var(--primary-color), rgba(49, 123, 245, 0.7));
+    opacity: 0.4;
     position: relative;
     z-index: 1;
-    box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2);
+    box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2); /* 使用主面板相同的阴影 */
 }
 
 .pagetalk-function-window .thinking-dots span:nth-child(1) {
@@ -898,7 +910,7 @@
         box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2);
     }
     30% {
-        transform: scale(1.2) translateY(-2px);
+        transform: scale(1.3) translateY(-2px); /* 使用主面板相同的动画参数 */
         opacity: 1;
         box-shadow: 0 3px 8px rgba(49, 123, 245, 0.4);
     }
@@ -937,7 +949,7 @@
         opacity: 0.6;
     }
     100% {
-        transform: translate(-50%, -50%) scale(2);
+        transform: translate(-50%, -50%) scale(2.5);
         opacity: 0;
     }
 }
