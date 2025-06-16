@@ -1,13 +1,12 @@
 /* 包含 Pagetalk 插件的基础样式、全局布局（如 body, header, footer）、通用组件（如按钮、模态框）和滚动条样式。 */
 
 /* 基本样式重置 */
-* {
+   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Segoe UI, "Microsoft Sans Serif", Segoe UI;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
-
 /* 列表缩进 */
 ul, ol {
     padding-left: 20px; /* 默认缩进 */

@@ -189,6 +189,15 @@ const translations = {
     'contextAfter': '后置上下文token数',
     'maxOutputLength': '最大输出长度',
 
+    // --- 代理设置相关翻译 ---
+    'proxyAddressLabel': '代理地址：',
+    'proxyAddressPlaceholder': '例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080',
+    'proxyAddressHint': '支持 HTTP 和 SOCKS5 代理，留空则禁用代理。',
+    'proxySetSuccess': '代理设置已应用',
+    'proxySetError': '代理设置失败：{error}',
+    'proxyCleared': '代理设置已清除',
+    'proxyInvalidUrl': '代理地址格式无效，请检查格式',
+
     // --- 划词助手默认提示词 ---
     'defaultInterpretPrompt': '解读一下',
     'defaultTranslatePrompt': `# 角色
@@ -399,6 +408,15 @@ const translations = {
     'contextBefore': 'Context Before (chars)',
     'contextAfter': 'Context After (chars)',
     'maxOutputLength': 'Max Output Length',
+
+    // --- Proxy Settings Related Translations ---
+    'proxyAddressLabel': 'Proxy Address:',
+    'proxyAddressPlaceholder': 'e.g., http://127.0.0.1:7890 or socks5://127.0.0.1:1080',
+    'proxyAddressHint': 'Supports HTTP and SOCKS5 proxies, leave empty to disable.',
+    'proxySetSuccess': 'Proxy settings applied',
+    'proxySetError': 'Failed to set proxy: {error}',
+    'proxyCleared': 'Proxy settings cleared',
+    'proxyInvalidUrl': 'Invalid proxy address format, please check the format',
 
     // --- Text Selection Helper Default Prompts ---
     'defaultInterpretPrompt': 'Interpret this',

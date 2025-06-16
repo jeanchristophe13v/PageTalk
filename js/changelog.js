@@ -5,6 +5,24 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.5.0",
+        date: "2025-06-16",
+        changes: {
+            "zh-CN": [
+                "1. 划词助手：现在你可以尝试这个非常牛逼的功能，划词→选择解读、翻译或对话，又或者是自定义你自己的选项，PageTalk不再仅仅是个侧栏AI插件。",
+                "2. 更新http, socks5代理支持",
+                "3. 修复一些小bug",
+                "备注：如果遇到任何问题，请先尝试刷新网页、刷新插件或重启浏览器，若仍存在，请联系kronos13v@gmail.com"
+            ],
+            "en": [
+                "1. Text Selection Helper: Try this amazing new feature! Select text → choose interpret, translate, or chat, or customize your own options. PageTalk is no longer just a sidebar AI extension.",
+                "2. Updated HTTP and SOCKS5 proxy support",
+                "3. Fixed various minor bugs",
+                "Note: If you encounter any issues, please try refreshing the webpage, reloading the extension, or restarting the browser first. If problems persist, contact kronos13v@gmail.com"
+            ]
+        }
+    },
+    {
         version: "3.0.0",
         date: "2025-05-28",
         changes: {

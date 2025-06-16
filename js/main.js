@@ -24,7 +24,7 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection } from './settings.js';
+import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection, handleProxyAddressChange } from './settings.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
@@ -73,6 +73,7 @@ const state = {
     videos: [],
     darkMode: false,
     language: 'en', // Changed default language to English
+    proxyAddress: '', // 代理地址
     isStreaming: false,
     userScrolledUpDuringStream: false, // 新增：跟踪用户在流式传输期间是否已向上滚动
     // userHasSetPreference: false, // Removed
@@ -135,6 +136,7 @@ const elements = {
     closePanelBtnSettings: document.getElementById('close-panel-settings'),
     // Settings - General
     languageSelect: document.getElementById('language-select'),
+    proxyAddressInput: document.getElementById('proxy-address-input'),
     themeToggleBtnSettings: document.getElementById('theme-toggle-btn'), // Draggable button
     moonIconSettings: document.getElementById('moon-icon'),
     sunIconSettings: document.getElementById('sun-icon'),
@@ -364,6 +366,17 @@ function setupEventListeners() {
     elements.toggleApiKey.addEventListener('click', () => toggleApiKeyVisibility(elements));
     elements.languageSelect.addEventListener('change', () => handleLanguageChange(state, elements, loadAndApplyTranslations, showToastUI, currentTranslations));
     elements.exportChatHistoryBtn.addEventListener('click', () => handleExportChat(state, elements, showToastUI, currentTranslations));
+
+    // Proxy Address Change
+    if (elements.proxyAddressInput) {
+        elements.proxyAddressInput.addEventListener('blur', () => handleProxyAddressChange(state, elements, showToastUI, currentTranslations));
+        elements.proxyAddressInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                elements.proxyAddressInput.blur(); // Trigger blur event to save
+            }
+        });
+    }
 
     // Agent Actions
     elements.addNewAgent.addEventListener('click', () => createNewAgent(state, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveAgentsListState, showToastUI, currentTranslations));

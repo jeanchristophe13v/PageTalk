@@ -203,6 +203,17 @@
     background-color: var(--input-background); /* Use variable */
     transform: translateY(0);
 }
+
+/* 代理地址输入框特定样式 */
+#proxy-address-input {
+    width: 30% !important;
+}
+
+/* 代理地址提示文本样式 */
+#proxy-address-input + .hint {
+    padding-left: var(--spacing-xs); /* 减少左边距，让文本往左一点 */
+    font-style: italic; /* 变成斜体 */
+}
 .setting-group input:focus,
 .setting-group textarea:focus {
     border-color: var(--primary-color);

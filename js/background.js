@@ -15,6 +15,9 @@ chrome.runtime.onInstalled.addListener(() => {
         title: "打开 Pagetalk 面板",
         contexts: ["page", "selection"]
     });
+
+    // 初始化代理设置
+    updateProxySettings();
 });
 
 // 处理右键菜单点击
@@ -269,6 +272,12 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'sync') {
         console.log('[Background] Storage changed:', changes);
 
+        // 特殊处理代理地址变化
+        if (changes.proxyAddress) {
+            console.log('[Background] Proxy address changed, updating proxy settings');
+            updateProxySettings();
+        }
+
         // 获取所有标签页并广播变化
         chrome.tabs.query({}, (tabs) => {
             tabs.forEach(tab => {
@@ -317,6 +326,8 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
  */
 chrome.runtime.onStartup.addListener(() => {
     console.log('[Background] Extension startup - broadcasting to all tabs');
+    // 初始化代理设置
+    updateProxySettings();
     setTimeout(broadcastExtensionReload, 1000);
 });
 
@@ -410,5 +421,81 @@ async function reinjectScriptsToTab(tabId) {
 
     } catch (error) {
         console.error('[Background] Error reinjecting scripts to tab:', tabId, error);
+    }
+}
+
+/**
+ * 更新代理设置
+ */
+async function updateProxySettings() {
+    try {
+        // 从存储中获取代理地址
+        const result = await chrome.storage.sync.get(['proxyAddress']);
+        const proxyAddress = result.proxyAddress;
+
+        if (!proxyAddress || proxyAddress.trim() === '') {
+            // 清除代理设置
+            console.log('[Background] Clearing proxy settings');
+            await chrome.proxy.settings.clear({});
+            console.log('[Background] Proxy settings cleared');
+            return;
+        }
+
+        // 解析代理地址
+        let proxyUrl;
+        try {
+            proxyUrl = new URL(proxyAddress.trim());
+        } catch (error) {
+            console.error('[Background] Invalid proxy URL format:', proxyAddress, error);
+            return;
+        }
+
+        // 构建代理配置
+        const proxyConfig = {
+            mode: "fixed_servers",
+            rules: {
+                singleProxy: {
+                    scheme: proxyUrl.protocol.slice(0, -1), // 移除末尾的冒号
+                    host: proxyUrl.hostname,
+                    port: parseInt(proxyUrl.port) || getDefaultPort(proxyUrl.protocol)
+                },
+                bypassList: ["<local>"] // 绕过本地地址
+            }
+        };
+
+        // 验证协议支持
+        const supportedSchemes = ['http', 'https', 'socks4', 'socks5'];
+        if (!supportedSchemes.includes(proxyConfig.rules.singleProxy.scheme)) {
+            console.error('[Background] Unsupported proxy scheme:', proxyConfig.rules.singleProxy.scheme);
+            return;
+        }
+
+        // 应用代理设置
+        console.log('[Background] Applying proxy settings:', proxyConfig);
+        await chrome.proxy.settings.set({
+            value: proxyConfig,
+            scope: 'regular'
+        });
+        console.log('[Background] Proxy settings applied successfully');
+
+    } catch (error) {
+        console.error('[Background] Error updating proxy settings:', error);
+    }
+}
+
+/**
+ * 获取协议的默认端口
+ */
+function getDefaultPort(protocol) {
+    switch (protocol) {
+        case 'http:':
+            return 80;
+        case 'https:':
+            return 443;
+        case 'socks4:':
+        case 'socks5:':
+            return 1080;
+        default:
+            return 8080;
     }
 }

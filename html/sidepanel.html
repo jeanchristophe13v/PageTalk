@@ -58,7 +58,7 @@
                     </div>
                     <div class="chat-messages" id="chat-messages">
                         <div class="welcome-message">
-                            <h2>欢迎使用 Pagetalk :) </h2>
+                            <h2>欢迎使用 PageTalk :) </h2>
                             <div class="quick-actions">
                                 <button id="summarize-page" class="quick-action-btn">总结一下</button>
                             </div>
@@ -159,6 +159,11 @@
                                 </select>
                                 <button id="export-chat-history" class="action-button">导出</button>
                             </div>
+                        </div>
+                        <div class="setting-group">
+                            <label for="proxy-address-input" data-i18n="proxyAddressLabel">代理地址：</label>
+                            <input type="text" id="proxy-address-input" data-i18n-placeholder="proxyAddressPlaceholder" placeholder="例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
+                            <p class="hint" data-i18n="proxyAddressHint">支持 HTTP 和 SOCKS5 代理，留空则禁用代理。</p>
                         </div>
                     </div>
 

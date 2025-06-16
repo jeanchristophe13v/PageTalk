@@ -47,7 +47,7 @@ function detectUserLanguage() {
  * @param {function} applyThemeCallback - Callback
  */
 export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback) {
-    chrome.storage.sync.get(['apiKey', 'model', 'language'], (syncResult) => {
+    chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress'], (syncResult) => {
         // API Key and Model
         if (syncResult.apiKey) state.apiKey = syncResult.apiKey;
         if (syncResult.model) state.model = syncResult.model;
@@ -68,6 +68,14 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         
         if (elements.languageSelect) elements.languageSelect.value = state.language;
         loadAndApplyTranslationsCallback(state.language); // Apply translations
+
+        // Proxy Address
+        if (syncResult.proxyAddress) {
+            state.proxyAddress = syncResult.proxyAddress;
+        } else {
+            state.proxyAddress = '';
+        }
+        if (elements.proxyAddressInput) elements.proxyAddressInput.value = state.proxyAddress;
 
         // Theme (Load default, content script might override)
         state.darkMode = false; // Default to light
@@ -166,6 +174,35 @@ export function handleLanguageChange(state, elements, loadAndApplyTranslationsCa
         } else {
             console.log(`Language saved: ${selectedLanguage}`);
             loadAndApplyTranslationsCallback(selectedLanguage); // Load and apply NEW translations
+        }
+    });
+}
+
+/**
+ * Handles proxy address changes
+ * @param {object} state - Global state reference
+ * @param {object} elements - DOM elements reference
+ * @param {function} showToastCallback - Callback for showing toast messages
+ * @param {object} currentTranslations - Current translations object
+ */
+export function handleProxyAddressChange(state, elements, showToastCallback, currentTranslations) {
+    const proxyAddress = elements.proxyAddressInput.value.trim();
+
+    // Update state
+    state.proxyAddress = proxyAddress;
+
+    // Save to storage
+    chrome.storage.sync.set({ proxyAddress: proxyAddress }, () => {
+        if (chrome.runtime.lastError) {
+            console.error("Error saving proxy address:", chrome.runtime.lastError);
+            showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
+        } else {
+            console.log(`Proxy address saved: ${proxyAddress || '(empty)'}`);
+            if (proxyAddress) {
+                showToastCallback(_('proxySetSuccess', {}, currentTranslations), 'success');
+            } else {
+                showToastCallback(_('proxyCleared', {}, currentTranslations), 'success');
+            }
         }
     });
 }
