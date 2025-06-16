@@ -187,6 +187,7 @@ const translations = {
     'contextWindow': '上下文窗口',
     'contextBefore': '前置上下文token数',
     'contextAfter': '后置上下文token数',
+    'maxOutputLength': '最大输出长度',
 
     // --- 划词助手默认提示词 ---
     'defaultInterpretPrompt': '解读一下',
@@ -397,6 +398,7 @@ const translations = {
     'contextWindow': 'Context Window',
     'contextBefore': 'Context Before (chars)',
     'contextAfter': 'Context After (chars)',
+    'maxOutputLength': 'Max Output Length',
 
     // --- Text Selection Helper Default Prompts ---
     'defaultInterpretPrompt': 'Interpret this',

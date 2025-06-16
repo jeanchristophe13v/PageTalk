@@ -1779,7 +1779,7 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
                     adjustWindowSize(windowElement);
                 }
             }
-        });
+        }, null, null, optionSettings.maxOutputLength);
 
         // 设置按钮事件
         setupResponseActions(windowElement, fullResponse, optionId);
@@ -2052,8 +2052,13 @@ async function sendChatMessage(windowElement) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
         const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
+        // 获取主面板助手设置
+        const currentAgent = await getCurrentMainPanelAgent();
+        const temperature = currentAgent ? currentAgent.temperature : 0.7;
+        const maxOutputLength = currentAgent ? currentAgent.maxTokens : 65536;
+
         // 发送到 AI (流式输出)
-        await callAIAPI(fullMessage, currentModel, 0.7, (text, isComplete) => {
+        await callAIAPI(fullMessage, currentModel, temperature, (text, isComplete) => {
             // 检查流式状态是否仍然有效（可能已被中断）
             const currentStreamingState = streamingStates.get(windowId);
             if (!currentStreamingState || !currentStreamingState.isStreaming) {
@@ -2136,7 +2141,7 @@ async function sendChatMessage(windowElement) {
             if (!functionWindowScrolledUp) {
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             }
-        }, requestId, windowId);
+        }, requestId, windowId, maxOutputLength);
 
         // 条件滚动到底部
         if (!functionWindowScrolledUp) {
@@ -2480,8 +2485,13 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
         const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
+        // 获取主面板助手设置
+        const currentAgent = await getCurrentMainPanelAgent();
+        const temperature = currentAgent ? currentAgent.temperature : 0.7;
+        const maxOutputLength = currentAgent ? currentAgent.maxTokens : 65536;
+
         // 发送到 AI (流式输出)
-        await callAIAPI(fullMessage, currentModel, 0.7, (text, isComplete) => {
+        await callAIAPI(fullMessage, currentModel, temperature, (text, isComplete) => {
             // 检查流式状态是否仍然有效（可能已被中断）
             const currentStreamingState = streamingStates.get(windowId);
             if (!currentStreamingState || !currentStreamingState.isStreaming) {
@@ -2568,7 +2578,7 @@ async function regenerateChatMessage(windowElement, userMessage) {
             if (!functionWindowScrolledUp) {
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             }
-        }, requestId, windowId);
+        }, requestId, windowId, maxOutputLength);
 
     } catch (error) {
         console.error('[TextSelectionHelper] Regenerate chat error:', error);
@@ -2677,7 +2687,7 @@ function escapeHtml(text) {
 /**
  * 调用 AI API - 通过 background.js 统一处理
  */
-async function callAIAPI(message, model, temperature, onStream = null, requestId = null, windowId = null) {
+async function callAIAPI(message, model, temperature, onStream = null, requestId = null, windowId = null, maxOutputLength = null) {
     try {
         // 使用传入的requestId或生成新的
         if (!requestId) {
@@ -2692,7 +2702,7 @@ async function callAIAPI(message, model, temperature, onStream = null, requestId
             }],
             generationConfig: {
                 temperature: temperature,
-                maxOutputTokens: 65536, // 设置为65536
+                maxOutputTokens: maxOutputLength || 65536, // 使用传入的maxOutputLength或默认65536
                 topP: 0.95
             },
             model: model

@@ -18,14 +18,16 @@ function getDefaultSettings(language = 'zh-CN') {
             systemPrompt: interpretPrompt,
             temperature: 0.7,
             contextBefore: 500,
-            contextAfter: 500
+            contextAfter: 500,
+            maxOutputLength: 65536
         },
         translate: {
             model: 'gemini-2.5-flash',
             systemPrompt: translatePrompt,
             temperature: 0.2,
             contextBefore: 500,
-            contextAfter: 500
+            contextAfter: 500,
+            maxOutputLength: 65536
         },
         customOptions: [], // 自定义选项数组
         optionsOrder: ['interpret', 'translate', 'chat']
@@ -101,9 +103,26 @@ function loadSettings() {
                             currentSettings.translate.systemPrompt = window.getDefaultPrompt('translate', currentLanguage);
                         }
 
+                        // 确保maxOutputLength字段存在（向后兼容）
+                        if (currentSettings.interpret && currentSettings.interpret.maxOutputLength === undefined) {
+                            currentSettings.interpret.maxOutputLength = 65536;
+                        }
+                        if (currentSettings.translate && currentSettings.translate.maxOutputLength === undefined) {
+                            currentSettings.translate.maxOutputLength = 65536;
+                        }
+
                         // 确保自定义选项数组存在
                         if (!currentSettings.customOptions) {
                             currentSettings.customOptions = [];
+                        }
+
+                        // 为现有自定义选项添加maxOutputLength字段（向后兼容）
+                        if (currentSettings.customOptions) {
+                            currentSettings.customOptions.forEach(option => {
+                                if (option.maxOutputLength === undefined) {
+                                    option.maxOutputLength = 65536;
+                                }
+                            });
                         }
 
                         // 确保选项顺序数组存在
@@ -399,6 +418,7 @@ function loadSettingsToUI(elements) {
     const interpretPrompt = document.getElementById('interpret-system-prompt');
     const interpretTemp = document.getElementById('interpret-temperature');
     const interpretTempValue = interpretTemp?.parentElement.querySelector('.temperature-value');
+    const interpretMaxOutput = document.getElementById('interpret-max-output');
 
     if (interpretModel) interpretModel.value = currentSettings.interpret.model;
     if (interpretPrompt) interpretPrompt.value = currentSettings.interpret.systemPrompt;
@@ -406,12 +426,14 @@ function loadSettingsToUI(elements) {
         interpretTemp.value = currentSettings.interpret.temperature;
         if (interpretTempValue) interpretTempValue.textContent = currentSettings.interpret.temperature;
     }
+    if (interpretMaxOutput) interpretMaxOutput.value = currentSettings.interpret.maxOutputLength || 65536;
 
     // 翻译设置
     const translateModel = document.getElementById('translate-model');
     const translatePrompt = document.getElementById('translate-system-prompt');
     const translateTemp = document.getElementById('translate-temperature');
     const translateTempValue = translateTemp?.parentElement.querySelector('.temperature-value');
+    const translateMaxOutput = document.getElementById('translate-max-output');
 
     if (translateModel) translateModel.value = currentSettings.translate.model;
     if (translatePrompt) translatePrompt.value = currentSettings.translate.systemPrompt;
@@ -419,6 +441,7 @@ function loadSettingsToUI(elements) {
         translateTemp.value = currentSettings.translate.temperature;
         if (translateTempValue) translateTempValue.textContent = currentSettings.translate.temperature;
     }
+    if (translateMaxOutput) translateMaxOutput.value = currentSettings.translate.maxOutputLength || 65536;
 }
 
 /**
@@ -439,21 +462,22 @@ function setupEventListeners(elements, translations) {
     const interpretModel = document.getElementById('interpret-model');
     const interpretPrompt = document.getElementById('interpret-system-prompt');
     const interpretTemp = document.getElementById('interpret-temperature');
-    
+    const interpretMaxOutput = document.getElementById('interpret-max-output');
+
     if (interpretModel) {
         interpretModel.addEventListener('change', () => {
             currentSettings.interpret.model = interpretModel.value;
             saveSettings();
         });
     }
-    
+
     if (interpretPrompt) {
         interpretPrompt.addEventListener('input', () => {
             currentSettings.interpret.systemPrompt = interpretPrompt.value;
             saveSettings();
         });
     }
-    
+
     if (interpretTemp) {
         interpretTemp.addEventListener('input', () => {
             const value = parseFloat(interpretTemp.value);
@@ -463,32 +487,49 @@ function setupEventListeners(elements, translations) {
             saveSettings();
         });
     }
+
+    if (interpretMaxOutput) {
+        interpretMaxOutput.addEventListener('input', () => {
+            const value = parseInt(interpretMaxOutput.value) || 65536;
+            currentSettings.interpret.maxOutputLength = value;
+            saveSettings();
+        });
+    }
     
     // 翻译设置变化
     const translateModel = document.getElementById('translate-model');
     const translatePrompt = document.getElementById('translate-system-prompt');
     const translateTemp = document.getElementById('translate-temperature');
-    
+    const translateMaxOutput = document.getElementById('translate-max-output');
+
     if (translateModel) {
         translateModel.addEventListener('change', () => {
             currentSettings.translate.model = translateModel.value;
             saveSettings();
         });
     }
-    
+
     if (translatePrompt) {
         translatePrompt.addEventListener('input', () => {
             currentSettings.translate.systemPrompt = translatePrompt.value;
             saveSettings();
         });
     }
-    
+
     if (translateTemp) {
         translateTemp.addEventListener('input', () => {
             const value = parseFloat(translateTemp.value);
             currentSettings.translate.temperature = value;
             const valueDisplay = translateTemp.parentElement.querySelector('.temperature-value');
             if (valueDisplay) valueDisplay.textContent = value;
+            saveSettings();
+        });
+    }
+
+    if (translateMaxOutput) {
+        translateMaxOutput.addEventListener('input', () => {
+            const value = parseInt(translateMaxOutput.value) || 65536;
+            currentSettings.translate.maxOutputLength = value;
             saveSettings();
         });
     }
@@ -716,7 +757,8 @@ export function addCustomOption(optionData) {
         systemPrompt: optionData.systemPrompt,
         temperature: optionData.temperature || 0.7,
         contextBefore: optionData.contextBefore !== undefined ? optionData.contextBefore : 500,
-        contextAfter: optionData.contextAfter !== undefined ? optionData.contextAfter : 500
+        contextAfter: optionData.contextAfter !== undefined ? optionData.contextAfter : 500,
+        maxOutputLength: optionData.maxOutputLength !== undefined ? optionData.maxOutputLength : 65536
     };
 
     currentSettings.customOptions.push(newOption);
@@ -746,7 +788,8 @@ export function updateCustomOption(optionId, optionData) {
         systemPrompt: optionData.systemPrompt,
         temperature: optionData.temperature,
         contextBefore: optionData.contextBefore,
-        contextAfter: optionData.contextAfter
+        contextAfter: optionData.contextAfter,
+        maxOutputLength: optionData.maxOutputLength
     };
 
     saveSettings();
@@ -877,6 +920,10 @@ function createCustomOptionElement(option, translations) {
                 <div class="custom-option-detail-label">${translations?.contextWindow || '上下文窗口'}:</div>
                 <div class="custom-option-detail-value">${option.contextBefore !== undefined ? option.contextBefore : 500}/${option.contextAfter !== undefined ? option.contextAfter : 500}</div>
             </div>
+            <div class="custom-option-detail">
+                <div class="custom-option-detail-label">${translations?.maxOutputLength || '最大输出长度'}:</div>
+                <div class="custom-option-detail-value">${option.maxOutputLength !== undefined ? option.maxOutputLength : 65536}</div>
+            </div>
             <div class="custom-option-detail" style="grid-column: 1 / -1;">
                 <div class="custom-option-detail-label">${translations?.systemPrompt || '系统提示词'}:</div>
                 <div class="custom-option-detail-value">${escapeHtml(option.systemPrompt.substring(0, 100))}${option.systemPrompt.length > 100 ? '...' : ''}</div>
@@ -992,6 +1039,7 @@ function updateDialogTranslations(dialog, option, translations) {
     if (labels[3]) labels[3].textContent = translations?.temperature || '温度';
     if (labels[4]) labels[4].textContent = translations?.contextBefore || '前置上下文字符数';
     if (labels[5]) labels[5].textContent = translations?.contextAfter || '后置上下文字符数';
+    if (labels[6]) labels[6].textContent = translations?.maxOutputLength || '最大输出长度';
 
     // 更新占位符
     const nameInput = dialog.querySelector('#custom-option-name');
@@ -1075,6 +1123,10 @@ async function showCustomOptionDialog(option, translations) {
                     <label>${currentTranslations?.contextAfter || '后置上下文字符数'}</label>
                     <input type="number" id="custom-option-context-after" min="0" max="2000" value="${option?.contextAfter !== undefined ? option.contextAfter : 500}" placeholder="500">
                 </div>
+                <div class="setting-group">
+                    <label>${currentTranslations?.maxOutputLength || '最大输出长度'}</label>
+                    <input type="number" id="custom-option-max-output" min="1" max="200000" value="${option?.maxOutputLength !== undefined ? option.maxOutputLength : 65536}" placeholder="65536">
+                </div>
             </div>
             <div class="custom-option-dialog-footer">
                 <button class="custom-option-dialog-cancel">${currentTranslations?.cancelEdit || '取消'}</button>
@@ -1137,6 +1189,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
             const temperatureInput = dialog.querySelector('#custom-option-temperature');
             const contextBeforeInput = dialog.querySelector('#custom-option-context-before');
             const contextAfterInput = dialog.querySelector('#custom-option-context-after');
+            const maxOutputInput = dialog.querySelector('#custom-option-max-output');
 
             const name = nameInput?.value.trim();
             const model = modelSelect?.value;
@@ -1144,6 +1197,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
             const temperature = parseFloat(temperatureInput?.value || 0.7);
             const contextBefore = contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 500;
             const contextAfter = contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 500;
+            const maxOutputLength = maxOutputInput?.value !== '' ? parseInt(maxOutputInput.value) : 65536;
 
             // 验证输入
             if (!name) {
@@ -1159,7 +1213,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
             }
 
             // 保存选项
-            const optionData = { name, model, systemPrompt, temperature, contextBefore, contextAfter };
+            const optionData = { name, model, systemPrompt, temperature, contextBefore, contextAfter, maxOutputLength };
 
             if (option) {
                 // 编辑现有选项
