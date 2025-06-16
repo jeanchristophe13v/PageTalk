@@ -34,6 +34,64 @@ let isProgrammaticResize = false; // 用于标记程序自动调整，避免被�
 let streamingStates = new Map(); // 存储每个窗口的流式状态 {windowId: {isStreaming: boolean, requestId: string, streamListener: function}}
 let abortControllers = new Map(); // 存储每个窗口的中断控制器 {windowId: AbortController}
 
+// 聊天历史记录管理
+let chatHistories = new Map(); // 存储每个聊天窗口的历史记录 {windowId: Array<{role: string, content: string}>}
+
+/**
+ * 获取聊天历史记录
+ */
+function getChatHistory(windowId) {
+    if (!chatHistories.has(windowId)) {
+        chatHistories.set(windowId, []);
+    }
+    return chatHistories.get(windowId);
+}
+
+/**
+ * 添加消息到聊天历史记录
+ */
+function addToChatHistory(windowId, role, content) {
+    const history = getChatHistory(windowId);
+    history.push({ role, content });
+
+    // 限制历史记录为最近10条消息（5轮对话）
+    if (history.length > 10) {
+        history.splice(0, history.length - 10);
+    }
+
+    console.log(`[TextSelectionHelper] Added ${role} message to history for window ${windowId}, total: ${history.length}`);
+}
+
+/**
+ * 清除聊天历史记录
+ */
+function clearChatHistory(windowId) {
+    chatHistories.set(windowId, []);
+    console.log(`[TextSelectionHelper] Cleared chat history for window ${windowId}`);
+}
+
+/**
+ * 构建包含历史记录的完整消息
+ */
+function buildMessageWithHistory(windowId, currentMessage) {
+    const history = getChatHistory(windowId);
+
+    if (history.length === 0) {
+        return currentMessage;
+    }
+
+    // 构建历史记录部分
+    let historyText = '\n\n{{history}}\n以下是此前的对话历史（最近10条消息）：\n';
+    history.forEach((msg, index) => {
+        const roleLabel = msg.role === 'user' ? '用户' : '助手';
+        historyText += `${roleLabel}：${msg.content}\n`;
+    });
+    historyText += '{{/history}}\n\n';
+
+    // 将历史记录插入到当前消息中
+    return currentMessage + historyText;
+}
+
 // 配置
 const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移
 const FUNCTION_WINDOW_DEFAULT_SIZE = {
@@ -1907,6 +1965,9 @@ async function sendChatMessage(windowElement) {
     // 添加用户消息到聊天区域
     addChatMessage(windowElement, message, 'user');
 
+    // 添加用户消息到历史记录
+    addToChatHistory(windowId, 'user', message);
+
     // 设置流式状态
     const requestId = 'chat-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
     streamingStates.set(windowId, { isStreaming: true, requestId: requestId, streamListener: null });
@@ -1915,15 +1976,18 @@ async function sendChatMessage(windowElement) {
     updateSendButtonToStopState(sendBtn, windowId);
 
     try {
-        // 构建优化的消息，支持空上下文
-        let fullMessage;
+        // 构建基础消息
+        let baseMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
             // 有有效上下文时包含上下文
-            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
+            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
         } else {
             // 无上下文或上下文无效时，告知AI上下文可能为空
-            fullMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+            baseMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
         }
+
+        // 构建包含历史记录的完整消息
+        const fullMessage = buildMessageWithHistory(windowId, baseMessage);
 
         // 重置滚动状态（新请求开始）
         functionWindowScrolledUp = false;
@@ -2048,6 +2112,9 @@ async function sendChatMessage(windowElement) {
             }
 
             if (isComplete) {
+                // 添加AI响应到历史记录
+                addToChatHistory(windowId, 'assistant', fullResponse);
+
                 // 设置复制按钮事件
                 setupChatMessageActions(aiMessageElement, fullResponse);
 
@@ -2111,6 +2178,11 @@ async function sendChatMessage(windowElement) {
 function clearChatContext(windowElement) {
     // 获取窗口ID
     const windowId = windowElement.dataset.windowId;
+
+    // 清除聊天历史记录
+    if (windowId) {
+        clearChatHistory(windowId);
+    }
 
     // 如果正在流式输出，先中断并删除消息
     if (windowId) {
@@ -2324,15 +2396,18 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const windowId = windowElement.dataset.windowId || Date.now().toString();
         windowElement.dataset.windowId = windowId;
 
-        // 构建优化的消息，支持空上下文
-        let fullMessage;
+        // 构建基础消息
+        let baseMessage;
         if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
             // 有有效上下文时包含上下文
-            fullMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
+            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
         } else {
             // 无上下文或上下文无效时，告知AI上下文可能为空
-            fullMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+            baseMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
         }
+
+        // 构建包含历史记录的完整消息
+        const fullMessage = buildMessageWithHistory(windowId, baseMessage);
 
         // 设置流式状态
         const requestId = 'regenerate-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
@@ -2462,6 +2537,16 @@ async function regenerateChatMessage(windowElement, userMessage) {
             }
 
             if (isComplete) {
+                // 添加AI响应到历史记录（重新生成时需要更新历史记录中的最后一条助手消息）
+                const history = getChatHistory(windowId);
+                if (history.length > 0 && history[history.length - 1].role === 'assistant') {
+                    // 更新最后一条助手消息
+                    history[history.length - 1].content = fullResponse;
+                } else {
+                    // 如果历史记录中没有助手消息，添加新的
+                    addToChatHistory(windowId, 'assistant', fullResponse);
+                }
+
                 // 设置复制按钮事件
                 setupChatMessageActions(aiMessageElement, fullResponse);
 
@@ -2528,6 +2613,9 @@ function deleteChatMessage(messageElement) {
     const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
     if (!messagesArea) return;
 
+    // 获取窗口ID
+    const windowId = windowElement.dataset.windowId;
+
     // 判断是用户消息还是助手消息
     const isUserMessage = messageElement.classList.contains('pagetalk-chat-message-user');
     const isAssistantMessage = messageElement.classList.contains('pagetalk-chat-message-assistant');
@@ -2536,10 +2624,21 @@ function deleteChatMessage(messageElement) {
         // 删除用户消息：需要删除该消息及其后的所有消息（包括对应的助手回复）
         const allMessages = Array.from(messagesArea.querySelectorAll('.pagetalk-chat-message'));
         const currentIndex = allMessages.indexOf(messageElement);
+        const deletedCount = allMessages.length - currentIndex;
 
         // 删除当前消息及其后的所有消息
         for (let i = currentIndex; i < allMessages.length; i++) {
             allMessages[i].remove();
+        }
+
+        // 从历史记录中删除对应的消息
+        if (windowId) {
+            const history = getChatHistory(windowId);
+            // 删除最后 deletedCount 条消息（因为UI中删除了这么多条）
+            if (history.length >= deletedCount) {
+                history.splice(-deletedCount, deletedCount);
+                console.log(`[TextSelectionHelper] Removed ${deletedCount} messages from history`);
+            }
         }
 
         // 引用区域始终保持显示，不需要恢复操作
@@ -2547,6 +2646,15 @@ function deleteChatMessage(messageElement) {
     } else if (isAssistantMessage) {
         // 删除助手消息：只删除这一条消息
         messageElement.remove();
+
+        // 从历史记录中删除最后一条助手消息
+        if (windowId) {
+            const history = getChatHistory(windowId);
+            if (history.length > 0 && history[history.length - 1].role === 'assistant') {
+                history.pop();
+                console.log('[TextSelectionHelper] Removed last assistant message from history');
+            }
+        }
 
         // 引用区域始终保持显示，不需要恢复操作
     }
@@ -2866,11 +2974,13 @@ function abortStreaming(windowId, keepMessages = true) {
         restoreSendButtonToNormalState(windowElement);
 
         if (!keepMessages) {
-            // 如果不保留消息，清除所有聊天消息
+            // 如果不保留消息，清除所有聊天消息和历史记录
             const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
             if (messagesArea) {
                 messagesArea.innerHTML = '';
             }
+            // 同时清除历史记录
+            clearChatHistory(windowId);
         } else {
             // 如果保留消息，移除正在输出的消息中的流式光标和思考动画
             const streamingCursors = windowElement.querySelectorAll('.pagetalk-streaming-cursor');
@@ -3564,7 +3674,11 @@ function showMermaidModal(svgContent) {
     };
 
     // 点击关闭按钮关闭
-    closeButton.addEventListener('click', closeModal);
+    closeButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation(); // 阻止事件冒泡，防止关闭对话窗口
+        closeModal();
+    });
 
     // 点击模态框背景关闭
     modal.addEventListener('click', (event) => {

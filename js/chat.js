@@ -498,7 +498,8 @@ export function abortStreaming(state, restoreSendButtonAndInputCallback, showToa
     if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {
         console.log("Aborting API request...");
         window.GeminiAPI.currentAbortController.abort();
-        if (showToastCallback) showToastCallback(_('streamingAborted', {}, currentTranslations), 'info');
+        // 移除streamingAborted提示，用户主动中断不需要提示
+        // if (showToastCallback) showToastCallback(_('streamingAborted', {}, currentTranslations), 'info');
         // Controller cleanup happens in api.js finally block
     } else {
         console.warn("No active AbortController found to abort.");
