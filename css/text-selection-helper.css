@@ -2358,3 +2358,157 @@ body.dark-mode .pagetalk-retry-btn:hover {
     background: rgba(255, 135, 135, 0.25);
 }
 
+/* ===== Mermaid 图表样式 ===== */
+
+/* Mermaid 容器样式 */
+.pagetalk-function-window .mermaid {
+    margin: 1em 0;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.pagetalk-function-window .mermaid:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagetalk-function-window .mermaid svg {
+    max-width: 100%;
+    height: auto;
+    background-color: var(--card-background);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mermaid 错误样式 */
+.pagetalk-function-window .mermaid-error {
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 1em 0;
+    color: #dc3545;
+    font-family: monospace;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Mermaid 模态框样式 */
+.pagetalk-mermaid-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2147483648; /* 确保在划词助手之上 */
+    padding: 30px;
+    box-sizing: border-box;
+    overflow: auto;
+}
+
+.pagetalk-mermaid-modal-content {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    max-width: 95%;
+    max-height: 90vh;
+}
+
+.pagetalk-mermaid-modal-content svg {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    width: auto;
+    background-color: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    cursor: grab;
+}
+
+.pagetalk-mermaid-modal-content svg:active {
+    cursor: grabbing;
+}
+
+/* Mermaid 模态框关闭按钮样式 */
+.pagetalk-mermaid-close-modal {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 2147483649; /* 确保关闭按钮在最上层 */
+    line-height: 1;
+    user-select: none;
+}
+
+.pagetalk-mermaid-close-modal:hover {
+    color: #4674ff;
+    text-decoration: none;
+}
+
+/* ===== KaTeX 数学公式样式 ===== */
+
+/* KaTeX 基础样式 */
+.pagetalk-function-window .katex {
+    font-size: 1.1em;
+    line-height: 1.2;
+}
+
+.pagetalk-function-window .katex-display {
+    margin: 1em 0;
+    text-align: center;
+}
+
+.pagetalk-function-window .katex-display > .katex {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+/* KaTeX 错误样式 */
+.pagetalk-function-window .katex-error {
+    color: #cc0000;
+    background-color: rgba(204, 0, 0, 0.1);
+    border: 1px solid rgba(204, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+/* 深色模式下的 Mermaid 和 KaTeX 样式 */
+body.dark-mode .pagetalk-function-window .mermaid svg {
+    background-color: var(--card-background);
+}
+
+body.dark-mode .pagetalk-mermaid-modal-content svg {
+    background-color: var(--card-background, #2d3748);
+    color: var(--text-color, #e2e8f0);
+}
+
+body.dark-mode .pagetalk-function-window .mermaid-error {
+    background-color: rgba(255, 135, 135, 0.15);
+    border-color: rgba(255, 135, 135, 0.3);
+    color: var(--error-color);
+}
+
+body.dark-mode .pagetalk-function-window .katex-error {
+    background-color: rgba(255, 135, 135, 0.15);
+    border-color: rgba(255, 135, 135, 0.3);
+    color: var(--error-color);
+}
+

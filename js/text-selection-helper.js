@@ -9,6 +9,9 @@ if (window.textSelectionHelperInitialized) {
 } else {
     window.textSelectionHelperInitialized = true;
 
+    // Mermaid初始化状态标志
+    window.textSelectionHelperMermaidInitialized = false;
+
 // 全局状态
 let isSelectionHelperActive = window.isSelectionHelperActive || false;
 let currentMiniIcon = null;
@@ -141,6 +144,45 @@ function initTextSelectionHelper() {
         console.log('[TextSelectionHelper] MarkdownRenderer is available');
     } else {
         console.warn('[TextSelectionHelper] MarkdownRenderer not available, will use fallback');
+    }
+
+    // 初始化Mermaid（智能延迟检查，避免不必要的警告）
+    if (!window.textSelectionHelperMermaidInitialized) {
+        let mermaidInitAttempts = 0;
+        const maxMermaidInitAttempts = 10; // 最多尝试10次
+
+        const tryInitMermaid = () => {
+            if (window.textSelectionHelperMermaidInitialized) {
+                return; // 已经初始化过了，避免重复
+            }
+
+            if (typeof mermaid !== 'undefined') {
+                try {
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: 'default',
+                        logLevel: 'fatal' // 只显示致命错误，减少日志噪音
+                    });
+                    window.textSelectionHelperMermaidInitialized = true;
+                    console.log('[TextSelectionHelper] Mermaid initialized successfully');
+                } catch (error) {
+                    console.error('[TextSelectionHelper] Mermaid initialization failed:', error);
+                    window.textSelectionHelperMermaidInitialized = true; // 标记为已尝试，避免重复
+                }
+            } else {
+                mermaidInitAttempts++;
+                if (mermaidInitAttempts < maxMermaidInitAttempts) {
+                    // 继续等待，不输出警告
+                    setTimeout(tryInitMermaid, 200);
+                } else {
+                    // 达到最大尝试次数后静默放弃，标记为已尝试
+                    window.textSelectionHelperMermaidInitialized = true;
+                }
+            }
+        };
+
+        // 开始尝试初始化
+        setTimeout(tryInitMermaid, 100);
     }
 
     // 监听文本选择事件
@@ -1660,6 +1702,9 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
 
                 responseContent.innerHTML = renderedContent;
 
+                // 渲染动态内容 (KaTeX 和 Mermaid)
+                renderDynamicContent(responseContent, !isComplete);
+
                 // 添加代码块复制按钮（模仿主面板逻辑）
                 const codeBlocks = responseContent.querySelectorAll('pre');
                 codeBlocks.forEach(addCopyButtonToCodeBlock);
@@ -1980,6 +2025,9 @@ async function sendChatMessage(windowElement) {
 
                 // 更新内容，但保留按钮容器
                 messageContent.innerHTML = renderedContent;
+
+                // 渲染动态内容 (KaTeX 和 Mermaid)
+                renderDynamicContent(messageContent, !isComplete);
 
                 // 重新添加按钮容器
                 if (actionsContainer) {
@@ -2394,6 +2442,9 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
                 // 更新内容，但保留按钮容器
                 messageContent.innerHTML = renderedContent;
+
+                // 渲染动态内容 (KaTeX 和 Mermaid)
+                renderDynamicContent(messageContent, !isComplete);
 
                 // 重新添加按钮容器
                 if (actionsContainer) {
@@ -3250,6 +3301,298 @@ function updateFunctionWindowLanguage(windowElement, newLanguage) {
     if (agentLabel) {
         agentLabel.textContent = _tr('agentLabel');
     }
+}
+
+/**
+ * 渲染动态内容 (KaTeX 和 Mermaid)
+ * @param {HTMLElement} element - 要渲染的容器元素
+ * @param {boolean} isStreaming - 是否正在流式输出中
+ */
+function renderDynamicContent(element, isStreaming = false) {
+    // --- 渲染 KaTeX ---
+    if (typeof window.renderMathInElement === 'function') {
+        try {
+            window.renderMathInElement(element, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\[", right: "\\]", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false}
+                ],
+                throwOnError: false // 不因单个错误停止渲染
+            });
+        } catch (error) {
+            console.error('[TextSelectionHelper] KaTeX rendering error:', error);
+        }
+    }
+
+    // --- 渲染 Mermaid ---
+    // 检查Mermaid库是否可用，静默跳过避免日志噪音
+    if (typeof mermaid === 'undefined') {
+        return;
+    }
+
+    // 如果Mermaid还未初始化，尝试初始化一次
+    if (!window.textSelectionHelperMermaidInitialized) {
+        try {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: 'default',
+                logLevel: 'fatal'
+            });
+            window.textSelectionHelperMermaidInitialized = true;
+        } catch (error) {
+            // 静默处理初始化失败
+            window.textSelectionHelperMermaidInitialized = true;
+            return;
+        }
+    }
+
+    const mermaidPreElements = element.querySelectorAll('pre.mermaid');
+    if (mermaidPreElements.length > 0) {
+        mermaidPreElements.forEach(async (preElement, index) => {
+            const definition = preElement.textContent || '';
+            if (!definition.trim()) {
+                return; // 静默跳过空定义
+            }
+
+            // 如果正在流式输出，检查Mermaid定义是否完整
+            if (isStreaming && !isMermaidDefinitionComplete(definition)) {
+                return; // 跳过不完整的定义，避免解析错误
+            }
+
+            const renderId = `mermaid-selection-${Date.now()}-${index}`;
+            const container = document.createElement('div');
+            container.className = 'mermaid';
+            container.id = `${renderId}-container`;
+            container.dataset.mermaidDefinition = definition;
+
+            if (preElement.parentNode) {
+                preElement.parentNode.replaceChild(container, preElement);
+            } else {
+                return; // 静默跳过
+            }
+
+            try {
+                const { svg } = await mermaid.render(renderId, definition);
+                container.innerHTML = svg;
+
+                // 添加点击事件监听器以显示放大预览
+                container.addEventListener('click', (event) => {
+                    const svgElement = container.querySelector('svg');
+                    if (svgElement) {
+                        event.stopPropagation();
+                        showMermaidModal(svgElement.outerHTML);
+                    }
+                });
+
+            } catch (error) {
+                // 只在非流式输出时显示错误，避免流式输出时的噪音
+                if (!isStreaming) {
+                    console.warn(`[TextSelectionHelper] Mermaid render failed for chart ${index + 1}:`, error.message);
+                }
+                container.innerHTML = `<div class="mermaid-error">Mermaid图表渲染失败</div>`;
+            }
+        });
+    }
+}
+
+/**
+ * 检查Mermaid定义是否完整
+ * @param {string} definition - Mermaid定义
+ * @returns {boolean} 是否完整
+ */
+function isMermaidDefinitionComplete(definition) {
+    const trimmed = definition.trim();
+
+    // 基本完整性检查
+    if (!trimmed) return false;
+
+    // 检查是否以不完整的箭头结尾（常见的流式输出不完整情况）
+    const incompletePatterns = [
+        /--+$/, // 以多个连字符结尾
+        /->$/, // 以箭头开始结尾
+        /-->$/, // 以完整箭头结尾但可能还有内容
+        /\|\s*$/, // 以管道符结尾
+        /\[\s*$/, // 以开括号结尾
+        /\{\s*$/, // 以开花括号结尾
+        /\(\s*$/, // 以开圆括号结尾
+    ];
+
+    return !incompletePatterns.some(pattern => pattern.test(trimmed));
+}
+
+// Mermaid模态框相关变量
+let currentPanzoomInstance = null;
+let mermaidWheelListener = null;
+
+/**
+ * 显示 Mermaid 图表放大预览模态框
+ * @param {string} svgContent - 要显示的 SVG 图表内容
+ */
+function showMermaidModal(svgContent) {
+    console.log('[TextSelectionHelper] showMermaidModal called. SVG content length:', svgContent?.length);
+
+    // 销毁之前的Panzoom实例
+    if (currentPanzoomInstance) {
+        currentPanzoomInstance.destroy();
+        currentPanzoomInstance = null;
+        console.log('[TextSelectionHelper] Previous Panzoom instance destroyed.');
+    }
+
+    // 创建模态框
+    const modal = document.createElement('div');
+    modal.className = 'pagetalk-mermaid-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2147483648;
+        padding: 30px;
+        box-sizing: border-box;
+        overflow: auto;
+    `;
+
+    const content = document.createElement('div');
+    content.className = 'pagetalk-mermaid-modal-content';
+    content.style.cssText = `
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        max-width: 95%;
+        max-height: 90vh;
+    `;
+    content.innerHTML = svgContent;
+
+    // 添加关闭按钮
+    const closeButton = document.createElement('span');
+    closeButton.className = 'pagetalk-mermaid-close-modal';
+    closeButton.innerHTML = '&times;';
+    closeButton.style.cssText = `
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 2147483649;
+        line-height: 1;
+        user-select: none;
+    `;
+
+    modal.appendChild(content);
+    modal.appendChild(closeButton);
+    document.body.appendChild(modal);
+
+    // 初始化Panzoom
+    const svgElement = content.querySelector('svg');
+    if (svgElement && typeof Panzoom !== 'undefined') {
+        try {
+            // 设置SVG样式
+            svgElement.style.cssText = `
+                max-width: 100%;
+                max-height: 100%;
+                height: auto;
+                width: auto;
+                background-color: white;
+                border-radius: 8px;
+                padding: 16px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                cursor: grab;
+            `;
+
+            currentPanzoomInstance = Panzoom(svgElement, {
+                maxZoom: 5,
+                minZoom: 0.5,
+                bounds: true,
+                boundsPadding: 0.1
+            });
+            console.log('[TextSelectionHelper] Panzoom initialized on Mermaid SVG.');
+
+            // 添加滚轮缩放支持
+            mermaidWheelListener = (event) => {
+                if (currentPanzoomInstance) {
+                    event.preventDefault();
+                    currentPanzoomInstance.zoomWithWheel(event);
+                }
+            };
+            content.addEventListener('wheel', mermaidWheelListener, { passive: false });
+            console.log('[TextSelectionHelper] Wheel listener added to mermaid modal content.');
+
+        } catch (error) {
+            console.error('[TextSelectionHelper] Failed to initialize Panzoom:', error);
+            currentPanzoomInstance = null;
+        }
+    } else if (!svgElement) {
+        console.warn('[TextSelectionHelper] Could not find SVG element in Mermaid modal to initialize Panzoom.');
+    } else if (typeof Panzoom === 'undefined') {
+        console.warn('[TextSelectionHelper] Panzoom library not loaded, cannot initialize zoom/pan for Mermaid.');
+    }
+
+    // 关闭模态框的函数
+    const closeModal = () => {
+        // 移除滚轮监听器
+        if (mermaidWheelListener && content) {
+            content.removeEventListener('wheel', mermaidWheelListener);
+            mermaidWheelListener = null;
+            console.log('[TextSelectionHelper] Wheel listener removed from mermaid modal content.');
+        }
+
+        // 销毁Panzoom实例
+        if (currentPanzoomInstance) {
+            currentPanzoomInstance.destroy();
+            currentPanzoomInstance = null;
+            console.log('[TextSelectionHelper] Panzoom instance destroyed.');
+        }
+
+        // 移除模态框
+        if (modal.parentNode) {
+            document.body.removeChild(modal);
+        }
+        document.removeEventListener('keydown', handleEscape);
+    };
+
+    // 点击关闭按钮关闭
+    closeButton.addEventListener('click', closeModal);
+
+    // 点击模态框背景关闭
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    // 点击内容区域阻止冒泡
+    content.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    // ESC键关闭
+    const handleEscape = (event) => {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // 关闭按钮悬停效果
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.color = '#4674ff';
+    });
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.color = '#f1f1f1';
+    });
 }
 
 // 初始化划词助手

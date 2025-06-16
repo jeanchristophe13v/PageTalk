@@ -185,8 +185,8 @@ const translations = {
     'customOptionDeleted': '自定义选项已删除',
     'noCustomOptions': '暂无自定义选项',
     'contextWindow': '上下文窗口',
-    'contextBefore': '前置上下文字符数',
-    'contextAfter': '后置上下文字符数',
+    'contextBefore': '前置上下文token数',
+    'contextAfter': '后置上下文token数',
 
     // --- 划词助手默认提示词 ---
     'defaultInterpretPrompt': '解读一下',
