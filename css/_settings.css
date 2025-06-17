@@ -161,19 +161,25 @@
     flex: 1; 
     max-width: 150px; 
 }
-.export-controls .action-button { /* Specific styling for export button */
-    background-color: var(--primary-color); 
+.export-controls .action-button { /* 导出按钮使用测试按钮的形状样式 */
+    background-color: var(--primary-color);
     color: white;
-    padding: var(--spacing-xs) var(--spacing-md);
+    border: none;
     border-radius: var(--radius-md);
-    width: auto; 
-    height: auto;
-    font-size: clamp(12px, 3vw, 13px);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: clamp(11px, 2.5vw, 12px);
+    cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    min-width: 60px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .export-controls .action-button:hover {
     background-color: var(--secondary-color);
-    color: white; 
+    color: white;
 }
 
 
@@ -204,13 +210,55 @@
     transform: translateY(0);
 }
 
-/* 代理地址输入框特定样式 */
-#proxy-address-input {
-    width: 30% !important;
+/* 代理地址输入容器样式 */
+.proxy-input-container {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.proxy-input-container #proxy-address-input {
+    flex: 0.5; 
+    width: 50% !important;
+}
+
+.test-proxy-btn {
+    /* 测试按钮使用导出按钮的颜色和悬浮样式 */
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: clamp(11px, 2.5vw, 12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    min-width: 60px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.test-proxy-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.test-proxy-btn:active {
+    transform: scale(0.98);
+}
+
+.test-proxy-btn:disabled {
+    background-color: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* 代理地址提示文本样式 */
-#proxy-address-input + .hint {
+.proxy-input-container + .hint {
     padding-left: var(--spacing-xs); /* 减少左边距，让文本往左一点 */
     font-style: italic; /* 变成斜体 */
 }
@@ -742,6 +790,21 @@
     color: var(--primary-color);
     border: 1px solid rgba(76, 110, 245, 0.3);
     bottom: var(--toast-bottom-base); /* info 提示也使用基础位置 */
+}
+.toast.warning { /* For warning toasts like proxy auto-cleared */
+    background-color: rgba(230, 119, 0, 0.1);
+    color: var(--warning-color);
+    border: 1px solid rgba(230, 119, 0, 0.3);
+    bottom: var(--toast-bottom-base);
+}
+
+/* 代理自动清除通知的特殊样式 */
+.toast.toast-proxy-cleared {
+    max-width: 400px; /* 允许更宽的显示 */
+    white-space: normal; /* 允许换行 */
+    text-align: center;
+    line-height: 1.4;
+    padding: var(--spacing-sm) var(--spacing-lg);
 }
 
 

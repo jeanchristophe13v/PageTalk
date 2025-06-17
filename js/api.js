@@ -5,6 +5,63 @@
 const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
 /**
+ * 代理请求函数 - 改进的实现
+ */
+async function makeProxyRequest(url, options = {}, proxyAddress = '') {
+    // 如果没有配置代理，直接使用fetch
+    if (!proxyAddress || proxyAddress.trim() === '') {
+        console.log('[API] No proxy configured, using direct fetch');
+        return fetch(url, options);
+    }
+
+    try {
+        // 解析代理地址
+        const proxyUrl = new URL(proxyAddress.trim());
+        const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
+
+        console.log('[API] Using proxy:', proxyAddress, 'scheme:', proxyScheme);
+
+        // 对于HTTP/HTTPS代理，使用CONNECT方法或直接代理
+        if (proxyScheme === 'http' || proxyScheme === 'https') {
+            // 在浏览器扩展环境中，我们依赖chrome.proxy.settings来处理代理
+            // 这里直接使用fetch，让Chrome的代理设置生效
+            console.log('[API] Using HTTP proxy via Chrome proxy settings');
+            return fetch(url, options);
+        }
+        // 对于SOCKS代理，同样依赖Chrome的代理设置
+        else if (proxyScheme === 'socks4' || proxyScheme === 'socks5') {
+            console.log('[API] Using SOCKS proxy via Chrome proxy settings');
+            return fetch(url, options);
+        }
+        else {
+            console.warn('[API] Unsupported proxy scheme:', proxyScheme, 'falling back to direct fetch');
+            return fetch(url, options);
+        }
+    } catch (error) {
+        console.error('[API] Error parsing proxy URL:', error);
+        // 如果代理配置有问题，回退到直接请求
+        console.log('[API] Falling back to direct fetch due to proxy error');
+        return fetch(url, options);
+    }
+}
+
+/**
+ * 获取代理设置并发起请求
+ */
+async function makeApiRequest(url, options = {}) {
+    try {
+        // 获取代理设置
+        const result = await chrome.storage.sync.get(['proxyAddress']);
+        const proxyAddress = result.proxyAddress;
+
+        return await makeProxyRequest(url, options, proxyAddress);
+    } catch (error) {
+        console.error('[API] Error in makeApiRequest:', error);
+        throw error;
+    }
+}
+
+/**
  * Internal helper to test API key and model validity.
  * @param {string} apiKey - The API key to test.
  * @param {string} model - The model to test against. Can be a "logical" model name.
@@ -21,7 +78,7 @@ async function _testAndVerifyApiKey(apiKey, model) {
         const requestBody = {
             contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
         };
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${apiKey}`, {
+        const response = await makeApiRequest(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -274,7 +331,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 
         const endpoint = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`; // Use actual apiModelName
 
-        const response = await fetch(endpoint, {
+        const response = await makeApiRequest(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),

@@ -191,11 +191,12 @@ const translations = {
 
     // --- 代理设置相关翻译 ---
     'proxyAddressLabel': '代理地址：',
-    'proxyAddressPlaceholder': '例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080',
+    'proxyAddressPlaceholder': 'http://127.0.0.1:7890 或 socks5://127.0.0.1:1080',
     'proxyAddressHint': '支持 HTTP 和 SOCKS5 代理，留空则禁用代理。',
     'proxySetSuccess': '代理设置已应用',
     'proxySetError': '代理设置失败：{error}',
     'proxyCleared': '代理设置已清除',
+    'testProxy': '测试',
     'proxyInvalidUrl': '代理地址格式无效，请检查格式',
 
     // --- 划词助手默认提示词 ---
@@ -410,13 +411,14 @@ const translations = {
     'maxOutputLength': 'Max Output Length',
 
     // --- Proxy Settings Related Translations ---
-    'proxyAddressLabel': 'Proxy Address:',
-    'proxyAddressPlaceholder': 'e.g., http://127.0.0.1:7890 or socks5://127.0.0.1:1080',
+    'proxyAddressLabel': 'Proxy Url:',
+    'proxyAddressPlaceholder': 'http://127.0.0.1:7890 or socks5://127.0.0.1:1080',
     'proxyAddressHint': 'Supports HTTP and SOCKS5 proxies, leave empty to disable.',
     'proxySetSuccess': 'Proxy settings applied',
     'proxySetError': 'Failed to set proxy: {error}',
     'proxyCleared': 'Proxy settings cleared',
-    'proxyInvalidUrl': 'Invalid proxy address format, please check the format',
+    'testProxy': 'Test',
+    'proxyInvalidUrl': 'Invalid proxy url format, please check the format',
 
     // --- Text Selection Helper Default Prompts ---
     'defaultInterpretPrompt': 'Interpret this',

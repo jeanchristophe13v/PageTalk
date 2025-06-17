@@ -24,7 +24,7 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection, handleProxyAddressChange } from './settings.js';
+import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection, handleProxyAddressChange, handleProxyTest } from './settings.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
@@ -137,6 +137,7 @@ const elements = {
     // Settings - General
     languageSelect: document.getElementById('language-select'),
     proxyAddressInput: document.getElementById('proxy-address-input'),
+    testProxyBtn: document.getElementById('test-proxy-btn'),
     themeToggleBtnSettings: document.getElementById('theme-toggle-btn'), // Draggable button
     moonIconSettings: document.getElementById('moon-icon'),
     sunIconSettings: document.getElementById('sun-icon'),
@@ -376,6 +377,11 @@ function setupEventListeners() {
                 elements.proxyAddressInput.blur(); // Trigger blur event to save
             }
         });
+    }
+
+    // Proxy Test Button
+    if (elements.testProxyBtn) {
+        elements.testProxyBtn.addEventListener('click', () => handleProxyTest(state, elements, showToastUI, currentTranslations));
     }
 
     // Agent Actions
@@ -846,6 +852,10 @@ function handleContentScriptMessages(event) {
             console.log(`[main.js] Extension reloaded - reinitializing`);
             handleExtensionReloadFromContent();
             break;
+        case 'proxyAutoCleared':
+            console.log(`[main.js] Proxy auto-cleared notification:`, message.failedProxy);
+            handleProxyAutoClearedFromContent(message.failedProxy);
+            break;
     }
 }
 
@@ -1092,4 +1102,29 @@ function removeSelectedTabFromMain(tabId) {
 // 新增：用于更新已选标签栏UI的回调函数
 function updateSelectedTabsBarFromMain() {
     updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
+}
+
+
+
+/**
+ * 处理代理自动清除通知
+ */
+function handleProxyAutoClearedFromContent(failedProxy) {
+    console.log('[main.js] Handling proxy auto-cleared notification for:', failedProxy);
+
+    // 更新UI中的代理地址输入框
+    if (elements.proxyAddressInput) {
+        elements.proxyAddressInput.value = '';
+    }
+
+    // 更新状态
+    state.proxyAddress = '';
+
+    // 显示通知给用户
+    const message = `代理服务器 ${failedProxy} 连接失败，已自动清除代理设置以恢复网络连接。`;
+    if (showToastUI) {
+        showToastUI(message, 'warning', 'toast-proxy-cleared');
+    }
+
+    console.log('[main.js] Proxy settings cleared due to connection failure');
 }

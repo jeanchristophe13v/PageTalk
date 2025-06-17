@@ -179,6 +179,43 @@ export function handleLanguageChange(state, elements, loadAndApplyTranslationsCa
 }
 
 /**
+ * 验证代理地址格式
+ */
+function validateProxyAddress(proxyAddress) {
+    if (!proxyAddress || proxyAddress.trim() === '') {
+        return { valid: true, message: '' }; // 空地址是有效的（表示不使用代理）
+    }
+
+    try {
+        const url = new URL(proxyAddress.trim());
+        const scheme = url.protocol.slice(0, -1);
+
+        // 检查支持的协议
+        const supportedSchemes = ['http', 'https', 'socks4', 'socks5'];
+        if (!supportedSchemes.includes(scheme)) {
+            return {
+                valid: false,
+                message: `不支持的代理协议: ${scheme}。支持的协议: ${supportedSchemes.join(', ')}`
+            };
+        }
+
+        // 检查主机名
+        if (!url.hostname) {
+            return { valid: false, message: '代理地址缺少主机名' };
+        }
+
+        // 检查端口（如果提供）
+        if (url.port && (isNaN(url.port) || url.port < 1 || url.port > 65535)) {
+            return { valid: false, message: '代理端口必须在1-65535范围内' };
+        }
+
+        return { valid: true, message: '' };
+    } catch (error) {
+        return { valid: false, message: '代理地址格式无效' };
+    }
+}
+
+/**
  * Handles proxy address changes
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
@@ -188,13 +225,20 @@ export function handleLanguageChange(state, elements, loadAndApplyTranslationsCa
 export function handleProxyAddressChange(state, elements, showToastCallback, currentTranslations) {
     const proxyAddress = elements.proxyAddressInput.value.trim();
 
+    // 验证代理地址
+    const validation = validateProxyAddress(proxyAddress);
+    if (!validation.valid) {
+        showToastCallback(validation.message, 'error');
+        return;
+    }
+
     // Update state
     state.proxyAddress = proxyAddress;
 
     // Save to storage
     chrome.storage.sync.set({ proxyAddress: proxyAddress }, () => {
         if (chrome.runtime.lastError) {
-            console.error("Error saving proxy address:", chrome.runtime.lastError);
+            console.error("Error saving proxy url:", chrome.runtime.lastError);
             showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
         } else {
             console.log(`Proxy address saved: ${proxyAddress || '(empty)'}`);
@@ -203,6 +247,58 @@ export function handleProxyAddressChange(state, elements, showToastCallback, cur
             } else {
                 showToastCallback(_('proxyCleared', {}, currentTranslations), 'success');
             }
+        }
+    });
+}
+
+/**
+ * 测试代理连接
+ * @param {object} state - Global state reference
+ * @param {object} elements - DOM elements reference
+ * @param {function} showToastCallback - Callback for showing toast messages
+ * @param {object} currentTranslations - Current translations object
+ */
+export function handleProxyTest(state, elements, showToastCallback, currentTranslations) {
+    const proxyAddress = elements.proxyAddressInput.value.trim();
+
+    // 验证代理地址
+    const validation = validateProxyAddress(proxyAddress);
+    if (!validation.valid) {
+        showToastCallback(validation.message, 'error');
+        return;
+    }
+
+    if (!proxyAddress) {
+        showToastCallback('请先输入代理地址', 'error');
+        return;
+    }
+
+    // 禁用测试按钮并显示加载状态
+    const testBtn = elements.testProxyBtn;
+    const originalText = testBtn.textContent;
+    testBtn.disabled = true;
+    testBtn.textContent = '测试中...';
+
+    // 发送测试请求到background.js
+    chrome.runtime.sendMessage({
+        action: 'testProxy',
+        proxyAddress: proxyAddress
+    }, (response) => {
+        // 恢复按钮状态
+        testBtn.disabled = false;
+        testBtn.textContent = originalText;
+
+        if (chrome.runtime.lastError) {
+            console.error('Error testing proxy:', chrome.runtime.lastError);
+            showToastCallback('代理测试失败: ' + chrome.runtime.lastError.message, 'error');
+            return;
+        }
+
+        if (response && response.success) {
+            showToastCallback('代理连接成功！', 'success');
+        } else {
+            const errorMsg = response?.error || '代理连接失败';
+            showToastCallback('代理测试失败: ' + errorMsg, 'error');
         }
     });
 }

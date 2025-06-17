@@ -18,6 +18,9 @@ chrome.runtime.onInstalled.addListener(() => {
 
     // 初始化代理设置
     updateProxySettings();
+
+    // 启动代理健康检查
+    startProxyHealthCheck();
 });
 
 // 处理右键菜单点击
@@ -158,6 +161,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         handleGenerateContentRequest(message.data, sendResponse, sender.tab?.id);
         return true; // 异步响应
     }
+    // 处理来自content script的代理请求
+    else if (message.action === "fetchWithProxy") {
+        handleFetchWithProxyRequest(message.url, message.options, sendResponse);
+        return true; // 异步响应
+    }
+    // 处理代理测试请求
+    else if (message.action === "testProxy") {
+        handleProxyTestRequest(message.proxyAddress, sendResponse);
+        return true; // 异步响应
+    }
     // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
     // 但如果整个 onMessage 可能处理异步操作，最好总是返回 true
     return true;
@@ -168,9 +181,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function handleGenerateContentRequest(requestData, sendResponse, senderTabId) {
     try {
-        // 从存储中获取 API Key
-        const result = await chrome.storage.sync.get(['apiKey']);
+        // 从存储中获取 API Key 和代理设置
+        const result = await chrome.storage.sync.get(['apiKey', 'proxyAddress']);
         const apiKey = result.apiKey;
+        const proxyAddress = result.proxyAddress;
 
         if (!apiKey) {
             sendResponse({ success: false, error: 'API Key not configured' });
@@ -189,12 +203,15 @@ async function handleGenerateContentRequest(requestData, sendResponse, senderTab
             generationConfig: requestData.generationConfig
         };
 
-        // 调用 Gemini API (流式输出)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`, {
+        // 构建API URL
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
+
+        // 调用 Gemini API (流式输出) - 使用代理请求函数
+        const response = await makeProxyRequest(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
-        });
+        }, proxyAddress);
 
         if (response.ok) {
             const reader = response.body.getReader();
@@ -328,6 +345,8 @@ chrome.runtime.onStartup.addListener(() => {
     console.log('[Background] Extension startup - broadcasting to all tabs');
     // 初始化代理设置
     updateProxySettings();
+    // 启动代理健康检查
+    startProxyHealthCheck();
     setTimeout(broadcastExtensionReload, 1000);
 });
 
@@ -438,6 +457,8 @@ async function updateProxySettings() {
             console.log('[Background] Clearing proxy settings');
             await chrome.proxy.settings.clear({});
             console.log('[Background] Proxy settings cleared');
+            // 停止健康检查
+            stopProxyHealthCheck();
             return;
         }
 
@@ -478,6 +499,9 @@ async function updateProxySettings() {
         });
         console.log('[Background] Proxy settings applied successfully');
 
+        // 启动健康检查
+        startProxyHealthCheck();
+
     } catch (error) {
         console.error('[Background] Error updating proxy settings:', error);
     }
@@ -498,4 +522,327 @@ function getDefaultPort(protocol) {
         default:
             return 8080;
     }
+}
+
+/**
+ * 代理请求函数 - 改进的实现
+ */
+async function makeProxyRequest(url, options = {}, proxyAddress = '') {
+    // 如果没有配置代理，直接使用fetch
+    if (!proxyAddress || proxyAddress.trim() === '') {
+        console.log('[Background] No proxy configured, using direct fetch');
+        return fetch(url, options);
+    }
+
+    try {
+        // 解析代理地址
+        const proxyUrl = new URL(proxyAddress.trim());
+        const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
+
+        console.log('[Background] Using proxy:', proxyAddress, 'scheme:', proxyScheme);
+
+        // 对于HTTP/HTTPS代理，使用CONNECT方法或直接代理
+        if (proxyScheme === 'http' || proxyScheme === 'https') {
+            // 在浏览器扩展环境中，我们依赖chrome.proxy.settings来处理代理
+            // 这里直接使用fetch，让Chrome的代理设置生效
+            console.log('[Background] Using HTTP proxy via Chrome proxy settings');
+            return fetch(url, options);
+        }
+        // 对于SOCKS代理，同样依赖Chrome的代理设置
+        else if (proxyScheme === 'socks4' || proxyScheme === 'socks5') {
+            console.log('[Background] Using SOCKS proxy via Chrome proxy settings');
+            return fetch(url, options);
+        }
+        else {
+            console.warn('[Background] Unsupported proxy scheme:', proxyScheme, 'falling back to direct fetch');
+            return fetch(url, options);
+        }
+    } catch (error) {
+        console.error('[Background] Error parsing proxy URL:', error);
+        // 如果代理配置有问题，回退到直接请求
+        console.log('[Background] Falling back to direct fetch due to proxy error');
+        return fetch(url, options);
+    }
+}
+
+/**
+ * 通用的API请求函数，支持代理
+ */
+async function makeApiRequest(url, options = {}) {
+    try {
+        // 获取代理设置
+        const result = await chrome.storage.sync.get(['proxyAddress']);
+        const proxyAddress = result.proxyAddress;
+
+        return await makeProxyRequest(url, options, proxyAddress);
+    } catch (error) {
+        console.error('[Background] Error in makeApiRequest:', error);
+        throw error;
+    }
+}
+
+/**
+ * 处理来自content script的代理请求
+ */
+async function handleFetchWithProxyRequest(url, options = {}, sendResponse) {
+    try {
+        // 获取代理设置
+        const result = await chrome.storage.sync.get(['proxyAddress']);
+        const proxyAddress = result.proxyAddress;
+
+        console.log('[Background] Handling fetch with proxy request for:', url);
+
+        // 使用代理请求
+        const response = await makeProxyRequest(url, options, proxyAddress);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
+        }
+
+        // 将响应转换为base64（用于传输二进制数据）
+        const arrayBuffer = await response.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const binaryString = String.fromCharCode.apply(null, uint8Array);
+        const base64Data = btoa(binaryString);
+
+        sendResponse({
+            success: true,
+            data: base64Data,
+            status: response.status,
+            statusText: response.statusText
+        });
+
+    } catch (error) {
+        console.error('[Background] Error in handleFetchWithProxyRequest:', error);
+        sendResponse({
+            success: false,
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 处理代理测试请求
+ */
+async function handleProxyTestRequest(proxyAddress, sendResponse) {
+    try {
+        console.log('[Background] Testing proxy:', proxyAddress);
+
+        // 使用一个简单的测试URL
+        const testUrl = 'https://www.google.com/generate_204';
+
+        // 临时设置代理进行测试
+        let originalProxyConfig = null;
+
+        try {
+            // 获取当前代理设置
+            const currentSettings = await chrome.proxy.settings.get({});
+            originalProxyConfig = currentSettings.value;
+
+            // 解析并设置测试代理
+            const proxyUrl = new URL(proxyAddress.trim());
+            const proxyScheme = proxyUrl.protocol.slice(0, -1);
+
+            const testProxyConfig = {
+                mode: "fixed_servers",
+                rules: {
+                    singleProxy: {
+                        scheme: proxyScheme,
+                        host: proxyUrl.hostname,
+                        port: parseInt(proxyUrl.port) || getDefaultPort(proxyUrl.protocol)
+                    },
+                    bypassList: ["<local>"]
+                }
+            };
+
+            // 应用测试代理设置
+            await chrome.proxy.settings.set({
+                value: testProxyConfig,
+                scope: 'regular'
+            });
+
+            console.log('[Background] Applied test proxy config:', testProxyConfig);
+
+            // 等待一下让代理设置生效
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // 进行测试请求
+            const response = await fetch(testUrl, {
+                method: 'GET',
+                signal: AbortSignal.timeout(10000) // 10秒超时
+            });
+
+            if (response.ok) {
+                console.log('[Background] Proxy test successful');
+                sendResponse({
+                    success: true,
+                    message: 'Proxy connection successful'
+                });
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+        } finally {
+            // 恢复原始代理设置
+            try {
+                if (originalProxyConfig) {
+                    await chrome.proxy.settings.set({
+                        value: originalProxyConfig,
+                        scope: 'regular'
+                    });
+                } else {
+                    await chrome.proxy.settings.clear({});
+                }
+                console.log('[Background] Restored original proxy settings');
+            } catch (restoreError) {
+                console.error('[Background] Error restoring proxy settings:', restoreError);
+            }
+        }
+
+    } catch (error) {
+        console.error('[Background] Proxy test failed:', error);
+        sendResponse({
+            success: false,
+            error: error.message || 'Proxy test failed'
+        });
+    }
+}
+
+// 代理健康检查相关变量
+let proxyHealthCheckInterval = null;
+let consecutiveFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 2; // 连续失败2次后清除代理
+const HEALTH_CHECK_INTERVAL = 5000; // 5秒检查一次
+const HEALTH_CHECK_TIMEOUT = 5000; // 5秒超时
+
+/**
+ * 启动代理健康检查
+ */
+function startProxyHealthCheck() {
+    // 清除现有的检查
+    if (proxyHealthCheckInterval) {
+        clearInterval(proxyHealthCheckInterval);
+    }
+
+    console.log('[Background] Starting proxy health check');
+
+    // 立即执行一次检查
+    checkProxyHealth();
+
+    // 设置定期检查
+    proxyHealthCheckInterval = setInterval(checkProxyHealth, HEALTH_CHECK_INTERVAL);
+}
+
+/**
+ * 停止代理健康检查
+ */
+function stopProxyHealthCheck() {
+    if (proxyHealthCheckInterval) {
+        clearInterval(proxyHealthCheckInterval);
+        proxyHealthCheckInterval = null;
+        consecutiveFailures = 0;
+        console.log('[Background] Stopped proxy health check');
+    }
+}
+
+/**
+ * 检查代理健康状态
+ */
+async function checkProxyHealth() {
+    try {
+        // 获取当前代理设置
+        const result = await chrome.storage.sync.get(['proxyAddress']);
+        const proxyAddress = result.proxyAddress;
+
+        // 如果没有设置代理，停止健康检查
+        if (!proxyAddress || proxyAddress.trim() === '') {
+            stopProxyHealthCheck();
+            return;
+        }
+
+        console.log('[Background] Checking proxy health for:', proxyAddress);
+
+        // 使用一个轻量级的测试URL
+        const testUrl = 'https://www.google.com/generate_204';
+
+        try {
+            // 设置较短的超时时间进行健康检查
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
+
+            const response = await fetch(testUrl, {
+                method: 'HEAD', // 使用HEAD请求减少数据传输
+                signal: controller.signal,
+                cache: 'no-cache'
+            });
+
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                // 代理工作正常，重置失败计数
+                if (consecutiveFailures > 0) {
+                    console.log('[Background] Proxy recovered, resetting failure count');
+                    consecutiveFailures = 0;
+                }
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+        } catch (fetchError) {
+            consecutiveFailures++;
+            console.warn(`[Background] Proxy health check failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`, fetchError.message);
+
+            // 如果连续失败次数达到阈值，自动清除代理
+            if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                console.error('[Background] Proxy appears to be dead after 2 consecutive failures, automatically clearing proxy settings');
+                await clearProxyDueToFailure(proxyAddress);
+            }
+        }
+
+    } catch (error) {
+        console.error('[Background] Error during proxy health check:', error);
+    }
+}
+
+/**
+ * 由于代理失败而清除代理设置
+ */
+async function clearProxyDueToFailure(failedProxyAddress) {
+    try {
+        // 清除Chrome代理设置
+        await chrome.proxy.settings.clear({});
+        console.log('[Background] Cleared Chrome proxy settings due to failure');
+
+        // 清除存储中的代理设置
+        await chrome.storage.sync.remove('proxyAddress');
+        console.log('[Background] Cleared stored proxy address due to failure');
+
+        // 停止健康检查
+        stopProxyHealthCheck();
+
+        // 通知所有标签页代理已被自动清除
+        notifyProxyAutoCleared(failedProxyAddress);
+
+    } catch (error) {
+        console.error('[Background] Error clearing proxy due to failure:', error);
+    }
+}
+
+/**
+ * 通知用户代理已被自动清除
+ */
+function notifyProxyAutoCleared(failedProxyAddress) {
+    // 向所有标签页发送通知
+    chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+            if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
+                chrome.tabs.sendMessage(tab.id, {
+                    action: 'proxyAutoCleared',
+                    failedProxy: failedProxyAddress
+                }).catch(() => {
+                    // 忽略发送失败的标签页
+                });
+            }
+        });
+    });
 }

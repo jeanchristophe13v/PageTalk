@@ -352,6 +352,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 不需要sendResponse，因为这是单向消息
     return false; // 不需要异步响应
   }
+  // 处理代理自动清除通知
+  else if (message.action === "proxyAutoCleared") {
+    console.log('[Content] Proxy auto-cleared notification received:', message.failedProxy);
+    // 通知主面板代理已被自动清除
+    const iframe = document.getElementById('pagetalk-panel-iframe');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        action: 'proxyAutoCleared',
+        failedProxy: message.failedProxy
+      }, '*');
+    }
+    return false; // 不需要异步响应
+  }
   // 实时同步机制 - 处理来自background的广播消息
   else if (message.action === 'storageChanged') {
     // 通用存储变化处理
@@ -407,12 +420,34 @@ async function extractPageContent() {
         throw new Error('PDF.js library failed to initialize.');
       }
 
-      // 使用 fetch 获取 PDF 文件的 ArrayBuffer
-      const response = await fetch(currentUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch PDF (${response.status}): ${response.statusText}`);
+      // 通过background.js获取PDF文件（支持代理）
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({
+          action: 'fetchWithProxy',
+          url: currentUrl,
+          options: { method: 'GET' }
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else if (response.success) {
+            resolve(response);
+          } else {
+            reject(new Error(response.error || 'Failed to fetch PDF'));
+          }
+        });
+      });
+
+      if (!response.success) {
+        throw new Error(`Failed to fetch PDF: ${response.error}`);
       }
-      const pdfData = await response.arrayBuffer();
+      // 将base64数据转换为ArrayBuffer
+      const base64Data = response.data;
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const pdfData = bytes.buffer;
       // 修改：使用 pdfjs.getDocument
       const pdf = await pdfjs.getDocument({ data: pdfData }).promise;
 

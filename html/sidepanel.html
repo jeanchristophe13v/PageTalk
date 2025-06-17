@@ -162,7 +162,10 @@
                         </div>
                         <div class="setting-group">
                             <label for="proxy-address-input" data-i18n="proxyAddressLabel">代理地址：</label>
-                            <input type="text" id="proxy-address-input" data-i18n-placeholder="proxyAddressPlaceholder" placeholder="例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
+                            <div class="proxy-input-container">
+                                <input type="text" id="proxy-address-input" data-i18n-placeholder="proxyAddressPlaceholder" placeholder="例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
+                                <button id="test-proxy-btn" class="action-button test-proxy-btn" data-i18n="testProxy">测试代理</button>
+                            </div>
                             <p class="hint" data-i18n="proxyAddressHint">支持 HTTP 和 SOCKS5 代理，留空则禁用代理。</p>
                         </div>
                     </div>
