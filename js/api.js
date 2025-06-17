@@ -5,38 +5,38 @@
 const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
 /**
- * 代理请求函数 - 改进的实现
+ * 代理请求函数 - 选择性代理实现，仅对 Gemini API 使用代理
+ * 注意：在 content script 环境中，我们通过 background.js 来处理代理请求
  */
 async function makeProxyRequest(url, options = {}, proxyAddress = '') {
-    // 如果没有配置代理，直接使用fetch
-    if (!proxyAddress || proxyAddress.trim() === '') {
-        console.log('[API] No proxy configured, using direct fetch');
+    // 检查是否为 Gemini API 请求
+    const isGeminiAPI = url.includes('generativelanguage.googleapis.com');
+
+    // 如果没有配置代理或不是 Gemini API 请求，直接使用fetch
+    if (!proxyAddress || proxyAddress.trim() === '' || !isGeminiAPI) {
+        if (!isGeminiAPI) {
+            console.log('[API] Non-Gemini API request, using direct fetch:', url);
+        } else {
+            console.log('[API] No proxy configured for Gemini API, using direct fetch');
+        }
         return fetch(url, options);
     }
 
+    // 对于 Gemini API 请求，如果配置了代理，通过 background.js 处理
+    console.log('[API] Gemini API request with proxy, delegating to background.js');
+
+    // 在 content script 环境中，我们需要通过 background.js 来处理代理请求
+    // 这里保持原有逻辑，实际的代理处理在 background.js 中完成
     try {
-        // 解析代理地址
+        // 解析代理地址以验证格式
         const proxyUrl = new URL(proxyAddress.trim());
         const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
 
-        console.log('[API] Using proxy:', proxyAddress, 'scheme:', proxyScheme);
+        console.log('[API] Using proxy for Gemini API:', proxyAddress, 'scheme:', proxyScheme);
 
-        // 对于HTTP/HTTPS代理，使用CONNECT方法或直接代理
-        if (proxyScheme === 'http' || proxyScheme === 'https') {
-            // 在浏览器扩展环境中，我们依赖chrome.proxy.settings来处理代理
-            // 这里直接使用fetch，让Chrome的代理设置生效
-            console.log('[API] Using HTTP proxy via Chrome proxy settings');
-            return fetch(url, options);
-        }
-        // 对于SOCKS代理，同样依赖Chrome的代理设置
-        else if (proxyScheme === 'socks4' || proxyScheme === 'socks5') {
-            console.log('[API] Using SOCKS proxy via Chrome proxy settings');
-            return fetch(url, options);
-        }
-        else {
-            console.warn('[API] Unsupported proxy scheme:', proxyScheme, 'falling back to direct fetch');
-            return fetch(url, options);
-        }
+        // 直接使用 fetch，让 background.js 的代理逻辑处理
+        return fetch(url, options);
+
     } catch (error) {
         console.error('[API] Error parsing proxy URL:', error);
         // 如果代理配置有问题，回退到直接请求

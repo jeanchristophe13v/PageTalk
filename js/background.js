@@ -444,7 +444,7 @@ async function reinjectScriptsToTab(tabId) {
 }
 
 /**
- * 更新代理设置
+ * 更新代理设置 - 使用选择性代理，只对 Gemini API 域名使用代理
  */
 async function updateProxySettings() {
     try {
@@ -471,33 +471,37 @@ async function updateProxySettings() {
             return;
         }
 
-        // 构建代理配置
+        // 构建选择性代理配置 - 只对 Gemini API 使用代理
+        const proxyPort = proxyUrl.port || getDefaultPort(proxyUrl.protocol);
+        const pacScriptData = 'function FindProxyForURL(url, host) {\n' +
+            '    if (host === "generativelanguage.googleapis.com") {\n' +
+            '        return "PROXY ' + proxyUrl.hostname + ':' + proxyPort + '";\n' +
+            '    }\n' +
+            '    return "DIRECT";\n' +
+            '}';
+
         const proxyConfig = {
-            mode: "fixed_servers",
-            rules: {
-                singleProxy: {
-                    scheme: proxyUrl.protocol.slice(0, -1), // 移除末尾的冒号
-                    host: proxyUrl.hostname,
-                    port: parseInt(proxyUrl.port) || getDefaultPort(proxyUrl.protocol)
-                },
-                bypassList: ["<local>"] // 绕过本地地址
+            mode: "pac_script",
+            pacScript: {
+                data: pacScriptData
             }
         };
 
         // 验证协议支持
         const supportedSchemes = ['http', 'https', 'socks4', 'socks5'];
-        if (!supportedSchemes.includes(proxyConfig.rules.singleProxy.scheme)) {
-            console.error('[Background] Unsupported proxy scheme:', proxyConfig.rules.singleProxy.scheme);
+        const proxyScheme = proxyUrl.protocol.slice(0, -1);
+        if (!supportedSchemes.includes(proxyScheme)) {
+            console.error('[Background] Unsupported proxy scheme:', proxyScheme);
             return;
         }
 
         // 应用代理设置
-        console.log('[Background] Applying proxy settings:', proxyConfig);
+        console.log('[Background] Applying selective proxy settings for Gemini API only:', proxyAddress);
         await chrome.proxy.settings.set({
             value: proxyConfig,
             scope: 'regular'
         });
-        console.log('[Background] Proxy settings applied successfully');
+        console.log('[Background] Selective proxy settings applied successfully');
 
         // 启动健康检查
         startProxyHealthCheck();
@@ -525,7 +529,7 @@ function getDefaultPort(protocol) {
 }
 
 /**
- * 代理请求函数 - 改进的实现
+ * 代理请求函数 - 简化版本，依赖 PAC 脚本进行选择性代理
  */
 async function makeProxyRequest(url, options = {}, proxyAddress = '') {
     // 如果没有配置代理，直接使用fetch
@@ -534,36 +538,20 @@ async function makeProxyRequest(url, options = {}, proxyAddress = '') {
         return fetch(url, options);
     }
 
-    try {
-        // 解析代理地址
-        const proxyUrl = new URL(proxyAddress.trim());
-        const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
+    // 检查是否为 Gemini API 请求
+    const isGeminiAPI = url.includes('generativelanguage.googleapis.com');
 
-        console.log('[Background] Using proxy:', proxyAddress, 'scheme:', proxyScheme);
-
-        // 对于HTTP/HTTPS代理，使用CONNECT方法或直接代理
-        if (proxyScheme === 'http' || proxyScheme === 'https') {
-            // 在浏览器扩展环境中，我们依赖chrome.proxy.settings来处理代理
-            // 这里直接使用fetch，让Chrome的代理设置生效
-            console.log('[Background] Using HTTP proxy via Chrome proxy settings');
-            return fetch(url, options);
-        }
-        // 对于SOCKS代理，同样依赖Chrome的代理设置
-        else if (proxyScheme === 'socks4' || proxyScheme === 'socks5') {
-            console.log('[Background] Using SOCKS proxy via Chrome proxy settings');
-            return fetch(url, options);
-        }
-        else {
-            console.warn('[Background] Unsupported proxy scheme:', proxyScheme, 'falling back to direct fetch');
-            return fetch(url, options);
-        }
-    } catch (error) {
-        console.error('[Background] Error parsing proxy URL:', error);
-        // 如果代理配置有问题，回退到直接请求
-        console.log('[Background] Falling back to direct fetch due to proxy error');
-        return fetch(url, options);
+    if (isGeminiAPI) {
+        console.log('[Background] Gemini API request, using configured proxy via PAC script');
+    } else {
+        console.log('[Background] Non-Gemini API request, will use direct connection via PAC script');
     }
+
+    // 直接使用 fetch，让 PAC 脚本决定是否使用代理
+    return fetch(url, options);
 }
+
+
 
 /**
  * 通用的API请求函数，支持代理
@@ -628,9 +616,6 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
     try {
         console.log('[Background] Testing proxy:', proxyAddress);
 
-        // 使用一个简单的测试URL
-        const testUrl = 'https://www.google.com/generate_204';
-
         // 临时设置代理进行测试
         let originalProxyConfig = null;
 
@@ -639,19 +624,22 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
             const currentSettings = await chrome.proxy.settings.get({});
             originalProxyConfig = currentSettings.value;
 
-            // 解析并设置测试代理
+            // 解析代理地址
             const proxyUrl = new URL(proxyAddress.trim());
-            const proxyScheme = proxyUrl.protocol.slice(0, -1);
+            const proxyPort = proxyUrl.port || getDefaultPort(proxyUrl.protocol);
+
+            // 构建测试代理配置 - 只对 Gemini API 使用代理
+            const testPacScriptData = 'function FindProxyForURL(url, host) {\n' +
+                '    if (host === "generativelanguage.googleapis.com") {\n' +
+                '        return "PROXY ' + proxyUrl.hostname + ':' + proxyPort + '";\n' +
+                '    }\n' +
+                '    return "DIRECT";\n' +
+                '}';
 
             const testProxyConfig = {
-                mode: "fixed_servers",
-                rules: {
-                    singleProxy: {
-                        scheme: proxyScheme,
-                        host: proxyUrl.hostname,
-                        port: parseInt(proxyUrl.port) || getDefaultPort(proxyUrl.protocol)
-                    },
-                    bypassList: ["<local>"]
+                mode: "pac_script",
+                pacScript: {
+                    data: testPacScriptData
                 }
             };
 
@@ -661,22 +649,26 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
                 scope: 'regular'
             });
 
-            console.log('[Background] Applied test proxy config:', testProxyConfig);
+            console.log('[Background] Applied test proxy config');
 
-            // 等待一下让代理设置生效
+            // 等待代理设置生效
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // 进行测试请求
+            // 使用 Gemini API 端点进行测试（不需要 API key 的端点）
+            const testUrl = 'https://generativelanguage.googleapis.com/';
             const response = await fetch(testUrl, {
                 method: 'GET',
-                signal: AbortSignal.timeout(10000) // 10秒超时
+                signal: AbortSignal.timeout(10000),
+                cache: 'no-cache'
             });
 
-            if (response.ok) {
-                console.log('[Background] Proxy test successful');
+            // 检查响应状态
+            if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
+                // 代理工作正常
+                console.log('[Background] Proxy test successful, status:', response.status);
                 sendResponse({
                     success: true,
-                    message: 'Proxy connection successful'
+                    message: `Proxy connection successful (HTTP ${response.status})`
                 });
             } else {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -685,7 +677,7 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
         } finally {
             // 恢复原始代理设置
             try {
-                if (originalProxyConfig) {
+                if (originalProxyConfig && originalProxyConfig.mode !== 'direct') {
                     await chrome.proxy.settings.set({
                         value: originalProxyConfig,
                         scope: 'regular'
@@ -693,7 +685,7 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
                 } else {
                     await chrome.proxy.settings.clear({});
                 }
-                console.log('[Background] Restored original proxy settings');
+                console.log('[Background] Restored original proxy settings after test');
             } catch (restoreError) {
                 console.error('[Background] Error restoring proxy settings:', restoreError);
             }
@@ -746,7 +738,7 @@ function stopProxyHealthCheck() {
 }
 
 /**
- * 检查代理健康状态
+ * 检查代理健康状态 - 使用当前代理设置测试 Gemini API
  */
 async function checkProxyHealth() {
     try {
@@ -762,24 +754,19 @@ async function checkProxyHealth() {
 
         console.log('[Background] Checking proxy health for:', proxyAddress);
 
-        // 使用一个轻量级的测试URL
-        const testUrl = 'https://www.google.com/generate_204';
+        // 使用 Gemini API 的健康检查端点
+        const testUrl = 'https://generativelanguage.googleapis.com/';
 
         try {
-            // 设置较短的超时时间进行健康检查
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT);
-
+            // 直接使用当前的代理设置进行健康检查
             const response = await fetch(testUrl, {
-                method: 'HEAD', // 使用HEAD请求减少数据传输
-                signal: controller.signal,
+                method: 'GET',
+                signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT),
                 cache: 'no-cache'
             });
 
-            clearTimeout(timeoutId);
-
-            if (response.ok) {
-                // 代理工作正常，重置失败计数
+            if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
+                // 代理工作正常
                 if (consecutiveFailures > 0) {
                     console.log('[Background] Proxy recovered, resetting failure count');
                     consecutiveFailures = 0;
