@@ -188,6 +188,11 @@ const translations = {
     'contextBefore': '前置上下文token数',
     'contextAfter': '后置上下文token数',
     'maxOutputLength': '最大输出长度',
+    'optionIcon': '选项图标',
+    'selectIcon': '选择图标',
+    'searchIcons': '搜索图标...',
+    'lucideLoadError': 'Lucide图标库加载失败，请刷新页面重试',
+    'autoSaveNotice': '更改将自动保存',
 
     // --- 代理设置相关翻译 ---
     'proxyAddressLabel': '代理地址：',
@@ -409,6 +414,11 @@ const translations = {
     'contextBefore': 'Context Before (chars)',
     'contextAfter': 'Context After (chars)',
     'maxOutputLength': 'Max Output Length',
+    'optionIcon': 'Option Icon',
+    'selectIcon': 'Select Icon',
+    'searchIcons': 'Search icons...',
+    'lucideLoadError': 'Failed to load Lucide icon library, please refresh the page and try again',
+    'autoSaveNotice': 'Changes will be saved automatically',
 
     // --- Proxy Settings Related Translations ---
     'proxyAddressLabel': 'Proxy Url:',

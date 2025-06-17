@@ -3,6 +3,27 @@
  * 划词助手设置管理模块
  */
 
+// 常用Lucide图标列表
+const POPULAR_LUCIDE_ICONS = [
+    'star', 'heart', 'bookmark', 'tag', 'flag', 'bell', 'eye', 'search', 'edit', 'settings',
+    'home', 'user', 'users', 'mail', 'phone', 'calendar', 'clock', 'map-pin', 'globe', 'wifi',
+    'camera', 'image', 'video', 'music', 'headphones', 'mic', 'volume-2', 'play', 'pause', 'circle-stop',
+    'file', 'folder', 'download', 'upload', 'share', 'link', 'copy', 'scissors', 'trash', 'archive',
+    'plus', 'minus', 'x', 'check', 'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down', 'refresh-cw', 'rotate-ccw',
+    'zap', 'sun', 'moon', 'cloud', 'umbrella', 'thermometer', 'droplets', 'wind', 'snowflake', 'flame',
+    'car', 'plane', 'train', 'bike', 'truck', 'ship', 'rocket', 'anchor', 'compass', 'map',
+    'book', 'graduation-cap', 'briefcase', 'building', 'home', 'shopping-bag', 'hospital', 'school', 'banknote', 'church',
+    'coffee', 'pizza', 'apple', 'cake', 'wine', 'beer', 'utensils', 'chef-hat', 'ice-cream', 'candy',
+    'gamepad', 'tv', 'monitor', 'smartphone', 'tablet', 'laptop', 'keyboard', 'mouse', 'printer', 'scan'
+];
+
+/**
+ * 生成唯一ID
+ */
+function generateUniqueId() {
+    return 'custom_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+}
+
 /**
  * 获取默认设置（根据语言动态生成）
  */
@@ -116,11 +137,14 @@ function loadSettings() {
                             currentSettings.customOptions = [];
                         }
 
-                        // 为现有自定义选项添加maxOutputLength字段（向后兼容）
+                        // 为现有自定义选项添加maxOutputLength和icon字段（向后兼容）
                         if (currentSettings.customOptions) {
                             currentSettings.customOptions.forEach(option => {
                                 if (option.maxOutputLength === undefined) {
                                     option.maxOutputLength = 65536;
+                                }
+                                if (option.icon === undefined) {
+                                    option.icon = 'star'; // 默认图标
                                 }
                             });
                         }
@@ -735,12 +759,7 @@ function setupDragAndDrop(container) {
     });
 }
 
-/**
- * 生成唯一ID
- */
-function generateUniqueId() {
-    return 'custom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
+
 
 /**
  * 添加自定义选项
@@ -758,7 +777,8 @@ export function addCustomOption(optionData) {
         temperature: optionData.temperature || 0.7,
         contextBefore: optionData.contextBefore !== undefined ? optionData.contextBefore : 500,
         contextAfter: optionData.contextAfter !== undefined ? optionData.contextAfter : 500,
-        maxOutputLength: optionData.maxOutputLength !== undefined ? optionData.maxOutputLength : 65536
+        maxOutputLength: optionData.maxOutputLength !== undefined ? optionData.maxOutputLength : 65536,
+        icon: optionData.icon || 'star' // 默认使用star图标
     };
 
     currentSettings.customOptions.push(newOption);
@@ -789,7 +809,8 @@ export function updateCustomOption(optionId, optionData) {
         temperature: optionData.temperature,
         contextBefore: optionData.contextBefore,
         contextAfter: optionData.contextAfter,
-        maxOutputLength: optionData.maxOutputLength
+        maxOutputLength: optionData.maxOutputLength,
+        icon: optionData.icon || currentSettings.customOptions[optionIndex].icon || 'star'
     };
 
     saveSettings();
@@ -889,9 +910,15 @@ function createCustomOptionElement(option, translations) {
     element.className = 'custom-option-item';
     element.dataset.optionId = option.id;
 
+    // 获取选项图标
+    const optionIcon = renderLucideIconForSettings(option.icon || 'star', 16);
+
     element.innerHTML = `
         <div class="custom-option-header">
-            <div class="custom-option-name">${escapeHtml(option.name)}</div>
+            <div class="custom-option-name">
+                <span class="custom-option-icon">${optionIcon}</span>
+                <span class="custom-option-text">${escapeHtml(option.name)}</span>
+            </div>
             <div class="custom-option-actions">
                 <button class="edit-custom-option-btn" data-option-id="${option.id}" title="${translations?.editOption || '编辑'}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
@@ -1048,12 +1075,12 @@ function updateDialogTranslations(dialog, option, translations) {
     const promptTextarea = dialog.querySelector('#custom-option-prompt');
     if (promptTextarea) promptTextarea.placeholder = translations?.systemPromptRequired || '请输入系统提示词';
 
-    // 更新按钮
+    // 更新按钮和提示
     const cancelBtn = dialog.querySelector('.custom-option-dialog-cancel');
-    if (cancelBtn) cancelBtn.textContent = translations?.cancelEdit || '取消';
+    if (cancelBtn) cancelBtn.textContent = translations?.close || '关闭';
 
-    const saveBtn = dialog.querySelector('.custom-option-dialog-save');
-    if (saveBtn) saveBtn.textContent = translations?.saveOption || '保存';
+    const autoSaveNotice = dialog.querySelector('.auto-save-notice');
+    if (autoSaveNotice) autoSaveNotice.textContent = translations?.autoSaveNotice || '更改将自动保存';
 }
 
 /**
@@ -1089,6 +1116,18 @@ async function showCustomOptionDialog(option, translations) {
                 <div class="setting-group">
                     <label>${currentTranslations?.optionName || '选项名称'} *</label>
                     <input type="text" id="custom-option-name" value="${option ? escapeHtml(option.name) : ''}" placeholder="${currentTranslations?.optionNameRequired || '请输入选项名称'}">
+                </div>
+                <div class="setting-group">
+                    <label>${currentTranslations?.optionIcon || '选项图标'}</label>
+                    <div class="icon-selector">
+                        <div class="icon-preview" id="custom-option-icon-preview">
+                            ${renderLucideIconForSettings(option?.icon || 'star', 20)}
+                        </div>
+                        <button type="button" class="icon-select-btn" id="custom-option-icon-btn">
+                            ${currentTranslations?.selectIcon || '选择图标'}
+                        </button>
+                        <input type="hidden" id="custom-option-icon" value="${option?.icon || 'star'}">
+                    </div>
                 </div>
                 <div class="setting-group">
                     <label>${currentTranslations?.model || '模型'}</label>
@@ -1129,8 +1168,8 @@ async function showCustomOptionDialog(option, translations) {
                 </div>
             </div>
             <div class="custom-option-dialog-footer">
-                <button class="custom-option-dialog-cancel">${currentTranslations?.cancelEdit || '取消'}</button>
-                <button class="custom-option-dialog-save">${currentTranslations?.saveOption || '保存'}</button>
+                <div class="auto-save-notice">${currentTranslations?.autoSaveNotice || '更改将自动保存'}</div>
+                <button class="custom-option-dialog-cancel">${currentTranslations?.close || '关闭'}</button>
             </div>
         </div>
     `;
@@ -1156,12 +1195,76 @@ async function showCustomOptionDialog(option, translations) {
 function setupCustomOptionDialogEvents(dialog, option, translations) {
     const closeBtn = dialog.querySelector('.custom-option-dialog-close');
     const cancelBtn = dialog.querySelector('.custom-option-dialog-cancel');
-    const saveBtn = dialog.querySelector('.custom-option-dialog-save');
     const temperatureSlider = dialog.querySelector('#custom-option-temperature');
     const temperatureValue = dialog.querySelector('.temperature-value');
 
+    // 获取所有输入元素
+    const nameInput = dialog.querySelector('#custom-option-name');
+    const iconInput = dialog.querySelector('#custom-option-icon');
+    const modelSelect = dialog.querySelector('#custom-option-model');
+    const promptTextarea = dialog.querySelector('#custom-option-prompt');
+    const temperatureInput = dialog.querySelector('#custom-option-temperature');
+    const contextBeforeInput = dialog.querySelector('#custom-option-context-before');
+    const contextAfterInput = dialog.querySelector('#custom-option-context-after');
+    const maxOutputInput = dialog.querySelector('#custom-option-max-output');
+
+    // 使用对象来保存option引用，这样可以在函数内部修改
+    const optionRef = { current: option };
+
+    // 实时保存函数
+    const autoSave = () => {
+        const name = nameInput?.value.trim();
+        const icon = iconInput?.value || 'star';
+        const model = modelSelect?.value;
+        const systemPrompt = promptTextarea?.value.trim();
+        const temperature = parseFloat(temperatureInput?.value || 0.7);
+        const contextBefore = contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 500;
+        const contextAfter = contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 500;
+        const maxOutputLength = maxOutputInput?.value !== '' ? parseInt(maxOutputInput.value) : 65536;
+
+        // 基本验证（静默失败，不显示错误）
+        if (!name || !systemPrompt) {
+            return false;
+        }
+
+        // 保存选项
+        const optionData = { name, icon, model, systemPrompt, temperature, contextBefore, contextAfter, maxOutputLength };
+
+        try {
+            if (optionRef.current) {
+                // 编辑现有选项
+                if (updateCustomOption(optionRef.current.id, optionData)) {
+                    console.log('[TextSelectionHelperSettings] Custom option auto-saved:', optionRef.current.id);
+                    renderCustomOptionsList(translations);
+                    updateOptionsOrderUI(document, translations);
+                    return true;
+                }
+            } else {
+                // 添加新选项（只有在有名称和提示词时才创建）
+                const newOption = addCustomOption(optionData);
+                console.log('[TextSelectionHelperSettings] Custom option auto-created:', newOption.id);
+                // 更新option引用，后续保存将变为编辑模式
+                optionRef.current = newOption;
+                renderCustomOptionsList(translations);
+                updateOptionsOrderUI(document, translations);
+                return true;
+            }
+        } catch (error) {
+            console.warn('[TextSelectionHelperSettings] Auto-save failed:', error);
+        }
+        return false;
+    };
+
+    // 防抖函数
+    let saveTimeout;
+    const debouncedAutoSave = () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(autoSave, 500); // 500ms延迟保存
+    };
+
     // 关闭对话框
     const closeDialog = () => {
+        clearTimeout(saveTimeout); // 清理定时器
         dialog.remove();
     };
 
@@ -1177,64 +1280,60 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
     if (temperatureSlider && temperatureValue) {
         temperatureSlider.addEventListener('input', () => {
             temperatureValue.textContent = temperatureSlider.value;
+            debouncedAutoSave(); // 实时保存
         });
     }
 
-    // 保存按钮事件
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            const nameInput = dialog.querySelector('#custom-option-name');
-            const modelSelect = dialog.querySelector('#custom-option-model');
-            const promptTextarea = dialog.querySelector('#custom-option-prompt');
-            const temperatureInput = dialog.querySelector('#custom-option-temperature');
-            const contextBeforeInput = dialog.querySelector('#custom-option-context-before');
-            const contextAfterInput = dialog.querySelector('#custom-option-context-after');
-            const maxOutputInput = dialog.querySelector('#custom-option-max-output');
+    // 为所有输入元素添加实时保存事件
+    if (nameInput) {
+        nameInput.addEventListener('blur', debouncedAutoSave);
+        nameInput.addEventListener('input', debouncedAutoSave);
+    }
 
-            const name = nameInput?.value.trim();
-            const model = modelSelect?.value;
-            const systemPrompt = promptTextarea?.value.trim();
-            const temperature = parseFloat(temperatureInput?.value || 0.7);
-            const contextBefore = contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 500;
-            const contextAfter = contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 500;
-            const maxOutputLength = maxOutputInput?.value !== '' ? parseInt(maxOutputInput.value) : 65536;
+    if (modelSelect) {
+        modelSelect.addEventListener('change', debouncedAutoSave);
+    }
 
-            // 验证输入
-            if (!name) {
-                alert(translations?.optionNameRequired || '请输入选项名称');
-                nameInput?.focus();
-                return;
-            }
+    if (promptTextarea) {
+        promptTextarea.addEventListener('blur', debouncedAutoSave);
+        promptTextarea.addEventListener('input', debouncedAutoSave);
+    }
 
-            if (!systemPrompt) {
-                alert(translations?.systemPromptRequired || '请输入系统提示词');
-                promptTextarea?.focus();
-                return;
-            }
+    if (contextBeforeInput) {
+        contextBeforeInput.addEventListener('blur', debouncedAutoSave);
+        contextBeforeInput.addEventListener('change', debouncedAutoSave);
+    }
 
-            // 保存选项
-            const optionData = { name, model, systemPrompt, temperature, contextBefore, contextAfter, maxOutputLength };
+    if (contextAfterInput) {
+        contextAfterInput.addEventListener('blur', debouncedAutoSave);
+        contextAfterInput.addEventListener('change', debouncedAutoSave);
+    }
 
-            if (option) {
-                // 编辑现有选项
-                if (updateCustomOption(option.id, optionData)) {
-                    console.log('[TextSelectionHelperSettings] Custom option updated:', option.id);
-                    renderCustomOptionsList(translations);
-                    updateOptionsOrderUI(document, translations);
-                    closeDialog();
-                } else {
-                    alert('更新失败');
-                }
-            } else {
-                // 添加新选项
-                const newOption = addCustomOption(optionData);
-                console.log('[TextSelectionHelperSettings] Custom option added:', newOption.id);
-                renderCustomOptionsList(translations);
-                updateOptionsOrderUI(document, translations);
-                closeDialog();
-            }
+    if (maxOutputInput) {
+        maxOutputInput.addEventListener('blur', debouncedAutoSave);
+        maxOutputInput.addEventListener('change', debouncedAutoSave);
+    }
+
+    // 图标选择按钮事件
+    const iconBtn = dialog.querySelector('#custom-option-icon-btn');
+    const iconPreview = dialog.querySelector('#custom-option-icon-preview');
+
+    if (iconBtn && iconInput && iconPreview) {
+        iconBtn.addEventListener('click', async () => {
+            const currentIcon = iconInput.value || 'star';
+            await showIconPicker((selectedIcon) => {
+                iconInput.value = selectedIcon;
+                // 加载Lucide库后再更新预览
+                loadLucideLibrary().then(() => {
+                    iconPreview.innerHTML = renderLucideIconForSettings(selectedIcon, 20);
+                });
+                // 图标选择后立即保存
+                debouncedAutoSave();
+            }, currentIcon, translations);
         });
     }
+
+
 }
 
 /**
@@ -1250,6 +1349,349 @@ function showDeleteConfirmDialog(option, translations) {
             updateOptionsOrderUI(document, translations);
         } else {
             alert('删除失败');
+        }
+    }
+}
+
+/**
+ * 动态加载Lucide库
+ * @returns {Promise<boolean>} 是否成功加载
+ */
+function loadLucideLibrary() {
+    return new Promise((resolve) => {
+        // 如果已经加载，直接返回
+        if (typeof lucide !== 'undefined') {
+            resolve(true);
+            return;
+        }
+
+        // 检查是否已经有script标签
+        const existingScript = document.querySelector('script[src*="lucide"]');
+        if (existingScript) {
+            // 等待现有脚本加载
+            waitForLucide().then(resolve);
+            return;
+        }
+
+        // 动态创建script标签
+        const script = document.createElement('script');
+        script.src = '../js/lib/lucide.js';
+        script.onload = () => {
+            console.log('[TextSelectionHelperSettings] Lucide library loaded successfully');
+            resolve(true);
+        };
+        script.onerror = () => {
+            console.error('[TextSelectionHelperSettings] Failed to load Lucide library');
+            resolve(false);
+        };
+        document.head.appendChild(script);
+    });
+}
+
+/**
+ * 等待Lucide库加载
+ * @returns {Promise<boolean>} 是否成功加载
+ */
+function waitForLucide() {
+    return new Promise((resolve) => {
+        if (typeof lucide !== 'undefined') {
+            resolve(true);
+            return;
+        }
+
+        let attempts = 0;
+        const maxAttempts = 50; // 最多等待5秒
+        const checkInterval = setInterval(() => {
+            attempts++;
+            if (typeof lucide !== 'undefined') {
+                clearInterval(checkInterval);
+                resolve(true);
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.warn('[TextSelectionHelperSettings] Lucide library failed to load after 5 seconds');
+                resolve(false);
+            }
+        }, 100);
+    });
+}
+
+/**
+ * 渲染Lucide图标
+ * @param {string} iconName - 图标名称
+ * @param {number} size - 图标大小
+ * @returns {string} SVG HTML字符串
+ */
+function renderLucideIconForSettings(iconName, size = 16) {
+    try {
+        // 检查Lucide是否可用
+        if (typeof lucide === 'undefined') {
+            console.warn('[TextSelectionHelperSettings] Lucide library not available');
+            return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>`;
+        }
+
+        // 转换图标名称为PascalCase（Lucide的命名约定）
+        const pascalCaseName = iconName.split('-').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join('');
+
+        // 检查图标是否存在
+        if (!lucide[pascalCaseName]) {
+            console.warn(`[TextSelectionHelperSettings] Lucide icon "${iconName}" (${pascalCaseName}) not found`);
+            // 尝试一些常见的别名映射
+            const aliasMap = {
+                'stop': 'CircleStop',
+                'shop': 'ShoppingBag',
+                'bank': 'Banknote',
+                'scanner': 'Scan'
+            };
+
+            const aliasName = aliasMap[iconName];
+            if (aliasName && lucide[aliasName]) {
+                console.log(`[TextSelectionHelperSettings] Using alias "${aliasName}" for "${iconName}"`);
+                const iconData = lucide[aliasName];
+                if (iconData && Array.isArray(iconData)) {
+                    return renderIconFromData(iconData, size);
+                }
+            }
+
+            return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>`;
+        }
+
+        // 直接使用Lucide图标数据创建SVG
+        const iconData = lucide[pascalCaseName];
+        if (iconData && Array.isArray(iconData)) {
+            return renderIconFromData(iconData, size);
+        }
+
+        // 如果以上方法都失败，返回默认图标
+        return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>`;
+    } catch (error) {
+        console.error('[TextSelectionHelperSettings] Error rendering Lucide icon:', error);
+        return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>`;
+    }
+}
+
+/**
+ * 从Lucide图标数据渲染SVG
+ * @param {Array} iconData - Lucide图标数据数组
+ * @param {number} size - 图标大小
+ * @returns {string} SVG HTML字符串
+ */
+function renderIconFromData(iconData, size = 16) {
+    let svgContent = '';
+    iconData.forEach(([tag, attrs]) => {
+        if (tag === 'path') {
+            svgContent += `<path d="${attrs.d}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+        } else if (tag === 'circle') {
+            svgContent += `<circle cx="${attrs.cx}" cy="${attrs.cy}" r="${attrs.r}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+        } else if (tag === 'rect') {
+            svgContent += `<rect x="${attrs.x}" y="${attrs.y}" width="${attrs.width}" height="${attrs.height}"${attrs.rx ? ` rx="${attrs.rx}"` : ''}${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+        } else if (tag === 'line') {
+            svgContent += `<line x1="${attrs.x1}" y1="${attrs.y1}" x2="${attrs.x2}" y2="${attrs.y2}"${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+        } else if (tag === 'polyline') {
+            svgContent += `<polyline points="${attrs.points}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+        }
+    });
+
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        ${svgContent}
+    </svg>`;
+}
+
+/**
+ * 显示图标选择器
+ * @param {Function} onIconSelect - 图标选择回调函数
+ * @param {string} currentIcon - 当前选择的图标
+ * @param {Object} translations - 翻译对象
+ */
+async function showIconPicker(onIconSelect, currentIcon = 'star', translations = {}) {
+    // 尝试加载Lucide库
+    const lucideLoaded = await loadLucideLibrary();
+    if (!lucideLoaded) {
+        alert(translations.lucideLoadError || 'Lucide图标库加载失败，请刷新页面重试');
+        return;
+    }
+    // 创建遮罩层
+    const overlay = document.createElement('div');
+    overlay.className = 'icon-picker-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    // 创建图标选择器容器
+    const picker = document.createElement('div');
+    picker.className = 'icon-picker';
+    picker.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+    `;
+
+    // 创建标题和关闭按钮
+    const header = document.createElement('div');
+    header.className = 'header';
+
+    const title = document.createElement('h3');
+    title.textContent = translations.selectIcon || '选择图标';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'close-btn';
+    closeBtn.innerHTML = '×';
+    closeBtn.addEventListener('click', () => overlay.remove());
+
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    // 创建搜索框
+    const searchContainer = document.createElement('div');
+    searchContainer.style.cssText = `margin-bottom: 16px;`;
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = translations.searchIcons || '搜索图标...';
+    searchInput.style.cssText = `
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--border-color, #ddd);
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background: var(--input-background, #fff);
+        color: var(--text-color, #333);
+        transition: all 0.2s ease;
+    `;
+
+    // 添加搜索框焦点样式
+    searchInput.addEventListener('focus', () => {
+        searchInput.style.borderColor = 'var(--primary-color, #007bff)';
+        searchInput.style.boxShadow = '0 0 0 2px rgba(116, 143, 252, 0.2)';
+    });
+
+    searchInput.addEventListener('blur', () => {
+        searchInput.style.borderColor = 'var(--border-color, #ddd)';
+        searchInput.style.boxShadow = 'none';
+    });
+
+    searchContainer.appendChild(searchInput);
+
+    // 创建图标网格容器
+    const gridContainer = document.createElement('div');
+    gridContainer.style.cssText = `
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid var(--border-color, #eee);
+        border-radius: 8px;
+        padding: 16px;
+        background: var(--background-color, #f9f9f9);
+    `;
+
+    const iconGrid = document.createElement('div');
+    iconGrid.className = 'icon-grid';
+
+    gridContainer.appendChild(iconGrid);
+
+    // 渲染图标
+    function renderIcons(icons) {
+        iconGrid.innerHTML = '';
+        icons.forEach(iconName => {
+            const iconItem = document.createElement('div');
+            iconItem.className = `icon-item ${iconName === currentIcon ? 'selected' : ''}`;
+
+            const iconSvg = document.createElement('div');
+            iconSvg.innerHTML = renderLucideIconForSettings(iconName, 24);
+
+            const iconLabel = document.createElement('span');
+            iconLabel.textContent = iconName;
+
+            iconItem.appendChild(iconSvg);
+            iconItem.appendChild(iconLabel);
+
+            // 点击选择
+            iconItem.addEventListener('click', () => {
+                onIconSelect(iconName);
+                overlay.remove();
+            });
+
+            iconGrid.appendChild(iconItem);
+        });
+    }
+
+    // 初始渲染所有图标
+    renderIcons(POPULAR_LUCIDE_ICONS);
+
+    // 搜索功能
+    searchInput.addEventListener('input', () => {
+        const searchTerm = searchInput.value.toLowerCase();
+        const filteredIcons = POPULAR_LUCIDE_ICONS.filter(icon =>
+            icon.toLowerCase().includes(searchTerm)
+        );
+        renderIcons(filteredIcons);
+    });
+
+    // 组装界面
+    picker.appendChild(header);
+    picker.appendChild(searchContainer);
+    picker.appendChild(gridContainer);
+    overlay.appendChild(picker);
+
+    // 添加到页面
+    document.body.appendChild(overlay);
+
+    // 点击遮罩层关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+    // ESC键关闭
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // 聚焦搜索框
+    setTimeout(() => searchInput.focus(), 100);
+}
+
+/**
+ * 初始化图标预览（在对话框显示后调用）
+ * @param {HTMLElement} dialog - 对话框元素
+ * @param {string} iconName - 图标名称
+ */
+async function initIconPreview(dialog, iconName = 'star') {
+    const iconPreview = dialog.querySelector('#custom-option-icon-preview');
+    if (iconPreview) {
+        // 尝试加载Lucide库
+        const lucideLoaded = await loadLucideLibrary();
+        if (lucideLoaded) {
+            iconPreview.innerHTML = renderLucideIconForSettings(iconName, 20);
         }
     }
 }

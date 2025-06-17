@@ -100,7 +100,7 @@ const FUNCTION_WINDOW_DEFAULT_SIZE = {
     chatHeight: 450 // 对话窗口默认高度（更高）
 };
 
-// SVG 图标定义
+// SVG 图标定义（保留默认图标作为后备）
 const SVG_ICONS = {
     interpret: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -123,6 +123,113 @@ const SVG_ICONS = {
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
     </svg>`
 };
+
+/**
+ * 使用Lucide图标库渲染图标
+ * @param {string} iconName - Lucide图标名称
+ * @param {number} size - 图标大小，默认16
+ * @param {string} className - 额外的CSS类名
+ * @returns {string} SVG图标的HTML字符串
+ */
+function renderLucideIcon(iconName, size = 16, className = '') {
+    try {
+        // 检查Lucide是否可用
+        if (typeof lucide === 'undefined') {
+            console.warn('[TextSelectionHelper] Lucide library not available, using fallback');
+            return SVG_ICONS.custom;
+        }
+
+        // 转换图标名称为PascalCase（Lucide的命名约定）
+        const pascalCaseName = iconName.split('-').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join('');
+
+        // 检查图标是否存在
+        if (!lucide[pascalCaseName]) {
+            console.warn(`[TextSelectionHelper] Lucide icon "${iconName}" (${pascalCaseName}) not found, using fallback`);
+            // 尝试一些常见的别名映射
+            const aliasMap = {
+                'stop': 'CircleStop',
+                'shop': 'ShoppingBag',
+                'bank': 'Banknote',
+                'scanner': 'Scan'
+            };
+
+            const aliasName = aliasMap[iconName];
+            if (aliasName && lucide[aliasName]) {
+                console.log(`[TextSelectionHelper] Using alias "${aliasName}" for "${iconName}"`);
+                const iconData = lucide[aliasName];
+                if (iconData && Array.isArray(iconData)) {
+                    let svgContent = '';
+                    iconData.forEach(([tag, attrs]) => {
+                        if (tag === 'path') {
+                            svgContent += `<path d="${attrs.d}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                        } else if (tag === 'circle') {
+                            svgContent += `<circle cx="${attrs.cx}" cy="${attrs.cy}" r="${attrs.r}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                        } else if (tag === 'rect') {
+                            svgContent += `<rect x="${attrs.x}" y="${attrs.y}" width="${attrs.width}" height="${attrs.height}"${attrs.rx ? ` rx="${attrs.rx}"` : ''}${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                        } else if (tag === 'line') {
+                            svgContent += `<line x1="${attrs.x1}" y1="${attrs.y1}" x2="${attrs.x2}" y2="${attrs.y2}"${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                        } else if (tag === 'polyline') {
+                            svgContent += `<polyline points="${attrs.points}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                        }
+                    });
+
+                    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"${className ? ` class="${className}"` : ''}>
+                        ${svgContent}
+                    </svg>`;
+                }
+            }
+
+            return SVG_ICONS.custom;
+        }
+
+        // 直接使用Lucide图标数据创建SVG
+        const iconData = lucide[pascalCaseName];
+        if (iconData && Array.isArray(iconData)) {
+            let svgContent = '';
+            iconData.forEach(([tag, attrs]) => {
+                if (tag === 'path') {
+                    svgContent += `<path d="${attrs.d}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                } else if (tag === 'circle') {
+                    svgContent += `<circle cx="${attrs.cx}" cy="${attrs.cy}" r="${attrs.r}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                } else if (tag === 'rect') {
+                    svgContent += `<rect x="${attrs.x}" y="${attrs.y}" width="${attrs.width}" height="${attrs.height}"${attrs.rx ? ` rx="${attrs.rx}"` : ''}${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                } else if (tag === 'line') {
+                    svgContent += `<line x1="${attrs.x1}" y1="${attrs.y1}" x2="${attrs.x2}" y2="${attrs.y2}"${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                } else if (tag === 'polyline') {
+                    svgContent += `<polyline points="${attrs.points}"${attrs.fill ? ` fill="${attrs.fill}"` : ''}${attrs.stroke ? ` stroke="${attrs.stroke}"` : ''}/>`;
+                }
+            });
+
+            return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"${className ? ` class="${className}"` : ''}>
+                ${svgContent}
+            </svg>`;
+        }
+
+        // 如果以上方法都失败，返回默认图标
+        return SVG_ICONS.custom;
+    } catch (error) {
+        console.error('[TextSelectionHelper] Error rendering Lucide icon:', error);
+        return SVG_ICONS.custom;
+    }
+}
+
+/**
+ * 获取选项图标（优先使用Lucide，后备使用默认图标）
+ * @param {string} optionId - 选项ID
+ * @param {string} customIcon - 自定义图标名称
+ * @returns {string} SVG图标的HTML字符串
+ */
+function getOptionIcon(optionId, customIcon = null) {
+    // 如果有自定义图标，使用Lucide渲染
+    if (customIcon) {
+        return renderLucideIcon(customIcon, 16);
+    }
+
+    // 否则使用默认图标
+    return SVG_ICONS[optionId] || SVG_ICONS.custom;
+}
 
 /**
  * 获取翻译函数
@@ -905,11 +1012,11 @@ async function showOptionsBar(triggerElement) {
         const options = [];
         for (const optionId of optionsOrder) {
             if (optionId === 'interpret') {
-                options.push({ id: 'interpret', name: _tr('interpret'), icon: SVG_ICONS.interpret });
+                options.push({ id: 'interpret', name: _tr('interpret'), icon: getOptionIcon('interpret') });
             } else if (optionId === 'translate') {
-                options.push({ id: 'translate', name: _tr('translate'), icon: SVG_ICONS.translate });
+                options.push({ id: 'translate', name: _tr('translate'), icon: getOptionIcon('translate') });
             } else if (optionId === 'chat') {
-                options.push({ id: 'chat', name: _tr('chat'), icon: SVG_ICONS.chat });
+                options.push({ id: 'chat', name: _tr('chat'), icon: getOptionIcon('chat') });
             } else {
                 // 检查是否是自定义选项
                 const customOption = settings.customOptions?.find(opt => opt.id === optionId);
@@ -917,9 +1024,7 @@ async function showOptionsBar(triggerElement) {
                     options.push({
                         id: customOption.id,
                         name: customOption.name,
-                        icon: SVG_ICONS.custom || `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>`
+                        icon: getOptionIcon(customOption.id, customOption.icon)
                     });
                 }
             }
@@ -1015,9 +1120,9 @@ function showDefaultOptionsBar(triggerElement) {
 
     const _tr = getTranslationFunction();
     const defaultOptions = [
-        { id: 'interpret', name: _tr('interpret'), icon: SVG_ICONS.interpret },
-        { id: 'translate', name: _tr('translate'), icon: SVG_ICONS.translate },
-        { id: 'chat', name: _tr('chat'), icon: SVG_ICONS.chat }
+        { id: 'interpret', name: _tr('interpret'), icon: getOptionIcon('interpret') },
+        { id: 'translate', name: _tr('translate'), icon: getOptionIcon('translate') },
+        { id: 'chat', name: _tr('chat'), icon: getOptionIcon('chat') }
     ];
 
     const optionsBar = document.createElement('div');
@@ -1708,7 +1813,7 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
             message = `${optionSettings.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForThisRequest}`;
         } else {
             // 无上下文或上下文无效时，告知AI上下文可能为空
-            message = `${optionSettings.systemPrompt}\n\n注意：以下是用户选中的文本，可能没有额外的上下文信息，请基于文本本身和你的知识进行回答。\n\n选中文本：${selectedText}`;
+            message = `${optionSettings.systemPrompt}\n\n注意：以下是用户选中的文本，可能没有额外的上下文信息，请基于选中的文本本身和你的知识进行回答。\n\n选中文本：${selectedText}`;
         }
 
         // 准备响应区域

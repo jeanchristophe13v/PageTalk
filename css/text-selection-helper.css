@@ -1493,6 +1493,11 @@
     box-shadow: 0 2px 8px rgba(76, 110, 245, 0.1);
 }
 
+#settings-text-selection-helper .custom-option-item:hover .custom-option-icon svg {
+    color: var(--secondary-color);
+    transform: scale(1.1);
+}
+
 #settings-text-selection-helper .custom-option-header {
     display: flex;
     align-items: center;
@@ -1501,9 +1506,31 @@
 }
 
 #settings-text-selection-helper .custom-option-name {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
     font-weight: 600;
     color: var(--text-color);
     font-size: 14px;
+}
+
+#settings-text-selection-helper .custom-option-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#settings-text-selection-helper .custom-option-icon svg {
+    width: 16px;
+    height: 16px;
+    color: var(--primary-color);
+    transition: color 0.2s ease;
+}
+
+#settings-text-selection-helper .custom-option-text {
+    flex: 1;
+    min-width: 0; /* 允许文本截断 */
 }
 
 #settings-text-selection-helper .custom-option-actions {
@@ -1664,16 +1691,30 @@
 
 .custom-option-dialog-footer {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-md) var(--spacing-lg);
     border-top: 1px solid var(--border-color);
-    justify-content: flex-end;
     background: var(--background-color);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-.custom-option-dialog-cancel,
-.custom-option-dialog-save {
+.auto-save-notice {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.auto-save-notice::before {
+    content: "💾";
+    font-size: 14px;
+}
+
+.custom-option-dialog-cancel {
     padding: var(--spacing-sm) var(--spacing-md);
     border: none;
     border-radius: 16px;
@@ -1682,9 +1723,6 @@
     font-weight: 500;
     transition: all 0.2s ease;
     min-width: 80px;
-}
-
-.custom-option-dialog-cancel {
     background-color: var(--button-hover-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
@@ -1694,17 +1732,6 @@
     background-color: var(--border-color);
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.custom-option-dialog-save {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.custom-option-dialog-save:hover {
-    background-color: var(--secondary-color);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.3);
 }
 
 /* 自定义选项对话框中的温度控制样式 */
@@ -1754,6 +1781,238 @@
     font-weight: 600;
     color: var(--primary-color);
     font-size: clamp(12px, 3.5vw, 14px);
+}
+
+/* 图标选择器样式 */
+.icon-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: 4px;
+}
+
+.icon-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--input-background);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.icon-select-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--card-background);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.icon-select-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--button-hover-bg);
+}
+
+/* 图标选择器弹窗样式 */
+.icon-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-picker {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    width: 90vw;
+    max-width: 700px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+}
+
+/* 响应式弹窗大小 */
+@media (max-width: 768px) {
+    .icon-picker {
+        width: 95vw;
+        max-width: none;
+        max-height: 90vh;
+        padding: var(--spacing-md);
+    }
+}
+
+.icon-picker h3 {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.icon-picker .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.icon-picker .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.icon-picker .close-btn:hover {
+    background: var(--button-hover-bg);
+    color: var(--text-color);
+    transform: scale(1.1);
+}
+
+.icon-picker input[type="text"] {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    box-sizing: border-box;
+    margin-bottom: var(--spacing-md);
+    background: var(--input-background);
+    color: var(--text-color);
+    transition: all 0.2s ease;
+}
+
+.icon-picker input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2);
+}
+
+.icon-picker .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--spacing-sm);
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    background: var(--background-color);
+}
+
+/* 响应式网格布局 */
+@media (max-width: 600px) {
+    .icon-picker .icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    }
+}
+
+@media (min-width: 601px) and (max-width: 800px) {
+    .icon-picker .icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+    }
+}
+
+@media (min-width: 801px) {
+    .icon-picker .icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    }
+}
+
+.icon-picker .icon-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    background: var(--card-background);
+    min-height: 70px;
+    position: relative;
+    overflow: hidden;
+}
+
+.icon-picker .icon-item:hover {
+    background: var(--button-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.icon-picker .icon-item.selected {
+    border-color: var(--primary-color);
+    background: rgba(116, 143, 252, 0.1);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.3);
+}
+
+.icon-picker .icon-item svg {
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.icon-picker .icon-item:hover svg {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.icon-picker .icon-item.selected svg {
+    color: var(--primary-color);
+    transform: scale(1.05);
+}
+
+.icon-picker .icon-item span {
+    font-size: 11px;
+    text-align: center;
+    color: var(--text-tertiary);
+    word-break: break-word;
+    transition: color 0.2s ease;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.icon-picker .icon-item:hover span {
+    color: var(--text-secondary);
+}
+
+.icon-picker .icon-item.selected span {
+    color: var(--primary-color);
+    font-weight: 600;
 }
 
 #settings-text-selection-helper .options-order-list {
@@ -2011,8 +2270,21 @@ body.dark-mode #settings-text-selection-helper .custom-option-item:hover {
     box-shadow: 0 2px 8px rgba(116, 143, 252, 0.15);
 }
 
+body.dark-mode #settings-text-selection-helper .custom-option-item:hover .custom-option-icon svg {
+    color: var(--secondary-color);
+    transform: scale(1.1);
+}
+
+body.dark-mode .auto-save-notice {
+    color: var(--text-secondary);
+}
+
 body.dark-mode #settings-text-selection-helper .custom-option-name {
     color: var(--text-color);
+}
+
+body.dark-mode #settings-text-selection-helper .custom-option-icon svg {
+    color: var(--primary-color);
 }
 
 body.dark-mode #settings-text-selection-helper .custom-option-detail-label {
@@ -2140,6 +2412,80 @@ body.dark-mode .custom-option-dialog .temperature-control input[type="range"]:ac
 }
 
 body.dark-mode .custom-option-dialog .temperature-control .temperature-value {
+    color: var(--primary-color);
+}
+
+/* 深色模式下的图标选择器样式 */
+body.dark-mode .icon-preview {
+    background: var(--input-background);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+body.dark-mode .icon-select-btn {
+    background: var(--card-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .icon-select-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--button-hover-bg);
+}
+
+body.dark-mode .icon-picker {
+    background: var(--card-background);
+    border-color: var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .icon-picker h3 {
+    color: var(--text-color);
+}
+
+body.dark-mode .icon-picker input[type="text"] {
+    background: var(--input-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .icon-picker input[type="text"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2);
+}
+
+body.dark-mode .icon-picker .icon-grid {
+    background: var(--background-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .icon-picker .icon-item {
+    background: var(--card-background);
+}
+
+body.dark-mode .icon-picker .icon-item:hover {
+    background: var(--button-hover-bg);
+}
+
+body.dark-mode .icon-picker .icon-item.selected {
+    border-color: var(--primary-color);
+    background: rgba(116, 143, 252, 0.15);
+}
+
+body.dark-mode .icon-picker .icon-item svg {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .icon-picker .icon-item.selected svg {
+    color: var(--primary-color);
+}
+
+body.dark-mode .icon-picker .icon-item span {
+    color: var(--text-tertiary);
+}
+
+body.dark-mode .icon-picker .icon-item.selected span {
     color: var(--primary-color);
 }
 

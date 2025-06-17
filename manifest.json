@@ -40,6 +40,7 @@
           "js/lib/mhchem.min.js",
           "js/lib/mermaid.min.js",
           "js/lib/panzoom.min.js",
+          "js/lib/lucide.js",
           "js/translations.js",
           "js/markdown-renderer.js",
           "js/text-selection-helper.js",
