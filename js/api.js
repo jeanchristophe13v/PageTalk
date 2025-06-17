@@ -72,7 +72,9 @@ async function _testAndVerifyApiKey(apiKey, model) {
         let apiTestModel = model;
         // Map logical model names to actual API model names for testing if necessary
         if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
-            apiTestModel = 'gemini-2.5-flash-preview-05-20';
+            apiTestModel = 'gemini-2.5-flash';
+        } else if (model === 'gemini-2.5-pro') {
+            apiTestModel = 'gemini-2.5-pro';
         }
 
         const requestBody = {
@@ -154,10 +156,13 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         let effectiveThinkingConfig = null;
 
         if (stateRef.model === 'gemini-2.5-flash') {
-            apiModelName = 'gemini-2.5-flash-preview-05-20';
+            apiModelName = 'gemini-2.5-flash';
             effectiveThinkingConfig = { thinkingBudget: 0 };
         } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
-            apiModelName = 'gemini-2.5-flash-preview-05-20';
+            apiModelName = 'gemini-2.5-flash';
+            effectiveThinkingConfig = null;
+        } else if (stateRef.model === 'gemini-2.5-pro') {
+            apiModelName = 'gemini-2.5-pro';
             effectiveThinkingConfig = null;
         }
         console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with thinking config:`, effectiveThinkingConfig);
@@ -178,7 +183,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             requestBody.generationConfig.thinkingConfig = effectiveThinkingConfig;
         }
 
-        const actualApiModelsSupportingUrlContext = ['gemini-2.5-flash-preview-05-20', 'gemini-2.0-flash'];
+        const actualApiModelsSupportingUrlContext = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
         if (actualApiModelsSupportingUrlContext.includes(apiModelName)) {
             requestBody.tools.push({ "url_context": {} });
             console.log(`URL context tool added for model: ${apiModelName}`);

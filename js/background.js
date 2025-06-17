@@ -194,7 +194,9 @@ async function handleGenerateContentRequest(requestData, sendResponse, senderTab
         // 获取模型名称，映射逻辑模型名到实际 API 模型名
         let apiModelName = requestData.model || 'gemini-2.5-flash';
         if (apiModelName === 'gemini-2.5-flash' || apiModelName === 'gemini-2.5-flash-thinking') {
-            apiModelName = 'gemini-2.5-flash-preview-05-20';
+            apiModelName = 'gemini-2.5-flash';
+        } else if (apiModelName === 'gemini-2.5-pro') {
+            apiModelName = 'gemini-2.5-pro';
         }
 
         // 构建请求体

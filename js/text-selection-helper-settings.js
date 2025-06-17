@@ -332,12 +332,14 @@ function initSettingsUI(elements, translations) {
 }
 
 /**
- * 初始化模型选择器
+ * 获取模型选项列表
  */
-function initModelSelectors(elements) {
-    const modelOptions = [
-        { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
+function getModelOptions() {
+    return [
         { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
+        { value: 'gemini-2.5-pro', text: 'gemini-2.5-pro' },
+        { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17' },
+        { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
         { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
         { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking' },
         { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
@@ -346,6 +348,24 @@ function initModelSelectors(elements) {
         { value: 'gemini-2.5-pro-preview-05-06', text: 'gemini-2.5-pro-preview-05-06' },
         { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
     ];
+}
+
+/**
+ * 生成模型选项HTML
+ */
+function generateModelOptionsHTML(selectedModel = 'gemini-2.5-flash') {
+    const modelOptions = getModelOptions();
+    return modelOptions.map(option => {
+        const selected = option.value === selectedModel ? 'selected' : '';
+        return `<option value="${option.value}" ${selected}>${option.text}</option>`;
+    }).join('');
+}
+
+/**
+ * 初始化模型选择器
+ */
+function initModelSelectors(elements) {
+    const modelOptions = getModelOptions();
 
     const selectors = [
         document.getElementById('interpret-model'),
@@ -1132,15 +1152,7 @@ async function showCustomOptionDialog(option, translations) {
                 <div class="setting-group">
                     <label>${currentTranslations?.model || '模型'}</label>
                     <select id="custom-option-model">
-                        <option value="gemini-2.5-flash" ${!option || option?.model === 'gemini-2.5-flash' ? 'selected' : ''}>gemini-2.5-flash</option>
-                        <option value="gemini-2.0-flash" ${option?.model === 'gemini-2.0-flash' ? 'selected' : ''}>gemini-2.0-flash</option>
-                        <option value="gemini-2.5-flash-thinking" ${option?.model === 'gemini-2.5-flash-thinking' ? 'selected' : ''}>gemini-2.5-flash-thinking</option>
-                        <option value="gemini-2.0-flash-thinking-exp-01-21" ${option?.model === 'gemini-2.0-flash-thinking-exp-01-21' ? 'selected' : ''}>gemini-2.0-flash-thinking</option>
-                        <option value="gemini-2.0-pro-exp-02-05" ${option?.model === 'gemini-2.0-pro-exp-02-05' ? 'selected' : ''}>gemini-2.0-pro-exp-02-05</option>
-                        <option value="gemini-2.5-pro-exp-03-25" ${option?.model === 'gemini-2.5-pro-exp-03-25' ? 'selected' : ''}>gemini-2.5-pro-exp-03-25</option>
-                        <option value="gemini-2.5-pro-preview-03-25" ${option?.model === 'gemini-2.5-pro-preview-03-25' ? 'selected' : ''}>gemini-2.5-pro-preview-03-25</option>
-                        <option value="gemini-2.5-pro-preview-05-06" ${option?.model === 'gemini-2.5-pro-preview-05-06' ? 'selected' : ''}>gemini-2.5-pro-preview-05-06</option>
-                        <option value="gemini-exp-1206" ${option?.model === 'gemini-exp-1206' ? 'selected' : ''}>gemini-exp-1206</option>
+                        ${generateModelOptionsHTML(option?.model)}
                     </select>
                 </div>
                 <div class="setting-group">

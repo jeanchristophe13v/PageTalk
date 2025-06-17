@@ -1559,6 +1559,8 @@ async function createFunctionWindowContent(windowElement, optionId) {
         // 构建模型选项
         const modelOptions = [
             'gemini-2.5-flash',
+            'gemini-2.5-pro',
+            'gemini-2.5-flash-lite-preview-06-17',
             'gemini-2.0-flash',
             'gemini-2.5-flash-thinking',
             'gemini-2.0-flash-thinking-exp-01-21',
@@ -2845,8 +2847,10 @@ async function callAIAPI(message, model, temperature, onStream = null, requestId
             model: model
         };
 
-        // 为gemini-2.5-flash添加thinking配置
+        // 为gemini-2.5-flash和gemini-2.5-pro添加thinking配置
         if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
+            requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+        } else if (model === 'gemini-2.5-pro') {
             requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
         }
 
