@@ -12,7 +12,7 @@
 
 ## Introducing PageTalk 3.5 🎉
 
-**🌟 Text Selection Helper - The Game Changer:**
+**🌟 Selection Tool - The Game Changer:**
 PageTalk is no longer just a sidebar AI extension! Now you can select any text on any webpage and instantly:
 - **Interpret** complex content with AI analysis
 - **Translate** to your preferred language
@@ -29,7 +29,7 @@ Simply select text → choose your action → get instant AI assistance. It's th
 
 ---
 
-**Text Selection Helper Demo**
+**Selection Tool Demo**
 
 
 https://github.com/user-attachments/assets/3d998ee5-bf25-4a42-9269-417c80df6751
