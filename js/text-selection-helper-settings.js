@@ -1538,17 +1538,7 @@ async function showIconPicker(onIconSelect, currentIcon = 'star', translations =
     // 创建图标选择器容器
     const picker = document.createElement('div');
     picker.className = 'icon-picker';
-    picker.style.cssText = `
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        max-width: 600px;
-        max-height: 80vh;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        display: flex;
-        flex-direction: column;
-    `;
+    // 移除硬编码的样式，让CSS变量生效
 
     // 创建标题和关闭按钮
     const header = document.createElement('div');
