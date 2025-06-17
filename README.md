@@ -89,19 +89,19 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238" alt="Agent management" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
-    <p><em>AI agent management</em></p>
+    <p><em>Dark mode support</em></p>
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24" alt="Rich content rendering" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
-    <p><em>Rich content rendering</em></p>
+    <p><em>Mermaid rendering</em></p>
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/9fef9086-be70-448c-b23e-e79629e42d2a" alt="Settings panel" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
-    <p><em>Settings & customization</em></p>
+    <p><em>url extract</em></p>
   </div>
 </div>
 
-</details>
+
 
 
 
