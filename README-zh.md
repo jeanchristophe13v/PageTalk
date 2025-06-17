@@ -29,7 +29,11 @@ PageTalk不再仅仅是个侧栏AI插件！现在你可以选择网页上的任�
 
 ---
 
-**划词助手演示（截图即将更新）**
+**划词助手演示**
+
+
+https://github.com/user-attachments/assets/1315abf6-9773-4e54-bd2f-97ad480946c3
+
 
 ---
 
@@ -50,10 +54,7 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 *   **个性化设置:** 配置 API 密钥、**语言 (中/英)**、**主题 (浅色/深色)**。
 *   **聊天导出:** 将对话保存为 Markdown 或纯文本文件。
 
-## 用例
-
-<details>
-<summary><strong>📸 功能演示（点击展开）</strong></summary>
+## 使用示例
 
 ### 多标签页交互 & YouTube解析
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
@@ -91,11 +92,10 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/c23d2919-aa7c-427a-80a8-1b08a5f46a5c" alt="设置面板" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
-    <p><em>设置 & 自定义</em></p>
+    <p><em>url提取</em></p>
   </div>
 </div>
 
-</details>
 
 ## 安装
 
