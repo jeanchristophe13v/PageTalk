@@ -2052,13 +2052,29 @@ async function sendChatMessage(windowElement) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
         const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
-        // 获取主面板助手设置
-        const currentAgent = await getCurrentMainPanelAgent();
+        // 获取当前窗口选择的助手设置，如果没有选择则使用主面板助手设置
+        let currentAgent = await getCurrentWindowAgent(windowElement);
+        if (!currentAgent) {
+            currentAgent = await getCurrentMainPanelAgent();
+        }
         const temperature = currentAgent ? currentAgent.temperature : 0.7;
         const maxOutputLength = currentAgent ? currentAgent.maxTokens : 65536;
 
+        console.log('[TextSelectionHelper] Chat using agent:', currentAgent ? currentAgent.name : 'default', 'temperature:', temperature);
+
+        // 构建最终消息，如果有助手则使用助手的系统提示词
+        let finalMessage = fullMessage;
+        if (currentAgent && currentAgent.systemPrompt) {
+            // 使用助手的系统提示词替换默认的划词助手提示词
+            finalMessage = `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}${selectionContext && selectionContext.length > 0 && selectionContext !== selectedText ? `\n\n相关上下文：${selectionContext}` : ''}\n\n用户问题：${message}`;
+            // 如果有历史记录，需要重新构建包含历史记录的消息
+            if (windowId) {
+                finalMessage = buildMessageWithHistory(windowId, finalMessage);
+            }
+        }
+
         // 发送到 AI (流式输出)
-        await callAIAPI(fullMessage, currentModel, temperature, (text, isComplete) => {
+        await callAIAPI(finalMessage, currentModel, temperature, (text, isComplete) => {
             // 检查流式状态是否仍然有效（可能已被中断）
             const currentStreamingState = streamingStates.get(windowId);
             if (!currentStreamingState || !currentStreamingState.isStreaming) {
@@ -2485,13 +2501,29 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
         const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
-        // 获取主面板助手设置
-        const currentAgent = await getCurrentMainPanelAgent();
+        // 获取当前窗口选择的助手设置，如果没有选择则使用主面板助手设置
+        let currentAgent = await getCurrentWindowAgent(windowElement);
+        if (!currentAgent) {
+            currentAgent = await getCurrentMainPanelAgent();
+        }
         const temperature = currentAgent ? currentAgent.temperature : 0.7;
         const maxOutputLength = currentAgent ? currentAgent.maxTokens : 65536;
 
+        console.log('[TextSelectionHelper] Regenerate using agent:', currentAgent ? currentAgent.name : 'default', 'temperature:', temperature);
+
+        // 构建最终消息，如果有助手则使用助手的系统提示词
+        let finalMessage = fullMessage;
+        if (currentAgent && currentAgent.systemPrompt) {
+            // 使用助手的系统提示词替换默认的划词助手提示词
+            finalMessage = `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}${selectionContext && selectionContext.length > 0 && selectionContext !== selectedText ? `\n\n相关上下文：${selectionContext}` : ''}\n\n用户问题：${userMessage}`;
+            // 如果有历史记录，需要重新构建包含历史记录的消息
+            if (windowId) {
+                finalMessage = buildMessageWithHistory(windowId, finalMessage);
+            }
+        }
+
         // 发送到 AI (流式输出)
-        await callAIAPI(fullMessage, currentModel, temperature, (text, isComplete) => {
+        await callAIAPI(finalMessage, currentModel, temperature, (text, isComplete) => {
             // 检查流式状态是否仍然有效（可能已被中断）
             const currentStreamingState = streamingStates.get(windowId);
             if (!currentStreamingState || !currentStreamingState.isStreaming) {
@@ -2872,6 +2904,31 @@ function getCurrentMainPanelAgent() {
             if (result.agents && result.currentAgentId) {
                 const currentAgent = result.agents.find(agent => agent.id === result.currentAgentId);
                 resolve(currentAgent || null);
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+/**
+ * 获取当前对话窗口选择的助手设置
+ */
+function getCurrentWindowAgent(windowElement) {
+    return new Promise((resolve) => {
+        const agentSelect = windowElement.querySelector('.pagetalk-agent-select');
+        const selectedAgentId = agentSelect ? agentSelect.value : null;
+
+        if (!selectedAgentId || selectedAgentId === 'default') {
+            // 如果没有选择助手或选择了默认，返回null
+            resolve(null);
+            return;
+        }
+
+        chrome.storage.sync.get(['agents'], (result) => {
+            if (result.agents && Array.isArray(result.agents)) {
+                const selectedAgent = result.agents.find(agent => agent.id === selectedAgentId);
+                resolve(selectedAgent || null);
             } else {
                 resolve(null);
             }
