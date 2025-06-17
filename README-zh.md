@@ -109,7 +109,9 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
 
 2. edge： https://microsoftedge.microsoft.com/addons/detail/pagetalk-your-gemini-br/mpmohgpcggkkbjdamcnmmnkblkmpldmi
 
-火狐浏览器暂时还不支持，我努努力💪
+3. Firefox: https://addons.mozilla.org/zh-CN/firefox/addon/pagetalk-gemini-assistant/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search
+
+> ⚠️注意：由于一些兼容性问题，PageTalk在Firefox的一些功能（比如@选择标签页对话）并不完整，但仍然可以很好地总结和对话，往后会慢慢支持所有功能。
 
 ### 开发者通道
 
