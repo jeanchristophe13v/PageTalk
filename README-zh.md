@@ -84,11 +84,11 @@ Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您�
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/0dc31cbc-b714-4037-8185-cba15f7e4238" alt="助手管理" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
-    <p><em>AI助手管理</em></p>
+    <p><em>深色模式支持</em></p>
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/58256468-0ce8-476b-9383-e9dab566dd24" alt="富文本渲染" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
-    <p><em>富文本渲染</em></p>
+    <p><em>Mermaid渲染</em></p>
   </div>
   <div>
     <img src="https://github.com/user-attachments/assets/c23d2919-aa7c-427a-80a8-1b08a5f46a5c" alt="设置面板" width="300" style="border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"/>
