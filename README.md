@@ -29,7 +29,12 @@ Simply select text → choose your action → get instant AI assistance. It's th
 
 ---
 
-**Text Selection Helper Demo (Screenshots coming soon)**
+**Text Selection Helper Demo**
+
+
+https://github.com/user-attachments/assets/3d998ee5-bf25-4a42-9269-417c80df6751
+
+
 
 ---
 
@@ -54,8 +59,7 @@ Pagetalk is a browser extension that enhances your web browsing by integrating G
 
 ## Examples
 
-<details>
-<summary><strong>📸 Feature Demonstrations (Click to expand)</strong></summary>
+<strong>📸 Feature Demonstrations</strong>
 
 ### Multi-Tab Interaction & YouTube Parsing
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
