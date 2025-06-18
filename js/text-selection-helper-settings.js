@@ -31,6 +31,7 @@ function getDefaultSettings(language = 'zh-CN') {
     // 使用translations.js中的默认提示词
     const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', language) : (language === 'en' ? 'Interpret this' : '解读一下');
     const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', language) : (language === 'en' ? 'Translate this' : '翻译一下');
+    const chatPrompt = language === 'en' ? 'You are a helpful assistant' : '你是一个有用的助手';
 
     return {
         enabled: true, // 默认启用划词助手
@@ -49,6 +50,11 @@ function getDefaultSettings(language = 'zh-CN') {
             contextBefore: 500,
             contextAfter: 500,
             maxOutputLength: 65536
+        },
+        chat: {
+            contextMode: 'custom', // 'custom' 或 'full'
+            contextBefore: 500,
+            contextAfter: 500
         },
         customOptions: [], // 自定义选项数组
         optionsOrder: ['interpret', 'translate', 'chat']
@@ -127,6 +133,24 @@ function loadSettings() {
                         }
                         if (currentSettings.translate && currentSettings.translate.maxOutputLength === undefined) {
                             currentSettings.translate.maxOutputLength = 65536;
+                        }
+
+                        // 确保对话设置存在（向后兼容）
+                        if (!currentSettings.chat) {
+                            currentSettings.chat = {
+                                contextMode: 'custom',
+                                contextBefore: 500,
+                                contextAfter: 500
+                            };
+                        }
+                        if (currentSettings.chat && currentSettings.chat.contextMode === undefined) {
+                            currentSettings.chat.contextMode = 'custom';
+                        }
+                        if (currentSettings.chat && currentSettings.chat.contextBefore === undefined) {
+                            currentSettings.chat.contextBefore = 500;
+                        }
+                        if (currentSettings.chat && currentSettings.chat.contextAfter === undefined) {
+                            currentSettings.chat.contextAfter = 500;
                         }
 
                         // 确保自定义选项数组存在
@@ -500,6 +524,32 @@ function loadSettingsToUI(elements) {
         if (translateTempValue) translateTempValue.textContent = currentSettings.translate.temperature;
     }
     if (translateMaxOutput) translateMaxOutput.value = currentSettings.translate.maxOutputLength || 65536;
+
+    // 对话设置
+    const chatContextCustom = document.getElementById('chat-context-custom');
+    const chatContextFull = document.getElementById('chat-context-full');
+    const chatContextBefore = document.getElementById('chat-context-before');
+    const chatContextAfter = document.getElementById('chat-context-after');
+
+    // 设置上下文模式
+    if (currentSettings.chat.contextMode === 'full') {
+        if (chatContextFull) chatContextFull.checked = true;
+        // 隐藏自定义输入框
+        const contextInputs = document.getElementById('chat-context-inputs');
+        if (contextInputs) {
+            contextInputs.style.display = 'none';
+        }
+    } else {
+        if (chatContextCustom) chatContextCustom.checked = true;
+        // 显示自定义输入框
+        const contextInputs = document.getElementById('chat-context-inputs');
+        if (contextInputs) {
+            contextInputs.style.display = 'flex';
+        }
+    }
+
+    if (chatContextBefore) chatContextBefore.value = currentSettings.chat.contextBefore !== undefined ? currentSettings.chat.contextBefore : 500;
+    if (chatContextAfter) chatContextAfter.value = currentSettings.chat.contextAfter !== undefined ? currentSettings.chat.contextAfter : 500;
 }
 
 /**
@@ -588,6 +638,57 @@ function setupEventListeners(elements, translations) {
         translateMaxOutput.addEventListener('input', () => {
             const value = parseInt(translateMaxOutput.value) || 65536;
             currentSettings.translate.maxOutputLength = value;
+            saveSettings();
+        });
+    }
+
+    // 对话设置变化
+    const chatContextCustom = document.getElementById('chat-context-custom');
+    const chatContextFull = document.getElementById('chat-context-full');
+    const chatContextBefore = document.getElementById('chat-context-before');
+    const chatContextAfter = document.getElementById('chat-context-after');
+
+    // 上下文模式切换
+    if (chatContextCustom) {
+        chatContextCustom.addEventListener('change', () => {
+            if (chatContextCustom.checked) {
+                currentSettings.chat.contextMode = 'custom';
+                // 显示自定义输入框
+                const contextInputs = document.getElementById('chat-context-inputs');
+                if (contextInputs) {
+                    contextInputs.style.display = 'flex';
+                }
+                saveSettings();
+            }
+        });
+    }
+
+    if (chatContextFull) {
+        chatContextFull.addEventListener('change', () => {
+            if (chatContextFull.checked) {
+                currentSettings.chat.contextMode = 'full';
+                // 隐藏自定义输入框
+                const contextInputs = document.getElementById('chat-context-inputs');
+                if (contextInputs) {
+                    contextInputs.style.display = 'none';
+                }
+                saveSettings();
+            }
+        });
+    }
+
+    if (chatContextBefore) {
+        chatContextBefore.addEventListener('input', () => {
+            const value = chatContextBefore.value !== '' ? parseInt(chatContextBefore.value) : 500;
+            currentSettings.chat.contextBefore = value;
+            saveSettings();
+        });
+    }
+
+    if (chatContextAfter) {
+        chatContextAfter.addEventListener('input', () => {
+            const value = chatContextAfter.value !== '' ? parseInt(chatContextAfter.value) : 500;
+            currentSettings.chat.contextAfter = value;
             saveSettings();
         });
     }

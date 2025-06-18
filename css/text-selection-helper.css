@@ -319,6 +319,17 @@
     margin-bottom: 0;
 }
 
+/* 确保斜体文本保持原本样式，不应用引用样式 */
+.pagetalk-function-window .markdown-rendered em,
+.pagetalk-function-window .markdown-rendered i {
+    font-style: italic;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
 .pagetalk-function-window .markdown-rendered hr {
     height: 1px;
     padding: 0;
@@ -1782,6 +1793,72 @@
     color: var(--primary-color);
     font-size: clamp(12px, 3.5vw, 14px);
 }
+
+/* 对话设置样式 */
+.context-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.context-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.context-option input[type="radio"] {
+    margin: 0;
+}
+
+.context-option label {
+    margin: 0;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.context-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 24px;
+    padding: 8px 0;
+}
+
+.context-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.context-input-group label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.context-input-group input[type="number"] {
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 13px;
+}
+
+.context-input-group input[type="number"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
+}
+
+/* 当选择全部上下文时隐藏自定义输入 */
+input[name="chat-context-mode"][value="full"]:checked ~ .context-inputs,
+input[name="chat-context-mode"][value="full"]:checked + label + .context-inputs {
+    display: none;
+}
+
+
 
 /* 图标选择器样式 */
 .icon-selector {

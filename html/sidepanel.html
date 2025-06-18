@@ -309,6 +309,48 @@
                             </div>
                         </div>
 
+                        <!-- 对话设置卡片 -->
+                        <div class="setting-card">
+                            <div class="setting-card-header">
+                                <h3>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    <span data-i18n="chatSettings">对话设置</span>
+                                </h3>
+                                <button class="setting-card-toggle" type="button">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="setting-card-content">
+                                <div class="setting-group">
+                                    <label data-i18n="contextSettings">上下文设置：</label>
+                                    <div class="context-settings">
+                                        <div class="context-option">
+                                            <input type="radio" id="chat-context-custom" name="chat-context-mode" value="custom" checked>
+                                            <label for="chat-context-custom" data-i18n="customContext">自定义上下文</label>
+                                        </div>
+                                        <div class="context-inputs" id="chat-context-inputs">
+                                            <div class="context-input-group">
+                                                <label for="chat-context-before" data-i18n="contextBefore">前置上下文token数：</label>
+                                                <input type="number" id="chat-context-before" min="0" max="2000" value="500" placeholder="500">
+                                            </div>
+                                            <div class="context-input-group">
+                                                <label for="chat-context-after" data-i18n="contextAfter">后置上下文token数：</label>
+                                                <input type="number" id="chat-context-after" min="0" max="2000" value="500" placeholder="500">
+                                            </div>
+                                        </div>
+                                        <div class="context-option">
+                                            <input type="radio" id="chat-context-full" name="chat-context-mode" value="full">
+                                            <label for="chat-context-full" data-i18n="fullContext">读取全部上下文</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 自定义选项设置 -->
                         <div class="setting-card">
                             <div class="setting-card-header">

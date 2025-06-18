@@ -2090,11 +2090,33 @@ async function sendChatMessage(windowElement) {
     updateSendButtonToStopState(sendBtn, windowId);
 
     try {
+        // 获取对话设置
+        const settings = await getTextSelectionHelperSettings();
+        const chatSettings = settings.chat;
+
+        // 根据对话设置重新提取上下文
+        let contextForChat = '';
+        if (chatSettings.contextMode === 'full') {
+            // 读取全部上下文
+            contextForChat = selectionContext;
+        } else {
+            // 自定义上下文
+            const contextBefore = chatSettings.contextBefore || 500;
+            const contextAfter = chatSettings.contextAfter || 500;
+
+            if (contextBefore > 0 || contextAfter > 0) {
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    contextForChat = extractSelectionContext(selection, contextBefore, contextAfter);
+                }
+            }
+        }
+
         // 构建基础消息
         let baseMessage;
-        if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
+        if (contextForChat && contextForChat.length > 0 && contextForChat !== selectedText) {
             // 有有效上下文时包含上下文
-            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${message}`;
+            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${message}`;
         } else {
             // 无上下文或上下文无效时，告知AI上下文可能为空
             baseMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
@@ -2176,15 +2198,19 @@ async function sendChatMessage(windowElement) {
 
         console.log('[TextSelectionHelper] Chat using agent:', currentAgent ? currentAgent.name : 'default', 'temperature:', temperature);
 
-        // 构建最终消息，如果有助手则使用助手的系统提示词
-        let finalMessage = fullMessage;
+        // 构建最终消息，如果有助手则使用助手的系统提示词替换默认的划词助手提示词
+        let finalMessage = buildMessageWithHistory(windowId, baseMessage);
         if (currentAgent && currentAgent.systemPrompt) {
             // 使用助手的系统提示词替换默认的划词助手提示词
-            finalMessage = `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}${selectionContext && selectionContext.length > 0 && selectionContext !== selectedText ? `\n\n相关上下文：${selectionContext}` : ''}\n\n用户问题：${message}`;
-            // 如果有历史记录，需要重新构建包含历史记录的消息
-            if (windowId) {
-                finalMessage = buildMessageWithHistory(windowId, finalMessage);
-            }
+            const contextForChat = chatSettings.contextMode === 'full' ? selectionContext :
+                (chatSettings.contextBefore > 0 || chatSettings.contextAfter > 0 ?
+                    extractSelectionContext(window.getSelection(), chatSettings.contextBefore || 500, chatSettings.contextAfter || 500) : '');
+
+            const agentBaseMessage = contextForChat && contextForChat.length > 0 && contextForChat !== selectedText ?
+                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${message}` :
+                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+
+            finalMessage = buildMessageWithHistory(windowId, agentBaseMessage);
         }
 
         // 发送到 AI (流式输出)
@@ -2554,11 +2580,33 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const windowId = windowElement.dataset.windowId || Date.now().toString();
         windowElement.dataset.windowId = windowId;
 
+        // 获取对话设置
+        const settings = await getTextSelectionHelperSettings();
+        const chatSettings = settings.chat;
+
+        // 根据对话设置重新提取上下文
+        let contextForChat = '';
+        if (chatSettings.contextMode === 'full') {
+            // 读取全部上下文
+            contextForChat = selectionContext;
+        } else {
+            // 自定义上下文
+            const contextBefore = chatSettings.contextBefore || 500;
+            const contextAfter = chatSettings.contextAfter || 500;
+
+            if (contextBefore > 0 || contextAfter > 0) {
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    contextForChat = extractSelectionContext(selection, contextBefore, contextAfter);
+                }
+            }
+        }
+
         // 构建基础消息
         let baseMessage;
-        if (selectionContext && selectionContext.length > 0 && selectionContext !== selectedText) {
+        if (contextForChat && contextForChat.length > 0 && contextForChat !== selectedText) {
             // 有有效上下文时包含上下文
-            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${selectionContext}\n\n用户问题：${userMessage}`;
+            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${userMessage}`;
         } else {
             // 无上下文或上下文无效时，告知AI上下文可能为空
             baseMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
@@ -2648,15 +2696,19 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
         console.log('[TextSelectionHelper] Regenerate using agent:', currentAgent ? currentAgent.name : 'default', 'temperature:', temperature);
 
-        // 构建最终消息，如果有助手则使用助手的系统提示词
-        let finalMessage = fullMessage;
+        // 构建最终消息，如果有助手则使用助手的系统提示词替换默认的划词助手提示词
+        let finalMessage = buildMessageWithHistory(windowId, baseMessage);
         if (currentAgent && currentAgent.systemPrompt) {
             // 使用助手的系统提示词替换默认的划词助手提示词
-            finalMessage = `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}${selectionContext && selectionContext.length > 0 && selectionContext !== selectedText ? `\n\n相关上下文：${selectionContext}` : ''}\n\n用户问题：${userMessage}`;
-            // 如果有历史记录，需要重新构建包含历史记录的消息
-            if (windowId) {
-                finalMessage = buildMessageWithHistory(windowId, finalMessage);
-            }
+            const contextForChat = chatSettings.contextMode === 'full' ? selectionContext :
+                (chatSettings.contextBefore > 0 || chatSettings.contextAfter > 0 ?
+                    extractSelectionContext(window.getSelection(), chatSettings.contextBefore || 500, chatSettings.contextAfter || 500) : '');
+
+            const agentBaseMessage = contextForChat && contextForChat.length > 0 && contextForChat !== selectedText ?
+                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${userMessage}` :
+                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+
+            finalMessage = buildMessageWithHistory(windowId, agentBaseMessage);
         }
 
         // 发送到 AI (流式输出)
