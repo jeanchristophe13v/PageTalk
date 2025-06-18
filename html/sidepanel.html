@@ -380,26 +380,25 @@
                                 </div>
                                 <p class="hint"><span data-i18n="apiKeyHint"></span>  <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
                             </div>
-                            <div class="setting-group">
-                                <label for="model-selection">模型：</label>
-                                <select id="model-selection">
-                                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                                    <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-                                    <option value="gemini-2.5-flash-lite-preview-06-17">gemini-2.5-flash-lite-preview-06-17</option>
-                                    <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                                    <option value="gemini-2.5-flash-thinking">gemini-2.5-flash-thinking</option>
-                                    <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking</option>
-                                    <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05</option>
-                                    <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
-                                    <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
-                                    <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
-                                    <option value="gemini-exp-1206">gemini-exp-1206</option>
-                                </select>
-                            </div>
                         </div>
                         <div class="model-save-area">
                             <button id="save-model-settings" class="save-btn">保存</button>
                             <div id="connection-status" class="connection-status"></div>
+                        </div>
+                        <div class="setting-group model-fetching-group">
+                            <label data-i18n="fetchAvailableModelsLabel">获取可用模型:</label>
+                            <button id="fetch-models-btn" class="action-button fetch-models-button" title="获取可用模型列表">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="setting-group selected-models-group">
+                            <label data-i18n="selectedModelsLabel">已选模型:</label>
+                            <div id="selected-models-container" class="selected-models-container">
+                                <!-- 已选模型将动态填充到这里 -->
+                                <span class="no-models-selected-hint" data-i18n="noModelsSelectedHint">尚未选择任何模型。请先获取并选择模型。</span>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1966,21 +1966,78 @@ function displayError(windowElement, errorMessage) {
     const responseArea = windowElement.querySelector('.pagetalk-response-area');
     if (!responseArea) return;
 
-    responseArea.innerHTML = `
-        <div class="pagetalk-error">
-            <div class="pagetalk-error-message">错误：${errorMessage}</div>
-            <button class="pagetalk-retry-btn">重试</button>
-        </div>
-    `;
+    const _tr = getTranslationFunction();
+    let displayMsgKey = ''; // Key for translated message
+    let messageArg = null;  // Argument for translation if any
 
-    const retryBtn = responseArea.querySelector('.pagetalk-retry-btn');
-    if (retryBtn) {
-        retryBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const optionId = windowElement.dataset.option;
+    if (errorMessage === 'API Key not configured. Please set it in Pagetalk options.') {
+        displayMsgKey = 'apiKeyNotConfiguredForHelper';
+    } else if (typeof errorMessage === 'string' && (errorMessage.includes('API key not valid') || errorMessage.includes('API_KEY_INVALID') || errorMessage.includes('API key is invalid'))) {
+        displayMsgKey = 'apiKeyInvalidError';
+    } else if (typeof errorMessage === 'string' && errorMessage.includes('model') && errorMessage.includes('not found')) {
+        // Try to extract model name for better message, though it might not be in the error from background.js
+        displayMsgKey = 'modelNotFoundErrorHelper';
+    } else if (typeof errorMessage === 'string' && (errorMessage.includes('Quota') || errorMessage.includes('quota') || errorMessage.includes('429'))) {
+        displayMsgKey = 'quotaExceededErrorHelper';
+    } else if (typeof errorMessage === 'string' && (errorMessage.includes('NetworkError') || errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch'))) {
+        displayMsgKey = 'networkErrorHelper';
+    } else if (typeof errorMessage === 'string' && errorMessage.includes('User location is not supported')) {
+        displayMsgKey = 'locationNotSupportedErrorHelper';
+    } else if (typeof errorMessage === 'string' && errorMessage.includes('safety ratings')) {
+        displayMsgKey = 'safetyBlockedErrorHelper';
+    }
+
+
+    const errorPrefixStr = _tr('errorPrefix') || 'Error';
+    const retryTextStr = _tr('retryButton') || 'Retry';
+
+    let messageToShow;
+    if (displayMsgKey) {
+        messageToShow = _tr(displayMsgKey, messageArg || {});
+    } else {
+        // For unknown errors, show the original message but escape it if not already HTML
+        // Assuming original errorMessage is plain text
+        messageToShow = errorMessage;
+    }
+
+    responseArea.innerHTML = ''; // Clear previous content
+
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'pagetalk-error';
+
+    const errorMessageDiv = document.createElement('div');
+    errorMessageDiv.className = 'pagetalk-error-message';
+    errorMessageDiv.textContent = `${errorPrefixStr}: ${messageToShow}`; // Safely set combined text
+
+    const retryBtn = document.createElement('button');
+    retryBtn.className = 'pagetalk-retry-btn';
+    retryBtn.textContent = retryTextStr;
+
+    retryBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const optionId = windowElement.dataset.option;
+        if (windowElement.querySelector('.pagetalk-chat-messages')) {
+            responseArea.innerHTML = '';
+            const textarea = windowElement.querySelector('textarea');
+            if (textarea) textarea.focus();
+        } else {
+            responseArea.innerHTML = '<div class="thinking"><div class="thinking-dots"><span></span><span></span><span></span></div></div>';
             sendInterpretOrTranslateRequest(windowElement, optionId);
-        });
+        }
+    });
+
+    errorContainer.appendChild(errorMessageDiv);
+    // Only add retry button if the error is potentially recoverable by retrying (e.g., not an API key config issue)
+    if (displayMsgKey !== 'apiKeyNotConfiguredForHelper' && displayMsgKey !== 'apiKeyInvalidError') {
+        errorContainer.appendChild(retryBtn);
+    }
+
+    responseArea.appendChild(errorContainer);
+
+    const isManuallyResized = typeof userHasManuallyResized === "boolean" ? userHasManuallyResized : false;
+    if (typeof adjustWindowSize === "function" && !isManuallyResized) {
+        adjustWindowSize(windowElement);
     }
 }
 

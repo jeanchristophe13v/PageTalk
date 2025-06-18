@@ -870,3 +870,220 @@ input[type=number] { /* For Firefox */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
 }
 /* JS controls display based on active tab */
+
+/* Model Fetching and Selected Models Styles */
+.model-fetching-group,
+.selected-models-group {
+    display: flex;
+    align-items: center; /* Vertically align label and button/container */
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-sm); /* Gap between label and button/container */
+}
+
+.model-fetching-group label,
+.selected-models-group label {
+    flex-shrink: 0; /* Prevent label from shrinking */
+    margin-bottom: 0; /* Override default label margin if any */
+}
+
+.fetch-models-button {
+    padding: var(--spacing-xs) var(--spacing-sm); /* Adjust padding as needed */
+    min-width: auto; /* Allow button to be as small as its content + padding */
+    /* Ensure it aligns with other action buttons if that's the class used */
+    height: 32px; /* Match other action buttons like export */
+    width: auto; /* Adjust width based on content */
+}
+
+.fetch-models-button svg {
+    vertical-align: middle;
+    /* SVG size is already 16x16 by default in action-button, adjust if needed */
+}
+
+.selected-models-container {
+    display: flex;
+    flex-wrap: wrap; /* Allow tags to wrap to the next line */
+    gap: var(--spacing-xs); /* Gap between model tags */
+    padding: var(--spacing-xs);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    min-height: 38px; /* Same height as a button/input */
+    flex-grow: 1;
+    background-color: var(--input-background);
+    align-items: center; /* Align items (tags or hint) vertically */
+}
+
+.model-tag {
+    background-color: var(--primary-color);
+    color: var(--primary-text-color); /* Assuming you have a variable for text on primary background */
+    padding: var(--spacing-xxs) var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+.no-models-selected-hint {
+    color: var(--text-secondary); /* Use secondary text color for hints */
+    font-style: italic;
+    font-size: 0.9em;
+    /* align-self: center; */ /* Already handled by align-items in container */
+    padding: var(--spacing-xs); /* Ensure padding is consistent */
+}
+
+/* Styles for Model Fetch Dialog */
+.settings-dialog { /* Specific class for settings related dialogs */
+    width: 500px;
+    max-width: 90vw;
+    min-height: 300px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    /* .dialog-content already has background-color, border-radius, box-shadow from _chat.css (or _base.css) */
+}
+
+.settings-dialog .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0; /* Prevent header from shrinking */
+}
+
+.settings-dialog .dialog-header h3 {
+    margin: 0;
+    font-size: 1.2em; /* Slightly larger than default agent delete dialog */
+    color: var(--text-color);
+}
+
+.settings-dialog .dialog-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.8em; /* Larger close button */
+    cursor: pointer;
+    color: var(--text-secondary); /* Muted color */
+    padding: 0 var(--spacing-xs);
+    line-height: 1; /* Ensure proper vertical alignment */
+}
+.settings-dialog .dialog-close-btn:hover {
+    color: var(--text-color); /* Darker on hover */
+}
+
+.settings-dialog .dialog-body {
+    padding: var(--spacing-md);
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex; /* Added for vertical layout of search and list */
+    flex-direction: column; /* Added for vertical layout */
+}
+
+.model-search-input {
+    width: 100%;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+    font-size: 0.95em;
+    background-color: var(--input-background);
+    color: var(--text-color);
+}
+.model-search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color-translucent);
+    outline: none;
+}
+
+.model-list-container {
+    min-height: 150px;
+    max-height: 40vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color-light, var(--border-color)); /* Fallback for border-color-light */
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs);
+    flex-grow: 1; /* Allow list to take available space */
+    background-color: var(--background-color); /* Slightly different from dialog body if needed */
+}
+
+.model-list-container .loading-models-hint,
+.model-list-container .no-models-found-hint {
+    display: block;
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--text-secondary); /* Muted color for hints */
+    font-style: italic;
+}
+
+.model-list-container .error-hint {
+    display: block;
+    text-align: center;
+    padding: var(--spacing-lg);
+    color: var(--error-color); /* Assuming you have an error color variable */
+}
+
+/* Placeholder for model items, will be styled in next step */
+.model-list-item {
+    padding: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color-extralight, var(--border-color)); /* Fallback */
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.15s ease;
+}
+.model-list-item:last-child {
+    border-bottom: none;
+}
+.model-list-item:hover {
+    background-color: var(--button-hover-bg); /* Use button hover for consistency */
+}
+.model-list-item.selected {
+    background-color: var(--primary-color-light, var(--primary-color-translucent)); /* Fallback */
+    color: var(--primary-color); /* Make text color primary when selected */
+    font-weight: 500; /* Slightly bolder */
+}
+.model-list-item .model-name {
+    flex-grow: 1;
+    font-size: 0.9em;
+}
+.model-list-item .model-selected-icon svg { /* Assuming an SVG icon might be used */
+    color: var(--primary-color);
+    width: 16px; /* Example size */
+    height: 16px; /* Example size */
+}
+
+
+.settings-dialog .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    gap: var(--spacing-sm);
+    flex-shrink: 0; /* Prevent footer from shrinking */
+}
+
+.settings-dialog .dialog-button { /* Base style for dialog buttons */
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    border: 1px solid transparent; /* Add border for consistent sizing */
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.settings-dialog .confirm-btn {
+    background-color: var(--primary-color);
+    color: var(--primary-text-color, white); /* Fallback for primary text color */
+}
+.settings-dialog .confirm-btn:hover {
+    background-color: var(--primary-color-dark, var(--secondary-color)); /* Fallback for darker primary */
+}
+
+.settings-dialog .cancel-btn {
+    background-color: var(--button-secondary-bg, transparent); /* Fallback for secondary button bg */
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+.settings-dialog .cancel-btn:hover {
+    background-color: var(--button-hover-bg); /* Standard hover background */
+    border-color: var(--border-color-dark, var(--border-color)); /* Darker border on hover */
+}

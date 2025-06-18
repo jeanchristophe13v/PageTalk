@@ -187,7 +187,7 @@ async function handleGenerateContentRequest(requestData, sendResponse, senderTab
         const proxyAddress = result.proxyAddress;
 
         if (!apiKey) {
-            sendResponse({ success: false, error: 'API Key not configured' });
+            sendResponse({ success: false, error: 'API Key not configured. Please set it in Pagetalk options.' });
             return;
         }
 

@@ -4,6 +4,8 @@
 @import url("_variables.css");
 /* 导入基础样式、全局布局和通用组件 */
 @import url("_base.css");
+/* 导入 Toast 通知样式 */
+@import url("_toast.css");
 /* 导入 Markdown 内容渲染样式 */
 @import url("_markdown.css");
 /* 导入聊天界面相关样式 */
