@@ -14,16 +14,16 @@ async function makeProxyRequest(url, options = {}, proxyAddress = '') {
 
     // 如果没有配置代理或不是 Gemini API 请求，直接使用fetch
     if (!proxyAddress || proxyAddress.trim() === '' || !isGeminiAPI) {
-        if (!isGeminiAPI) {
-            console.log('[API] Non-Gemini API request, using direct fetch:', url);
-        } else {
-            console.log('[API] No proxy configured for Gemini API, using direct fetch');
-        }
+        // if (!isGeminiAPI) {
+            // console.log('[API] Non-Gemini API request, using direct fetch:', url);
+        // } else {
+            // console.log('[API] No proxy configured for Gemini API, using direct fetch');
+        // }
         return fetch(url, options);
     }
 
     // 对于 Gemini API 请求，如果配置了代理，通过 background.js 处理
-    console.log('[API] Gemini API request with proxy, delegating to background.js');
+    // console.log('[API] Gemini API request with proxy, delegating to background.js');
 
     // 在 content script 环境中，我们需要通过 background.js 来处理代理请求
     // 这里保持原有逻辑，实际的代理处理在 background.js 中完成
@@ -32,7 +32,7 @@ async function makeProxyRequest(url, options = {}, proxyAddress = '') {
         const proxyUrl = new URL(proxyAddress.trim());
         const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
 
-        console.log('[API] Using proxy for Gemini API:', proxyAddress, 'scheme:', proxyScheme);
+        // console.log('[API] Using proxy for Gemini API:', proxyAddress, 'scheme:', proxyScheme);
 
         // 直接使用 fetch，让 background.js 的代理逻辑处理
         return fetch(url, options);
@@ -40,7 +40,7 @@ async function makeProxyRequest(url, options = {}, proxyAddress = '') {
     } catch (error) {
         console.error('[API] Error parsing proxy URL:', error);
         // 如果代理配置有问题，回退到直接请求
-        console.log('[API] Falling back to direct fetch due to proxy error');
+        // console.log('[API] Falling back to direct fetch due to proxy error');
         return fetch(url, options);
     }
 }
@@ -64,18 +64,12 @@ async function makeApiRequest(url, options = {}) {
 /**
  * Internal helper to test API key and model validity.
  * @param {string} apiKey - The API key to test.
- * @param {string} model - The model to test against. Can be a "logical" model name.
+ * @param {string} apiKey - The API key to test.
  * @returns {Promise<{success: boolean, message: string}>} - Object indicating success and a message.
  */
-async function _testAndVerifyApiKey(apiKey, model) {
+async function _testAndVerifyApiKey(apiKey) {
     try {
-        let apiTestModel = model;
-        // Map logical model names to actual API model names for testing if necessary
-        if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
-            apiTestModel = 'gemini-2.5-flash';
-        } else if (model === 'gemini-2.5-pro') {
-            apiTestModel = 'gemini-2.5-pro';
-        }
+        const apiTestModel = 'gemini-2.5-flash'; // Use a reliable, basic model for testing API key validity.
 
         const requestBody = {
             contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
@@ -165,7 +159,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             apiModelName = 'gemini-2.5-pro';
             effectiveThinkingConfig = null;
         }
-        console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with thinking config:`, effectiveThinkingConfig);
+        // console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with thinking config:`, effectiveThinkingConfig);
 
         const historyToSend = historyForApi ? [...historyForApi] : [...stateRef.chatHistory];
 
@@ -186,7 +180,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         const actualApiModelsSupportingUrlContext = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
         if (actualApiModelsSupportingUrlContext.includes(apiModelName)) {
             requestBody.tools.push({ "url_context": {} });
-            console.log(`URL context tool added for model: ${apiModelName}`);
+            // console.log(`URL context tool added for model: ${apiModelName}`);
         }
         if (requestBody.tools.length === 0) {
             delete requestBody.tools;
@@ -344,11 +338,38 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}, unable to parse error response.` } }));
-            const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
-            // Log the actual model being used and the error for debugging
-            console.error(`API Error with model ${apiModelName} (selected: ${stateRef.model}): ${errorMessage}`, errorData);
-            throw new Error(errorMessage);
+            const errorData = await response.json().catch(() => ({
+                error: { message: `HTTP error ${response.status}. Unable to parse error response body.` }
+            }));
+            const originalErrorMessage = errorData.error?.message || `HTTP error ${response.status}.`;
+            let detailedErrorMessage = originalErrorMessage;
+
+            // Append hints based on error content or status code
+            if (typeof originalErrorMessage === 'string') {
+                if (originalErrorMessage.includes('API key not valid') ||
+                    originalErrorMessage.includes('API_KEY_INVALID') ||
+                    originalErrorMessage.includes('API key is invalid')) {
+                    detailedErrorMessage += " (Hint: Your API Key might be incorrect, expired, or not enabled for the Gemini API. Please check it in the Pagetalk settings and ensure it's correctly copied from Google AI Studio.)";
+                } else if (originalErrorMessage.includes('Permission denied') && originalErrorMessage.includes('model')) {
+                    detailedErrorMessage += ` (Hint: Your API Key may not have permission to use the model '${apiModelName}'. Check its configuration in your Google Cloud project or Google AI Studio.)`;
+                } else if (originalErrorMessage.includes('billing account')) {
+                    detailedErrorMessage += " (Hint: This error may be related to billing issues with your Google Cloud project. Please verify your project's billing status and ensure it's linked to an active billing account.)";
+                } else if (originalErrorMessage.includes('model') && originalErrorMessage.includes('not found')) {
+                    detailedErrorMessage += ` (Hint: The model '${apiModelName}' could not be found. It might be misspelled, deprecated, or not available for your API key's region or access level. Try re-fetching available models in settings.)`;
+                } else if (originalErrorMessage.includes('User location is not supported')) {
+                    detailedErrorMessage += " (Hint: The Gemini API is not available in your current region. Consider using a VPN or proxy if appropriate.)";
+                } else if (response.status === 400 && originalErrorMessage.includes('safety ratings')) {
+                     detailedErrorMessage += " (Hint: The response was blocked due to safety settings. You might need to adjust content filtering levels if configurable, or rephrase your prompt.)";
+                } else if (response.status === 400 && originalErrorMessage.includes('Invalid JSON payload')) {
+                     detailedErrorMessage += " (Hint: The request sent to the API was malformed. This is likely an extension issue.)";
+                } else if (response.status === 429) {
+                    detailedErrorMessage += " (Hint: You've exceeded your API request quota (RPM or TPM). Please try again later or check your quota limits in your Google Cloud project.)";
+                } else if (response.status >= 500 && response.status < 600) { // Server errors
+                    detailedErrorMessage += " (Hint: The API server encountered an unexpected error. This is likely a temporary issue on Google's side. Please try again after a short while.)";
+                }
+            }
+            console.error(`API Error with model ${apiModelName} (selected: ${stateRef.model}): ${detailedErrorMessage}`, errorData);
+            throw new Error(detailedErrorMessage); // Throw the enhanced message
         }
 
         // 处理 SSE 流
@@ -386,10 +407,10 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                                     };
                                     if (insertResponse && targetInsertionIndex !== null) {
                                         stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
-                                        console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
+                                        // console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
                                     } else {
                                         stateRef.chatHistory.push(botResponsePlaceholder);
-                                        console.log(`Appended bot placeholder`);
+                                        // console.log(`Appended bot placeholder`);
                                     }
                                     // --- 结束：新增 ---
                                 }
@@ -422,10 +443,10 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                             };
                             if (insertResponse && targetInsertionIndex !== null) {
                                 stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
-                                console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
+                                        // console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
                             } else {
                                 stateRef.chatHistory.push(botResponsePlaceholder);
-                                console.log(`Appended bot placeholder`);
+                                        // console.log(`Appended bot placeholder`);
                             }
                             // --- 结束：新增 ---
                         }
@@ -443,7 +464,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
             if (historyIndex !== -1) {
                 stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
-                console.log(`Updated bot message in history at index ${historyIndex}`);
+                // console.log(`Updated bot message in history at index ${historyIndex}`);
             } else {
                 console.error(`Could not find bot message with ID ${botMessageId} in history to finalize.`);
                 // Fallback: Add if not found (should not happen ideally)
@@ -472,7 +493,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            console.log('API call aborted by user.'); // Log abortion
+            // console.log('API call aborted by user.'); // Log abortion
             // If aborted, ensure the partial message is finalized and history is updated
             if (messageElement && botMessageId) {
                 uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Finalize potentially partial message
@@ -480,7 +501,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                 const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
                 if (historyIndex !== -1) {
                     stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
-                    console.log(`Updated aborted bot message in history at index ${historyIndex}`);
+                    // console.log(`Updated aborted bot message in history at index ${historyIndex}`);
                 } else {
                     console.error(`Could not find bot message with ID ${botMessageId} in history to finalize after abort.`);
                 }
@@ -524,10 +545,10 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                     // Add to history at the correct position
                     if (insertResponse && targetInsertionIndex !== null) {
                         stateRef.chatHistory.splice(targetInsertionIndex, 0, errorMessageObject);
-                        console.log(`Inserted error message object into history at index ${targetInsertionIndex}`);
+                        // console.log(`Inserted error message object into history at index ${targetInsertionIndex}`);
                     } else {
                         stateRef.chatHistory.push(errorMessageObject);
-                        console.log(`Appended error message object to history`);
+                        // console.log(`Appended error message object to history`);
                     }
                 } else {
                     // Fallback if element creation or ID retrieval failed
@@ -541,7 +562,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         // Ensure the controller is cleared regardless of success, error, or abort
         if (window.GeminiAPI.currentAbortController === controller) { // Check if it's still the same controller
             window.GeminiAPI.currentAbortController = null;
-            console.log('Cleared currentAbortController.');
+            // console.log('Cleared currentAbortController.');
         }
     }
 }

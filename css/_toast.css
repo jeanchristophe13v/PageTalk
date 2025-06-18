@@ -1,0 +1,33 @@
+/* Styles for toast notifications */
+
+.toast {
+    /* Basic toast styling can go here if not already defined elsewhere */
+    /* Example:
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+    border-radius: 5px;
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    */
+}
+
+.toast.show {
+    /* opacity: 1; */
+}
+
+/* For toasts that might need a longer display time */
+.toast.toast-long-duration {
+    /*
+      Currently, js/ui.js showToast function has a hardcoded timeout.
+      This class is added for potential future use where JS might check
+      this class to apply a longer timeout, or if CSS animations are used
+      for hiding, their duration could be extended here.
+      For now, no specific duration-extending styles are applied via CSS.
+    */
+}

@@ -31,6 +31,15 @@ function _(key, replacements = {}, translations) {
 export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, clearVideosCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, updateSelectedTabsBarCallback) {
     const userMessage = elements.userInput.value.trim();
 
+    if (!state.apiKey) {
+        if (showToastCallback) showToastCallback(_('chatApiKeyMissingError', {}, state.currentTranslations || currentTranslations), 'error');
+        // Ensure button is re-enabled if it was somehow disabled (though not typical for this specific check path)
+        if (elements.sendMessage.classList.contains('stop-streaming')) { // Check if it's in stop state
+             restoreSendButtonAndInputCallback(); // This should reset the button
+        }
+        return;
+    }
+
     if (state.isStreaming) {
         console.warn("Cannot send message while streaming.");
         // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
