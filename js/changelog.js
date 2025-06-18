@@ -11,12 +11,10 @@ const changelog = [
             "zh-CN": [
                 "1. 新增Gemini模型：gemini-2.5-flash、gemini-2.5-pro、gemini-2.5-flash-lite-preview-06-17",
                 "2. 将gemini-2.5-flash-preview-05-20替换为正式版gemini-2.5-flash",
-                "3. 优化模型选择器排序，将最新模型置于顶部"
             ],
             "en": [
                 "1. Added new Gemini models: gemini-2.5-flash, gemini-2.5-pro, gemini-2.5-flash-lite-preview-06-17",
                 "2. Replaced gemini-2.5-flash-preview-05-20 with official gemini-2.5-flash",
-                "3. Optimized model selector ordering with latest models at the top"
             ]
         }
     },
