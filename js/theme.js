@@ -170,13 +170,8 @@ export function loadButtonPosition(elements) {
             } else {
                 setDefaultButtonPosition(elements);
             }
-            // Ensure button is visible if settings tab is active initially
-            const settingsTab = document.getElementById('settings');
-            if (settingsTab && settingsTab.classList.contains('active')) {
-                 button.style.display = 'flex';
-            } else {
-                 button.style.display = 'none';
-            }
+            // Always hide button initially, let setThemeButtonVisibility control visibility
+            button.style.display = 'none';
         } else {
             console.warn("Theme toggle button element not found during loadButtonPosition.");
         }
@@ -208,6 +203,14 @@ function setDefaultButtonPosition(elements) {
  */
 export function setThemeButtonVisibility(currentTabId, elements) {
     if (elements.themeToggleBtnSettings) {
-        elements.themeToggleBtnSettings.style.display = (currentTabId === 'settings') ? 'flex' : 'none';
+        // 强制控制按钮显示状态，确保只在设置页面显示
+        if (currentTabId === 'settings') {
+            elements.themeToggleBtnSettings.style.display = 'flex';
+            elements.themeToggleBtnSettings.style.visibility = 'visible';
+        } else {
+            elements.themeToggleBtnSettings.style.display = 'none';
+            elements.themeToggleBtnSettings.style.visibility = 'hidden';
+        }
+        console.log(`Theme button visibility set for tab: ${currentTabId}, display: ${elements.themeToggleBtnSettings.style.display}`);
     }
 }

@@ -377,22 +377,131 @@
     margin-bottom: 0;
 }
 
-/* 模型设置保存按钮区域 */
+/* 模型管理区域 */
+.model-management-section {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.model-management-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+
+.model-management-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.selected-models-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    min-height: 60px;
+    padding: var(--spacing-sm);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--background-color);
+    transition: border-color 0.2s ease;
+}
+
+.selected-models-container:empty::before {
+    content: "暂无已选择的模型，点击"添加"来添加";
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 44px;
+}
+
+.selected-models-container:not(:empty) {
+    border-style: solid;
+    border-color: #acc1ff;
+    background-color: rgba(76, 110, 245, 0.02);
+}
+
+.model-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    max-width: 200px;
+}
+
+.model-card:hover {
+    border-color: var(--primary-color);
+    background-color: var(--button-hover-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.1);
+}
+
+.model-card-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.model-card-remove {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.model-card-remove:hover {
+    color: var(--error-color);
+    background-color: rgba(234, 67, 53, 0.1);
+}
+
+.model-card-remove svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* 模型设置状态区域 */
 .model-save-area {
     display: flex;
-    flex-direction: column; 
-    align-items: flex-end; 
-    margin-top: var(--spacing-lg); 
-}
-.model-save-area .save-btn {
-    margin-top: 0; 
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+    position: relative;
 }
 .model-save-area .connection-status {
-     margin-top: var(--spacing-sm); 
-     width: auto; 
-     text-align: right; 
+     position: relative;
+     width: auto;
+     text-align: right;
+     z-index: 1;
 }
-.save-btn, .test-btn { /* General save/test button style */
+.test-btn, .discover-btn { /* General test/discover button style */
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -407,7 +516,7 @@
     overflow: hidden;
 }
 
-.save-btn::before, .test-btn::before {
+.test-btn::before, .discover-btn::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -420,30 +529,36 @@
     transition: width 0.3s ease, height 0.3s ease;
 }
 
-.save-btn {
-    margin-top: var(--spacing-lg); /* Default margin for save buttons */
-}
-.save-btn:hover, .test-btn:hover {
+.test-btn:hover, .discover-btn:hover {
     transform: scale(1.02); /* 移除 translateY，只保留缩放 */
     box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2); /* 减少阴影强度 */
 }
 
-.save-btn:hover::before, .test-btn:hover::before {
+.test-btn:hover::before, .discover-btn:hover::before {
     width: 100%;
     height: 100%;
 }
 
-.save-btn:active, .test-btn:active {
+.test-btn:active, .discover-btn:active {
     transform: scale(0.98);
     box-shadow: 0 1px 3px rgba(76, 110, 245, 0.2);
 }
 .test-btn { /* Specific for test button, often beside save */
-     background-color: var(--warning-color); 
-     margin-right: var(--spacing-md); 
+     background-color: var(--warning-color);
+     margin-right: var(--spacing-md);
 }
 .test-btn:hover {
      background-color: #ffc107; /* Lighter warning color on hover */
      box-shadow: 0 2px 8px rgba(230, 119, 0, 0.2); /* Warning color shadow */
+}
+
+.discover-btn { /* Specific for discover models button */
+     background-color: var(--success-color);
+     margin-right: var(--spacing-sm);
+}
+.discover-btn:hover {
+     background-color: #45a049; /* Lighter success color on hover */
+     box-shadow: 0 2px 8px rgba(69, 160, 73, 0.2); /* Success color shadow */
 }
 
 /* 连接状态提示 (模型设置页) */
@@ -849,24 +964,34 @@ input[type=number] { /* For Firefox */
 
 /* --- 可拖动主题切换按钮 --- */
 #theme-toggle-btn {
-    display: none; /* Hide by default, shown via JS for settings tab */
-    position: absolute; 
-    right: var(--spacing-lg); 
-    bottom: 80px; 
-    left: auto; 
-    top: auto; 
-    cursor: grab; 
-    z-index: 99; 
-    width: 48px; 
-    height: 48px; 
-    padding: 12px; 
+    display: none !important; /* Hide by default, shown via JS for settings tab only */
+    position: absolute;
+    right: var(--spacing-lg);
+    bottom: 80px;
+    left: auto;
+    top: auto;
+    cursor: grab;
+    z-index: 99;
+    width: 48px;
+    height: 48px;
+    padding: 12px;
     transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     /* Inherits .icon-btn styles for background, color, border-radius, etc. */
     /* JS will add .icon-btn and .theme-toggle-btn classes */
 }
-#theme-toggle-btn:active {
-    cursor: grabbing; 
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+
+/* 只有在设置标签页激活时才显示主题切换按钮 */
+#settings.active #theme-toggle-btn {
+    display: flex !important;
 }
-/* JS controls display based on active tab */
+
+#theme-toggle-btn:active {
+    cursor: grabbing;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 确保在聊天标签页激活时按钮被隐藏 */
+#chat.active ~ main #settings #theme-toggle-btn {
+    display: none !important;
+}

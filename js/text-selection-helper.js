@@ -1556,20 +1556,27 @@ async function createFunctionWindowContent(windowElement, optionId) {
         // 获取主面板的模型设置
         const currentModel = await getCurrentMainPanelModel();
 
-        // 构建模型选项
-        const modelOptions = [
-            'gemini-2.5-flash',
-            'gemini-2.5-pro',
-            'gemini-2.5-flash-lite-preview-06-17',
-            'gemini-2.0-flash',
-            'gemini-2.5-flash-thinking',
-            'gemini-2.0-flash-thinking-exp-01-21',
-            'gemini-2.0-pro-exp-02-05',
-            'gemini-2.5-pro-exp-03-25',
-            'gemini-2.5-pro-preview-03-25',
-            'gemini-2.5-pro-preview-05-06',
-            'gemini-exp-1206'
-        ];
+        // 构建模型选项 - 通过消息传递获取
+        let modelOptions = [];
+        try {
+            // 尝试通过消息传递获取模型列表
+            const response = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({ action: 'getAvailableModels' }, (response) => {
+                    resolve(response);
+                });
+            });
+
+            if (response && response.models && response.models.length > 0) {
+                modelOptions = response.models;
+                console.log('[TextSelectionHelper] Got models from background:', modelOptions);
+            } else {
+                throw new Error('No models received from background');
+            }
+        } catch (error) {
+            console.warn('[TextSelectionHelper] Failed to get models from background, using fallback:', error);
+            // 回退到基本模型列表
+            modelOptions = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite-preview-06-17'];
+        }
 
         let modelOptionsHTML = '';
         modelOptions.forEach(model => {
@@ -2474,14 +2481,28 @@ function setupChatMessageActions(messageElement, message) {
                         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
                         const allMessages = Array.from(messagesArea.querySelectorAll('.pagetalk-chat-message'));
                         const currentIndex = allMessages.indexOf(messageElement);
+                        const deletedCount = allMessages.length - currentIndex;
 
                         // 移除当前消息及其后的所有消息
                         for (let i = currentIndex; i < allMessages.length; i++) {
                             allMessages[i].remove();
                         }
 
+                        // 从历史记录中删除对应的消息
+                        if (windowId) {
+                            const history = getChatHistory(windowId);
+                            // 删除最后 deletedCount 条消息（因为UI中删除了这么多条）
+                            if (history.length >= deletedCount) {
+                                history.splice(-deletedCount, deletedCount);
+                                console.log(`[TextSelectionHelper] Removed ${deletedCount} messages from history for regenerate`);
+                            }
+                        }
+
                         // 重新发送用户消息
                         addChatMessage(windowElement, userText, 'user');
+
+                        // 将用户消息重新添加到历史记录
+                        addToChatHistory(windowId, 'user', userText);
 
                         // 延迟执行，避免事件冲突
                         setTimeout(() => {
@@ -2491,6 +2512,15 @@ function setupChatMessageActions(messageElement, message) {
                     } else if (isAssistantMessage) {
                         // 助手消息：重新生成回复
                         messageElement.remove();
+
+                        // 从历史记录中删除最后一条助手消息
+                        if (windowId) {
+                            const history = getChatHistory(windowId);
+                            if (history.length > 0 && history[history.length - 1].role === 'assistant') {
+                                history.pop();
+                                console.log('[TextSelectionHelper] Removed last assistant message from history for regenerate');
+                            }
+                        }
 
                         // 获取最后一个用户消息
                         const messagesArea = windowElement.querySelector('.pagetalk-chat-messages');
@@ -2686,15 +2716,8 @@ async function regenerateChatMessage(windowElement, userMessage) {
             }
 
             if (isComplete) {
-                // 添加AI响应到历史记录（重新生成时需要更新历史记录中的最后一条助手消息）
-                const history = getChatHistory(windowId);
-                if (history.length > 0 && history[history.length - 1].role === 'assistant') {
-                    // 更新最后一条助手消息
-                    history[history.length - 1].content = fullResponse;
-                } else {
-                    // 如果历史记录中没有助手消息，添加新的
-                    addToChatHistory(windowId, 'assistant', fullResponse);
-                }
+                // 添加AI响应到历史记录（重新生成时直接添加新的助手消息，因为旧的已在performRegenerate中删除）
+                addToChatHistory(windowId, 'assistant', fullResponse);
 
                 // 设置复制按钮事件
                 setupChatMessageActions(aiMessageElement, fullResponse);
@@ -2847,11 +2870,36 @@ async function callAIAPI(message, model, temperature, onStream = null, requestId
             model: model
         };
 
-        // 为gemini-2.5-flash和gemini-2.5-pro添加thinking配置
-        if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
-            requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
-        } else if (model === 'gemini-2.5-pro') {
-            requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+        // 应用模型特定的参数配置 - 通过消息传递获取
+        try {
+            // 通过消息传递获取模型配置
+            const modelConfigResponse = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({
+                    action: 'getModelConfig',
+                    model: model
+                }, (response) => {
+                    resolve(response);
+                });
+            });
+
+            if (modelConfigResponse && modelConfigResponse.success && modelConfigResponse.config) {
+                const modelConfig = modelConfigResponse.config;
+                // 如果模型有特定参数，应用到请求数据中
+                if (modelConfig.params?.generationConfig) {
+                    Object.assign(requestData.generationConfig, modelConfig.params.generationConfig);
+                }
+                console.log('[TextSelectionHelper] Applied model config for:', model);
+            } else {
+                throw new Error('Failed to get model config from background');
+            }
+        } catch (error) {
+            console.warn('[TextSelectionHelper] Failed to get model config, using fallback logic:', error);
+            // 回退到原有逻辑
+            if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
+                requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+            } else if (model === 'gemini-2.5-pro') {
+                requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
+            }
         }
 
         // 设置流式更新监听器
@@ -3883,6 +3931,63 @@ function showMermaidModal(svgContent) {
     closeButton.addEventListener('mouseleave', () => {
         closeButton.style.color = '#f1f1f1';
     });
+}
+
+// 全局消息监听器 - 处理模型更新等事件
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'modelsUpdated') {
+        // 模型列表更新时刷新所有窗口的模型选择器
+        console.log('[TextSelectionHelper] Models updated, refreshing model selectors...');
+        refreshAllModelSelectors();
+    }
+});
+
+/**
+ * 刷新所有窗口的模型选择器
+ */
+async function refreshAllModelSelectors() {
+    try {
+        // 获取最新的模型列表
+        const response = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: 'getAvailableModels' }, (response) => {
+                resolve(response);
+            });
+        });
+
+        if (response && response.models && response.models.length > 0) {
+            const modelOptions = response.models;
+            console.log('[TextSelectionHelper] Refreshing with new models:', modelOptions);
+
+            // 更新所有现有窗口的模型选择器
+            const allWindows = document.querySelectorAll('.pagetalk-function-window');
+            allWindows.forEach(windowElement => {
+                const modelSelect = windowElement.querySelector('.pagetalk-model-select');
+                if (modelSelect) {
+                    const currentValue = modelSelect.value;
+
+                    // 清空并重新填充选项
+                    modelSelect.innerHTML = '';
+                    modelOptions.forEach(modelId => {
+                        const option = document.createElement('option');
+                        option.value = modelId;
+                        option.textContent = modelId;
+                        if (modelId === currentValue) {
+                            option.selected = true;
+                        }
+                        modelSelect.appendChild(option);
+                    });
+
+                    // 如果当前选择的模型不在新列表中，选择第一个可用模型
+                    if (!modelOptions.includes(currentValue) && modelOptions.length > 0) {
+                        modelSelect.value = modelOptions[0];
+                        console.log(`[TextSelectionHelper] Model ${currentValue} no longer available, switched to ${modelOptions[0]}`);
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.warn('[TextSelectionHelper] Failed to refresh model selectors:', error);
+    }
 }
 
 // 初始化划词助手

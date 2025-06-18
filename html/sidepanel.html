@@ -383,22 +383,21 @@
                             <div class="setting-group">
                                 <label for="model-selection">模型：</label>
                                 <select id="model-selection">
-                                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                                    <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-                                    <option value="gemini-2.5-flash-lite-preview-06-17">gemini-2.5-flash-lite-preview-06-17</option>
-                                    <option value="gemini-2.0-flash">gemini-2.0-flash</option>
-                                    <option value="gemini-2.5-flash-thinking">gemini-2.5-flash-thinking</option>
-                                    <option value="gemini-2.0-flash-thinking-exp-01-21">gemini-2.0-flash-thinking</option>
-                                    <option value="gemini-2.0-pro-exp-02-05">gemini-2.0-pro-exp-02-05</option>
-                                    <option value="gemini-2.5-pro-exp-03-25">gemini-2.5-pro-exp-03-25</option>
-                                    <option value="gemini-2.5-pro-preview-03-25">gemini-2.5-pro-preview-03-25</option>
-                                    <option value="gemini-2.5-pro-preview-05-06">gemini-2.5-pro-preview-05-06</option>
-                                    <option value="gemini-exp-1206">gemini-exp-1206</option>
+                                    <!-- 模型选项将通过 JavaScript 动态填充 -->
                                 </select>
                             </div>
                         </div>
+                        <div class="model-management-section">
+                            <div class="model-management-header">
+                                <h4 data-i18n="selectedModelsTitle">已选择的模型</h4>
+                                <button id="discover-models-btn" class="discover-btn" data-i18n="addModelsButton">添加</button>
+                            </div>
+                            <div id="selected-models-container" class="selected-models-container">
+                                <!-- 模型卡片将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+
                         <div class="model-save-area">
-                            <button id="save-model-settings" class="save-btn">保存</button>
                             <div id="connection-status" class="connection-status"></div>
                         </div>
                     </div>
@@ -475,6 +474,7 @@
     <!-- Lucide 图标库 -->
     <script src="../js/lib/lucide.js"></script>
     <!-- Load Helper Modules BEFORE main.js -->
+    <script src="../js/modelManager.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/translations.js"></script>
     <!-- 新增: 加载更新日志模块 -->

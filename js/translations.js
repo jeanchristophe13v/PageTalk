@@ -144,6 +144,7 @@ const translations = {
     'testingConnection': 'Testing connection...', // Model settings status
     'save': '保存',
     'saving': '保存中...',
+    'savingInProgress': '正在保存中...',
     'containsNImages': '[包含 {count} 张图片]', // For text export
     'tabContentLoadedSuccess': '页面已加载',
     'tabContentLoadFailed': '无法加载页面 \'{title}...\' 内容: {error}',
@@ -193,6 +194,27 @@ const translations = {
     'searchIcons': '搜索图标...',
     'lucideLoadError': 'Lucide图标库加载失败，请刷新页面重试',
     'autoSaveNotice': '更改将自动保存',
+
+    // --- 模型管理相关翻译 ---
+    'selectedModelsTitle': '已选择的模型',
+    'addModelsButton': '添加',
+    'addModelsTitle': '添加模型',
+    'addModelsDialogTitle': '添加模型',
+    'addModelsDialogClose': '关闭',
+    'modelsFoundMessage': '获取到 {count} 个新模型，请选择要添加的模型：',
+    'selectedCountMessage': '已选择 {count} 个模型',
+    'addModelsConfirm': '添加',
+    'addModelsCancel': '取消',
+    'fetchingModels': '获取中...',
+    'noNewModelsFound': '没有获取到模型',
+    'modelsAddedSuccess': '成功添加 {count} 个新模型',
+    'modelsReactivatedSuccess': '成功重新激活 {count} 个模型',
+    'modelsAddedAndReactivatedSuccess': '成功添加 {added} 个新模型，重新激活 {activated} 个模型',
+    'fetchModelsError': '获取模型失败: {error}',
+    'modelManagerUnavailable': '模型管理器不可用',
+    'removeModelTooltip': '移除此模型',
+    'minOneModelError': '至少需要保留一个模型',
+    'cannotRemoveProtectedModel': '无法删除受保护的模型',
 
     // --- 代理设置相关翻译 ---
     'proxyAddressLabel': '代理地址：',
@@ -370,6 +392,7 @@ const translations = {
     'agentSettingsSaved': 'Saved',
     'testingConnection': 'Testing connection...',
     'saving': 'Saving...',
+    'savingInProgress': 'Saving in progress...',
     'containsNImages': '[Contains {count} image(s)]', // For text export
     'tabContentLoadedSuccess': 'Page content loaded',
     'tabContentLoadFailed': 'Failed to load content for tab \'{title}...\': {error}',
@@ -419,6 +442,27 @@ const translations = {
     'searchIcons': 'Search icons...',
     'lucideLoadError': 'Failed to load Lucide icon library, please refresh the page and try again',
     'autoSaveNotice': 'Changes will be saved automatically',
+
+    // --- Model Management Related Translations ---
+    'selectedModelsTitle': 'Selected Models',
+    'addModelsButton': 'Add',
+    'addModelsTitle': 'Add Models',
+    'addModelsDialogTitle': 'Add Models',
+    'addModelsDialogClose': 'Close',
+    'modelsFoundMessage': 'Found {count} new models, please select the models to add:',
+    'selectedCountMessage': 'Selected {count} models',
+    'addModelsConfirm': 'Add',
+    'addModelsCancel': 'Cancel',
+    'fetchingModels': 'Fetching...',
+    'noNewModelsFound': 'No new models found',
+    'modelsAddedSuccess': 'Successfully added {count} new models',
+    'modelsReactivatedSuccess': 'Successfully reactivated {count} models',
+    'modelsAddedAndReactivatedSuccess': 'Successfully added {added} new models and reactivated {activated} models',
+    'fetchModelsError': 'Failed to fetch models: {error}',
+    'modelManagerUnavailable': 'Model manager unavailable',
+    'removeModelTooltip': 'Remove this model',
+    'minOneModelError': 'At least one model must be kept',
+    'cannotRemoveProtectedModel': 'Cannot remove protected model',
 
     // --- Proxy Settings Related Translations ---
     'proxyAddressLabel': 'Proxy Url:',

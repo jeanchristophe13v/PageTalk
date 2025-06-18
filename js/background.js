@@ -171,10 +171,164 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         handleProxyTestRequest(message.proxyAddress, sendResponse);
         return true; // 异步响应
     }
+    // 处理获取可用模型列表的请求
+    else if (message.action === "getAvailableModels") {
+        handleGetAvailableModelsRequest(sendResponse);
+        return true; // 异步响应
+    }
+    // 处理获取模型配置的请求
+    else if (message.action === "getModelConfig") {
+        handleGetModelConfigRequest(message.model, sendResponse);
+        return true; // 异步响应
+    }
+    // 处理广播模型更新的请求
+    else if (message.action === "broadcastModelsUpdated") {
+        handleBroadcastModelsUpdated(sendResponse);
+        return true; // 异步响应
+    }
     // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
     // 但如果整个 onMessage 可能处理异步操作，最好总是返回 true
     return true;
 });
+
+/**
+ * 处理获取可用模型列表的请求
+ */
+async function handleGetAvailableModelsRequest(sendResponse) {
+    try {
+        // 从存储中获取模型管理器的数据
+        const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels']);
+
+        if (result.managedModels && result.userActiveModels) {
+            // 获取用户激活的模型
+            const managedModels = result.managedModels;
+            const userActiveModels = result.userActiveModels;
+
+            const activeModels = userActiveModels
+                .map(modelId => managedModels.find(model => model.id === modelId))
+                .filter(model => model !== undefined)
+                .map(model => model.id);
+
+            console.log('[Background] Returning active models:', activeModels);
+            sendResponse({ success: true, models: activeModels });
+        } else {
+            // 如果没有存储数据，返回默认模型
+            const defaultModels = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite-preview-06-17'];
+            console.log('[Background] No stored models, returning defaults:', defaultModels);
+            sendResponse({ success: true, models: defaultModels });
+        }
+    } catch (error) {
+        console.error('[Background] Error getting available models:', error);
+        // 返回默认模型作为回退
+        const fallbackModels = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite-preview-06-17'];
+        sendResponse({ success: true, models: fallbackModels });
+    }
+}
+
+/**
+ * 处理获取模型配置的请求
+ */
+async function handleGetModelConfigRequest(modelId, sendResponse) {
+    try {
+        // 从存储中获取模型管理器的数据
+        const result = await chrome.storage.sync.get(['managedModels']);
+
+        if (result.managedModels) {
+            // 查找指定的模型配置
+            const managedModels = result.managedModels;
+            const modelConfig = managedModels.find(model => model.id === modelId);
+
+            if (modelConfig) {
+                console.log('[Background] Returning model config for:', modelId, modelConfig);
+                sendResponse({
+                    success: true,
+                    config: {
+                        apiModelName: modelConfig.apiModelName,
+                        params: modelConfig.params
+                    }
+                });
+            } else {
+                // 模型不存在，返回默认配置
+                console.warn('[Background] Model not found, using fallback config for:', modelId);
+                sendResponse({
+                    success: true,
+                    config: {
+                        apiModelName: modelId,
+                        params: getDefaultModelParams(modelId)
+                    }
+                });
+            }
+        } else {
+            // 没有存储数据，返回默认配置
+            console.warn('[Background] No stored models, using fallback config for:', modelId);
+            sendResponse({
+                success: true,
+                config: {
+                    apiModelName: modelId,
+                    params: getDefaultModelParams(modelId)
+                }
+            });
+        }
+    } catch (error) {
+        console.error('[Background] Error getting model config:', error);
+        // 返回默认配置作为回退
+        sendResponse({
+            success: true,
+            config: {
+                apiModelName: modelId,
+                params: getDefaultModelParams(modelId)
+            }
+        });
+    }
+}
+
+/**
+ * 获取默认模型参数
+ */
+function getDefaultModelParams(modelId) {
+    if (modelId === 'gemini-2.5-flash' || modelId === 'gemini-2.5-flash-thinking') {
+        return { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
+    } else if (modelId === 'gemini-2.5-pro') {
+        return { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
+    }
+    return null;
+}
+
+/**
+ * 处理广播模型更新的请求
+ */
+async function handleBroadcastModelsUpdated(sendResponse) {
+    try {
+        // 获取所有标签页
+        const tabs = await chrome.tabs.query({});
+
+        // 向每个标签页发送模型更新消息
+        const promises = tabs.map(tab => {
+            return chrome.tabs.sendMessage(tab.id, {
+                action: 'modelsUpdated'
+            }).catch(error => {
+                // 忽略发送失败的错误（可能是标签页没有content script）
+                console.log(`[Background] Failed to send modelsUpdated to tab ${tab.id}:`, error.message);
+            });
+        });
+
+        await Promise.all(promises);
+        console.log('[Background] Broadcasted models updated to all tabs');
+
+        // 确保在响应之前检查运行时是否仍然有效
+        if (chrome.runtime.lastError) {
+            console.warn('[Background] Runtime error during broadcast:', chrome.runtime.lastError.message);
+        } else {
+            sendResponse({ success: true });
+        }
+    } catch (error) {
+        console.error('[Background] Error broadcasting models updated:', error);
+        // 只有在运行时仍然有效时才发送响应
+        if (!chrome.runtime.lastError) {
+            sendResponse({ success: false, error: error.message });
+        }
+    }
+}
 
 /**
  * 处理来自划词助手的 generateContent 请求
@@ -191,8 +345,12 @@ async function handleGenerateContentRequest(requestData, sendResponse, senderTab
             return;
         }
 
-        // 获取模型名称，映射逻辑模型名到实际 API 模型名
+        // 获取模型配置，使用ModelManager（如果可用）
         let apiModelName = requestData.model || 'gemini-2.5-flash';
+        let modelParams = null;
+
+        // 注意：在background.js中，我们无法直接访问window.ModelManager
+        // 所以这里保持原有的映射逻辑，或者可以考虑将模型配置通过消息传递
         if (apiModelName === 'gemini-2.5-flash' || apiModelName === 'gemini-2.5-flash-thinking') {
             apiModelName = 'gemini-2.5-flash';
         } else if (apiModelName === 'gemini-2.5-pro') {
@@ -461,6 +619,13 @@ async function updateProxySettings() {
             console.log('[Background] Proxy settings cleared');
             // 停止健康检查
             stopProxyHealthCheck();
+
+            // 等待代理清除完全生效
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 清理网络缓存以避免代理切换导致的缓存问题
+            await clearNetworkCache();
+
             return;
         }
 
@@ -505,6 +670,12 @@ async function updateProxySettings() {
         });
         console.log('[Background] Selective proxy settings applied successfully');
 
+        // 等待代理设置完全生效
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // 清理网络缓存以避免代理切换导致的缓存问题
+        await clearNetworkCache();
+
         // 启动健康检查
         startProxyHealthCheck();
 
@@ -527,6 +698,38 @@ function getDefaultPort(protocol) {
             return 1080;
         default:
             return 8080;
+    }
+}
+
+/**
+ * 清理网络缓存以避免代理切换导致的缓存问题
+ */
+async function clearNetworkCache() {
+    try {
+        console.log('[Background] Clearing network cache to avoid proxy switching issues');
+
+        // 清理浏览器缓存（包括 DNS 缓存）
+        if (chrome.browsingData) {
+            await chrome.browsingData.remove({
+                "since": Date.now() - 60000 // 清理最近1分钟的缓存
+            }, {
+                "cache": true,
+                "cacheStorage": true,
+                "webSQL": false,
+                "indexedDB": false,
+                "localStorage": false,
+                "sessionStorage": false,
+                "cookies": false,
+                "downloads": false,
+                "formData": false,
+                "history": false,
+                "passwords": false
+            });
+            console.log('[Background] Network cache cleared successfully');
+        }
+    } catch (error) {
+        console.warn('[Background] Failed to clear network cache:', error);
+        // 不抛出错误，因为这不是关键功能
     }
 }
 

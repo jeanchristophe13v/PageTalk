@@ -69,12 +69,30 @@ async function makeApiRequest(url, options = {}) {
  */
 async function _testAndVerifyApiKey(apiKey, model) {
     try {
+        // 使用ModelManager获取API模型配置
         let apiTestModel = model;
-        // Map logical model names to actual API model names for testing if necessary
-        if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
-            apiTestModel = 'gemini-2.5-flash';
-        } else if (model === 'gemini-2.5-pro') {
-            apiTestModel = 'gemini-2.5-pro';
+        if (window.ModelManager?.instance) {
+            try {
+                await window.ModelManager.instance.initialize();
+                const modelConfig = window.ModelManager.instance.getModelApiConfig(model);
+                apiTestModel = modelConfig.apiModelName;
+            } catch (error) {
+                console.warn('[API] Failed to get model config from ModelManager, using fallback logic:', error);
+                // 回退到原有逻辑
+                if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
+                    apiTestModel = 'gemini-2.5-flash';
+                } else if (model === 'gemini-2.5-pro') {
+                    apiTestModel = 'gemini-2.5-pro';
+                }
+            }
+        } else {
+            console.warn('[API] ModelManager not available, using fallback logic');
+            // 回退到原有逻辑
+            if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
+                apiTestModel = 'gemini-2.5-flash';
+            } else if (model === 'gemini-2.5-pro') {
+                apiTestModel = 'gemini-2.5-pro';
+            }
         }
 
         const requestBody = {
@@ -151,21 +169,46 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
     }
 
     try {
-        // --- Determine actual API model name and thinking configuration ---
+        // --- Determine actual API model name and configuration using ModelManager ---
         let apiModelName = stateRef.model;
-        let effectiveThinkingConfig = null;
+        let modelParams = null;
 
-        if (stateRef.model === 'gemini-2.5-flash') {
-            apiModelName = 'gemini-2.5-flash';
-            effectiveThinkingConfig = { thinkingBudget: 0 };
-        } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
-            apiModelName = 'gemini-2.5-flash';
-            effectiveThinkingConfig = null;
-        } else if (stateRef.model === 'gemini-2.5-pro') {
-            apiModelName = 'gemini-2.5-pro';
-            effectiveThinkingConfig = null;
+        if (window.ModelManager?.instance) {
+            try {
+                await window.ModelManager.instance.initialize();
+                const modelConfig = window.ModelManager.instance.getModelApiConfig(stateRef.model);
+                apiModelName = modelConfig.apiModelName;
+                modelParams = modelConfig.params;
+            } catch (error) {
+                console.warn('[API] Failed to get model config from ModelManager, using fallback logic:', error);
+                // 回退到原有逻辑
+                if (stateRef.model === 'gemini-2.5-flash') {
+                    apiModelName = 'gemini-2.5-flash';
+                    modelParams = { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
+                } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
+                    apiModelName = 'gemini-2.5-flash';
+                    modelParams = null;
+                } else if (stateRef.model === 'gemini-2.5-pro') {
+                    apiModelName = 'gemini-2.5-pro';
+                    modelParams = null;
+                }
+            }
+        } else {
+            console.warn('[API] ModelManager not available, using fallback logic');
+            // 回退到原有逻辑
+            if (stateRef.model === 'gemini-2.5-flash') {
+                apiModelName = 'gemini-2.5-flash';
+                modelParams = { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
+            } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
+                apiModelName = 'gemini-2.5-flash';
+                modelParams = null;
+            } else if (stateRef.model === 'gemini-2.5-pro') {
+                apiModelName = 'gemini-2.5-pro';
+                modelParams = null;
+            }
         }
-        console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with thinking config:`, effectiveThinkingConfig);
+
+        console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with params:`, modelParams);
 
         const historyToSend = historyForApi ? [...historyForApi] : [...stateRef.chatHistory];
 
@@ -179,8 +222,10 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             tools: []
         };
 
-        if (effectiveThinkingConfig) {
-            requestBody.generationConfig.thinkingConfig = effectiveThinkingConfig;
+        // 应用模型特定的参数
+        if (modelParams?.generationConfig) {
+            // 合并模型特定的generationConfig参数
+            Object.assign(requestBody.generationConfig, modelParams.generationConfig);
         }
 
         const actualApiModelsSupportingUrlContext = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];

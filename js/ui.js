@@ -593,7 +593,7 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     setPlaceholder('#api-key', 'apiKeyPlaceholder');
     setTitle('#toggle-api-key', 'toggleApiKeyVisibilityTitleTranslated');
     setText('label[for="model-selection"]', 'modelSelectLabelSettings');
-    setText('#save-model-settings', 'save'); // Default text
+
 
     setTitle('#theme-toggle-btn', 'themeToggleTitle'); // Title for the draggable button
 

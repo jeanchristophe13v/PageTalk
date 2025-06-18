@@ -24,7 +24,7 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection, handleProxyAddressChange, handleProxyTest } from './settings.js';
+import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection, handleDiscoverModels, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest } from './settings.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
@@ -156,7 +156,9 @@ const elements = {
     // Settings - Model
     apiKey: document.getElementById('api-key'),
     modelSelection: document.getElementById('model-selection'),
-    saveModelSettings: document.getElementById('save-model-settings'),
+    selectedModelsContainer: document.getElementById('selected-models-container'),
+    discoverModelsBtn: document.getElementById('discover-models-btn'),
+
     connectionStatus: document.getElementById('connection-status'),
     toggleApiKey: document.getElementById('toggle-api-key'),
     apiKeyInput: document.getElementById('api-key'), // Alias
@@ -187,6 +189,18 @@ async function init() {
     // Request theme early
     requestThemeFromContentScript();
 
+    // Initialize ModelManager first
+    if (window.ModelManager?.instance) {
+        try {
+            await window.ModelManager.instance.initialize();
+            console.log('[main.js] ModelManager initialized successfully');
+        } catch (error) {
+            console.error('[main.js] Failed to initialize ModelManager:', error);
+        }
+    } else {
+        console.error('[main.js] ModelManager not available');
+    }
+
     // Load settings (app, agents) - this also loads language and applies initial theme/translations
     loadAppSettings(
         state, elements,
@@ -211,7 +225,7 @@ async function init() {
     }
 
     // Setup core features
-    initModelSelection(state, elements); // Populate model dropdowns
+    await initModelSelection(state, elements); // Populate model dropdowns (now async)
 
     // 确保翻译已加载后再初始化划词助手设置
     setTimeout(async () => {
@@ -245,9 +259,15 @@ async function init() {
         console.warn('Mermaid library not found during init.');
     }
 
-    // Set initial visibility for theme button
+    // Set initial visibility for theme button - ensure it's hidden on chat tab
     const initialTab = document.querySelector('.footer-tab.active')?.dataset.tab || 'chat';
     setThemeButtonVisibility(initialTab, elements);
+
+    // Additional safety check to ensure button is hidden on chat tab
+    if (initialTab === 'chat' && elements.themeToggleBtnSettings) {
+        elements.themeToggleBtnSettings.style.display = 'none';
+        elements.themeToggleBtnSettings.style.visibility = 'hidden';
+    }
 
     // Global Exposures for API module callbacks
     // These wrappers ensure that the live `isUserNearBottom` from main.js is used.
@@ -296,6 +316,12 @@ function setupEventListeners() {
             // 调用 ui.js 中的 switchTab (假设 switchTab 是一个可访问的函数，或者这部分逻辑在 main.js 中)
             switchTab(tabId, elements, (subTab) => switchSettingsSubTab(subTab, elements));
             setThemeButtonVisibility(tabId, elements); // Update button visibility on tab switch
+
+            // 额外的安全检查：确保主题按钮在聊天界面被隐藏
+            if (tabId === 'chat' && elements.themeToggleBtnSettings) {
+                elements.themeToggleBtnSettings.style.display = 'none';
+                elements.themeToggleBtnSettings.style.visibility = 'hidden';
+            }
 
             // 新增：如果切换到聊天标签页，则聚焦输入框
             if (tabId === 'chat' && elements.userInput) {
@@ -363,7 +389,12 @@ function setupEventListeners() {
     elements.mermaidModal.addEventListener('click', (e) => { if (e.target === elements.mermaidModal) hideMermaidModal(elements); });
 
     // Settings Actions
-    elements.saveModelSettings.addEventListener('click', () => saveModelSettings(true, state, elements, (msg, type) => showConnectionStatus(msg, type, elements), showToastUI, () => updateConnectionIndicator(state.isConnected, elements, currentTranslations), currentTranslations));
+    if (elements.discoverModelsBtn) {
+        elements.discoverModelsBtn.addEventListener('click', () => handleDiscoverModels(state, elements, showToastUI, currentTranslations));
+    }
+
+
+
     elements.toggleApiKey.addEventListener('click', () => toggleApiKeyVisibility(elements));
     elements.languageSelect.addEventListener('change', () => handleLanguageChange(state, elements, loadAndApplyTranslations, showToastUI, currentTranslations));
     elements.exportChatHistoryBtn.addEventListener('click', () => handleExportChat(state, elements, showToastUI, currentTranslations));
@@ -405,18 +436,128 @@ function setupEventListeners() {
     if (elements.chatMessages) {
         elements.chatMessages.addEventListener('scroll', handleChatScroll);
     }
+
+    // --- API Key 实时保存逻辑 ---
+    let apiKeyAutoSaveTimeout = null;
+    let isApiKeySaving = false;
+
+    /**
+     * 处理 API Key 的实时保存
+     */
+    function handleApiKeyAutoSave() {
+        // 清除之前的定时器
+        if (apiKeyAutoSaveTimeout) {
+            clearTimeout(apiKeyAutoSaveTimeout);
+        }
+
+        // 防抖：500ms 后执行保存
+        apiKeyAutoSaveTimeout = setTimeout(async () => {
+            const apiKey = elements.apiKey.value.trim();
+
+            // 如果 API Key 为空，清除缓存并更新连接状态
+            if (apiKey === '') {
+                chrome.storage.sync.remove('apiKey', () => {
+                    state.apiKey = '';
+                    state.isConnected = false;
+                    updateConnectionIndicator(state.isConnected, elements, currentTranslations);
+                });
+                return;
+            }
+
+            // 如果 API Key 与当前状态相同，不需要保存
+            if (apiKey === state.apiKey) {
+                return;
+            }
+
+            // 避免重复保存
+            if (isApiKeySaving) {
+                return;
+            }
+
+            isApiKeySaving = true;
+
+            try {
+                // 调用保存函数，显示连接状态提示
+                await saveModelSettings(true, state, elements,
+                    (msg, type) => showConnectionStatus(msg, type, elements),
+                    showToastUI,
+                    () => updateConnectionIndicator(state.isConnected, elements, currentTranslations),
+                    currentTranslations
+                );
+            } catch (error) {
+                console.error('Auto-save API key failed:', error);
+                // 显示错误提示
+                showToastUI(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
+            } finally {
+                isApiKeySaving = false;
+            }
+        }, 500);
+    }
+
+    /**
+     * 处理全局点击事件，触发 API Key 保存
+     */
+    function handleGlobalClickForApiKeySave(event) {
+        // 检查是否点击了 API Key 输入框或密码切换按钮
+        const isApiKeyInput = event.target === elements.apiKey;
+        const isToggleButton = event.target === elements.toggleApiKey ||
+                              elements.toggleApiKey.contains(event.target);
+
+        // 如果点击的是输入框或切换按钮，不触发保存
+        if (isApiKeyInput || isToggleButton) {
+            return;
+        }
+
+        // 如果 API Key 输入框有焦点且有内容变化，触发保存
+        if (document.activeElement === elements.apiKey) {
+            const currentValue = elements.apiKey.value.trim();
+            if (currentValue !== state.apiKey) {
+                // 清除防抖定时器，立即保存
+                if (apiKeyAutoSaveTimeout) {
+                    clearTimeout(apiKeyAutoSaveTimeout);
+                }
+                handleApiKeyAutoSave();
+            }
+            // 移除输入框焦点
+            elements.apiKey.blur();
+        }
+    }
+
+    // API Key 输入框事件监听
+    if (elements.apiKey) {
+        // 输入事件：实时保存
+        elements.apiKey.addEventListener('input', handleApiKeyAutoSave);
+
+        // 失焦事件：立即保存
+        elements.apiKey.addEventListener('blur', () => {
+            if (apiKeyAutoSaveTimeout) {
+                clearTimeout(apiKeyAutoSaveTimeout);
+            }
+            // 立即执行保存，不使用防抖
+            const apiKey = elements.apiKey.value.trim();
+            if (apiKey !== state.apiKey) {
+                handleApiKeyAutoSave();
+            }
+        });
+
+        // Enter 键：立即保存并失焦
+        elements.apiKey.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (apiKeyAutoSaveTimeout) {
+                    clearTimeout(apiKeyAutoSaveTimeout);
+                }
+                handleApiKeyAutoSave();
+                elements.apiKey.blur();
+            }
+        });
+    }
+
+    // 全局点击事件监听
+    document.addEventListener('click', handleGlobalClickForApiKeySave);
 }
 
-// --- 修复：API 密钥输入框清空时同步删除缓存 ---
-if (elements.apiKey) {
-    elements.apiKey.addEventListener('input', () => {
-        if (elements.apiKey.value.trim() === '') {
-            chrome.storage.sync.remove('apiKey', () => {
-                state.apiKey = '';
-            });
-        }
-    });
-}
+
 
 // --- Event Handlers & Triggers ---
 
@@ -988,6 +1129,29 @@ function handleExtensionReloadFromContent() {
     }
 }
 
+/**
+ * 处理代理自动清除通知
+ */
+function handleProxyAutoClearedFromContent(failedProxy) {
+    console.log('[main.js] Handling proxy auto-cleared notification for:', failedProxy);
+
+    // 更新UI中的代理地址输入框
+    if (elements.proxyAddressInput) {
+        elements.proxyAddressInput.value = '';
+    }
+
+    // 更新状态
+    state.proxyAddress = '';
+
+    // 显示通知给用户
+    const message = `代理服务器 ${failedProxy} 连接失败，已自动清除代理设置以恢复网络连接。`;
+    if (showToastUI) {
+        showToastUI(message, 'warning', 'toast-proxy-cleared');
+    }
+
+    console.log('[main.js] Proxy settings cleared due to connection failure');
+}
+
 // --- Translation Loading ---
 function loadAndApplyTranslations(language) {
     if (typeof translations === 'undefined') {
@@ -1106,25 +1270,3 @@ function updateSelectedTabsBarFromMain() {
 
 
 
-/**
- * 处理代理自动清除通知
- */
-function handleProxyAutoClearedFromContent(failedProxy) {
-    console.log('[main.js] Handling proxy auto-cleared notification for:', failedProxy);
-
-    // 更新UI中的代理地址输入框
-    if (elements.proxyAddressInput) {
-        elements.proxyAddressInput.value = '';
-    }
-
-    // 更新状态
-    state.proxyAddress = '';
-
-    // 显示通知给用户
-    const message = `代理服务器 ${failedProxy} 连接失败，已自动清除代理设置以恢复网络连接。`;
-    if (showToastUI) {
-        showToastUI(message, 'warning', 'toast-proxy-cleared');
-    }
-
-    console.log('[main.js] Proxy settings cleared due to connection failure');
-}

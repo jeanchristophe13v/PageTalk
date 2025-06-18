@@ -73,11 +73,8 @@ export async function initTextSelectionHelperSettings(elements, translations) {
     // 加载设置（等待完成）
     await loadSettings();
 
-    // 初始化UI
-    initSettingsUI(elements, translations);
-
-    // 设置事件监听器
-    setupEventListeners(elements, translations);
+    // 初始化UI（现在是异步的）
+    await initSettingsUI(elements, translations);
 
     // 初始化自定义选项UI
     initCustomOptionsUI(elements, translations);
@@ -317,44 +314,61 @@ function saveSettings() {
 /**
  * 初始化设置UI
  */
-function initSettingsUI(elements, translations) {
+async function initSettingsUI(elements, translations) {
     // 初始化模型选择器
-    initModelSelectors(elements);
-    
+    await initModelSelectors(elements);
+
     // 初始化设置卡片
     initSettingCards(elements);
-    
+
     // 加载当前设置到UI
     loadSettingsToUI(elements);
+
+    // 设置事件监听器
+    setupEventListeners(elements, translations);
 
     // 初始化选项顺序列表
     updateOptionsOrderUI(elements, translations);
 }
 
 /**
- * 获取模型选项列表
+ * 获取模型选项列表 - 通过消息传递获取
  */
-function getModelOptions() {
-    return [
-        { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
-        { value: 'gemini-2.5-pro', text: 'gemini-2.5-pro' },
-        { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17' },
-        { value: 'gemini-2.0-flash', text: 'gemini-2.0-flash' },
-        { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
-        { value: 'gemini-2.0-flash-thinking-exp-01-21', text: 'gemini-2.0-flash-thinking' },
-        { value: 'gemini-2.0-pro-exp-02-05', text: 'gemini-2.0-pro-exp-02-05' },
-        { value: 'gemini-2.5-pro-exp-03-25', text: 'gemini-2.5-pro-exp-03-25' },
-        { value: 'gemini-2.5-pro-preview-03-25', text: 'gemini-2.5-pro-preview-03-25' },
-        { value: 'gemini-2.5-pro-preview-05-06', text: 'gemini-2.5-pro-preview-05-06' },
-        { value: 'gemini-exp-1206', text: 'gemini-exp-1206' },
-    ];
+async function getModelOptions() {
+    try {
+        // 尝试通过消息传递获取模型列表
+        const response = await new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: 'getAvailableModels' }, (response) => {
+                resolve(response);
+            });
+        });
+
+        if (response && response.models && response.models.length > 0) {
+            const modelOptions = response.models.map(modelId => ({
+                value: modelId,
+                text: modelId
+            }));
+            console.log('[TextSelectionHelperSettings] Got models from background:', modelOptions);
+            return modelOptions;
+        } else {
+            throw new Error('No models received from background');
+        }
+    } catch (error) {
+        console.warn('[TextSelectionHelperSettings] Failed to get models from background, using fallback:', error);
+        // 回退到基本选项
+        return [
+            { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
+            { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
+            { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17' }
+        ];
+    }
 }
 
 /**
  * 生成模型选项HTML
  */
-function generateModelOptionsHTML(selectedModel = 'gemini-2.5-flash') {
-    const modelOptions = getModelOptions();
+async function generateModelOptionsHTML(selectedModel = 'gemini-2.5-flash') {
+    const modelOptions = await getModelOptions();
     return modelOptions.map(option => {
         const selected = option.value === selectedModel ? 'selected' : '';
         return `<option value="${option.value}" ${selected}>${option.text}</option>`;
@@ -364,8 +378,8 @@ function generateModelOptionsHTML(selectedModel = 'gemini-2.5-flash') {
 /**
  * 初始化模型选择器
  */
-function initModelSelectors(elements) {
-    const modelOptions = getModelOptions();
+async function initModelSelectors(elements) {
+    const modelOptions = await getModelOptions();
 
     const selectors = [
         document.getElementById('interpret-model'),
@@ -1123,6 +1137,9 @@ async function showCustomOptionDialog(option, translations) {
 
     const title = isEdit ? (currentTranslations?.editCustomOption || '编辑自定义选项') : (currentTranslations?.newCustomOption || '新建自定义选项');
 
+    // 先获取模型选项HTML
+    const modelOptionsHTML = await generateModelOptionsHTML(option?.model);
+
     // 创建对话框
     const dialog = document.createElement('div');
     dialog.className = 'custom-option-dialog-overlay';
@@ -1152,7 +1169,7 @@ async function showCustomOptionDialog(option, translations) {
                 <div class="setting-group">
                     <label>${currentTranslations?.model || '模型'}</label>
                     <select id="custom-option-model">
-                        ${generateModelOptionsHTML(option?.model)}
+                        ${modelOptionsHTML}
                     </select>
                 </div>
                 <div class="setting-group">
@@ -1695,5 +1712,85 @@ async function initIconPreview(dialog, iconName = 'star') {
         if (lucideLoaded) {
             iconPreview.innerHTML = renderLucideIconForSettings(iconName, 20);
         }
+    }
+}
+
+// 监听模型更新事件
+if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'modelsUpdated') {
+            console.log('[TextSelectionHelperSettings] Models updated, refreshing model selectors...');
+            refreshModelSelectors();
+        }
+    });
+}
+
+/**
+ * 刷新模型选择器
+ */
+async function refreshModelSelectors() {
+    try {
+        const modelOptions = await getModelOptions();
+
+        // 更新解读和翻译的模型选择器
+        const selectors = [
+            document.getElementById('interpret-model'),
+            document.getElementById('translate-model')
+        ];
+
+        selectors.forEach(selector => {
+            if (selector) {
+                const currentValue = selector.value;
+
+                // 清空并重新填充选项
+                selector.innerHTML = '';
+                modelOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    if (option.value === currentValue) {
+                        optionElement.selected = true;
+                    }
+                    selector.appendChild(optionElement);
+                });
+
+                // 如果当前选择的模型不在新列表中，选择第一个可用模型
+                if (!modelOptions.find(opt => opt.value === currentValue) && modelOptions.length > 0) {
+                    selector.value = modelOptions[0].value;
+                    console.log(`[TextSelectionHelperSettings] Model ${currentValue} no longer available, switched to ${modelOptions[0].value}`);
+
+                    // 触发change事件以保存新的选择
+                    selector.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+
+        // 更新自定义选项对话框中的模型选择器（如果打开）
+        const customDialog = document.querySelector('.custom-option-dialog-overlay');
+        if (customDialog) {
+            const customModelSelect = customDialog.querySelector('#custom-option-model');
+            if (customModelSelect) {
+                const currentValue = customModelSelect.value;
+
+                customModelSelect.innerHTML = '';
+                modelOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    if (option.value === currentValue) {
+                        optionElement.selected = true;
+                    }
+                    customModelSelect.appendChild(optionElement);
+                });
+
+                if (!modelOptions.find(opt => opt.value === currentValue) && modelOptions.length > 0) {
+                    customModelSelect.value = modelOptions[0].value;
+                }
+            }
+        }
+
+        console.log('[TextSelectionHelperSettings] Model selectors refreshed');
+    } catch (error) {
+        console.warn('[TextSelectionHelperSettings] Failed to refresh model selectors:', error);
     }
 }
