@@ -108,6 +108,41 @@ if (typeof window.translations === 'undefined') {
     'settingsSaved': '已保存', // Used in showConnectionStatus for success
     'connectionTestSuccess': '连接成功', // Used in showConnectionStatus for success
     'connectionTestFailed': '连接失败: {error}', // Placeholder for error message
+
+    // --- API 错误消息 ---
+    'apiKeyNotValidError': '连接失败：API密钥无效，请检查您的密钥。',
+    'connectionFailedGeneric': '连接失败：{error}',
+    'networkErrorGeneric': '连接失败：网络错误或服务器无法访问。',
+    'serverUnreachableError': '连接失败：无法连接到服务器，请检查您的网络连接。',
+    'httpErrorGeneric': 'HTTP错误 {status}',
+    'httpErrorWithMessage': 'HTTP错误 {status}，无法解析错误响应。',
+
+    // --- 内容提取错误消息 ---
+    'unableToExtractContent': '无法提取页面内容。',
+    'fallbackToBodyText': '(回退到正文文本) ',
+    'contentTruncated': '...(内容已截断)',
+    'pdfExtractionFailed': '从PDF.js查看器DOM提取文本失败，回退到Readability。',
+    'pdfLibraryInitFailed': 'PDF.js库初始化失败。',
+    'pdfFetchFailed': '获取PDF失败',
+    'pdfFetchFailedWithError': '获取PDF失败：{error}',
+    'extractionError': '提取页面内容时出错: {error}',
+    'readabilityNotLoaded': '错误：无法加载页面内容提取库。',
+    'pdfProcessingError': 'PDF处理错误：{error}',
+    'embeddedPdfTitle': '嵌入式PDF',
+
+    // --- 默认提示词 ---
+    'defaultInterpretPrompt': '解读一下',
+    'defaultTranslatePrompt': '翻译一下',
+    'defaultChatPrompt': '你是一个有用的助手',
+
+    // --- 代理相关错误消息 ---
+    'proxyConnectionFailed': '代理服务器 {proxy} 连接失败，已自动清除代理设置以恢复网络连接。',
+
+    // --- 通用错误消息 ---
+    'unknownErrorLoadingTab': '加载标签页时发生未知错误',
+    'unifiedApiNotAvailable': '统一API接口不可用',
+    'translationsNotFound': '未找到翻译对象。',
+
     'contextClearedSuccess': '聊天记录已清除',
     'pageContentExtractedSuccess': '成功提取页面内容',
     'newAgentCreatedToast': '新助手已创建',
@@ -204,20 +239,19 @@ if (typeof window.translations === 'undefined') {
 
     // --- 模型管理相关翻译 ---
     'selectedModelsTitle': '已选择的模型',
-    'addModelsButton': '添加',
     'addModelsTitle': '添加模型',
     'addModelsDialogTitle': '添加模型',
     'addModelsDialogClose': '关闭',
-    'modelsFoundMessage': '获取到 {count} 个新模型，请选择要添加的模型：',
+    'modelsFoundMessage': '找到 {count} 个新模型，请选择要添加的模型：',
     'selectedCountMessage': '已选择 {count} 个模型',
     'addModelsConfirm': '添加',
     'addModelsCancel': '取消',
-    'fetchingModels': '获取中...',
-    'noNewModelsFound': '没有获取到模型',
+    'fetchingModels': '查找中...',
+    'noNewModelsFound': '没有找到新模型',
     'modelsAddedSuccess': '成功添加 {count} 个新模型',
     'modelsReactivatedSuccess': '成功重新激活 {count} 个模型',
     'modelsAddedAndReactivatedSuccess': '成功添加 {added} 个新模型，重新激活 {activated} 个模型',
-    'fetchModelsError': '获取模型失败: {error}',
+    'fetchModelsError': '添加模型失败: {error}',
     'modelManagerUnavailable': '模型管理器不可用',
     'removeModelTooltip': '移除此模型',
     'minOneModelError': '至少需要保留一个模型',
@@ -225,11 +259,11 @@ if (typeof window.translations === 'undefined') {
     'modelManagerUnavailable': 'API 测试功能不可用',
     'apiKeyMissingError': '请先输入 API Key',
     'connectionTestFailed': '测试失败: {error}',
-    'noNewModelsFound': '未发现新的可用模型',
+    'noNewModelsFound': '未找到新的可用模型',
     'modelsAddedSuccess': '成功添加 {count} 个模型',
     'modelsReactivatedSuccess': '成功重新激活 {count} 个模型',
     'modelsAddedAndReactivatedSuccess': '成功添加 {added} 个模型，重新激活 {activated} 个模型',
-    'fetchModelsError': '发现模型失败: {error}',
+    'fetchModelsError': '添加模型失败: {error}',
 
     // --- 代理设置相关翻译 ---
     'proxyAddressLabel': '代理地址：',
@@ -243,11 +277,11 @@ if (typeof window.translations === 'undefined') {
 
     // --- 多供应商设置相关翻译 ---
     'aiProviderLabel': 'AI 供应商：',
-    'testConnection': '测试连接',
-    'discoverModels': '发现模型',
+    'testConnection': '测试',
+    'discoverModels': '添加',
     'currentModelLabel': '当前模型：',
     'testingConnection': '测试中...',
-    'discoveringModels': '发现中...',
+    'discoveringModels': '添加中...',
     'noModelsSelected': '暂无已选择的模型，点击"添加"来添加',
     'providerApiKeyPlaceholder': '输入您的 API Key',
     'getApiKeyHint': '获取 API Key',
@@ -384,6 +418,41 @@ if (typeof window.translations === 'undefined') {
     'settingsSaved': 'Saved',
     'connectionTestSuccess': 'Connection successful',
     'connectionTestFailed': 'Connection failed: {error}',
+
+    // --- API Error Messages ---
+    'apiKeyNotValidError': 'Connection failed: API key not valid. Please check your key.',
+    'connectionFailedGeneric': 'Connection failed: {error}',
+    'networkErrorGeneric': 'Connection failed: Network error or server unreachable.',
+    'serverUnreachableError': 'Connection failed: Could not reach the server. Check your internet connection.',
+    'httpErrorGeneric': 'HTTP error {status}',
+    'httpErrorWithMessage': 'HTTP error {status}, unable to parse error response.',
+
+    // --- Content Extraction Error Messages ---
+    'unableToExtractContent': 'Unable to extract page content.',
+    'fallbackToBodyText': '(Fallback to body text) ',
+    'contentTruncated': '...(Content truncated)',
+    'pdfExtractionFailed': 'Failed to extract text from PDF.js viewer DOM, falling back to Readability.',
+    'pdfLibraryInitFailed': 'PDF.js library failed to initialize.',
+    'pdfFetchFailed': 'Failed to fetch PDF',
+    'pdfFetchFailedWithError': 'Failed to fetch PDF: {error}',
+    'extractionError': 'Error extracting page content: {error}',
+    'readabilityNotLoaded': 'Error: Unable to load page content extraction library.',
+    'pdfProcessingError': 'Error processing PDF: {error}',
+    'embeddedPdfTitle': 'Embedded PDF',
+
+    // --- Default Prompts ---
+    'defaultInterpretPrompt': 'Interpret this',
+    'defaultTranslatePrompt': 'Translate this',
+    'defaultChatPrompt': 'You are a helpful assistant',
+
+    // --- Proxy Related Error Messages ---
+    'proxyConnectionFailed': 'Proxy server {proxy} connection failed, proxy settings have been automatically cleared to restore network connection.',
+
+    // --- Generic Error Messages ---
+    'unknownErrorLoadingTab': 'Unknown error loading tab',
+    'unifiedApiNotAvailable': 'Unified API interface not available',
+    'translationsNotFound': 'Translations object not found.',
+
     'contextClearedSuccess': 'Chat history cleared',
     'pageContentExtractedSuccess': 'Successfully extracted page content',
     'newAgentCreatedToast': 'New agent created',
@@ -479,7 +548,6 @@ if (typeof window.translations === 'undefined') {
 
     // --- Model Management Related Translations ---
     'selectedModelsTitle': 'Selected Models',
-    'addModelsButton': 'Add',
     'addModelsTitle': 'Add Models',
     'addModelsDialogTitle': 'Add Models',
     'addModelsDialogClose': 'Close',
@@ -487,12 +555,12 @@ if (typeof window.translations === 'undefined') {
     'selectedCountMessage': 'Selected {count} models',
     'addModelsConfirm': 'Add',
     'addModelsCancel': 'Cancel',
-    'fetchingModels': 'Fetching...',
+    'fetchingModels': 'Searching...',
     'noNewModelsFound': 'No new models found',
     'modelsAddedSuccess': 'Successfully added {count} new models',
     'modelsReactivatedSuccess': 'Successfully reactivated {count} models',
     'modelsAddedAndReactivatedSuccess': 'Successfully added {added} new models and reactivated {activated} models',
-    'fetchModelsError': 'Failed to fetch models: {error}',
+    'fetchModelsError': 'Failed to add models: {error}',
     'modelManagerUnavailable': 'Model manager unavailable',
     'removeModelTooltip': 'Remove this model',
     'minOneModelError': 'At least one model must be kept',
@@ -504,7 +572,7 @@ if (typeof window.translations === 'undefined') {
     'modelsAddedSuccess': 'Successfully added {count} models',
     'modelsReactivatedSuccess': 'Successfully reactivated {count} models',
     'modelsAddedAndReactivatedSuccess': 'Successfully added {added} models and reactivated {activated} models',
-    'fetchModelsError': 'Failed to discover models: {error}',
+    'fetchModelsError': 'Failed to add models: {error}',
 
     // --- Proxy Settings Related Translations ---
     'proxyAddressLabel': 'Proxy Url:',
@@ -518,11 +586,11 @@ if (typeof window.translations === 'undefined') {
 
     // --- Multi-Provider Settings Related Translations ---
     'aiProviderLabel': 'AI Provider:',
-    'testConnection': 'Test Connection',
-    'discoverModels': 'Discover Models',
+    'testConnection': 'Test',
+    'discoverModels': 'Add',
     'currentModelLabel': 'Current Model:',
     'testingConnection': 'Testing...',
-    'discoveringModels': 'Discovering...',
+    'discoveringModels': 'Adding...',
     'noModelsSelected': 'No models selected yet, click "Add" to add models',
     'providerApiKeyPlaceholder': 'Enter your API Key',
     'getApiKeyHint': 'Get API Key',

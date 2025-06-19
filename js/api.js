@@ -17,6 +17,31 @@ import { openaiAdapter, fetchOpenAIModels, testOpenAIApiKey } from './providers/
 import { anthropicAdapter, fetchAnthropicModels, testAnthropicApiKey } from './providers/adapters/anthropicAdapter.js';
 
 /**
+ * 获取当前翻译对象
+ * @returns {Object} 当前翻译对象
+ */
+function getCurrentTranslations() {
+    // 尝试从全局获取当前语言
+    let currentLanguage = 'zh-CN';
+
+    // 尝试从全局状态获取语言设置
+    if (typeof window !== 'undefined' && window.state && window.state.language) {
+        currentLanguage = window.state.language;
+    }
+    // 从localStorage获取语言设置
+    else if (typeof localStorage !== 'undefined') {
+        currentLanguage = localStorage.getItem('language') || 'zh-CN';
+    }
+
+    // 从window.translations获取翻译
+    if (typeof window !== 'undefined' && window.translations) {
+        const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
+        return translations;
+    }
+    return {};
+}
+
+/**
  * 代理请求函数 - 选择性代理实现，仅对 Gemini API 使用代理
  * 注意：在 content script 环境中，我们通过 background.js 来处理代理请求
  */
@@ -131,25 +156,30 @@ async function _testAndVerifyApiKey(apiKey, model) {
         });
 
         if (response.ok) {
-            return { success: true, message: 'Connection established ! API Key verified.' };
+            // 获取当前翻译
+            const currentTranslations = getCurrentTranslations();
+            const message = currentTranslations['connectionTestSuccess'] || 'Connection established ! API Key verified.';
+            return { success: true, message };
         } else {
             // Try to parse error, provide fallback message
-            const error = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
-            const errorMessage = error.error?.message || `HTTP error ${response.status}`;
+            const currentTranslations = getCurrentTranslations();
+            const error = await response.json().catch(() => ({ error: { message: currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error ${response.status}` } }));
+            const errorMessage = error.error?.message || currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error ${response.status}`;
             // Check for specific API key related errors if possible (example)
             if (errorMessage.includes('API key not valid')) {
-                return { success: false, message: 'Connection failed: API key not valid. Please check your key.' };
+                return { success: false, message: currentTranslations['apiKeyNotValidError'] || 'Connection failed: API key not valid. Please check your key.' };
             }
-            return { success: false, message: `Connection failed: ${errorMessage}` };
+            return { success: false, message: currentTranslations['connectionFailedGeneric']?.replace('{error}', errorMessage) || `Connection failed: ${errorMessage}` };
         }
     } catch (error) {
         console.error('API Test Error:', error);
         // Provide a more user-friendly network error message
-        let friendlyMessage = 'Connection failed: Network error or server unreachable.';
+        const currentTranslations = getCurrentTranslations();
+        let friendlyMessage = currentTranslations['networkErrorGeneric'] || 'Connection failed: Network error or server unreachable.';
         if (error instanceof TypeError && error.message.includes('fetch')) {
-            friendlyMessage = 'Connection failed: Could not reach the server. Check your internet connection.';
+            friendlyMessage = currentTranslations['serverUnreachableError'] || 'Connection failed: Could not reach the server. Check your internet connection.';
         } else if (error.message) {
-            friendlyMessage = `Connection failed: ${error.message}`;
+            friendlyMessage = currentTranslations['connectionFailedGeneric']?.replace('{error}', error.message) || `Connection failed: ${error.message}`;
         }
         return { success: false, message: friendlyMessage };
     }
@@ -438,8 +468,9 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}, unable to parse error response.` } }));
-            const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+            const currentTranslations = getCurrentTranslations();
+            const errorData = await response.json().catch(() => ({ error: { message: currentTranslations['httpErrorWithMessage']?.replace('{status}', response.status) || `HTTP error ${response.status}, unable to parse error response.` } }));
+            const errorMessage = errorData.error?.message || currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error! status: ${response.status}`;
             // Log the actual model being used and the error for debugging
             console.error(`API Error with model ${apiModelName} (selected: ${stateRef.model}): ${errorMessage}`, errorData);
             throw new Error(errorMessage);

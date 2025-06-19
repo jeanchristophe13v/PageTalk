@@ -683,17 +683,7 @@ async function removeModelFromSelection(modelId) {
     console.log(`[Settings] Removed model: ${modelId}`);
 }
 
-/**
- * 处理获取新模型按钮点击（旧版本兼容性，现在使用供应商特定的发现）
- * @param {object} state - Global state reference
- * @param {object} elements - DOM elements reference
- * @param {function} showToastCallback - Toast notification callback
- * @param {object} currentTranslations - Translations object
- */
-export async function handleDiscoverModels(state, elements, showToastCallback, currentTranslations) {
-    // 为了向后兼容，默认使用 Google 供应商
-    await handleDiscoverModelsForProvider('google', state, elements, showToastCallback);
-}
+
 
 /**
  * 显示模型选择对话框

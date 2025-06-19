@@ -2993,8 +2993,12 @@ async function getTextSelectionHelperSettings() {
 
             chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
                 // 使用translations.js中的默认提示词
-                const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) : (currentLanguage === 'en' ? 'Interpret this' : '解读一下');
-                const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) : (currentLanguage === 'en' ? 'Translate this' : '翻译一下');
+                const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
+                    (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
+                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解读一下');
+                const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) :
+                    (window.translations?.[currentLanguage]?.['defaultTranslatePrompt'] ||
+                     window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
 
                 const defaultSettings = {
                     interpret: {
@@ -3041,8 +3045,12 @@ async function getTextSelectionHelperSettings() {
             // 回退到默认设置，使用当前语言
             try {
                 const currentLanguage = await getCurrentLanguage();
-                const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) : '解读一下';
-                const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) : '翻译一下';
+                const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
+                    (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
+                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解读一下');
+                const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) :
+                    (window.translations?.[currentLanguage]?.['defaultTranslatePrompt'] ||
+                     window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
 
                 const defaultSettings = {
                     interpret: {

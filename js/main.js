@@ -24,7 +24,7 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, handleDiscoverModels, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners } from './settings.js';
+import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners } from './settings.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
@@ -157,7 +157,6 @@ const elements = {
     apiKey: null, // 多供应商模式下不再使用单一API Key
     modelSelection: document.getElementById('model-selection'),
     selectedModelsContainer: document.getElementById('selected-models-container'),
-    discoverModelsBtn: document.getElementById('discover-models-btn'),
 
     connectionStatus: document.getElementById('connection-status'),
     toggleApiKey: null, // 多供应商模式下不再使用单一切换按钮
@@ -392,9 +391,7 @@ function setupEventListeners() {
     elements.mermaidModal.addEventListener('click', (e) => { if (e.target === elements.mermaidModal) hideMermaidModal(elements); });
 
     // Settings Actions
-    if (elements.discoverModelsBtn) {
-        elements.discoverModelsBtn.addEventListener('click', () => handleDiscoverModels(state, elements, showToastUI, currentTranslations));
-    }
+    // Removed discover models button event listener
 
 
 
@@ -602,7 +599,7 @@ function handleTabSelectedFromPopup(selectedTab) {
                 tabData.content = null; // 确保错误时内容为空
                 tabData.isLoading = false;
                 tabData.error = true;
-                const errorMessage = response.error || 'Unknown error loading tab';
+                const errorMessage = response.error || _('unknownErrorLoadingTab', {}, currentTranslations);
                 console.error(`Failed to load content for tab ${selectedTab.id}: ${errorMessage}`);
                 // 使用自定义类名调用 showToastUI
                 showToastUI(_('tabContentLoadFailed', { title: tabData.title.substring(0, 20), error: errorMessage }), 'error', 'toast-tab-loaded');
@@ -1006,7 +1003,7 @@ async function handleUnifiedAPICallFromBackground(message) {
 
         // 检查统一API接口是否可用
         if (!window.ModelManager?.instance || !window.PageTalkAPI?.callApi) {
-            throw new Error('Unified API interface not available');
+            throw new Error(_('unifiedApiNotAvailable', {}, currentTranslations));
         }
 
         // 确保ModelManager已初始化
@@ -1103,7 +1100,7 @@ function handleProxyAutoClearedFromContent(failedProxy) {
     state.proxyAddress = '';
 
     // 显示通知给用户
-    const message = `代理服务器 ${failedProxy} 连接失败，已自动清除代理设置以恢复网络连接。`;
+    const message = _('proxyConnectionFailed', { proxy: failedProxy }, currentTranslations);
     if (showToastUI) {
         showToastUI(message, 'warning', 'toast-proxy-cleared');
     }
@@ -1114,7 +1111,7 @@ function handleProxyAutoClearedFromContent(failedProxy) {
 // --- Translation Loading ---
 function loadAndApplyTranslations(language) {
     if (typeof window.translations === 'undefined') {
-        console.error('Translations object not found.');
+        console.error(_('translationsNotFound', {}, currentTranslations));
         return;
     }
     currentTranslations = window.translations[language] || window.translations['en']; // Fallback to English

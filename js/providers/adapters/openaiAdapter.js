@@ -1,9 +1,34 @@
 /**
  * PageTalk - OpenAI 兼容 API 适配器
- * 
+ *
  * 处理 OpenAI 兼容 API 的请求格式转换和响应解析
  * 支持：OpenAI、SiliconFlow、OpenRouter、DeepSeek 等
  */
+
+/**
+ * 获取当前翻译对象
+ * @returns {Object} 当前翻译对象
+ */
+function getCurrentTranslations() {
+    // 尝试从全局获取当前语言
+    let currentLanguage = 'zh-CN';
+
+    // 尝试从全局状态获取语言设置
+    if (typeof window !== 'undefined' && window.state && window.state.language) {
+        currentLanguage = window.state.language;
+    }
+    // 从localStorage获取语言设置
+    else if (typeof localStorage !== 'undefined') {
+        currentLanguage = localStorage.getItem('language') || 'zh-CN';
+    }
+
+    // 从window.translations获取翻译
+    if (typeof window !== 'undefined' && window.translations) {
+        const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
+        return translations;
+    }
+    return {};
+}
 
 /**
  * OpenAI 兼容 API 适配器
@@ -219,7 +244,9 @@ export async function fetchOpenAIModels(provider, providerSettings) {
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const currentTranslations = getCurrentTranslations();
+            const errorMessage = currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error! status: ${response.status}`;
+            throw new Error(errorMessage);
         }
         
         const data = await response.json();
@@ -279,18 +306,23 @@ export async function testOpenAIApiKey(provider, providerSettings, testModel = n
         });
         
         if (response.ok) {
-            return { success: true, message: 'Connection established! API Key verified.' };
+            // 获取当前翻译
+            const currentTranslations = getCurrentTranslations();
+            const message = currentTranslations['connectionTestSuccess'] || 'Connection established! API Key verified.';
+            return { success: true, message };
         } else {
-            const error = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
-            const errorMessage = error.error?.message || `HTTP error ${response.status}`;
-            
+            const currentTranslations = getCurrentTranslations();
+            const error = await response.json().catch(() => ({ error: { message: currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error ${response.status}` } }));
+            const errorMessage = error.error?.message || currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error ${response.status}`;
+
             if (errorMessage.includes('Incorrect API key') || errorMessage.includes('Invalid API key')) {
-                return { success: false, message: 'Connection failed: API key not valid. Please check your key.' };
+                return { success: false, message: currentTranslations['apiKeyNotValidError'] || 'Connection failed: API key not valid. Please check your key.' };
             }
-            return { success: false, message: `Connection failed: ${errorMessage}` };
+            return { success: false, message: currentTranslations['connectionFailedGeneric']?.replace('{error}', errorMessage) || `Connection failed: ${errorMessage}` };
         }
     } catch (error) {
         console.error('[OpenAIAdapter] API test error:', error);
-        return { success: false, message: `Connection failed: ${error.message}` };
+        const currentTranslations = getCurrentTranslations();
+        return { success: false, message: currentTranslations['connectionFailedGeneric']?.replace('{error}', error.message) || `Connection failed: ${error.message}` };
     }
 }

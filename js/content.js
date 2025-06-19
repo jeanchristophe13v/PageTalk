@@ -459,7 +459,9 @@ async function extractPageContent() {
       // 修改：使用 getInitializedPdfjsLib 获取 pdf.js
       const pdfjs = await getInitializedPdfjsLib();
       if (!pdfjs || !pdfjs.getDocument) { // 检查 pdfjs 是否成功初始化
-        throw new Error('PDF.js library failed to initialize.');
+        const currentLang = localStorage.getItem('language') || 'zh-CN';
+        const errorMessage = window.translations?.[currentLang]?.['pdfLibraryInitFailed'] || 'PDF.js library failed to initialize.';
+        throw new Error(errorMessage);
       }
 
       // 通过background.js获取PDF文件（支持代理）
@@ -474,13 +476,18 @@ async function extractPageContent() {
           } else if (response.success) {
             resolve(response);
           } else {
-            reject(new Error(response.error || 'Failed to fetch PDF'));
+            const currentLang = localStorage.getItem('language') || 'zh-CN';
+            const errorMessage = window.translations?.[currentLang]?.['pdfFetchFailed'] || 'Failed to fetch PDF';
+            reject(new Error(response.error || errorMessage));
           }
         });
       });
 
       if (!response.success) {
-        throw new Error(`Failed to fetch PDF: ${response.error}`);
+        const currentLang = localStorage.getItem('language') || 'zh-CN';
+        const errorTemplate = window.translations?.[currentLang]?.['pdfFetchFailedWithError'] || 'Failed to fetch PDF: {error}';
+        const errorMessage = errorTemplate.replace('{error}', response.error);
+        throw new Error(errorMessage);
       }
       // 将base64数据转换为ArrayBuffer
       const base64Data = response.data;
@@ -507,7 +514,9 @@ async function extractPageContent() {
       console.log('[PageTalk] PDF text extracted via fetch, length:', fullText.length);
       const maxLength = 500000; // 限制最大长度，与 Readability 提取一致
       if (fullText.length > maxLength) {
-        fullText = fullText.substring(0, maxLength) + '... (Content truncated)';
+        const currentLang = localStorage.getItem('language') || 'zh-CN';
+        const truncatedSuffix = window.translations?.[currentLang]?.['contentTruncated'] || '...(Content truncated)';
+        fullText = fullText.substring(0, maxLength) + truncatedSuffix;
       }
       return fullText.trim();
     } catch (pdfError) {
@@ -519,7 +528,10 @@ async function extractPageContent() {
       }
       // 如果 DOM 提取方式不适用或失败，最终回退到 Readability
       console.warn('[PageTalk] Falling back to Readability for direct PDF after fetch/parse error.');
-      return `Error processing PDF: ${pdfError.message}. \n\n ${extractWithReadability()}`;
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      const errorTemplate = window.translations?.[currentLang]?.['pdfProcessingError'] || 'Error processing PDF: {error}';
+      const errorMessage = errorTemplate.replace('{error}', pdfError.message);
+      return `${errorMessage} \n\n ${extractWithReadability()}`;
     }
   } else if (isPdfJsViewerDom) {
     // 如果不是直接的 PDF 链接，但页面 DOM 结构像是 PDF.js 渲染的
@@ -540,7 +552,8 @@ function extractWithReadability() {
   try {
     if (typeof Readability === 'undefined') {
       console.error('[PageTalk] Readability library not loaded.');
-      return '错误：无法加载页面内容提取库。';
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      return window.translations?.[currentLang]?.['readabilityNotLoaded'] || '错误：无法加载页面内容提取库。';
     }
     const documentClone = document.cloneNode(true);
     const reader = new Readability(documentClone);
@@ -554,19 +567,26 @@ function extractWithReadability() {
       content = document.body.textContent || '';
       content = content.replace(/\s+/g, ' ').trim();
       if (!content) {
-        return 'Unable to extract page content.';
+        const currentLang = localStorage.getItem('language') || 'zh-CN';
+        return window.translations?.[currentLang]?.['unableToExtractContent'] || 'Unable to extract page content.';
       }
-      content = '(Fallback to body text) ' + content; // 标记为后备提取
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      const fallbackPrefix = window.translations?.[currentLang]?.['fallbackToBodyText'] || '(Fallback to body text) ';
+      content = fallbackPrefix + content; // 标记为后备提取
     }
     const maxLength = 500000; // 限制最大长度
     if (content.length > maxLength) {
-      content = content.substring(0, maxLength) + '...(Content truncated)';
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      const truncatedSuffix = window.translations?.[currentLang]?.['contentTruncated'] || '...(Content truncated)';
+      content = content.substring(0, maxLength) + truncatedSuffix;
     }
     return content;
 
   } catch (error) {
     console.error('[PageTalk] Error extracting page content with Readability:', error);
-    return `提取页面内容时出错: ${error.message}`;
+    const currentLang = localStorage.getItem('language') || 'zh-CN';
+    const errorTemplate = window.translations?.[currentLang]?.['extractionError'] || '提取页面内容时出错: {error}';
+    return errorTemplate.replace('{error}', error.message);
   }
 }
 
@@ -610,13 +630,17 @@ function extractFromPdfJsDom() {
   }
 
   if (pdfText) {
-    const title = document.title || 'Embedded PDF';
+    const currentLang = localStorage.getItem('language') || 'zh-CN';
+    const defaultTitle = window.translations?.[currentLang]?.['embeddedPdfTitle'] || 'Embedded PDF';
+    const title = document.title || defaultTitle;
     // 规范化提取过程中可能产生的多余空格和换行
     pdfText = pdfText.replace(/\s\s+/g, ' ').replace(/\n\s*\n/g, '\n').trim();
     return `Title: ${title}\n\n${pdfText}`;
   }
 
-  console.warn('[PageTalk] Failed to extract text from PDF.js viewer DOM, falling back to Readability.');
+  const currentLang = localStorage.getItem('language') || 'zh-CN';
+  const fallbackMessage = window.translations?.[currentLang]?.['pdfExtractionFailed'] || 'Failed to extract text from PDF.js viewer DOM, falling back to Readability.';
+  console.warn(`[PageTalk] ${fallbackMessage}`);
   return extractWithReadability(); // 如果 DOM 提取没有结果，则回退
 }
 

@@ -580,7 +580,7 @@
      text-align: right;
      z-index: 1;
 }
-.test-btn, .discover-btn { /* General test/discover button style */
+.test-btn { /* General test button style */
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -595,7 +595,7 @@
     overflow: hidden;
 }
 
-.test-btn::before, .discover-btn::before {
+.test-btn::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -608,17 +608,17 @@
     transition: width 0.3s ease, height 0.3s ease;
 }
 
-.test-btn:hover, .discover-btn:hover {
+.test-btn:hover {
     transform: scale(1.02); /* 移除 translateY，只保留缩放 */
     box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2); /* 减少阴影强度 */
 }
 
-.test-btn:hover::before, .discover-btn:hover::before {
+.test-btn:hover::before {
     width: 100%;
     height: 100%;
 }
 
-.test-btn:active, .discover-btn:active {
+.test-btn:active {
     transform: scale(0.98);
     box-shadow: 0 1px 3px rgba(76, 110, 245, 0.2);
 }
@@ -629,15 +629,6 @@
 .test-btn:hover {
      background-color: #ffc107; /* Lighter warning color on hover */
      box-shadow: 0 2px 8px rgba(230, 119, 0, 0.2); /* Warning color shadow */
-}
-
-.discover-btn { /* Specific for discover models button */
-     background-color: var(--success-color);
-     margin-right: var(--spacing-sm);
-}
-.discover-btn:hover {
-     background-color: #45a049; /* Lighter success color on hover */
-     box-shadow: 0 2px 8px rgba(69, 160, 73, 0.2); /* Success color shadow */
 }
 
 /* 连接状态提示 (模型设置页) */
@@ -656,7 +647,7 @@
     opacity: 1;
     transform: translateY(0);
     background-color: rgba(52, 168, 83, 0.1);
-    color: var(--success-color); 
+    color: var(--success-color);
     border: 1px solid rgba(52, 168, 83, 0.3);
 }
 .connection-status.error {
