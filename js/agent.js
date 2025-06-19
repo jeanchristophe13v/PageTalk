@@ -7,7 +7,7 @@ import { generateUniqueId } from './utils.js';
 const defaultAgentSettings = {
     systemPrompt: '',
     temperature: 0.7,
-    maxTokens: 65536,
+    maxTokens: '', // 改为空值，让模型使用自己的默认值
     topP: 0.95,
 };
 

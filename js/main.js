@@ -24,7 +24,7 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, saveModelSettings, handleLanguageChange, handleExportChat, initModelSelection, handleDiscoverModels, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest } from './settings.js';
+import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, handleDiscoverModels, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners } from './settings.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
 import {
@@ -63,7 +63,7 @@ const state = {
     // Settings derived from current agent
     systemPrompt: '',
     temperature: 0.7,
-    maxTokens: 65536,
+    maxTokens: '', // 改为空值，让模型使用自己的默认值
     topP: 0.95,
     // Other state
     pageContext: null, // Use null initially to indicate not yet extracted
@@ -87,7 +87,7 @@ const state = {
 const defaultSettings = {
     systemPrompt: '',
     temperature: 0.7,
-    maxTokens: 65536,
+    maxTokens: '', // 改为空值，让模型使用自己的默认值
     topP: 0.95,
 };
 // Default agent (used by agent module)
@@ -154,14 +154,14 @@ const elements = {
     importAgentInput: document.getElementById('import-agent-input'),
     exportAgentsBtn: document.getElementById('export-agents'),
     // Settings - Model
-    apiKey: document.getElementById('api-key'),
+    apiKey: null, // 多供应商模式下不再使用单一API Key
     modelSelection: document.getElementById('model-selection'),
     selectedModelsContainer: document.getElementById('selected-models-container'),
     discoverModelsBtn: document.getElementById('discover-models-btn'),
 
     connectionStatus: document.getElementById('connection-status'),
-    toggleApiKey: document.getElementById('toggle-api-key'),
-    apiKeyInput: document.getElementById('api-key'), // Alias
+    toggleApiKey: null, // 多供应商模式下不再使用单一切换按钮
+    apiKeyInput: null, // 多供应商模式下不再使用单一API Key输入框
     // Footer Status Bar
     contextStatus: document.getElementById('context-status'),
     connectionIndicator: document.getElementById('connection-indicator'),
@@ -302,6 +302,9 @@ async function init() {
     // Expose text selection helper functions to global scope
     window.isTextSelectionHelperEnabled = isTextSelectionHelperEnabled;
 
+    // Expose state object to global scope for settings functions
+    window.state = state;
+
     console.log("Pagetalk Initialized.");
 }
 
@@ -395,7 +398,8 @@ function setupEventListeners() {
 
 
 
-    elements.toggleApiKey.addEventListener('click', () => toggleApiKeyVisibility(elements));
+    // 多供应商模式下，API Key 可见性切换由 setupProviderEventListeners 处理
+    // elements.toggleApiKey.addEventListener('click', () => toggleApiKeyVisibility(elements));
     elements.languageSelect.addEventListener('change', () => handleLanguageChange(state, elements, loadAndApplyTranslations, showToastUI, currentTranslations));
     elements.exportChatHistoryBtn.addEventListener('click', () => handleExportChat(state, elements, showToastUI, currentTranslations));
 
@@ -437,124 +441,11 @@ function setupEventListeners() {
         elements.chatMessages.addEventListener('scroll', handleChatScroll);
     }
 
-    // --- API Key 实时保存逻辑 ---
-    let apiKeyAutoSaveTimeout = null;
-    let isApiKeySaving = false;
+    // --- 多供应商模式下，API Key 保存逻辑由 setupProviderEventListeners 处理 ---
+    // 旧的单一 API Key 自动保存逻辑已移除，现在由各个供应商的输入框独立处理
 
-    /**
-     * 处理 API Key 的实时保存
-     */
-    function handleApiKeyAutoSave() {
-        // 清除之前的定时器
-        if (apiKeyAutoSaveTimeout) {
-            clearTimeout(apiKeyAutoSaveTimeout);
-        }
-
-        // 防抖：500ms 后执行保存
-        apiKeyAutoSaveTimeout = setTimeout(async () => {
-            const apiKey = elements.apiKey.value.trim();
-
-            // 如果 API Key 为空，清除缓存并更新连接状态
-            if (apiKey === '') {
-                chrome.storage.sync.remove('apiKey', () => {
-                    state.apiKey = '';
-                    state.isConnected = false;
-                    updateConnectionIndicator(state.isConnected, elements, currentTranslations);
-                });
-                return;
-            }
-
-            // 如果 API Key 与当前状态相同，不需要保存
-            if (apiKey === state.apiKey) {
-                return;
-            }
-
-            // 避免重复保存
-            if (isApiKeySaving) {
-                return;
-            }
-
-            isApiKeySaving = true;
-
-            try {
-                // 调用保存函数，显示连接状态提示
-                await saveModelSettings(true, state, elements,
-                    (msg, type) => showConnectionStatus(msg, type, elements),
-                    showToastUI,
-                    () => updateConnectionIndicator(state.isConnected, elements, currentTranslations),
-                    currentTranslations
-                );
-            } catch (error) {
-                console.error('Auto-save API key failed:', error);
-                // 显示错误提示
-                showToastUI(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
-            } finally {
-                isApiKeySaving = false;
-            }
-        }, 500);
-    }
-
-    /**
-     * 处理全局点击事件，触发 API Key 保存
-     */
-    function handleGlobalClickForApiKeySave(event) {
-        // 检查是否点击了 API Key 输入框或密码切换按钮
-        const isApiKeyInput = event.target === elements.apiKey;
-        const isToggleButton = event.target === elements.toggleApiKey ||
-                              elements.toggleApiKey.contains(event.target);
-
-        // 如果点击的是输入框或切换按钮，不触发保存
-        if (isApiKeyInput || isToggleButton) {
-            return;
-        }
-
-        // 如果 API Key 输入框有焦点且有内容变化，触发保存
-        if (document.activeElement === elements.apiKey) {
-            const currentValue = elements.apiKey.value.trim();
-            if (currentValue !== state.apiKey) {
-                // 清除防抖定时器，立即保存
-                if (apiKeyAutoSaveTimeout) {
-                    clearTimeout(apiKeyAutoSaveTimeout);
-                }
-                handleApiKeyAutoSave();
-            }
-            // 移除输入框焦点
-            elements.apiKey.blur();
-        }
-    }
-
-    // API Key 输入框事件监听
-    if (elements.apiKey) {
-        // 输入事件：实时保存
-        elements.apiKey.addEventListener('input', handleApiKeyAutoSave);
-
-        // 失焦事件：立即保存
-        elements.apiKey.addEventListener('blur', () => {
-            if (apiKeyAutoSaveTimeout) {
-                clearTimeout(apiKeyAutoSaveTimeout);
-            }
-            // 立即执行保存，不使用防抖
-            const apiKey = elements.apiKey.value.trim();
-            if (apiKey !== state.apiKey) {
-                handleApiKeyAutoSave();
-            }
-        });
-
-        // Enter 键：立即保存并失焦
-        elements.apiKey.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (apiKeyAutoSaveTimeout) {
-                    clearTimeout(apiKeyAutoSaveTimeout);
-                }
-                handleApiKeyAutoSave();
-                elements.apiKey.blur();
-            }
-        });
-    }
-
-    // 全局点击事件监听
-    document.addEventListener('click', handleGlobalClickForApiKeySave);
+    // 设置多供应商事件监听器
+    setupProviderEventListeners(state, elements, showToastUI, () => updateConnectionIndicator(state.isConnected, elements, currentTranslations));
 }
 
 
@@ -730,7 +621,16 @@ function handleTabSelectedFromPopup(selectedTab) {
 function handleChatModelChange() {
     state.model = elements.chatModelSelection.value;
     elements.modelSelection.value = state.model; // Sync settings tab
-    saveModelSettings(false, state, elements, (msg, type) => showConnectionStatus(msg, type, elements), showToastUI, () => updateConnectionIndicator(state.isConnected, elements, currentTranslations), currentTranslations); // Save without toast
+
+    // 在多供应商模式下，只需要保存模型选择，不需要测试API Key
+    chrome.storage.sync.set({ model: state.model }, () => {
+        if (chrome.runtime.lastError) {
+            console.error("Error saving model selection:", chrome.runtime.lastError);
+            showToastUI(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
+        } else {
+            console.log(`Model selection saved: ${state.model}`);
+        }
+    });
 }
 
 function handleChatAgentChange() {
@@ -997,12 +897,25 @@ function handleContentScriptMessages(event) {
             console.log(`[main.js] Proxy auto-cleared notification:`, message.failedProxy);
             handleProxyAutoClearedFromContent(message.failedProxy);
             break;
+        case 'callUnifiedAPIFromBackground':
+            console.log(`[main.js] Received API call request from background:`, message.model);
+            handleUnifiedAPICallFromBackground(message);
+            break;
     }
 }
 
 function requestPageContent() {
     updateContextStatus('contextStatusExtracting', {}, elements, currentTranslations);
     window.parent.postMessage({ action: 'requestPageContent' }, '*');
+
+    // 添加超时机制，如果10秒内没有收到响应，显示失败状态
+    setTimeout(() => {
+        if (state.pageContext === null) { // 仍然是初始状态，说明没有收到响应
+            console.warn('[main.js] Page content extraction timeout');
+            state.pageContext = 'error';
+            updateContextStatus('contextStatusFailed', {}, elements, currentTranslations);
+        }
+    }, 10000); // 10秒超时
 }
 
 function requestThemeFromContentScript() {
@@ -1084,6 +997,52 @@ function closePanel() {
 }
 
 /**
+ * 处理来自background的API调用转发请求
+ */
+async function handleUnifiedAPICallFromBackground(message) {
+    try {
+        const { model, messages, options } = message;
+        console.log('[main.js] Handling unified API call from background for model:', model);
+
+        // 检查统一API接口是否可用
+        if (!window.ModelManager?.instance || !window.PageTalkAPI?.callApi) {
+            throw new Error('Unified API interface not available');
+        }
+
+        // 确保ModelManager已初始化
+        await window.ModelManager.instance.initialize();
+
+        let accumulatedText = '';
+
+        // 流式回调函数
+        const streamCallback = (chunk, complete) => {
+            accumulatedText += chunk;
+            // 对于划词助手，我们不需要实时流式更新，只需要最终结果
+        };
+
+        // 调用统一API接口
+        await window.PageTalkAPI.callApi(model, messages, streamCallback, options);
+
+        // 发送成功响应
+        window.parent.postMessage({
+            action: 'unifiedAPIResponse',
+            success: true,
+            response: accumulatedText
+        }, '*');
+
+    } catch (error) {
+        console.error('[main.js] Error handling unified API call from background:', error);
+
+        // 发送错误响应
+        window.parent.postMessage({
+            action: 'unifiedAPIResponse',
+            success: false,
+            error: error.message
+        }, '*');
+    }
+}
+
+/**
  * 处理来自content script的语言变化通知
  */
 function handleLanguageChangeFromContent(newLanguage) {
@@ -1154,11 +1113,11 @@ function handleProxyAutoClearedFromContent(failedProxy) {
 
 // --- Translation Loading ---
 function loadAndApplyTranslations(language) {
-    if (typeof translations === 'undefined') {
+    if (typeof window.translations === 'undefined') {
         console.error('Translations object not found.');
         return;
     }
-    currentTranslations = translations[language] || translations['en']; // Fallback to English
+    currentTranslations = window.translations[language] || window.translations['en']; // Fallback to English
     state.language = language; // Ensure state is updated
     console.log(`Applying translations for: ${language}`);
     updateUIElementsWithTranslations(currentTranslations); // Update static UI text

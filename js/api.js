@@ -1,8 +1,20 @@
 /**
- * Pagetalk - Gemini API Interaction Module
+ * PageTalk - 统一 API 交互模块
+ *
+ * 这个模块实现了多供应商 AI API 的统一调用接口，采用适配器模式支持不同供应商的 API 格式。
+ * 支持的供应商类型：
+ * - Gemini (Google)
+ * - OpenAI Compatible (OpenAI, SiliconFlow, OpenRouter, DeepSeek)
+ * - Anthropic (Claude)
  */
 
-const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+// 导入供应商管理器
+import { getProvider, API_TYPES } from './providerManager.js';
+
+// 导入适配器
+import { geminiAdapter, fetchGeminiModels, testGeminiApiKey } from './providers/adapters/geminiAdapter.js';
+import { openaiAdapter, fetchOpenAIModels, testOpenAIApiKey } from './providers/adapters/openaiAdapter.js';
+import { anthropicAdapter, fetchAnthropicModels, testAnthropicApiKey } from './providers/adapters/anthropicAdapter.js';
 
 /**
  * 代理请求函数 - 选择性代理实现，仅对 Gemini API 使用代理
@@ -95,10 +107,24 @@ async function _testAndVerifyApiKey(apiKey, model) {
             }
         }
 
+        // 获取正确的API Key - 优先使用ModelManager中的Google供应商API Key
+        let actualApiKey = apiKey;
+        if (window.ModelManager?.instance) {
+            try {
+                const googleApiKey = window.ModelManager.instance.getProviderApiKey('google');
+                if (googleApiKey) {
+                    actualApiKey = googleApiKey;
+                    console.log('[API] Using Google provider API key for testing');
+                }
+            } catch (error) {
+                console.warn('[API] Failed to get Google provider API key for testing, using provided key:', error);
+            }
+        }
+
         const requestBody = {
             contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
         };
-        const response = await makeApiRequest(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${apiKey}`, {
+        const response = await makeApiRequest(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${actualApiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -379,7 +405,30 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             return;
         }
 
-        const endpoint = `${API_BASE_URL}/models/${apiModelName}:streamGenerateContent?key=${stateRef.apiKey}&alt=sse`; // Use actual apiModelName
+        // 获取正确的API Key
+        let apiKey = stateRef.apiKey; // 默认使用旧的全局API Key
+
+        // 尝试从ModelManager获取Google供应商的API Key
+        if (window.ModelManager?.instance) {
+            try {
+                const googleApiKey = window.ModelManager.instance.getProviderApiKey('google');
+                if (googleApiKey) {
+                    apiKey = googleApiKey;
+                    console.log('[API] Using Google provider API key from ModelManager');
+                } else {
+                    console.log('[API] No Google provider API key found, using legacy apiKey');
+                }
+            } catch (error) {
+                console.warn('[API] Failed to get Google provider API key, using legacy apiKey:', error);
+            }
+        }
+
+        if (!apiKey) {
+            throw new Error('API Key not configured. Please set up your Google API key in settings.');
+        }
+
+        // 使用 Google Gemini API 端点
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`; // Use actual apiModelName
 
         const response = await makeApiRequest(endpoint, {
             method: 'POST',
@@ -592,19 +641,473 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 }
 
 /**
- * 用于发送新消息 (追加)
+ * 用于发送新消息 (追加) - 新版本使用统一API接口
  * @param {Array<{title: string, content: string}>|null} [contextTabsForApi=null] - Explicit tab contents for API.
  */
 async function callGeminiAPIWithImages(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null) {
+    // 检查是否应该使用新的统一API接口
+    if (window.ModelManager?.instance && window.PageTalkAPI?.callApi) {
+        try {
+            await window.ModelManager.instance.initialize();
+            const modelConfig = window.ModelManager.instance.getModelApiConfig(stateRef.model);
+
+            // 如果模型不是Google供应商，使用新的统一API接口
+            if (modelConfig.providerId !== 'google') {
+                console.log('[API] Using unified API interface for non-Google model:', stateRef.model);
+                return await callUnifiedAPI(userMessage, images, videos, thinkingElement, stateRef, uiCallbacks, contextTabsForApi, false);
+            }
+        } catch (error) {
+            console.warn('[API] Failed to check model provider, falling back to legacy API:', error);
+        }
+    }
+
+    // 对于Google模型或回退情况，使用原有逻辑
     await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, null, false, null, null, stateRef, uiCallbacks, contextTabsForApi); // insertResponse = false, historyForApi = null
 }
 
 /**
- * 用于重新生成并插入响应
+ * 用于重新生成并插入响应 - 新版本使用统一API接口
  * @param {Array<{title: string, content: string}>|null} [contextTabsForApi=null] - Explicit tab contents for API.
  */
 async function callApiAndInsertResponse(userMessage, images = [], videos = [], thinkingElement, historyForApi, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks, contextTabsForApi = null) {
+    // 检查是否应该使用新的统一API接口
+    if (window.ModelManager?.instance && window.PageTalkAPI?.callApi) {
+        try {
+            await window.ModelManager.instance.initialize();
+            const modelConfig = window.ModelManager.instance.getModelApiConfig(stateRef.model);
+
+            // 如果模型不是Google供应商，使用新的统一API接口
+            if (modelConfig.providerId !== 'google') {
+                console.log('[API] Using unified API interface for regeneration with non-Google model:', stateRef.model);
+                return await callUnifiedAPI(userMessage, images, videos, thinkingElement, stateRef, uiCallbacks, contextTabsForApi, true, historyForApi, targetInsertionIndex, insertAfterElement);
+            }
+        } catch (error) {
+            console.warn('[API] Failed to check model provider for regeneration, falling back to legacy API:', error);
+        }
+    }
+
+    // 对于Google模型或回退情况，使用原有逻辑
     await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, historyForApi, true, targetInsertionIndex, insertAfterElement, stateRef, uiCallbacks, contextTabsForApi); // insertResponse = true
+}
+
+// === 统一 API 调用接口 ===
+
+/**
+ * 统一API调用的桥梁函数，将主面板的调用格式转换为新的统一API格式
+ * @param {string} userMessage - 用户消息
+ * @param {Array} images - 图片数组
+ * @param {Array} videos - 视频数组
+ * @param {HTMLElement} thinkingElement - 思考动画元素
+ * @param {Object} stateRef - 状态引用
+ * @param {Object} uiCallbacks - UI回调函数
+ * @param {Array} contextTabsForApi - 上下文标签页
+ * @param {boolean} insertResponse - 是否插入响应
+ * @param {Array|null} historyForApi - API历史记录
+ * @param {number|null} targetInsertionIndex - 插入索引
+ * @param {HTMLElement|null} insertAfterElement - 插入位置元素
+ */
+async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null, insertResponse = false, historyForApi = null, targetInsertionIndex = null, insertAfterElement = null) {
+    let accumulatedText = '';
+    let messageElement = null;
+    let botMessageId = null;
+    const controller = new AbortController();
+    window.PageTalkAPI.currentAbortController = controller;
+
+    function escapeXml(unsafe) {
+        if (typeof unsafe !== 'string') {
+            return '';
+        }
+        return unsafe.replace(/[<>&'"]/g, function (c) {
+            switch (c) {
+                case '<': return '&lt;';
+                case '>': return '&gt;';
+                case '&': return '&amp;';
+                case '\'': return '&apos;';
+                case '"': return '&quot;';
+                default: return c;
+            }
+        });
+    }
+
+    try {
+        // 构建标准化的消息数组
+        const messages = [];
+
+        // --- 构建完整的上下文信息（与callGeminiAPIInternal保持一致） ---
+
+        // 获取更自然的页面标题
+        let pageTitle = '当前页面';
+
+        if (stateRef.pageContext) {
+            const titleMatch = stateRef.pageContext.match(/^(.{1,100})/);
+            if (titleMatch) {
+                const firstLine = titleMatch[1].trim();
+                if (firstLine.length > 5 && firstLine.length < 80 && !firstLine.includes('function') && !firstLine.includes('class')) {
+                    pageTitle = firstLine;
+                }
+            }
+        }
+
+        if (pageTitle === '当前页面' && typeof window !== 'undefined' && window.location) {
+            const url = window.location.href;
+            if (url.includes('github.com')) {
+                pageTitle = 'GitHub页面';
+            } else if (url.includes('stackoverflow.com')) {
+                pageTitle = 'Stack Overflow页面';
+            } else if (url.includes('youtube.com')) {
+                pageTitle = 'YouTube页面';
+            } else if (url.includes('reddit.com')) {
+                pageTitle = 'Reddit页面';
+            } else if (url.includes('wikipedia.org')) {
+                pageTitle = 'Wikipedia页面';
+            }
+        }
+
+        // 构建XML系统提示（包含完整的上下文信息）
+        let xmlSystemPrompt = `
+<instructions>
+  <role>You are a helpful and professional AI assistant. You are capable of understanding and processing text, as well as analyzing images provided in the user's messages. Your primary goal is to answer the user's questions accurately and informatively, drawing upon all provided context, including images and chat history. If an image is provided, please analyze it and use that information in your response.</role>
+  <output_format>
+    <language>Respond in the language used by the user in their most recent query.</language>
+    <markdown>Format your entire response using Markdown.</markdown>
+  </output_format>
+  <context_handling>
+    <general>You have access to the current page content, additional web pages (if selected), and ongoing chat history. Use this information naturally to provide comprehensive and relevant answers.</general>
+    <natural_response_style>
+      <guideline>Answer questions naturally and conversationally. When information comes from the provided page content, integrate it seamlessly without mechanical attribution phrases. You know where the information comes from - just use it naturally.</guideline>
+      <avoid_mechanical_phrases>Do not use rigid phrases like "根据Current Page Document" or "According to the provided document". Instead, when appropriate, use natural language like "这个页面提到", "从内容来看", "页面上显示", or simply present the information directly without attribution if it flows naturally.</avoid_mechanical_phrases>
+      <when_to_attribute>Only mention sources explicitly when:
+        1. There are multiple conflicting sources
+        2. The user specifically asks about source verification
+        3. It's crucial for understanding which specific document/page you're referencing
+        Otherwise, let the information speak for itself.</when_to_attribute>
+    </natural_response_style>
+    <information_usage>
+      <accuracy>Prioritize answering based on the provided context documents. If a question cannot be directly answered from these documents and pertains to general knowledge, you may use your broader knowledge base. Base your answers strictly on verifiable information.</accuracy>
+      <conciseness>Be concise yet comprehensive. When appropriate, synthesize information from multiple provided documents or different parts of a single document, rather than listing disparate facts. Aim to provide a cohesive understanding and avoid unnecessary verbosity or repetition.</conciseness>
+      <no_fabrication>If an answer cannot be found in the provided contexts or your general knowledge, clearly state this. Do not invent information.</no_fabrication>
+      <content_source_handling>
+        You have been given the full text content for the current page and any additional pages selected by the user. When answering questions about these specific documents, rely exclusively on the text provided. Do not attempt to access external URLs. Your knowledge for these provided documents is the embedded text content.
+      </content_source_handling>
+    </information_usage>
+    <ambiguity_handling>
+      <guideline>If the user's query is unclear or open to multiple interpretations, first try to identify the most probable intent and answer accordingly. If no single interpretation is significantly more probable, ask for clarification. Avoid making broad assumptions based on ambiguous queries.</guideline>
+    </ambiguity_handling>
+  </context_handling>
+  <multi_turn_dialogue>
+    <instruction>Carefully consider the entire chat history to understand conversational flow and maintain relevance. Refer to previous turns as needed for coherent, contextually appropriate responses.</instruction>
+  </multi_turn_dialogue>
+  <agent_specific_instructions>
+    ${stateRef.systemPrompt ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
+  </agent_specific_instructions>
+</instructions>
+
+<provided_contexts>
+  <current_page source_title="${escapeXml(pageTitle)}">
+    <content>
+      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No page content was loaded or provided.'}
+    </content>
+  </current_page>
+`;
+
+        if (contextTabsForApi && contextTabsForApi.length > 0) {
+            xmlSystemPrompt += `  <additional_pages>
+`;
+            contextTabsForApi.forEach(tab => {
+                if (tab.content) {
+                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>\n${escapeXml(tab.content)}\n      </content>\n    </page>\n`;
+                } else {
+                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>Content for this tab was not loaded or is empty.</content>\n    </page>\n`;
+                }
+            });
+            xmlSystemPrompt += `  </additional_pages>
+`;
+        }
+        xmlSystemPrompt += `</provided_contexts>`;
+
+        // 添加完整的系统提示作为第一条消息
+        messages.push({
+            role: 'system',
+            content: xmlSystemPrompt.trim()
+        });
+
+        // 添加历史消息
+        const historyToSend = historyForApi ? [...historyForApi] : [...stateRef.chatHistory];
+        historyToSend.forEach(msg => {
+            if (msg.parts && Array.isArray(msg.parts) && msg.parts.length > 0) {
+                const content = msg.parts.map(part => part.text).join('');
+                if (content.trim()) {
+                    messages.push({
+                        role: msg.role === 'model' ? 'assistant' : msg.role,
+                        content: content
+                    });
+                }
+            }
+        });
+
+        // 添加当前用户消息（包含图片支持）
+        if (userMessage || images.length > 0) {
+            const userMessageObj = {
+                role: 'user',
+                content: userMessage || ''
+            };
+
+            // 添加图片支持
+            if (images.length > 0) {
+                userMessageObj.images = images.map(image => ({
+                    dataUrl: image.dataUrl,
+                    mimeType: image.mimeType
+                }));
+            }
+
+            messages.push(userMessageObj);
+        }
+
+        // 流式回调函数
+        const streamCallback = (chunk, isComplete) => {
+            if (thinkingElement && thinkingElement.parentNode) {
+                thinkingElement.remove();
+            }
+
+            if (!messageElement) {
+                // 创建流式消息元素
+                messageElement = uiCallbacks.addMessageToChat(null, 'bot', {
+                    isStreaming: true,
+                    insertAfterElement: insertResponse ? insertAfterElement : null
+                });
+                botMessageId = messageElement.dataset.messageId;
+
+                // 添加占位符到历史记录
+                const botResponsePlaceholder = {
+                    role: 'model',
+                    parts: [{ text: '' }],
+                    id: botMessageId
+                };
+                if (insertResponse && targetInsertionIndex !== null) {
+                    stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
+                } else {
+                    stateRef.chatHistory.push(botResponsePlaceholder);
+                }
+            }
+
+            accumulatedText += chunk;
+            uiCallbacks.updateStreamingMessage(messageElement, accumulatedText);
+
+            if (isComplete) {
+                // 完成流式输出
+                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
+
+                // 更新历史记录
+                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
+                if (historyIndex !== -1) {
+                    stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
+                }
+            }
+        };
+
+        // 调用统一API接口
+        await window.PageTalkAPI.callApi(stateRef.model, messages, streamCallback, {
+            temperature: parseFloat(stateRef.temperature),
+            maxTokens: parseInt(stateRef.maxTokens),
+            topP: parseFloat(stateRef.topP),
+            signal: controller.signal
+        });
+
+        // 清除图片和视频（仅在初始发送时）
+        if ((stateRef.images.length > 0 || stateRef.videos.length > 0) && thinkingElement && historyForApi === null) {
+            if (stateRef.images.length > 0) {
+                uiCallbacks.clearImages();
+            }
+            if (stateRef.videos.length > 0) {
+                uiCallbacks.clearVideos();
+            }
+        }
+
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('Unified API call aborted by user.');
+            if (messageElement && botMessageId) {
+                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
+                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
+                if (historyIndex !== -1) {
+                    stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
+                }
+            } else if (thinkingElement && thinkingElement.parentNode) {
+                thinkingElement.remove();
+            }
+        } else {
+            console.error('Unified API call failed:', error);
+            if (thinkingElement && thinkingElement.parentNode) {
+                thinkingElement.remove();
+            }
+            if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
+                uiCallbacks.restoreSendButtonAndInput();
+            }
+
+            const errorText = error.message;
+            if (messageElement) {
+                accumulatedText += `\n\n--- ${errorText} ---`;
+                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
+            } else {
+                const errorElement = uiCallbacks.addMessageToChat(errorText, 'bot', {
+                    insertAfterElement: insertResponse ? insertAfterElement : null
+                });
+                if (errorElement && errorElement.dataset.messageId) {
+                    const errorMessageId = errorElement.dataset.messageId;
+                    errorElement.classList.add('error-message');
+                    const errorMessageObject = {
+                        role: 'model',
+                        parts: [{ text: errorText }],
+                        id: errorMessageId
+                    };
+                    if (insertResponse && targetInsertionIndex !== null) {
+                        stateRef.chatHistory.splice(targetInsertionIndex, 0, errorMessageObject);
+                    } else {
+                        stateRef.chatHistory.push(errorMessageObject);
+                    }
+                }
+            }
+        }
+    } finally {
+        if (window.PageTalkAPI.currentAbortController === controller) {
+            window.PageTalkAPI.currentAbortController = null;
+        }
+    }
+}
+
+/**
+ * 统一的 API 调用入口函数
+ * @param {string} modelId - 模型ID
+ * @param {Array} messages - 标准化的消息数组 [{role: 'user'|'assistant', content: string}]
+ * @param {Function} streamCallback - 流式输出回调函数
+ * @param {Object} options - 调用选项
+ * @returns {Promise<void>}
+ */
+async function callApi(modelId, messages, streamCallback, options = {}) {
+    // 获取模型配置
+    const modelManager = window.ModelManager?.instance;
+    if (!modelManager) {
+        throw new Error('ModelManager not available');
+    }
+
+    await modelManager.initialize();
+    const modelConfig = modelManager.getModelApiConfig(modelId);
+    const providerId = modelConfig.providerId;
+
+    // 获取供应商配置
+    const provider = getProvider(providerId);
+    if (!provider) {
+        throw new Error(`Provider not found: ${providerId}`);
+    }
+
+    // 获取供应商设置（API Key等）
+    const providerSettings = modelManager.getProviderSettings(providerId);
+    const apiKey = providerSettings.apiKey;
+    if (!apiKey) {
+        throw new Error(`API Key not configured for provider: ${providerId}`);
+    }
+
+    // 根据供应商类型选择适配器
+    switch (provider.type) {
+        case API_TYPES.GEMINI:
+            return await _geminiAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options);
+        case API_TYPES.OPENAI_COMPATIBLE:
+            return await _openAIAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options);
+        case API_TYPES.ANTHROPIC:
+            return await _anthropicAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options);
+        default:
+            throw new Error(`Unsupported provider type: ${provider.type}`);
+    }
+}
+
+/**
+ * 统一的模型发现函数
+ * @param {string} providerId - 供应商ID
+ * @returns {Promise<Array>} 模型列表
+ */
+async function fetchModels(providerId) {
+    const provider = getProvider(providerId);
+    if (!provider) {
+        throw new Error(`Provider not found: ${providerId}`);
+    }
+
+    const modelManager = window.ModelManager?.instance;
+    if (!modelManager) {
+        throw new Error('ModelManager not available');
+    }
+
+    const providerSettings = modelManager.getProviderSettings(providerId);
+    const apiKey = providerSettings.apiKey;
+    if (!apiKey) {
+        throw new Error(`API Key not configured for provider: ${providerId}`);
+    }
+
+    // 根据供应商类型选择模型发现方法
+    switch (provider.type) {
+        case API_TYPES.GEMINI:
+            return await fetchGeminiModels(provider, providerSettings);
+        case API_TYPES.OPENAI_COMPATIBLE:
+            return await fetchOpenAIModels(provider, providerSettings);
+        case API_TYPES.ANTHROPIC:
+            return await fetchAnthropicModels(provider, providerSettings);
+        default:
+            throw new Error(`Unsupported provider type: ${provider.type}`);
+    }
+}
+
+// === 适配器函数 ===
+
+/**
+ * Gemini API 适配器
+ */
+async function _geminiAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options) {
+    return await geminiAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options);
+}
+
+/**
+ * OpenAI 兼容 API 适配器
+ */
+async function _openAIAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options) {
+    return await openaiAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options);
+}
+
+/**
+ * Anthropic API 适配器
+ */
+async function _anthropicAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options) {
+    return await anthropicAdapter(modelConfig, provider, providerSettings, messages, streamCallback, options);
+}
+
+/**
+ * 统一的 API Key 测试函数
+ * @param {string} providerId - 供应商ID
+ * @param {string} apiKey - API Key
+ * @param {string} testModel - 测试模型（可选）
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+async function testApiKey(providerId, apiKey, testModel = null) {
+    const provider = getProvider(providerId);
+    if (!provider) {
+        return { success: false, message: `Provider not found: ${providerId}` };
+    }
+
+    const providerSettings = { apiKey };
+
+    try {
+        switch (provider.type) {
+            case API_TYPES.GEMINI:
+                return await testGeminiApiKey(provider, providerSettings, testModel);
+            case API_TYPES.OPENAI_COMPATIBLE:
+                return await testOpenAIApiKey(provider, providerSettings, testModel);
+            case API_TYPES.ANTHROPIC:
+                return await testAnthropicApiKey(provider, providerSettings, testModel);
+            default:
+                return { success: false, message: `Unsupported provider type: ${provider.type}` };
+        }
+    } catch (error) {
+        console.error('[API] Test API Key error:', error);
+        return { success: false, message: `Test failed: ${error.message}` };
+    }
 }
 
 // Export functions to be used in sidepanel.js
@@ -613,4 +1116,12 @@ window.GeminiAPI = {
     callGeminiAPIWithImages: callGeminiAPIWithImages,
     callApiAndInsertResponse: callApiAndInsertResponse,
     currentAbortController: null // Initialize the controller holder
+};
+
+// 导出新的统一 API 接口
+window.PageTalkAPI = {
+    callApi,
+    fetchModels,
+    testApiKey,
+    currentAbortController: null
 };

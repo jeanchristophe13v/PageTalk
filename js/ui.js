@@ -613,6 +613,20 @@ export function updateUIElementsWithTranslations(currentTranslations) {
         }
     });
 
+    // Handle all elements with data-i18n-title attribute
+    document.querySelectorAll('[data-i18n-title]').forEach(element => {
+        const key = element.dataset.i18nTitle;
+        if (key) {
+            element.title = _tr(key);
+        }
+    });
+
+    // Update model container empty state text
+    const modelContainer = document.getElementById('selected-models-container');
+    if (modelContainer) {
+        modelContainer.setAttribute('data-empty-text', _tr('noModelsSelected'));
+    }
+
     // Note: Dynamic elements like agent list items, status messages, etc.,
     // need to be updated when they are created or their state changes,
     // using the _ function with the currentTranslations.
@@ -647,8 +661,12 @@ export function restoreSendButtonAndInput(state, elements, currentTranslations, 
     elements.sendMessage = newSendButton;
     elements.sendMessage.addEventListener('click', sendUserMessageCallback);
 
+    // 清理所有可能的 AbortController
     if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {
         window.GeminiAPI.currentAbortController = null;
+    }
+    if (window.PageTalkAPI && window.PageTalkAPI.currentAbortController) {
+        window.PageTalkAPI.currentAbortController = null;
     }
 }
 

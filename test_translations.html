@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Test</title>
+</head>
+<body>
+    <h1>Translation Test</h1>
+    
+    <div>
+        <label>Language: 
+            <select id="language-select">
+                <option value="zh-CN">中文</option>
+                <option value="en">English</option>
+            </select>
+        </label>
+    </div>
+    
+    <div id="test-results">
+        <h2>Test Results:</h2>
+        <div id="results"></div>
+    </div>
+
+    <script src="js/translations.js"></script>
+    <script>
+        // Mock state object
+        window.state = { language: 'zh-CN' };
+        
+        // Mock localStorage
+        if (!localStorage.getItem('language')) {
+            localStorage.setItem('language', 'zh-CN');
+        }
+
+        function getCurrentTranslations() {
+            let currentLanguage = 'zh-CN';
+
+            if (typeof window !== 'undefined' && window.state && window.state.language) {
+                currentLanguage = window.state.language;
+            }
+            else if (typeof localStorage !== 'undefined') {
+                currentLanguage = localStorage.getItem('language') || 'zh-CN';
+            }
+
+            if (typeof window !== 'undefined' && window.translations) {
+                const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
+                return translations;
+            }
+
+            return {};
+        }
+
+        function _(key, replacements = {}, translations) {
+            let translation = translations[key] || key;
+            for (const placeholder in replacements) {
+                translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
+            }
+            return translation;
+        }
+
+        function testTranslations() {
+            const currentTranslations = getCurrentTranslations();
+            const resultsDiv = document.getElementById('results');
+            
+            const testKeys = [
+                'addModelsDialogTitle',
+                'modelsFoundMessage',
+                'selectedCountMessage',
+                'modelsAddedSuccess',
+                'modelsReactivatedSuccess',
+                'modelsAddedAndReactivatedSuccess'
+            ];
+            
+            let html = '<h3>Current Language: ' + (window.state.language || 'unknown') + '</h3>';
+            html += '<ul>';
+            
+            testKeys.forEach(key => {
+                const translation = _(key, { count: 5, added: 3, activated: 2 }, currentTranslations);
+                html += `<li><strong>${key}:</strong> ${translation}</li>`;
+            });
+            
+            html += '</ul>';
+            resultsDiv.innerHTML = html;
+        }
+
+        function changeLanguage(lang) {
+            window.state.language = lang;
+            localStorage.setItem('language', lang);
+            testTranslations();
+        }
+
+        document.getElementById('language-select').addEventListener('change', (e) => {
+            changeLanguage(e.target.value);
+        });
+
+        // Initial test
+        testTranslations();
+    </script>
+</body>
+</html>

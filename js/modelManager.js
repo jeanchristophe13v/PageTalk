@@ -1,12 +1,13 @@
 /**
  * PageTalk - 统一模型管理模块
- * 
+ *
  * 这个模块负责管理所有模型相关的逻辑，包括：
  * 1. 默认模型定义（包括逻辑别名模型）
  * 2. 用户自定义模型管理
  * 3. 动态模型发现
  * 4. 模型参数配置
  * 5. 存储管理
+ * 6. 多供应商支持
  */
 
 /**
@@ -15,16 +16,19 @@
  * - id: 唯一标识符，用于内部跟踪和存储
  * - displayName: 显示给用户的名称
  * - apiModelName: 调用API时使用的实际模型名称
+ * - providerId: 所属供应商ID
  * - params: 调用此模型时需要的特殊参数（如果为null则不附加参数）
  * - isAlias: 是否为逻辑别名模型（用于简化用户操作）
  * - isDefault: 是否为插件默认提供的模型
+ * - canDelete: 是否可以被用户删除
  */
 const DEFAULT_MODELS = [
-    // 只保留最常用的几个模型
+    // Google Gemini 模型
     {
         id: 'gemini-2.5-flash',
         displayName: 'Gemini 2.5 Flash',
         apiModelName: 'gemini-2.5-flash',
+        providerId: 'google',
         params: { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } },
         isAlias: true,
         isDefault: true,
@@ -34,6 +38,7 @@ const DEFAULT_MODELS = [
         id: 'gemini-2.5-flash-thinking',
         displayName: 'Gemini 2.5 Flash (Thinking)',
         apiModelName: 'gemini-2.5-flash',
+        providerId: 'google',
         params: null, // 不设置thinkingBudget，使用默认思考模式
         isAlias: true,
         isDefault: true,
@@ -43,6 +48,7 @@ const DEFAULT_MODELS = [
         id: 'gemini-2.5-pro',
         displayName: 'Gemini 2.5 Pro',
         apiModelName: 'gemini-2.5-pro',
+        providerId: 'google',
         params: null,
         isAlias: false,
         isDefault: true,
@@ -52,6 +58,7 @@ const DEFAULT_MODELS = [
         id: 'gemini-2.5-flash-lite-preview-06-17',
         displayName: 'Gemini 2.5 Flash Lite',
         apiModelName: 'gemini-2.5-flash-lite-preview-06-17',
+        providerId: 'google',
         params: null,
         isAlias: false,
         isDefault: true,
@@ -65,13 +72,17 @@ const DEFAULT_MODELS = [
 const STORAGE_KEYS = {
     MANAGED_MODELS: 'managedModels',        // 主模型列表
     USER_ACTIVE_MODELS: 'userActiveModels', // 用户已选模型列表
-    MODEL_MANAGER_VERSION: 'modelManagerVersion' // 版本号，用于数据迁移
+    PROVIDER_SETTINGS: 'providerSettings',  // 供应商设置（API Keys等）
+    MODEL_MANAGER_VERSION: 'modelManagerVersion', // 版本号，用于数据迁移
+    // 旧版本兼容性键名
+    OLD_API_KEY: 'apiKey',                  // 旧版本的单一API Key
+    OLD_SELECTED_MODELS: 'selectedModels'   // 旧版本的选中模型列表
 };
 
 /**
- * 当前版本号
+ * 当前版本号 - 用于数据迁移
  */
-const CURRENT_VERSION = '1.0.0';
+const CURRENT_VERSION = '2.0.0'; // 升级到2.0.0以支持多供应商
 
 /**
  * 模型管理器类
@@ -80,6 +91,7 @@ class ModelManager {
     constructor() {
         this.managedModels = [];
         this.userActiveModels = [];
+        this.providerSettings = {}; // 存储各供应商的设置（API Keys等）
         this.initialized = false;
     }
 
@@ -109,7 +121,11 @@ class ModelManager {
             chrome.storage.sync.get([
                 STORAGE_KEYS.MANAGED_MODELS,
                 STORAGE_KEYS.USER_ACTIVE_MODELS,
-                STORAGE_KEYS.MODEL_MANAGER_VERSION
+                STORAGE_KEYS.PROVIDER_SETTINGS,
+                STORAGE_KEYS.MODEL_MANAGER_VERSION,
+                // 旧版本兼容性
+                STORAGE_KEYS.OLD_API_KEY,
+                STORAGE_KEYS.OLD_SELECTED_MODELS
             ], (result) => {
                 if (chrome.runtime.lastError) {
                     console.error('[ModelManager] Storage load error:', chrome.runtime.lastError);
@@ -117,18 +133,30 @@ class ModelManager {
                     return;
                 }
 
+                // 加载供应商设置
+                if (result[STORAGE_KEYS.PROVIDER_SETTINGS]) {
+                    this.providerSettings = result[STORAGE_KEYS.PROVIDER_SETTINGS];
+                } else {
+                    this.providerSettings = {};
+                }
+
                 // 加载主模型列表
                 if (result[STORAGE_KEYS.MANAGED_MODELS]) {
                     this.managedModels = result[STORAGE_KEYS.MANAGED_MODELS];
-                    // 为旧数据添加canDelete属性
+                    // 为旧数据添加缺失的属性
                     this.managedModels = this.managedModels.map(model => {
+                        // 添加 providerId（如果缺失）
+                        if (!model.providerId) {
+                            // 旧模型默认为 Google
+                            model.providerId = 'google';
+                        }
+
+                        // 添加 canDelete 属性（如果缺失）
                         if (model.canDelete === undefined) {
-                            // 为默认模型设置canDelete属性
                             const defaultModel = DEFAULT_MODELS.find(dm => dm.id === model.id);
                             if (defaultModel) {
                                 model.canDelete = defaultModel.canDelete;
                             } else {
-                                // 用户添加的模型默认可删除
                                 model.canDelete = true;
                             }
                         }
@@ -149,9 +177,10 @@ class ModelManager {
 
                 console.log('[ModelManager] Loaded from storage:', {
                     managedModels: this.managedModels.length,
-                    userActiveModels: this.userActiveModels.length
+                    userActiveModels: this.userActiveModels.length,
+                    providerSettings: Object.keys(this.providerSettings).length
                 });
-                
+
                 resolve();
             });
         });
@@ -165,6 +194,7 @@ class ModelManager {
             const data = {
                 [STORAGE_KEYS.MANAGED_MODELS]: this.managedModels,
                 [STORAGE_KEYS.USER_ACTIVE_MODELS]: this.userActiveModels,
+                [STORAGE_KEYS.PROVIDER_SETTINGS]: this.providerSettings,
                 [STORAGE_KEYS.MODEL_MANAGER_VERSION]: CURRENT_VERSION
             };
 
@@ -212,9 +242,78 @@ class ModelManager {
      * 数据迁移（如果需要）
      */
     async migrateIfNeeded() {
-        // 检查是否需要从旧版本迁移数据
-        // 这里可以添加版本检查和迁移逻辑
-        console.log('[ModelManager] Migration check completed');
+        return new Promise((resolve) => {
+            chrome.storage.sync.get([
+                STORAGE_KEYS.MODEL_MANAGER_VERSION,
+                STORAGE_KEYS.OLD_API_KEY,
+                STORAGE_KEYS.OLD_SELECTED_MODELS
+            ], async (result) => {
+                const currentVersion = result[STORAGE_KEYS.MODEL_MANAGER_VERSION];
+
+                // 如果没有版本号或版本号低于2.0.0，执行迁移
+                if (!currentVersion || this.compareVersions(currentVersion, '2.0.0') < 0) {
+                    console.log('[ModelManager] Starting migration from version', currentVersion || 'unknown', 'to', CURRENT_VERSION);
+
+                    // 迁移旧的API Key到新的供应商设置结构
+                    if (result[STORAGE_KEYS.OLD_API_KEY]) {
+                        if (!this.providerSettings.google) {
+                            this.providerSettings.google = {};
+                        }
+                        this.providerSettings.google.apiKey = result[STORAGE_KEYS.OLD_API_KEY];
+                        console.log('[ModelManager] Migrated API key to Google provider settings');
+                    }
+
+                    // 迁移旧的选中模型列表
+                    if (result[STORAGE_KEYS.OLD_SELECTED_MODELS] && this.userActiveModels.length === 0) {
+                        this.userActiveModels = result[STORAGE_KEYS.OLD_SELECTED_MODELS];
+                        console.log('[ModelManager] Migrated selected models list');
+                    }
+
+                    // 确保所有管理的模型都有providerId
+                    this.managedModels = this.managedModels.map(model => {
+                        if (!model.providerId) {
+                            model.providerId = 'google'; // 旧模型默认为Google
+                        }
+                        return model;
+                    });
+
+                    // 保存迁移后的数据
+                    await this.saveToStorage();
+
+                    // 清理旧的存储键
+                    chrome.storage.sync.remove([
+                        STORAGE_KEYS.OLD_API_KEY,
+                        STORAGE_KEYS.OLD_SELECTED_MODELS
+                    ], () => {
+                        console.log('[ModelManager] Migration completed and old keys cleaned up');
+                        resolve();
+                    });
+                } else {
+                    console.log('[ModelManager] No migration needed, current version:', currentVersion);
+                    resolve();
+                }
+            });
+        });
+    }
+
+    /**
+     * 比较版本号
+     * @param {string} version1
+     * @param {string} version2
+     * @returns {number} -1 if version1 < version2, 0 if equal, 1 if version1 > version2
+     */
+    compareVersions(version1, version2) {
+        const v1parts = version1.split('.').map(Number);
+        const v2parts = version2.split('.').map(Number);
+
+        for (let i = 0; i < Math.max(v1parts.length, v2parts.length); i++) {
+            const v1part = v1parts[i] || 0;
+            const v2part = v2parts[i] || 0;
+
+            if (v1part < v2part) return -1;
+            if (v1part > v2part) return 1;
+        }
+        return 0;
     }
 
     /**
@@ -267,7 +366,7 @@ class ModelManager {
     /**
      * 获取模型的API调用配置
      * @param {string} modelId - 模型ID
-     * @returns {Object} API调用配置 { apiModelName, params }
+     * @returns {Object} API调用配置 { apiModelName, params, providerId }
      */
     getModelApiConfig(modelId) {
         const model = this.getModelById(modelId);
@@ -275,14 +374,85 @@ class ModelManager {
             console.warn(`[ModelManager] Model not found: ${modelId}, using fallback`);
             return {
                 apiModelName: modelId, // 回退到使用原始ID
-                params: null
+                params: null,
+                providerId: 'google' // 默认供应商
             };
         }
 
         return {
             apiModelName: model.apiModelName,
-            params: model.params
+            params: model.params,
+            providerId: model.providerId
         };
+    }
+
+    // === 供应商设置管理方法 ===
+
+    /**
+     * 获取指定供应商的设置
+     * @param {string} providerId - 供应商ID
+     * @returns {Object} 供应商设置对象
+     */
+    getProviderSettings(providerId) {
+        return this.providerSettings[providerId] || {};
+    }
+
+    /**
+     * 设置指定供应商的配置
+     * @param {string} providerId - 供应商ID
+     * @param {Object} settings - 设置对象
+     */
+    async setProviderSettings(providerId, settings) {
+        if (!this.providerSettings[providerId]) {
+            this.providerSettings[providerId] = {};
+        }
+
+        // 合并设置
+        this.providerSettings[providerId] = {
+            ...this.providerSettings[providerId],
+            ...settings
+        };
+
+        await this.saveToStorage();
+        console.log(`[ModelManager] Updated settings for provider: ${providerId}`);
+    }
+
+    /**
+     * 获取指定供应商的API Key
+     * @param {string} providerId - 供应商ID
+     * @returns {string|null} API Key或null
+     */
+    getProviderApiKey(providerId) {
+        const settings = this.getProviderSettings(providerId);
+        return settings.apiKey || null;
+    }
+
+    /**
+     * 设置指定供应商的API Key
+     * @param {string} providerId - 供应商ID
+     * @param {string} apiKey - API Key
+     */
+    async setProviderApiKey(providerId, apiKey) {
+        await this.setProviderSettings(providerId, { apiKey });
+    }
+
+    /**
+     * 获取指定供应商的API Host（如果有自定义的话）
+     * @param {string} providerId - 供应商ID
+     * @returns {string|null} 自定义API Host或null
+     */
+    getProviderApiHost(providerId) {
+        const settings = this.getProviderSettings(providerId);
+        return settings.apiHost || null;
+    }
+
+    /**
+     * 设置指定供应商的API Host
+     * @param {string} providerId - 供应商ID
+     * @param {string} apiHost - API Host
+     */
+    async setProviderApiHost(providerId, apiHost) {
+        await this.setProviderSettings(providerId, { apiHost });
     }
 
     /**
@@ -291,8 +461,8 @@ class ModelManager {
      * @returns {boolean} 是否添加成功
      */
     async addModel(modelDefinition) {
-        if (!modelDefinition.id || !modelDefinition.displayName || !modelDefinition.apiModelName) {
-            console.error('[ModelManager] Invalid model definition:', modelDefinition);
+        if (!modelDefinition.id || !modelDefinition.displayName || !modelDefinition.apiModelName || !modelDefinition.providerId) {
+            console.error('[ModelManager] Invalid model definition (missing required fields):', modelDefinition);
             return false;
         }
 
@@ -310,7 +480,7 @@ class ModelManager {
         });
 
         await this.saveToStorage();
-        console.log(`[ModelManager] Added new model: ${modelDefinition.id}`);
+        console.log(`[ModelManager] Added new model: ${modelDefinition.id} (provider: ${modelDefinition.providerId})`);
         return true;
     }
 
@@ -537,6 +707,8 @@ class ModelManager {
             // 添加新模型
             const success = await this.addModel(discoveredModel);
             if (success) {
+                // 自动激活新添加的模型
+                await this.activateModel(modelId);
                 added++;
             } else {
                 skipped++;
@@ -550,19 +722,26 @@ class ModelManager {
     /**
      * 获取可以添加的发现模型（包括被停用的模型）
      * @param {Array} discoveredModels - 从API发现的模型列表
+     * @param {string} providerId - 供应商ID，用于过滤相关模型
      * @returns {Array} 可添加的模型列表
      */
-    getNewDiscoveredModels(discoveredModels) {
+    getNewDiscoveredModels(discoveredModels, providerId = null) {
         const activeModelIds = new Set(this.userActiveModels);
         const managedModelIds = new Set(this.managedModels.map(model => model.id));
 
-        // 首先恢复缺失的默认模型
+        // 首先恢复缺失的默认模型（只包括指定供应商的模型）
         const missingDefaultModels = this.getMissingDefaultModels();
-        const availableModels = [...missingDefaultModels];
+        const relevantMissingModels = providerId
+            ? missingDefaultModels.filter(model => model.providerId === providerId)
+            : missingDefaultModels;
+        const availableModels = [...relevantMissingModels];
 
         // 添加已管理但未激活的模型（被用户移除但仍在管理列表中的模型）
+        // 只包括指定供应商的模型
         const inactiveModels = this.managedModels.filter(model =>
-            !activeModelIds.has(model.id) && !missingDefaultModels.some(dm => dm.id === model.id)
+            !activeModelIds.has(model.id) &&
+            !relevantMissingModels.some(dm => dm.id === model.id) &&
+            (!providerId || model.providerId === providerId)
         );
         availableModels.push(...inactiveModels);
 
@@ -574,7 +753,7 @@ class ModelManager {
             }
 
             // 过滤掉已经在缺失默认模型列表中的模型
-            if (missingDefaultModels.some(defaultModel => defaultModel.id === model.id)) {
+            if (relevantMissingModels.some(defaultModel => defaultModel.id === model.id)) {
                 return false;
             }
 
@@ -586,7 +765,7 @@ class ModelManager {
         // 按模型ID进行字母排序
         availableModels.sort((a, b) => a.id.localeCompare(b.id));
 
-        console.log(`[ModelManager] Found ${availableModels.length} models available for addition:`,
+        console.log(`[ModelManager] Found ${availableModels.length} models available for addition for provider ${providerId || 'all'}:`,
             availableModels.map(m => `${m.id} (${managedModelIds.has(m.id) ? 'inactive' : 'new'})`));
 
         return availableModels;
@@ -665,13 +844,87 @@ class ModelManager {
         const userModels = this.managedModels.filter(model => !model.isDefault);
         const aliasModels = this.managedModels.filter(model => model.isAlias);
 
+        // 按供应商统计
+        const providerStats = {};
+        this.managedModels.forEach(model => {
+            const providerId = model.providerId || 'unknown';
+            if (!providerStats[providerId]) {
+                providerStats[providerId] = { total: 0, active: 0 };
+            }
+            providerStats[providerId].total++;
+            if (this.userActiveModels.includes(model.id)) {
+                providerStats[providerId].active++;
+            }
+        });
+
         return {
             totalManaged: this.managedModels.length,
             totalActive: this.userActiveModels.length,
             defaultModels: defaultModels.length,
             userAddedModels: userModels.length,
-            aliasModels: aliasModels.length
+            aliasModels: aliasModels.length,
+            providerStats: providerStats
         };
+    }
+
+    // === 多供应商支持方法 ===
+
+    /**
+     * 根据供应商ID获取模型列表
+     * @param {string} providerId - 供应商ID
+     * @param {boolean} activeOnly - 是否只返回激活的模型
+     * @returns {Array} 模型列表
+     */
+    getModelsByProvider(providerId, activeOnly = false) {
+        let models = this.managedModels.filter(model => model.providerId === providerId);
+
+        if (activeOnly) {
+            models = models.filter(model => this.userActiveModels.includes(model.id));
+        }
+
+        return models.sort((a, b) => a.id.localeCompare(b.id));
+    }
+
+    /**
+     * 获取所有已配置的供应商ID列表
+     * @returns {Array<string>} 供应商ID数组
+     */
+    getConfiguredProviders() {
+        const providerIds = new Set();
+        this.managedModels.forEach(model => {
+            if (model.providerId) {
+                providerIds.add(model.providerId);
+            }
+        });
+        return Array.from(providerIds).sort();
+    }
+
+    /**
+     * 检查指定供应商是否有可用的模型
+     * @param {string} providerId - 供应商ID
+     * @returns {boolean} 是否有可用模型
+     */
+    hasActiveModelsForProvider(providerId) {
+        return this.getModelsByProvider(providerId, true).length > 0;
+    }
+
+    /**
+     * 检查指定供应商是否已配置API Key
+     * @param {string} providerId - 供应商ID
+     * @returns {boolean} 是否已配置
+     */
+    isProviderConfigured(providerId) {
+        const apiKey = this.getProviderApiKey(providerId);
+        return !!(apiKey && apiKey.trim());
+    }
+
+    /**
+     * 获取需要配置的供应商列表（有模型但没有API Key的供应商）
+     * @returns {Array<string>} 需要配置的供应商ID数组
+     */
+    getProvidersNeedingConfiguration() {
+        const configuredProviders = this.getConfiguredProviders();
+        return configuredProviders.filter(providerId => !this.isProviderConfigured(providerId));
     }
 }
 

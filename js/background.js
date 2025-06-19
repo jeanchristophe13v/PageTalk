@@ -156,10 +156,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return true; // 必须返回 true 以表明 sendResponse 将会异步调用
     }
-    // 处理来自划词助手的 generateContent 请求
+    // 已废弃：处理来自划词助手的 generateContent 请求
+    // 现在划词助手使用统一API接口，不再通过background.js处理
     else if (message.action === "generateContent") {
-        handleGenerateContentRequest(message.data, sendResponse, sender.tab?.id);
-        return true; // 异步响应
+        sendResponse({
+            success: false,
+            error: "This API endpoint has been deprecated. Please use the unified API interface."
+        });
+        return true;
     }
     // 处理来自content script的代理请求
     else if (message.action === "fetchWithProxy") {
@@ -184,6 +188,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 处理广播模型更新的请求
     else if (message.action === "broadcastModelsUpdated") {
         handleBroadcastModelsUpdated(sendResponse);
+        return true; // 异步响应
+    }
+    // 处理来自划词助手的API调用请求
+    else if (message.action === "callUnifiedAPI") {
+        handleUnifiedAPICall(message, sendResponse, sender);
         return true; // 异步响应
     }
     // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
@@ -226,7 +235,7 @@ async function handleGetAvailableModelsRequest(sendResponse) {
 }
 
 /**
- * 处理获取模型配置的请求
+ * 处理获取模型配置的请求（多供应商版本）
  */
 async function handleGetModelConfigRequest(modelId, sendResponse) {
     try {
@@ -244,6 +253,7 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
                     success: true,
                     config: {
                         apiModelName: modelConfig.apiModelName,
+                        providerId: modelConfig.providerId || 'google',
                         params: modelConfig.params
                     }
                 });
@@ -254,6 +264,7 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
                     success: true,
                     config: {
                         apiModelName: modelId,
+                        providerId: 'google',
                         params: getDefaultModelParams(modelId)
                     }
                 });
@@ -265,6 +276,7 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
                 success: true,
                 config: {
                     apiModelName: modelId,
+                    providerId: 'google',
                     params: getDefaultModelParams(modelId)
                 }
             });
@@ -276,6 +288,7 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
             success: true,
             config: {
                 apiModelName: modelId,
+                providerId: 'google',
                 params: getDefaultModelParams(modelId)
             }
         });
@@ -283,14 +296,21 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
 }
 
 /**
- * 获取默认模型参数
+ * 获取默认模型参数（多供应商版本）
  */
 function getDefaultModelParams(modelId) {
-    if (modelId === 'gemini-2.5-flash' || modelId === 'gemini-2.5-flash-thinking') {
+    // Google Gemini 模型的默认参数
+    if (modelId === 'gemini-2.5-flash') {
         return { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
+    } else if (modelId === 'gemini-2.5-flash-thinking') {
+        return null; // 使用默认思考模式
     } else if (modelId === 'gemini-2.5-pro') {
-        return { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
+        return null;
+    } else if (modelId === 'gemini-2.5-flash-lite-preview-06-17') {
+        return null;
     }
+
+    // 其他供应商的模型默认无特殊参数
     return null;
 }
 
@@ -331,113 +351,115 @@ async function handleBroadcastModelsUpdated(sendResponse) {
 }
 
 /**
- * 处理来自划词助手的 generateContent 请求
+ * 处理来自划词助手的统一API调用请求 - 独立处理，不依赖主面板
  */
-async function handleGenerateContentRequest(requestData, sendResponse, senderTabId) {
+async function handleUnifiedAPICall(message, sendResponse, sender) {
     try {
-        // 从存储中获取 API Key 和代理设置
-        const result = await chrome.storage.sync.get(['apiKey', 'proxyAddress']);
-        const apiKey = result.apiKey;
-        const proxyAddress = result.proxyAddress;
+        const { model, messages, options, streamId } = message;
+        console.log('[Background] Handling independent unified API call for model:', model);
 
-        if (!apiKey) {
-            sendResponse({ success: false, error: 'API Key not configured' });
-            return;
+        // 从存储中获取模型配置和供应商设置
+        const result = await chrome.storage.sync.get(['managedModels', 'providerSettings']);
+
+        if (!result.managedModels) {
+            throw new Error('Model configuration not found. Please configure models in the main panel first.');
         }
 
-        // 获取模型配置，使用ModelManager（如果可用）
-        let apiModelName = requestData.model || 'gemini-2.5-flash';
-        let modelParams = null;
-
-        // 注意：在background.js中，我们无法直接访问window.ModelManager
-        // 所以这里保持原有的映射逻辑，或者可以考虑将模型配置通过消息传递
-        if (apiModelName === 'gemini-2.5-flash' || apiModelName === 'gemini-2.5-flash-thinking') {
-            apiModelName = 'gemini-2.5-flash';
-        } else if (apiModelName === 'gemini-2.5-pro') {
-            apiModelName = 'gemini-2.5-pro';
+        // 查找模型配置
+        const modelConfig = result.managedModels.find(m => m.id === model);
+        if (!modelConfig) {
+            throw new Error(`Model not found: ${model}`);
         }
 
-        // 构建请求体
-        const requestBody = {
-            contents: requestData.contents,
-            generationConfig: requestData.generationConfig
+        const providerId = modelConfig.providerId;
+        const providerSettings = result.providerSettings?.[providerId];
+
+        if (!providerSettings || !providerSettings.apiKey) {
+            throw new Error(`API Key not configured for provider: ${providerId}`);
+        }
+
+        // 流式回调函数
+        const streamCallback = (chunk, isComplete) => {
+            if (sender.tab) {
+                chrome.tabs.sendMessage(sender.tab.id, {
+                    action: 'streamUpdate',
+                    streamId: streamId,
+                    chunk: chunk,
+                    isComplete: isComplete
+                }).catch(() => {
+                    // 忽略发送失败
+                });
+            }
         };
 
-        // 构建API URL
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
+        // 直接在background中调用API（支持流式）
+        const response = await callAPIDirectlyWithStream(modelConfig, providerSettings, messages, options, streamCallback);
 
-        // 调用 Gemini API (流式输出) - 使用代理请求函数
-        const response = await makeProxyRequest(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        }, proxyAddress);
+        sendResponse({ success: true, response: response });
 
-        if (response.ok) {
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let accumulatedText = '';
-
-            try {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const jsonData = JSON.parse(line.slice(6));
-                                const text = jsonData.candidates?.[0]?.content?.parts?.[0]?.text;
-                                if (text) {
-                                    accumulatedText += text;
-                                    // 直接发送到指定标签页，避免查询延迟
-                                    if (senderTabId) {
-                                        chrome.tabs.sendMessage(senderTabId, {
-                                            action: 'streamUpdate',
-                                            requestId: requestData.requestId,
-                                            text: accumulatedText,
-                                            isComplete: false
-                                        }).catch(() => {
-                                            // 忽略发送失败的错误
-                                        });
-                                    }
-                                }
-                            } catch (e) {
-                                // 忽略解析错误
-                            }
-                        }
-                    }
-                }
-
-                // 发送完成信号
-                if (senderTabId) {
-                    chrome.tabs.sendMessage(senderTabId, {
-                        action: 'streamUpdate',
-                        requestId: requestData.requestId,
-                        text: accumulatedText,
-                        isComplete: true
-                    }).catch(() => {
-                        // 忽略发送失败的错误
-                    });
-                }
-
-                sendResponse({ success: true, data: accumulatedText });
-            } catch (streamError) {
-                sendResponse({ success: false, error: streamError.message });
-            }
-        } else {
-            const errorData = await response.json().catch(() => ({ error: { message: `HTTP error ${response.status}` } }));
-            const errorMessage = errorData.error?.message || `HTTP error ${response.status}`;
-            sendResponse({ success: false, error: errorMessage });
-        }
     } catch (error) {
-        console.error('[Background] Generate content error:', error);
+        console.error('[Background] Error handling unified API call:', error);
         sendResponse({ success: false, error: error.message });
     }
 }
+
+/**
+ * 在background中直接调用API（支持流式）
+ */
+async function callAPIDirectlyWithStream(modelConfig, providerSettings, messages, options, streamCallback) {
+    const { providerId, apiModelName, params } = modelConfig;
+    const { apiKey } = providerSettings;
+
+    // 获取供应商配置
+    const providerConfigs = {
+        google: {
+            type: 'gemini',
+            apiHost: 'https://generativelanguage.googleapis.com'
+        },
+        openai: {
+            type: 'openai_compatible',
+            apiHost: 'https://api.openai.com'
+        },
+        claude: {
+            type: 'anthropic',
+            apiHost: 'https://api.anthropic.com'
+        },
+        siliconflow: {
+            type: 'openai_compatible',
+            apiHost: 'https://api.siliconflow.cn'
+        },
+        openrouter: {
+            type: 'openai_compatible',
+            apiHost: 'https://openrouter.ai/api/v1'
+        },
+        deepseek: {
+            type: 'openai_compatible',
+            apiHost: 'https://api.deepseek.com'
+        }
+    };
+
+    const provider = providerConfigs[providerId];
+    if (!provider) {
+        throw new Error(`Unsupported provider: ${providerId}`);
+    }
+
+    const apiHost = providerSettings.apiHost || provider.apiHost;
+
+    // 根据供应商类型调用相应的API
+    switch (provider.type) {
+        case 'gemini':
+            return await callGeminiAPIInBackgroundStream(apiHost, apiKey, apiModelName, messages, options, params, streamCallback);
+        case 'openai_compatible':
+            return await callOpenAICompatibleAPIInBackgroundStream(apiHost, apiKey, apiModelName, messages, options, providerId, streamCallback);
+        case 'anthropic':
+            return await callAnthropicAPIInBackgroundStream(apiHost, apiKey, apiModelName, messages, options, streamCallback);
+        default:
+            throw new Error(`Unsupported provider type: ${provider.type}`);
+    }
+}
+
+// 已删除：handleGenerateContentRequest 函数
+// 划词助手现在使用统一API接口，不再通过background.js处理API调用
 
 // 移除 getPageContentForExtraction 函数，因为它不再被使用
 // function getPageContentForExtraction() { ... } // REMOVED
@@ -1037,4 +1059,250 @@ function notifyProxyAutoCleared(failedProxyAddress) {
             }
         });
     });
+}
+
+/**
+ * 在background中直接调用OpenAI兼容API（支持流式）
+ */
+async function callOpenAICompatibleAPIInBackgroundStream(apiHost, apiKey, modelName, messages, options, providerId, streamCallback) {
+    const requestBody = {
+        model: modelName,
+        messages: messages,
+        temperature: options.temperature || 0.7,
+        top_p: options.topP || 0.95,
+        stream: true // 启用流式输出
+    };
+
+    if (options.maxTokens && parseInt(options.maxTokens) > 0) {
+        requestBody.max_tokens = parseInt(options.maxTokens);
+    }
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+    };
+
+    // OpenRouter特殊请求头
+    if (providerId === 'openrouter') {
+        headers['HTTP-Referer'] = 'https://pagetalk.extension';
+        headers['X-Title'] = 'PageTalk Browser Extension';
+    }
+
+    // OpenRouter使用不同的端点路径
+    const endpoint = providerId === 'openrouter' ? `${apiHost}/chat/completions` : `${apiHost}/v1/chat/completions`;
+    console.log('[Background] Calling OpenAI-compatible API with streaming:', endpoint);
+
+    const response = await makeApiRequest(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenAI API error: ${response.status} ${errorText}`);
+    }
+
+    // 处理流式响应
+    let fullResponse = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') {
+                        streamCallback('', true);
+                        return fullResponse;
+                    }
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.choices?.[0]?.delta?.content || '';
+                        if (content) {
+                            fullResponse += content;
+                            streamCallback(content, false);
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+
+    streamCallback('', true);
+    return fullResponse;
+}
+
+/**
+ * 在background中直接调用Gemini API（支持流式）
+ */
+async function callGeminiAPIInBackgroundStream(apiHost, apiKey, modelName, messages, options, params, streamCallback) {
+    // 转换消息格式
+    const geminiMessages = messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+    }));
+
+    const requestBody = {
+        contents: geminiMessages,
+        generationConfig: {
+            temperature: options.temperature || 0.7,
+            topP: options.topP || 0.95,
+            ...(params?.generationConfig || {})
+        }
+    };
+
+    if (options.maxTokens && parseInt(options.maxTokens) > 0) {
+        requestBody.generationConfig.maxOutputTokens = parseInt(options.maxTokens);
+    }
+
+    const endpoint = `${apiHost}/v1beta/models/${modelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
+    console.log('[Background] Calling Gemini API with streaming:', endpoint);
+
+    const response = await makeApiRequest(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+    }
+
+    // 处理流式响应
+    let fullResponse = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    try {
+                        const parsed = JSON.parse(data);
+                        const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                        if (content) {
+                            fullResponse += content;
+                            streamCallback(content, false);
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+
+    streamCallback('', true);
+    return fullResponse;
+}
+
+/**
+ * 在background中直接调用Anthropic API（支持流式）
+ */
+async function callAnthropicAPIInBackgroundStream(apiHost, apiKey, modelName, messages, options, streamCallback) {
+    // 分离系统消息和用户消息
+    const systemMessage = messages.find(msg => msg.role === 'system');
+    const userMessages = messages.filter(msg => msg.role !== 'system');
+
+    const requestBody = {
+        model: modelName,
+        messages: userMessages,
+        temperature: options.temperature || 0.7,
+        top_p: options.topP || 0.95,
+        stream: true
+    };
+
+    if (systemMessage) {
+        requestBody.system = systemMessage.content;
+    }
+
+    if (options.maxTokens && parseInt(options.maxTokens) > 0) {
+        requestBody.max_tokens = parseInt(options.maxTokens);
+    }
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+    };
+
+    const endpoint = `${apiHost}/v1/messages`;
+    console.log('[Background] Calling Anthropic API with streaming:', endpoint);
+
+    const response = await makeApiRequest(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Anthropic API error: ${response.status} ${errorText}`);
+    }
+
+    // 处理流式响应
+    let fullResponse = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') {
+                        streamCallback('', true);
+                        return fullResponse;
+                    }
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (parsed.type === 'content_block_delta') {
+                            const content = parsed.delta?.text || '';
+                            if (content) {
+                                fullResponse += content;
+                                streamCallback(content, false);
+                            }
+                        }
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+            }
+        }
+    } finally {
+        reader.releaseLock();
+    }
+
+    streamCallback('', true);
+    return fullResponse;
 }

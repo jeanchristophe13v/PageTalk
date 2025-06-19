@@ -305,9 +305,9 @@ function _(key) {
     const currentLang = localStorage.getItem('language') || 'zh-CN';
     
     // 确保 translations 对象存在，这个对象应该是在 translations.js 中定义的
-    if (typeof translations !== 'undefined') {
-        return translations[currentLang]?.[key] || 
-               translations['zh-CN']?.[key] || 
+    if (typeof window.translations !== 'undefined') {
+        return window.translations[currentLang]?.[key] ||
+               window.translations['zh-CN']?.[key] ||
                key;
     }
     

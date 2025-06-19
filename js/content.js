@@ -352,6 +352,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 不需要sendResponse，因为这是单向消息
     return false; // 不需要异步响应
   }
+  // 处理主面板ping请求
+  else if (message.action === "pingMainPanel") {
+    // 检查主面板是否存在
+    const iframe = document.getElementById('pagetalk-panel-iframe');
+    const hasMainPanel = iframe && iframe.contentWindow && panelActive;
+    console.log('[Content] Main panel ping check:', { iframe: !!iframe, contentWindow: !!iframe?.contentWindow, panelActive, hasMainPanel });
+    sendResponse({ hasMainPanel: hasMainPanel });
+    return true;
+  }
+  // 处理来自background的API调用转发请求
+  else if (message.action === "callUnifiedAPIFromBackground") {
+    // 转发到主面板iframe
+    const iframe = document.getElementById('pagetalk-panel-iframe');
+    if (iframe && iframe.contentWindow && panelActive) {
+      iframe.contentWindow.postMessage({
+        action: 'callUnifiedAPIFromBackground',
+        model: message.model,
+        messages: message.messages,
+        options: message.options
+      }, '*');
+
+      // 监听主面板的响应
+      const responseHandler = (event) => {
+        if (event.data && event.data.action === 'unifiedAPIResponse') {
+          window.removeEventListener('message', responseHandler);
+          sendResponse(event.data);
+        }
+      };
+      window.addEventListener('message', responseHandler);
+
+      // 设置超时
+      setTimeout(() => {
+        window.removeEventListener('message', responseHandler);
+        sendResponse({ success: false, error: 'API call timeout' });
+      }, 30000);
+
+      return true; // 异步响应
+    } else {
+      sendResponse({ success: false, error: 'Main panel not available' });
+      return true;
+    }
+  }
   // 处理代理自动清除通知
   else if (message.action === "proxyAutoCleared") {
     console.log('[Content] Proxy auto-cleared notification received:', message.failedProxy);
@@ -512,13 +554,13 @@ function extractWithReadability() {
       content = document.body.textContent || '';
       content = content.replace(/\s+/g, ' ').trim();
       if (!content) {
-        return '无法提取页面内容。';
+        return 'Unable to extract page content.';
       }
       content = '(Fallback to body text) ' + content; // 标记为后备提取
     }
     const maxLength = 500000; // 限制最大长度
     if (content.length > maxLength) {
-      content = content.substring(0, maxLength) + '...（内容已截断）';
+      content = content.substring(0, maxLength) + '...(Content truncated)';
     }
     return content;
 
@@ -843,7 +885,7 @@ function checkLibrariesAvailability() {
   }
 
   // 检查translations对象
-  if (typeof translations === 'undefined' && typeof window.translations === 'undefined') {
+  if (typeof window.translations === 'undefined') {
     missing.push('translations');
   }
 

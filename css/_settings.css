@@ -359,10 +359,89 @@
     accent-color: var(--primary-color);
 }
 
+/* === 多供应商设置样式 === */
+.provider-selection-section {
+    margin-bottom: 20px;
+}
+
+.provider-settings-container {
+    margin-bottom: 20px;
+}
+
+.provider-settings {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 16px;
+    background: var(--card-background);
+}
+
+.provider-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.provider-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.provider-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.provider-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.test-api-key-btn,
+.discover-models-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: clamp(11px, 2.5vw, 12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    min-width: 60px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.test-api-key-btn:hover,
+.discover-models-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.test-api-key-btn:disabled,
+.discover-models-btn:disabled {
+    background-color: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.model-selection-section {
+    margin-top: 20px;
+}
+
 /* 模型设置特定外框 */
 .model-settings-group-box {
-    border-radius: var(--radius-lg); 
-    margin-bottom: var(--spacing-lg); 
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
     padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
     border: 1px solid var(--border-color);
     width: 100%;
@@ -413,7 +492,7 @@
 }
 
 .selected-models-container:empty::before {
-    content: "暂无已选择的模型，点击"添加"来添加";
+    content: attr(data-empty-text);
     color: var(--text-secondary);
     font-size: 13px;
     display: flex;

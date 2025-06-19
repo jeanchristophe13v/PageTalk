@@ -12,6 +12,8 @@ function _(key, replacements = {}, translations) {
     return translation;
 }
 
+
+
 /**
  * 获取当前翻译对象
  * @returns {Object} 当前翻译对象
@@ -20,16 +22,20 @@ function getCurrentTranslations() {
     // 尝试从全局获取当前语言
     let currentLanguage = 'zh-CN';
 
+    // 尝试从全局状态获取语言设置
+    if (typeof window !== 'undefined' && window.state && window.state.language) {
+        currentLanguage = window.state.language;
+    }
     // 从localStorage获取语言设置
-    if (typeof localStorage !== 'undefined') {
+    else if (typeof localStorage !== 'undefined') {
         currentLanguage = localStorage.getItem('language') || 'zh-CN';
     }
 
     // 从window.translations获取翻译
     if (typeof window !== 'undefined' && window.translations) {
-        return window.translations[currentLanguage] || window.translations['zh-CN'] || {};
+        const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
+        return translations;
     }
-
     return {};
 }
 
@@ -68,11 +74,33 @@ function detectUserLanguage() {
  * @param {function} applyThemeCallback - Callback
  */
 export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback) {
-    chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress'], (syncResult) => {
-        // API Key and Model
-        if (syncResult.apiKey) state.apiKey = syncResult.apiKey;
+    chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress', 'providerSettings'], async (syncResult) => {
+        // 初始化 ModelManager
+        if (window.ModelManager?.instance) {
+            try {
+                await window.ModelManager.instance.initialize();
+            } catch (error) {
+                console.error('[Settings] Failed to initialize ModelManager:', error);
+            }
+        }
+
+        // 处理旧版本兼容性 - API Key 和模型
+        if (syncResult.apiKey) {
+            // 旧版本的 API Key，迁移到 Google 供应商设置
+            state.apiKey = syncResult.apiKey;
+            if (window.ModelManager?.instance) {
+                await window.ModelManager.instance.setProviderApiKey('google', syncResult.apiKey);
+            }
+        }
         if (syncResult.model) state.model = syncResult.model;
-        if (elements.apiKey) elements.apiKey.value = state.apiKey;
+
+        // 加载供应商设置到 UI
+        await loadProviderSettingsToUI(elements);
+
+        // 初始化供应商选择器
+        await initProviderSelection(elements);
+
+        // 设置模型选择器
         if (elements.modelSelection) elements.modelSelection.value = state.model;
         if (elements.chatModelSelection) elements.chatModelSelection.value = state.model;
 
@@ -86,7 +114,7 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
             // 保存检测到的语言设置
             chrome.storage.sync.set({ language: state.language });
         }
-        
+
         if (elements.languageSelect) elements.languageSelect.value = state.language;
         loadAndApplyTranslationsCallback(state.language); // Apply translations
 
@@ -102,8 +130,8 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         state.darkMode = false; // Default to light
         applyThemeCallback(state.darkMode); // Apply default
 
-        // Connection Status (based on API key presence)
-        state.isConnected = !!state.apiKey;
+        // Connection Status (检查是否有任何供应商配置了 API Key)
+        state.isConnected = await checkAnyProviderConnected();
         updateConnectionIndicatorCallback(); // Update footer indicator
     });
 }
@@ -132,7 +160,8 @@ export async function saveModelSettings(showToastNotification = true, state, ele
 
     let testResult;
     try {
-        testResult = await window.GeminiAPI.testAndVerifyApiKey(apiKey, model);
+        // 使用新的统一 API 测试接口
+        testResult = await window.PageTalkAPI.testApiKey('google', apiKey, model);
 
         if (testResult.success) {
             state.apiKey = apiKey;
@@ -286,7 +315,7 @@ export function handleProxyTest(state, elements, showToastCallback, currentTrans
     }
 
     if (!proxyAddress) {
-        showToastCallback('请先输入代理地址', 'error');
+        showToastCallback(_('proxyInvalidUrl', {}, currentTranslations), 'error');
         return;
     }
 
@@ -294,7 +323,7 @@ export function handleProxyTest(state, elements, showToastCallback, currentTrans
     const testBtn = elements.testProxyBtn;
     const originalText = testBtn.textContent;
     testBtn.disabled = true;
-    testBtn.textContent = '测试中...';
+    testBtn.textContent = _('testingConnection', {}, currentTranslations);
 
     // 发送测试请求到background.js
     chrome.runtime.sendMessage({
@@ -307,15 +336,15 @@ export function handleProxyTest(state, elements, showToastCallback, currentTrans
 
         if (chrome.runtime.lastError) {
             console.error('Error testing proxy:', chrome.runtime.lastError);
-            showToastCallback('代理测试失败: ' + chrome.runtime.lastError.message, 'error');
+            showToastCallback(_('proxySetError', { error: chrome.runtime.lastError.message }, currentTranslations), 'error');
             return;
         }
 
         if (response && response.success) {
-            showToastCallback('代理连接成功！', 'success');
+            showToastCallback(_('proxySetSuccess', {}, currentTranslations), 'success');
         } else {
-            const errorMsg = response?.error || '代理连接失败';
-            showToastCallback('代理测试失败: ' + errorMsg, 'error');
+            const errorMsg = response?.error || 'Connection failed';
+            showToastCallback(_('proxySetError', { error: errorMsg }, currentTranslations), 'error');
         }
     });
 }
@@ -655,87 +684,15 @@ async function removeModelFromSelection(modelId) {
 }
 
 /**
- * 处理获取新模型按钮点击
+ * 处理获取新模型按钮点击（旧版本兼容性，现在使用供应商特定的发现）
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {function} showToastCallback - Toast notification callback
  * @param {object} currentTranslations - Translations object
  */
 export async function handleDiscoverModels(state, elements, showToastCallback, currentTranslations) {
-    if (!state.apiKey) {
-        showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
-        return;
-    }
-
-    if (!window.ModelManager?.instance) {
-        showToastCallback(_('modelManagerUnavailable', {}, currentTranslations), 'error');
-        return;
-    }
-
-    const discoverBtn = elements.discoverModelsBtn;
-    if (discoverBtn) {
-        discoverBtn.disabled = true;
-        discoverBtn.textContent = _('fetchingModels', {}, currentTranslations);
-    }
-
-    try {
-        const modelManager = window.ModelManager.instance;
-        await modelManager.initialize();
-
-        // 从API获取可用模型
-        const discoveredModels = await modelManager.fetchAvailableModels(state.apiKey);
-
-        // 获取新模型（排除已存在的）
-        const newModels = modelManager.getNewDiscoveredModels(discoveredModels);
-
-        if (newModels.length === 0) {
-            showToastCallback(_('noNewModelsFound', {}, currentTranslations), 'info');
-            return;
-        }
-
-        // 显示模型选择对话框
-        showModelSelectionDialog(newModels, currentTranslations, async (selectedModelIds) => {
-            if (selectedModelIds.length > 0) {
-                const result = await modelManager.addDiscoveredModels(discoveredModels, selectedModelIds);
-
-                // 激活新添加的模型
-                for (const modelId of selectedModelIds) {
-                    await modelManager.activateModel(modelId);
-                }
-
-                // 重新初始化模型选择器和卡片显示
-                await initModelSelection(state, elements);
-                await updateModelCardsDisplay();
-
-                const totalCount = result.added + (result.activated || 0);
-                if (totalCount > 0) {
-                    let message = '';
-                    if (result.added > 0 && result.activated > 0) {
-                        message = _('modelsAddedAndReactivatedSuccess', {
-                            added: result.added,
-                            activated: result.activated
-                        }, currentTranslations);
-                    } else if (result.added > 0) {
-                        message = _('modelsAddedSuccess', { count: result.added }, currentTranslations);
-                    } else if (result.activated > 0) {
-                        message = _('modelsReactivatedSuccess', { count: result.activated }, currentTranslations);
-                    }
-                    showToastCallback(message, 'success');
-                } else {
-                    showToastCallback(_('noNewModelsFound', {}, currentTranslations), 'info');
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error('[Settings] Failed to discover models:', error);
-        showToastCallback(_('fetchModelsError', { error: error.message }, currentTranslations), 'error');
-    } finally {
-        if (discoverBtn) {
-            discoverBtn.disabled = false;
-            discoverBtn.textContent = _('addModelsButton', {}, currentTranslations);
-        }
-    }
+    // 为了向后兼容，默认使用 Google 供应商
+    await handleDiscoverModelsForProvider('google', state, elements, showToastCallback);
 }
 
 /**
@@ -1245,4 +1202,282 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
     updateSelectedCount();
 
     document.body.appendChild(dialog);
+}
+
+// === 多供应商支持函数 ===
+
+/**
+ * 初始化供应商选择器
+ */
+async function initProviderSelection(elements) {
+    const providerSelect = document.getElementById('provider-select');
+    if (!providerSelect) return;
+
+    // 获取供应商选项
+    const providerOptions = window.ProviderManager?.getProviderOptionsForUI() || [];
+
+    // 清空并填充选项
+    providerSelect.innerHTML = '';
+    providerOptions.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.text;
+        providerSelect.appendChild(optionElement);
+    });
+
+    // 设置默认选择（Google）
+    providerSelect.value = 'google';
+
+    // 显示对应的供应商设置
+    showProviderSettings('google');
+
+    // 监听供应商切换
+    providerSelect.addEventListener('change', (e) => {
+        showProviderSettings(e.target.value);
+    });
+}
+
+/**
+ * 显示指定供应商的设置区域
+ */
+function showProviderSettings(providerId) {
+    // 隐藏所有供应商设置
+    const allProviderSettings = document.querySelectorAll('.provider-settings');
+    allProviderSettings.forEach(setting => {
+        setting.style.display = 'none';
+    });
+
+    // 显示选中的供应商设置
+    const targetSettings = document.getElementById(`provider-settings-${providerId}`);
+    if (targetSettings) {
+        targetSettings.style.display = 'block';
+    }
+}
+
+/**
+ * 加载供应商设置到 UI
+ */
+async function loadProviderSettingsToUI(elements) {
+    if (!window.ModelManager?.instance) return;
+
+    const modelManager = window.ModelManager.instance;
+    const providerIds = window.ProviderManager?.getProviderIds() || [];
+
+    for (const providerId of providerIds) {
+        const apiKey = modelManager.getProviderApiKey(providerId);
+        const apiKeyInput = document.getElementById(`${providerId}-api-key`);
+
+        if (apiKeyInput && apiKey) {
+            apiKeyInput.value = apiKey;
+        }
+    }
+}
+
+/**
+ * 检查是否有任何供应商已连接
+ */
+async function checkAnyProviderConnected() {
+    if (!window.ModelManager?.instance) return false;
+
+    const modelManager = window.ModelManager.instance;
+    const providerIds = window.ProviderManager?.getProviderIds() || [];
+
+    for (const providerId of providerIds) {
+        if (modelManager.isProviderConfigured(providerId)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * 设置供应商事件监听器
+ */
+export function setupProviderEventListeners(state, elements, showToastCallback, updateConnectionIndicatorCallback) {
+    // API Key 可见性切换
+    const toggleButtons = document.querySelectorAll('.toggle-api-key-button');
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const eyeIcon = button.querySelector('.eye-icon');
+            const eyeSlashIcon = button.querySelector('.eye-slash-icon');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.style.display = 'none';
+                eyeSlashIcon.style.display = 'block';
+            } else {
+                input.type = 'password';
+                eyeIcon.style.display = 'block';
+                eyeSlashIcon.style.display = 'none';
+            }
+        });
+    });
+
+    // API Key 输入事件
+    const apiKeyInputs = document.querySelectorAll('[id$="-api-key"]');
+    apiKeyInputs.forEach(input => {
+        input.addEventListener('blur', async () => {
+            const providerId = input.id.replace('-api-key', '');
+            const apiKey = input.value.trim();
+
+            if (window.ModelManager?.instance) {
+                await window.ModelManager.instance.setProviderApiKey(providerId, apiKey);
+
+                // 更新连接状态
+                state.isConnected = await checkAnyProviderConnected();
+                // 调用更新连接指示器的回调
+                if (updateConnectionIndicatorCallback) {
+                    updateConnectionIndicatorCallback();
+                }
+            }
+        });
+    });
+
+    // 测试连接按钮
+    const testButtons = document.querySelectorAll('.test-api-key-btn');
+    testButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const providerId = button.getAttribute('data-provider');
+            await handleTestApiKey(providerId, showToastCallback);
+        });
+    });
+
+    // 发现模型按钮
+    const discoverButtons = document.querySelectorAll('.discover-models-btn');
+    discoverButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const providerId = button.getAttribute('data-provider');
+            await handleDiscoverModelsForProvider(providerId, state, elements, showToastCallback);
+        });
+    });
+}
+
+/**
+ * 处理 API Key 测试
+ */
+async function handleTestApiKey(providerId, showToastCallback) {
+    const currentTranslations = getCurrentTranslations();
+
+    if (!window.PageTalkAPI?.testApiKey) {
+        showToastCallback(_('modelManagerUnavailable', {}, currentTranslations), 'error');
+        return;
+    }
+
+    if (!window.ModelManager?.instance) {
+        showToastCallback(_('modelManagerUnavailable', {}, currentTranslations), 'error');
+        return;
+    }
+
+    const modelManager = window.ModelManager.instance;
+    const apiKey = modelManager.getProviderApiKey(providerId);
+
+    if (!apiKey) {
+        showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
+        return;
+    }
+
+    const testButton = document.querySelector(`.test-api-key-btn[data-provider="${providerId}"]`);
+    const originalText = testButton.textContent;
+
+    try {
+        testButton.disabled = true;
+        testButton.textContent = _('testingConnection', {}, currentTranslations);
+
+        const result = await window.PageTalkAPI.testApiKey(providerId, apiKey);
+
+        if (result.success) {
+            showToastCallback(result.message, 'success');
+        } else {
+            showToastCallback(result.message, 'error');
+        }
+    } catch (error) {
+        console.error(`[Settings] Test API Key failed for ${providerId}:`, error);
+        showToastCallback(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
+    } finally {
+        testButton.disabled = false;
+        testButton.textContent = originalText;
+    }
+}
+
+/**
+ * 处理指定供应商的模型发现
+ */
+async function handleDiscoverModelsForProvider(providerId, state, elements, showToastCallback) {
+    const currentTranslations = getCurrentTranslations();
+
+    if (!window.PageTalkAPI?.fetchModels) {
+        showToastCallback(_('modelManagerUnavailable', {}, currentTranslations), 'error');
+        return;
+    }
+
+    if (!window.ModelManager?.instance) {
+        showToastCallback(_('modelManagerUnavailable', {}, currentTranslations), 'error');
+        return;
+    }
+
+    const modelManager = window.ModelManager.instance;
+    const apiKey = modelManager.getProviderApiKey(providerId);
+
+    if (!apiKey) {
+        showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
+        return;
+    }
+
+    const discoverButton = document.querySelector(`.discover-models-btn[data-provider="${providerId}"]`);
+    const originalText = discoverButton.textContent;
+
+    try {
+        discoverButton.disabled = true;
+        discoverButton.textContent = _('discoveringModels', {}, currentTranslations);
+
+        // 获取可用模型
+        const discoveredModels = await window.PageTalkAPI.fetchModels(providerId);
+
+        if (!discoveredModels || discoveredModels.length === 0) {
+            showToastCallback(_('noNewModelsFound', {}, currentTranslations), 'info');
+            return;
+        }
+
+        // 使用 ModelManager 的方法获取可添加的模型（包括被停用的模型）
+        const newModels = modelManager.getNewDiscoveredModels(discoveredModels, providerId);
+
+        if (newModels.length === 0) {
+            showToastCallback(_('noNewModelsFound', {}, currentTranslations), 'info');
+            return;
+        }
+
+        // 显示模型选择对话框
+        showModelSelectionDialog(newModels, currentTranslations, async (selectedModelIds) => {
+            if (selectedModelIds.length > 0) {
+                // 使用 ModelManager 的批量添加方法
+                const result = await modelManager.addDiscoveredModels(discoveredModels, selectedModelIds);
+                const totalProcessed = result.added + result.activated;
+
+                if (totalProcessed > 0) {
+                    // 重新初始化模型选择器和卡片显示
+                    await initModelSelection(state, elements);
+                    await updateModelCardsDisplay();
+
+                    if (result.added > 0 && result.activated > 0) {
+                        showToastCallback(_('modelsAddedAndReactivatedSuccess', { added: result.added, activated: result.activated }, currentTranslations), 'success');
+                    } else if (result.added > 0) {
+                        showToastCallback(_('modelsAddedSuccess', { count: result.added }, currentTranslations), 'success');
+                    } else if (result.activated > 0) {
+                        showToastCallback(_('modelsReactivatedSuccess', { count: result.activated }, currentTranslations), 'success');
+                    }
+                } else {
+                    showToastCallback(_('fetchModelsError', { error: 'Unknown error' }, currentTranslations), 'error');
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error(`[Settings] Discover models failed for ${providerId}:`, error);
+        showToastCallback(_('fetchModelsError', { error: error.message }, currentTranslations), 'error');
+    } finally {
+        discoverButton.disabled = false;
+        discoverButton.textContent = originalText;
+    }
 }

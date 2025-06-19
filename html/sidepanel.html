@@ -402,28 +402,205 @@
 
                     <!-- 模型设置 -->
                     <div id="settings-model" class="settings-sub-content">
-                        <h2>模型设置</h2>
-                        <div class="model-settings-group-box">
+                        <h2 data-i18n="modelSettingsHeading">模型设置</h2>
+
+                        <!-- 供应商选择 -->
+                        <div class="provider-selection-section">
                             <div class="setting-group">
-                                <label for="api-key">Gemini API Key:</label>
-                                <div class="api-key-input-container">
-                                    <input type="password" id="api-key" placeholder="输入您的API Key">
-                                    <button id="toggle-api-key" class="toggle-api-key-button" type="button" title="Toggle API Key visibility">
-                                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
-                                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                                        </svg>
-                                        <svg id="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash" viewBox="0 0 16 16" style="display: none;">
-                                            <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
-                                            <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
-                                            <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <p class="hint"><span data-i18n="apiKeyHint"></span>  <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
+                                <label for="provider-select" data-i18n="aiProviderLabel">AI 供应商：</label>
+                                <select id="provider-select">
+                                    <!-- 供应商选项将通过 JavaScript 动态填充 -->
+                                </select>
                             </div>
+                        </div>
+
+                        <!-- 供应商配置区域 -->
+                        <div class="provider-settings-container">
+                            <!-- Google 供应商设置 -->
+                            <div id="provider-settings-google" class="provider-settings" style="display: none;">
+                                <div class="provider-header">
+                                    <img src="../icons/Gemini.svg" alt="Google" class="provider-icon">
+                                    <h3>Google Gemini</h3>
+                                </div>
+                                <div class="setting-group">
+                                    <label for="google-api-key">API Key:</label>
+                                    <div class="api-key-input-container">
+                                        <input type="password" id="google-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="输入您的 Google API Key">
+                                        <button class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitleTranslated" title="Toggle API Key visibility" data-target="google-api-key">
+                                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                            </svg>
+                                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a></p>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="test-api-key-btn" data-provider="google" data-i18n="testConnection">测试连接</button>
+                                    <button class="discover-models-btn" data-provider="google" data-i18n="discoverModels">发现模型</button>
+                                </div>
+                            </div>
+
+                            <!-- OpenAI 供应商设置 -->
+                            <div id="provider-settings-openai" class="provider-settings" style="display: none;">
+                                <div class="provider-header">
+                                    <img src="../icons/OpenAI.svg" alt="OpenAI" class="provider-icon">
+                                    <h3>OpenAI</h3>
+                                </div>
+                                <div class="setting-group">
+                                    <label for="openai-api-key">API Key:</label>
+                                    <div class="api-key-input-container">
+                                        <input type="password" id="openai-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="输入您的 OpenAI API Key">
+                                        <button class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitleTranslated" title="Toggle API Key visibility" data-target="openai-api-key">
+                                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                            </svg>
+                                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a></p>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="test-api-key-btn" data-provider="openai" data-i18n="testConnection">测试连接</button>
+                                    <button class="discover-models-btn" data-provider="openai" data-i18n="discoverModels">发现模型</button>
+                                </div>
+                            </div>
+
+                            <!-- Anthropic 供应商设置 -->
+                            <div id="provider-settings-anthropic" class="provider-settings" style="display: none;">
+                                <div class="provider-header">
+                                    <img src="../icons/Claude.svg" alt="Claude" class="provider-icon">
+                                    <h3>Anthropic Claude</h3>
+                                </div>
+                                <div class="setting-group">
+                                    <label for="anthropic-api-key">API Key:</label>
+                                    <div class="api-key-input-container">
+                                        <input type="password" id="anthropic-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="输入您的 Anthropic API Key">
+                                        <button class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitleTranslated" title="Toggle API Key visibility" data-target="anthropic-api-key">
+                                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                            </svg>
+                                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Anthropic Console</a></p>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="test-api-key-btn" data-provider="anthropic" data-i18n="testConnection">测试连接</button>
+                                    <button class="discover-models-btn" data-provider="anthropic" data-i18n="discoverModels">发现模型</button>
+                                </div>
+                            </div>
+
+                            <!-- SiliconFlow 供应商设置 -->
+                            <div id="provider-settings-siliconflow" class="provider-settings" style="display: none;">
+                                <div class="provider-header">
+                                    <img src="../icons/SiliconFlow.svg" alt="SiliconFlow" class="provider-icon">
+                                    <h3>SiliconFlow</h3>
+                                </div>
+                                <div class="setting-group">
+                                    <label for="siliconflow-api-key">API Key:</label>
+                                    <div class="api-key-input-container">
+                                        <input type="password" id="siliconflow-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="输入您的 SiliconFlow API Key">
+                                        <button class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitleTranslated" title="Toggle API Key visibility" data-target="siliconflow-api-key">
+                                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                            </svg>
+                                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="https://cloud.siliconflow.cn/account/ak" target="_blank" rel="noopener">SiliconFlow 控制台</a></p>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="test-api-key-btn" data-provider="siliconflow" data-i18n="testConnection">测试连接</button>
+                                    <button class="discover-models-btn" data-provider="siliconflow" data-i18n="discoverModels">发现模型</button>
+                                </div>
+                            </div>
+
+                            <!-- OpenRouter 供应商设置 -->
+                            <div id="provider-settings-openrouter" class="provider-settings" style="display: none;">
+                                <div class="provider-header">
+                                    <img src="../icons/OpenRouter.svg" alt="OpenRouter" class="provider-icon">
+                                    <h3>OpenRouter</h3>
+                                </div>
+                                <div class="setting-group">
+                                    <label for="openrouter-api-key">API Key:</label>
+                                    <div class="api-key-input-container">
+                                        <input type="password" id="openrouter-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="输入您的 OpenRouter API Key">
+                                        <button class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitleTranslated" title="Toggle API Key visibility" data-target="openrouter-api-key">
+                                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                            </svg>
+                                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="https://openrouter.ai/settings/keys" target="_blank" rel="noopener">OpenRouter 设置</a></p>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="test-api-key-btn" data-provider="openrouter" data-i18n="testConnection">测试连接</button>
+                                    <button class="discover-models-btn" data-provider="openrouter" data-i18n="discoverModels">发现模型</button>
+                                </div>
+                            </div>
+
+                            <!-- DeepSeek 供应商设置 -->
+                            <div id="provider-settings-deepseek" class="provider-settings" style="display: none;">
+                                <div class="provider-header">
+                                    <img src="../icons/DeepSeek.svg" alt="DeepSeek" class="provider-icon">
+                                    <h3>DeepSeek</h3>
+                                </div>
+                                <div class="setting-group">
+                                    <label for="deepseek-api-key">API Key:</label>
+                                    <div class="api-key-input-container">
+                                        <input type="password" id="deepseek-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="输入您的 DeepSeek API Key">
+                                        <button class="toggle-api-key-button" type="button" data-i18n-title="toggleApiKeyVisibilityTitleTranslated" title="Toggle API Key visibility" data-target="deepseek-api-key">
+                                            <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                                                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                            </svg>
+                                            <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                                                <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                                                <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                                                <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">DeepSeek 平台</a></p>
+                                </div>
+                                <div class="provider-actions">
+                                    <button class="test-api-key-btn" data-provider="deepseek" data-i18n="testConnection">测试连接</button>
+                                    <button class="discover-models-btn" data-provider="deepseek" data-i18n="discoverModels">发现模型</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 模型选择 -->
+                        <div class="model-selection-section">
                             <div class="setting-group">
-                                <label for="model-selection">模型：</label>
+                                <label for="model-selection" data-i18n="currentModelLabel">当前模型：</label>
                                 <select id="model-selection">
                                     <!-- 模型选项将通过 JavaScript 动态填充 -->
                                 </select>
@@ -434,7 +611,7 @@
                                 <h4 data-i18n="selectedModelsTitle">已选择的模型</h4>
                                 <button id="discover-models-btn" class="discover-btn" data-i18n="addModelsButton">添加</button>
                             </div>
-                            <div id="selected-models-container" class="selected-models-container">
+                            <div id="selected-models-container" class="selected-models-container" data-empty-text="暂无已选择的模型，点击"添加"来添加">
                                 <!-- 模型卡片将通过JavaScript动态生成 -->
                             </div>
                         </div>
@@ -516,8 +693,9 @@
     <!-- Lucide 图标库 -->
     <script src="../js/lib/lucide.js"></script>
     <!-- Load Helper Modules BEFORE main.js -->
+    <script type="module" src="../js/providerManager.js"></script>
     <script src="../js/modelManager.js"></script>
-    <script src="../js/api.js"></script>
+    <script type="module" src="../js/api.js"></script>
     <script src="../js/translations.js"></script>
     <!-- 新增: 加载更新日志模块 -->
     <script src="../js/changelog.js"></script>

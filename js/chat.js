@@ -38,7 +38,20 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     }
     if (!userMessage && state.images.length === 0 && state.videos.length === 0 && state.selectedContextTabs.filter(t => t.content && !t.isLoading && !t.isContextSent).length === 0) return;
 
-    if (!state.apiKey) {
+    // 检查是否有任何供应商配置了 API Key
+    let hasValidApiKey = false;
+    if (window.ModelManager?.instance) {
+        try {
+            await window.ModelManager.instance.initialize();
+            const modelConfig = window.ModelManager.instance.getModelApiConfig(state.model);
+            const providerId = modelConfig.providerId;
+            hasValidApiKey = window.ModelManager.instance.isProviderConfigured(providerId);
+        } catch (error) {
+            console.warn('[Chat] Failed to check provider configuration:', error);
+        }
+    }
+
+    if (!hasValidApiKey) {
         // Show API key missing error as a toast on the chat page (首页下方)
         if (showToastCallback) showToastCallback(_('apiKeyMissingError', {}, currentTranslations), 'error');
         return;
@@ -495,15 +508,26 @@ function extractPartsFromMessage(message) {
  * @param {object} currentTranslations - Translations object
  */
 export function abortStreaming(state, restoreSendButtonAndInputCallback, showToastCallback, currentTranslations) {
+    let aborted = false;
+
+    // 尝试中断新的统一API接口
+    if (window.PageTalkAPI && window.PageTalkAPI.currentAbortController) {
+        console.log("Aborting unified API request...");
+        window.PageTalkAPI.currentAbortController.abort();
+        aborted = true;
+    }
+
+    // 尝试中断旧的Gemini API接口（向后兼容）
     if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {
-        console.log("Aborting API request...");
+        console.log("Aborting legacy Gemini API request...");
         window.GeminiAPI.currentAbortController.abort();
-        // 移除streamingAborted提示，用户主动中断不需要提示
-        // if (showToastCallback) showToastCallback(_('streamingAborted', {}, currentTranslations), 'info');
-        // Controller cleanup happens in api.js finally block
-    } else {
+        aborted = true;
+    }
+
+    if (!aborted) {
         console.warn("No active AbortController found to abort.");
     }
+
     // Always attempt to restore UI state after abort attempt
     restoreSendButtonAndInputCallback();
 }

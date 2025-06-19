@@ -1,4 +1,6 @@
-const translations = {
+// 避免重复声明
+if (typeof window.translations === 'undefined') {
+  window.translations = {
   'zh-CN': {
     // --- General UI ---
     'appName': 'Pagetalk',
@@ -15,6 +17,7 @@ const translations = {
     'regenerate': '重新生成',
     'deleteMessage': '删除消息',
     'edit': '编辑', // Added for potential future use
+    'retry': '重试',
 
     // --- 更新通告相关翻译 ---
     'changelogTitle': '更新',
@@ -219,6 +222,14 @@ const translations = {
     'removeModelTooltip': '移除此模型',
     'minOneModelError': '至少需要保留一个模型',
     'cannotRemoveProtectedModel': '无法删除受保护的模型',
+    'modelManagerUnavailable': 'API 测试功能不可用',
+    'apiKeyMissingError': '请先输入 API Key',
+    'connectionTestFailed': '测试失败: {error}',
+    'noNewModelsFound': '未发现新的可用模型',
+    'modelsAddedSuccess': '成功添加 {count} 个模型',
+    'modelsReactivatedSuccess': '成功重新激活 {count} 个模型',
+    'modelsAddedAndReactivatedSuccess': '成功添加 {added} 个模型，重新激活 {activated} 个模型',
+    'fetchModelsError': '发现模型失败: {error}',
 
     // --- 代理设置相关翻译 ---
     'proxyAddressLabel': '代理地址：',
@@ -229,6 +240,20 @@ const translations = {
     'proxyCleared': '代理设置已清除',
     'testProxy': '测试',
     'proxyInvalidUrl': '代理地址格式无效，请检查格式',
+
+    // --- 多供应商设置相关翻译 ---
+    'aiProviderLabel': 'AI 供应商：',
+    'testConnection': '测试连接',
+    'discoverModels': '发现模型',
+    'currentModelLabel': '当前模型：',
+    'testingConnection': '测试中...',
+    'discoveringModels': '发现中...',
+    'noModelsSelected': '暂无已选择的模型，点击"添加"来添加',
+    'providerApiKeyPlaceholder': '输入您的 API Key',
+    'getApiKeyHint': '获取 API Key',
+    'selectedText': '选中文本',
+    'relatedContext': '相关上下文',
+    'userQuestion': '用户问题',
 
     // --- 划词助手默认提示词 ---
     'defaultInterpretPrompt': '解读一下',
@@ -267,6 +292,7 @@ const translations = {
     'regenerate': 'Regenerate',
     'deleteMessage': 'Delete Message',
     'edit': 'Edit',
+    'retry': 'Retry',
 
     // --- Changelog Related Translations ---
     'changelogTitle': 'Updates',
@@ -471,6 +497,14 @@ const translations = {
     'removeModelTooltip': 'Remove this model',
     'minOneModelError': 'At least one model must be kept',
     'cannotRemoveProtectedModel': 'Cannot remove protected model',
+    'modelManagerUnavailable': 'API test function unavailable',
+    'apiKeyMissingError': 'Please enter API Key first',
+    'connectionTestFailed': 'Test failed: {error}',
+    'noNewModelsFound': 'No new models found',
+    'modelsAddedSuccess': 'Successfully added {count} models',
+    'modelsReactivatedSuccess': 'Successfully reactivated {count} models',
+    'modelsAddedAndReactivatedSuccess': 'Successfully added {added} models and reactivated {activated} models',
+    'fetchModelsError': 'Failed to discover models: {error}',
 
     // --- Proxy Settings Related Translations ---
     'proxyAddressLabel': 'Proxy Url:',
@@ -481,6 +515,20 @@ const translations = {
     'proxyCleared': 'Proxy settings cleared',
     'testProxy': 'Test',
     'proxyInvalidUrl': 'Invalid proxy url format, please check the format',
+
+    // --- Multi-Provider Settings Related Translations ---
+    'aiProviderLabel': 'AI Provider:',
+    'testConnection': 'Test Connection',
+    'discoverModels': 'Discover Models',
+    'currentModelLabel': 'Current Model:',
+    'testingConnection': 'Testing...',
+    'discoveringModels': 'Discovering...',
+    'noModelsSelected': 'No models selected yet, click "Add" to add models',
+    'providerApiKeyPlaceholder': 'Enter your API Key',
+    'getApiKeyHint': 'Get API Key',
+    'selectedText': 'Selected Text',
+    'relatedContext': 'Related Context',
+    'userQuestion': 'User Question',
 
     // --- Text Selection Helper Default Prompts ---
     'defaultInterpretPrompt': 'Interpret this',
@@ -506,7 +554,8 @@ Analyze the selected text and strictly follow the rules below. Provide the outpu
     - Translate the text into natural, idiomatic English.
     - If the input is a single, non-trivial word, you may also provide a brief explanation or a close synonym to clarify its meaning.`,
   }
-};
+  };
+}
 
 /**
  * 获取默认提示词
@@ -516,7 +565,7 @@ Analyze the selected text and strictly follow the rules below. Provide the outpu
  */
 function getDefaultPrompt(type, language = 'zh-CN') {
   const key = type === 'interpret' ? 'defaultInterpretPrompt' : 'defaultTranslatePrompt';
-  return translations[language]?.[key] || translations['zh-CN']?.[key] || '';
+  return window.translations[language]?.[key] || window.translations['zh-CN']?.[key] || '';
 }
 
 /**
@@ -543,7 +592,7 @@ function isDefaultPrompt(prompt, type) {
 // }
 
 // Make translations globally accessible (or pass it around)
-window.translations = translations;
+// window.translations is already set above
 // window._ = _; // Optional: make the helper global too
 
 // 导出函数供其他模块使用

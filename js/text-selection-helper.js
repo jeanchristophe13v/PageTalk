@@ -246,11 +246,11 @@ function getTranslationFunction() {
     }
 
     // 如果translations对象可用，创建翻译函数
-    if (typeof translations !== 'undefined') {
+    if (typeof window.translations !== 'undefined') {
         return function(key, replacements = {}) {
             // 使用缓存的语言设置或默认中文
             const currentLanguage = window.currentLanguageCache || 'zh-CN';
-            const translation = translations[currentLanguage]?.[key] || translations['zh-CN']?.[key] || key;
+            const translation = window.translations[currentLanguage]?.[key] || window.translations['zh-CN']?.[key] || key;
 
             // 处理占位符替换
             let result = translation;
@@ -1973,10 +1973,11 @@ function displayError(windowElement, errorMessage) {
     const responseArea = windowElement.querySelector('.pagetalk-response-area');
     if (!responseArea) return;
 
+    const _tr = getTranslationFunction();
     responseArea.innerHTML = `
         <div class="pagetalk-error">
-            <div class="pagetalk-error-message">错误：${errorMessage}</div>
-            <button class="pagetalk-retry-btn">重试</button>
+            <div class="pagetalk-error-message">${_tr('error')}: ${errorMessage}</div>
+            <button class="pagetalk-retry-btn">${_tr('retry')}</button>
         </div>
     `;
 
@@ -2206,9 +2207,10 @@ async function sendChatMessage(windowElement) {
                 (chatSettings.contextBefore > 0 || chatSettings.contextAfter > 0 ?
                     extractSelectionContext(window.getSelection(), chatSettings.contextBefore || 500, chatSettings.contextAfter || 500) : '');
 
+            const _tr = getTranslationFunction();
             const agentBaseMessage = contextForChat && contextForChat.length > 0 && contextForChat !== selectedText ?
-                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${message}` :
-                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
+                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('relatedContext')}: ${contextForChat}\n\n${_tr('userQuestion')}: ${message}` :
+                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('userQuestion')}: ${message}`;
 
             finalMessage = buildMessageWithHistory(windowId, agentBaseMessage);
         }
@@ -2704,9 +2706,10 @@ async function regenerateChatMessage(windowElement, userMessage) {
                 (chatSettings.contextBefore > 0 || chatSettings.contextAfter > 0 ?
                     extractSelectionContext(window.getSelection(), chatSettings.contextBefore || 500, chatSettings.contextAfter || 500) : '');
 
+            const _tr = getTranslationFunction();
             const agentBaseMessage = contextForChat && contextForChat.length > 0 && contextForChat !== selectedText ?
-                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${userMessage}` :
-                `${currentAgent.systemPrompt}\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
+                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('relatedContext')}: ${contextForChat}\n\n${_tr('userQuestion')}: ${userMessage}` :
+                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('userQuestion')}: ${userMessage}`;
 
             finalMessage = buildMessageWithHistory(windowId, agentBaseMessage);
         }
@@ -2899,116 +2902,85 @@ function escapeHtml(text) {
 }
 
 /**
- * 调用 AI API - 通过 background.js 统一处理
+ * 调用 AI API - 通过background.js独立处理，支持流式输出
  */
-async function callAIAPI(message, model, temperature, onStream = null, requestId = null, windowId = null, maxOutputLength = null) {
+async function callAIAPI(message, model, temperature, onStream = null, maxOutputLength = null) {
     try {
-        // 使用传入的requestId或生成新的
-        if (!requestId) {
-            requestId = 'text-selection-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
-        }
+        console.log('[TextSelectionHelper] Calling API via background for model:', model);
 
-        // 构建请求数据
-        const requestData = {
-            requestId: requestId,
-            contents: [{
-                parts: [{ text: message }]
-            }],
-            generationConfig: {
-                temperature: temperature,
-                maxOutputTokens: maxOutputLength || 65536, // 使用传入的maxOutputLength或默认65536
-                topP: 0.95
-            },
-            model: model
+        // 生成唯一的流ID
+        const streamId = 'stream_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+
+        // 构建标准化的消息数组
+        const messages = [
+            {
+                role: 'user',
+                content: message
+            }
+        ];
+
+        // 构建调用选项
+        const callOptions = {
+            temperature: temperature,
+            topP: 0.95
         };
 
-        // 应用模型特定的参数配置 - 通过消息传递获取
-        try {
-            // 通过消息传递获取模型配置
-            const modelConfigResponse = await new Promise((resolve) => {
-                chrome.runtime.sendMessage({
-                    action: 'getModelConfig',
-                    model: model
-                }, (response) => {
-                    resolve(response);
-                });
-            });
-
-            if (modelConfigResponse && modelConfigResponse.success && modelConfigResponse.config) {
-                const modelConfig = modelConfigResponse.config;
-                // 如果模型有特定参数，应用到请求数据中
-                if (modelConfig.params?.generationConfig) {
-                    Object.assign(requestData.generationConfig, modelConfig.params.generationConfig);
-                }
-                console.log('[TextSelectionHelper] Applied model config for:', model);
-            } else {
-                throw new Error('Failed to get model config from background');
-            }
-        } catch (error) {
-            console.warn('[TextSelectionHelper] Failed to get model config, using fallback logic:', error);
-            // 回退到原有逻辑
-            if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-thinking') {
-                requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
-            } else if (model === 'gemini-2.5-pro') {
-                requestData.generationConfig.thinkingConfig = { thinkingBudget: 0 };
-            }
+        // 只有当明确设置了maxOutputLength且大于0时才添加该参数
+        if (maxOutputLength && parseInt(maxOutputLength) > 0) {
+            callOptions.maxTokens = parseInt(maxOutputLength);
         }
 
-        // 设置流式更新监听器
+        // 设置流式监听器
+        let accumulatedText = '';
         const streamListener = (message) => {
-            if (message.action === 'streamUpdate' && message.requestId === requestId) {
-                if (onStream) {
-                    onStream(message.text, message.isComplete);
-                }
-            }
-        };
-
-        // 如果有windowId，将监听器保存到状态中（用于后续清理）
-        if (windowId) {
-            const currentState = streamingStates.get(windowId);
-            if (currentState) {
-                // 如果已有旧的监听器，先移除
-                if (currentState.streamListener) {
-                    try {
-                        chrome.runtime.onMessage.removeListener(currentState.streamListener);
-                        console.log('[TextSelectionHelper] Removed old stream listener for window:', windowId);
-                    } catch (error) {
-                        console.log('[TextSelectionHelper] Failed to remove old listener:', error.message);
+            if (message.action === 'streamUpdate' && message.streamId === streamId) {
+                if (message.chunk) {
+                    accumulatedText += message.chunk;
+                    if (onStream) {
+                        onStream(accumulatedText, false);
                     }
                 }
-                // 更新状态中的监听器
-                currentState.streamListener = streamListener;
-                streamingStates.set(windowId, currentState);
+                if (message.isComplete && onStream) {
+                    onStream(accumulatedText, true);
+                }
             }
-        }
+        };
 
         // 添加消息监听器
         chrome.runtime.onMessage.addListener(streamListener);
 
         try {
-            // 发送请求到 background.js
-            const response = await chrome.runtime.sendMessage({
-                action: 'generateContent',
-                data: requestData
+            // 通过background.js调用API
+            const response = await new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    action: 'callUnifiedAPI',
+                    model: model,
+                    messages: messages,
+                    options: callOptions,
+                    streamId: streamId
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else if (response && response.success) {
+                        resolve(response.response);
+                    } else {
+                        reject(new Error(response ? response.error : 'Unknown error'));
+                    }
+                });
             });
 
-            if (!response.success) {
-                throw new Error(response.error || 'API调用失败');
-            }
-
-            return response.data;
+            return response;
         } finally {
-            // 如果没有windowId或请求完成，移除监听器
-            if (!windowId) {
-                chrome.runtime.onMessage.removeListener(streamListener);
-            }
-            // 如果有windowId，监听器会在abortStreaming或完成时被移除
+            // 移除监听器
+            chrome.runtime.onMessage.removeListener(streamListener);
         }
     } catch (error) {
         console.error('[TextSelectionHelper] API call error:', error);
         throw error;
     }
 }
+
+
 
 /**
  * 获取划词助手设置
@@ -3035,10 +3007,24 @@ async function getTextSelectionHelperSettings() {
                         systemPrompt: translatePrompt,
                         temperature: 0.2
                     },
+                    chat: {
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
+                    },
                     optionsOrder: ['interpret', 'translate', 'chat']
                 };
 
                 const settings = result.textSelectionHelperSettings || defaultSettings;
+
+                // 确保chat配置存在
+                if (!settings.chat) {
+                    settings.chat = {
+                        contextMode: 'custom',
+                        contextBefore: 500,
+                        contextAfter: 500
+                    };
+                }
 
                 // 智能更新默认提示词：只有当前提示词是默认提示词时才更新
                 if (settings.interpret && window.isDefaultPrompt && window.isDefaultPrompt(settings.interpret.systemPrompt, 'interpret')) {
@@ -3069,6 +3055,11 @@ async function getTextSelectionHelperSettings() {
                         systemPrompt: translatePrompt,
                         temperature: 0.2
                     },
+                    chat: {
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
+                    },
                     optionsOrder: ['interpret', 'translate', 'chat']
                 };
                 resolve(defaultSettings);
@@ -3084,6 +3075,11 @@ async function getTextSelectionHelperSettings() {
                         model: 'gemini-2.5-flash',
                         systemPrompt: '翻译一下',
                         temperature: 0.2
+                    },
+                    chat: {
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     optionsOrder: ['interpret', 'translate', 'chat']
                 };
