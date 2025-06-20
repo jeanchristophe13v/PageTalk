@@ -3,6 +3,7 @@
 :root {
     /* 全新配色模式 - 低调沉稳，靛蓝+灰色系 */
     --primary-color: #4674ff;       /* 主色调 - 靛蓝 5 */
+    --primary-hover: #3b5bff;       /* 主色调悬浮 - 更深的靛蓝 */
     --secondary-color: #748FFC;      /* 辅助色 - 靛蓝 3 */
     --background-color: #F8F9FA;    /* 背景色 - 灰色 0 */
     --card-background: #FFFFFF;     /* 卡片背景 - 白色 */
@@ -44,6 +45,7 @@
 /* --- 全新深色模式变量 - 低调沉稳，靛蓝+灰色系 --- */
 body.dark-mode {
     --primary-color: #748FFC;       /* 主色调 - 靛蓝 3 */
+    --primary-hover: #91A7FF;       /* 主色调悬浮 - 更亮的靛蓝 */
     --secondary-color: #91A7FF;      /* 辅助色 - 靛蓝 2 */
     --background-color: #212529;    /* 背景色 - 灰色 9 */
     --card-background: #2C2E33;     /* 卡片背景 - 稍亮深灰 */
