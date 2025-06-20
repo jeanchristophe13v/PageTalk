@@ -90,6 +90,18 @@ export const providers = {
         apiKeyNeeded: true,
         icon: 'DeepSeek.svg',
         description: 'DeepSeek 深度求索的高性能 AI 模型'
+    },
+
+    chatglm: {
+        id: 'chatglm',
+        name: 'ChatGLM',
+        type: 'openai_compatible',
+        apiHost: 'https://open.bigmodel.cn/api/paas/v4',
+        apiKeyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
+        modelsUrl: 'https://open.bigmodel.cn/modelcenter/square',
+        apiKeyNeeded: true,
+        icon: 'ChatGLM.svg',
+        description: '智谱AI ChatGLM 系列模型，支持中文对话和代码生成'
     }
 };
 

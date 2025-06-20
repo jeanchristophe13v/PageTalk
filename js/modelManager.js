@@ -63,6 +63,58 @@ const DEFAULT_MODELS = [
         isAlias: false,
         isDefault: true,
         canDelete: true // 可以删除
+    },
+
+    // ChatGLM 模型
+    {
+        id: 'glm-4-plus',
+        displayName: 'GLM-4-Plus',
+        apiModelName: 'glm-4-plus',
+        providerId: 'chatglm',
+        params: null,
+        isAlias: false,
+        isDefault: true,
+        canDelete: true
+    },
+    {
+        id: 'glm-4-0520',
+        displayName: 'GLM-4-0520',
+        apiModelName: 'glm-4-0520',
+        providerId: 'chatglm',
+        params: null,
+        isAlias: false,
+        isDefault: true,
+        canDelete: true
+    },
+    {
+        id: 'glm-4-long',
+        displayName: 'GLM-4-Long',
+        apiModelName: 'glm-4-long',
+        providerId: 'chatglm',
+        params: null,
+        isAlias: false,
+        isDefault: true,
+        canDelete: true
+    },
+    {
+        id: 'glm-4-flashx',
+        displayName: 'GLM-4-FlashX',
+        apiModelName: 'glm-4-flashx',
+        providerId: 'chatglm',
+        params: null,
+        isAlias: false,
+        isDefault: true,
+        canDelete: true
+    },
+    {
+        id: 'glm-4-flash',
+        displayName: 'GLM-4-Flash',
+        apiModelName: 'glm-4-flash',
+        providerId: 'chatglm',
+        params: null,
+        isAlias: false,
+        isDefault: true,
+        canDelete: true
     }
 ];
 

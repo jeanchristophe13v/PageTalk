@@ -4,7 +4,7 @@
  * 这个模块实现了多供应商 AI API 的统一调用接口，采用适配器模式支持不同供应商的 API 格式。
  * 支持的供应商类型：
  * - Gemini (Google)
- * - OpenAI Compatible (OpenAI, SiliconFlow, OpenRouter, DeepSeek)
+ * - OpenAI Compatible (OpenAI, SiliconFlow, OpenRouter, DeepSeek, ChatGLM)
  * - Anthropic (Claude)
  */
 

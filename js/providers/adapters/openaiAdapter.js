@@ -44,8 +44,13 @@ function formatApiUrl(apiHost, providerId, endpoint) {
         return `${apiHost}${endpoint}`;
     }
 
+    // ChatGLM 的 apiHost 已包含完整路径 /api/paas/v4
+    if (providerId === 'chatglm') {
+        return `${apiHost}${endpoint}`;
+    }
+
     // 检查 URL 是否已经包含版本路径
-    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\//.test(apiHost);
+    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\/|\/paas\/v\d+/.test(apiHost);
 
     if (hasVersionPath) {
         return `${apiHost}${endpoint}`;
@@ -95,10 +100,18 @@ export async function openaiAdapter(modelConfig, provider, providerSettings, mes
     
     // 构建请求头
     const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
     };
-    
+
+    // 根据供应商设置认证方式
+    if (provider.id === 'chatglm') {
+        // ChatGLM 使用直接的 API key 认证，不需要 Bearer 前缀
+        headers['Authorization'] = apiKey;
+    } else {
+        // 其他供应商使用标准的 Bearer 认证
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
     // 特殊处理某些供应商的请求头
     if (provider.id === 'openrouter') {
         headers['HTTP-Referer'] = 'https://pagetalk.extension';
@@ -242,19 +255,89 @@ async function processOpenAIStreamResponse(response, streamCallback) {
 export async function fetchOpenAIModels(provider, providerSettings) {
     const { apiKey } = providerSettings;
     const apiHost = providerSettings.apiHost || provider.apiHost;
-    
+
+    // ChatGLM 不支持标准的 /models 端点，返回预定义的模型列表
+    if (provider.id === 'chatglm') {
+        console.log('[OpenAIAdapter] ChatGLM does not support /models endpoint, returning predefined models');
+        return [
+            {
+                id: 'glm-4-plus',
+                displayName: 'GLM-4-Plus',
+                apiModelName: 'glm-4-plus',
+                providerId: 'chatglm',
+                params: null,
+                isAlias: false,
+                isDefault: false,
+                canDelete: true,
+                description: '智谱AI GLM-4-Plus 模型，支持高质量对话和代码生成'
+            },
+            {
+                id: 'glm-4-0520',
+                displayName: 'GLM-4-0520',
+                apiModelName: 'glm-4-0520',
+                providerId: 'chatglm',
+                params: null,
+                isAlias: false,
+                isDefault: false,
+                canDelete: true,
+                description: '智谱AI GLM-4-0520 模型'
+            },
+            {
+                id: 'glm-4-long',
+                displayName: 'GLM-4-Long',
+                apiModelName: 'glm-4-long',
+                providerId: 'chatglm',
+                params: null,
+                isAlias: false,
+                isDefault: false,
+                canDelete: true,
+                description: '智谱AI GLM-4-Long 长文本模型'
+            },
+            {
+                id: 'glm-4-flashx',
+                displayName: 'GLM-4-FlashX',
+                apiModelName: 'glm-4-flashx',
+                providerId: 'chatglm',
+                params: null,
+                isAlias: false,
+                isDefault: false,
+                canDelete: true,
+                description: '智谱AI GLM-4-FlashX 快速响应模型'
+            },
+            {
+                id: 'glm-4-flash',
+                displayName: 'GLM-4-Flash',
+                apiModelName: 'glm-4-flash',
+                providerId: 'chatglm',
+                params: null,
+                isAlias: false,
+                isDefault: false,
+                canDelete: true,
+                description: '智谱AI GLM-4-Flash 快速模型'
+            }
+        ];
+    }
+
     try {
         const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Content-Type': 'application/json'
         };
-        
+
+        // 根据供应商设置认证方式
+        if (provider.id === 'chatglm') {
+            // ChatGLM 使用直接的 API key 认证，不需要 Bearer 前缀
+            headers['Authorization'] = apiKey;
+        } else {
+            // 其他供应商使用标准的 Bearer 认证
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
         // 特殊处理某些供应商的请求头
         if (provider.id === 'openrouter') {
             headers['HTTP-Referer'] = 'https://pagetalk.extension';
             headers['X-Title'] = 'PageTalk Browser Extension';
         }
-        
+
         // 构建模型列表端点 - 智能处理不同供应商的 URL 格式
         const modelsEndpoint = formatApiUrl(apiHost, provider.id, '/models');
 
@@ -262,15 +345,15 @@ export async function fetchOpenAIModels(provider, providerSettings) {
             method: 'GET',
             headers
         });
-        
+
         if (!response.ok) {
             const currentTranslations = getCurrentTranslations();
             const errorMessage = currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error! status: ${response.status}`;
             throw new Error(errorMessage);
         }
-        
+
         const data = await response.json();
-        
+
         // 转换为标准格式
         return data.data?.map(model => ({
             id: model.id,
@@ -285,7 +368,7 @@ export async function fetchOpenAIModels(provider, providerSettings) {
             created: model.created || null,
             owned_by: model.owned_by || null
         })) || [];
-        
+
     } catch (error) {
         console.error('[OpenAIAdapter] Failed to fetch models:', error);
         throw error;
@@ -302,19 +385,80 @@ export async function fetchOpenAIModels(provider, providerSettings) {
 export async function testOpenAIApiKey(provider, providerSettings, testModel = null) {
     const { apiKey } = providerSettings;
     const apiHost = providerSettings.apiHost || provider.apiHost;
-    
+
+    // ChatGLM 特殊测试逻辑 - 使用 chat/completions 端点进行测试
+    if (provider.id === 'chatglm') {
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': apiKey  // ChatGLM 使用直接的 API key 认证
+            };
+
+            const chatEndpoint = formatApiUrl(apiHost, provider.id, '/chat/completions');
+
+            // 发送一个简单的测试请求
+            const testRequestBody = {
+                model: 'glm-4-flash',  // 使用最基础的模型进行测试
+                messages: [
+                    {
+                        role: 'user',
+                        content: 'test'
+                    }
+                ],
+                max_tokens: 1,
+                temperature: 0.1
+            };
+
+            const response = await fetch(chatEndpoint, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(testRequestBody)
+            });
+
+            if (response.ok) {
+                const currentTranslations = getCurrentTranslations();
+                const message = currentTranslations['connectionTestSuccess'] || 'Connection established! API Key verified.';
+                return { success: true, message };
+            } else {
+                const currentTranslations = getCurrentTranslations();
+                const errorText = await response.text();
+                console.log('[OpenAIAdapter] ChatGLM test error response:', errorText);
+
+                // 检查是否是认证错误
+                if (response.status === 401 || errorText.includes('unauthorized') || errorText.includes('invalid') || errorText.includes('API key')) {
+                    return { success: false, message: currentTranslations['apiKeyNotValidError'] || 'Connection failed: API key not valid. Please check your key.' };
+                }
+
+                const errorMessage = currentTranslations['httpErrorGeneric']?.replace('{status}', response.status) || `HTTP error ${response.status}`;
+                return { success: false, message: currentTranslations['connectionFailedGeneric']?.replace('{error}', errorMessage) || `Connection failed: ${errorMessage}` };
+            }
+        } catch (error) {
+            console.error('[OpenAIAdapter] ChatGLM API test error:', error);
+            const currentTranslations = getCurrentTranslations();
+            return { success: false, message: currentTranslations['connectionFailedGeneric']?.replace('{error}', error.message) || `Connection failed: ${error.message}` };
+        }
+    }
+
     try {
-        // 首先尝试获取模型列表来验证 API Key
+        // 对于其他供应商，使用标准的模型列表端点测试
         const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Content-Type': 'application/json'
         };
-        
+
+        // 根据供应商设置认证方式
+        if (provider.id === 'chatglm') {
+            // ChatGLM 使用直接的 API key 认证，不需要 Bearer 前缀
+            headers['Authorization'] = apiKey;
+        } else {
+            // 其他供应商使用标准的 Bearer 认证
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
         if (provider.id === 'openrouter') {
             headers['HTTP-Referer'] = 'https://pagetalk.extension';
             headers['X-Title'] = 'PageTalk Browser Extension';
         }
-        
+
         // 构建模型列表端点 - 智能处理不同供应商的 URL 格式
         const modelsEndpoint = formatApiUrl(apiHost, provider.id, '/models');
 
@@ -322,7 +466,7 @@ export async function testOpenAIApiKey(provider, providerSettings, testModel = n
             method: 'GET',
             headers
         });
-        
+
         if (response.ok) {
             // 获取当前翻译
             const currentTranslations = getCurrentTranslations();
