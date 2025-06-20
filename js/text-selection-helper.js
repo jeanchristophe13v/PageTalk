@@ -1567,8 +1567,21 @@ async function createFunctionWindowContent(windowElement, optionId) {
             });
 
             if (response && response.models && response.models.length > 0) {
-                modelOptions = response.models;
-                console.log('[TextSelectionHelper] Got models from background:', modelOptions);
+                // 检查是否是新格式（包含提供商信息）
+                if (typeof response.models[0] === 'object' && response.models[0].value) {
+                    // 新格式：包含提供商信息的对象数组
+                    modelOptions = response.models;
+                    console.log('[TextSelectionHelper] Got models with provider info from background:', modelOptions);
+                } else {
+                    // 旧格式：简单的字符串数组，转换为对象格式
+                    modelOptions = response.models.map(modelId => ({
+                        value: modelId,
+                        text: modelId,
+                        providerId: 'google',
+                        providerName: 'Google'
+                    }));
+                    console.log('[TextSelectionHelper] Got models from background (legacy format):', modelOptions);
+                }
             } else {
                 throw new Error('No models received from background');
             }
@@ -1579,10 +1592,49 @@ async function createFunctionWindowContent(windowElement, optionId) {
         }
 
         let modelOptionsHTML = '';
+
+        // 按提供商分组模型
+        const modelsByProvider = {};
         modelOptions.forEach(model => {
-            const displayName = model === 'gemini-2.0-flash-thinking-exp-01-21' ? 'gemini-2.0-flash-thinking' : model;
-            const selected = model === (currentModel || 'gemini-2.5-flash') ? 'selected' : '';
-            modelOptionsHTML += `<option value="${model}" ${selected}>${displayName}</option>`;
+            // 处理新格式和旧格式
+            const modelValue = typeof model === 'object' ? model.value : model;
+            const modelText = typeof model === 'object' ? model.text : model;
+            const providerId = typeof model === 'object' ? (model.providerId || 'unknown') : 'google';
+            const providerName = typeof model === 'object' ? (model.providerName || 'Unknown') : 'Google';
+
+            if (!modelsByProvider[providerId]) {
+                modelsByProvider[providerId] = {
+                    name: providerName,
+                    models: []
+                };
+            }
+            modelsByProvider[providerId].models.push({
+                value: modelValue,
+                text: modelText,
+                providerId: providerId,
+                providerName: providerName
+            });
+        });
+
+        // 按提供商名称排序
+        const sortedProviders = Object.entries(modelsByProvider).sort(([, a], [, b]) =>
+            a.name.localeCompare(b.name)
+        );
+
+        // 为每个提供商创建 optgroup
+        sortedProviders.forEach(([providerId, providerData]) => {
+            modelOptionsHTML += `<optgroup label="${providerData.name}" data-provider-id="${providerId}">`;
+
+            // 按模型名称排序
+            const sortedModels = providerData.models.sort((a, b) => a.text.localeCompare(b.text));
+
+            sortedModels.forEach(model => {
+                const selected = model.value === (currentModel || 'gemini-2.5-flash') ? 'selected' : '';
+                const dataAttrs = `data-provider-id="${model.providerId}" data-provider-name="${model.providerName}"`;
+                modelOptionsHTML += `<option value="${model.value}" ${selected} ${dataAttrs}>${model.text}</option>`;
+            });
+
+            modelOptionsHTML += `</optgroup>`;
         });
 
         // 构建助手选项
@@ -4023,20 +4075,66 @@ async function refreshAllModelSelectors() {
 
                     // 清空并重新填充选项
                     modelSelect.innerHTML = '';
-                    modelOptions.forEach(modelId => {
-                        const option = document.createElement('option');
-                        option.value = modelId;
-                        option.textContent = modelId;
-                        if (modelId === currentValue) {
-                            option.selected = true;
+
+                    // 按提供商分组模型
+                    const modelsByProvider = {};
+                    modelOptions.forEach(model => {
+                        // 处理新格式和旧格式
+                        const modelValue = typeof model === 'object' ? model.value : model;
+                        const modelText = typeof model === 'object' ? model.text : model;
+                        const providerId = typeof model === 'object' ? (model.providerId || 'unknown') : 'google';
+                        const providerName = typeof model === 'object' ? (model.providerName || 'Unknown') : 'Google';
+
+                        if (!modelsByProvider[providerId]) {
+                            modelsByProvider[providerId] = {
+                                name: providerName,
+                                models: []
+                            };
                         }
-                        modelSelect.appendChild(option);
+                        modelsByProvider[providerId].models.push({
+                            value: modelValue,
+                            text: modelText,
+                            providerId: providerId,
+                            providerName: providerName
+                        });
+                    });
+
+                    // 按提供商名称排序
+                    const sortedProviders = Object.entries(modelsByProvider).sort(([, a], [, b]) =>
+                        a.name.localeCompare(b.name)
+                    );
+
+                    // 为每个提供商创建 optgroup
+                    sortedProviders.forEach(([providerId, providerData]) => {
+                        const optgroup = document.createElement('optgroup');
+                        optgroup.label = providerData.name;
+                        optgroup.setAttribute('data-provider-id', providerId);
+
+                        // 按模型名称排序
+                        const sortedModels = providerData.models.sort((a, b) => a.text.localeCompare(b.text));
+
+                        sortedModels.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.value;
+                            option.textContent = model.text;
+                            option.setAttribute('data-provider-id', model.providerId);
+                            option.setAttribute('data-provider-name', model.providerName);
+
+                            if (model.value === currentValue) {
+                                option.selected = true;
+                            }
+                            optgroup.appendChild(option);
+                        });
+
+                        modelSelect.appendChild(optgroup);
                     });
 
                     // 如果当前选择的模型不在新列表中，选择第一个可用模型
-                    if (!modelOptions.includes(currentValue) && modelOptions.length > 0) {
-                        modelSelect.value = modelOptions[0];
-                        console.log(`[TextSelectionHelper] Model ${currentValue} no longer available, switched to ${modelOptions[0]}`);
+                    const modelValues = modelOptions.map(model => typeof model === 'object' ? model.value : model);
+                    if (!modelValues.includes(currentValue) && modelOptions.length > 0) {
+                        const firstModelValue = typeof modelOptions[0] === 'object' ? modelOptions[0].value : modelOptions[0];
+                        modelSelect.value = firstModelValue;
+                        console.log(`[TextSelectionHelper] Model ${currentValue} no longer available, switched to ${firstModelValue}`);
                     }
                 }
             });

@@ -239,7 +239,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     font-size: 13px;
-    font-weight: 500;
+    font-weight: normal; /* 修改为正常字重，不加粗 */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; /* 添加字体族 */
     outline: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--input-background);
@@ -579,6 +580,35 @@
     margin: 0 var(--spacing-lg) var(--spacing-md);
     /* 当前模型选择移到最顶部 */
     order: 1;
+}
+
+/* 模型选择框样式优化 - 统一样式 */
+.model-selection-section select {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: normal; /* 确保不是加粗 */
+}
+
+.model-selection-section select optgroup {
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: transparent;
+    padding: 4px 8px;
+    margin: 2px 0;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.model-selection-section select option {
+    padding: 6px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--background-color);
+}
+
+.model-selection-section select option:hover {
+    background-color: var(--hover-bg);
 }
 
 /* 模型设置特定外框 */

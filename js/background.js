@@ -205,32 +205,65 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function handleGetAvailableModelsRequest(sendResponse) {
     try {
-        // 从存储中获取模型管理器的数据
-        const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels']);
+        // 从存储中获取模型管理器的数据和自定义提供商
+        const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels', 'customProviders']);
 
         if (result.managedModels && result.userActiveModels) {
             // 获取用户激活的模型
             const managedModels = result.managedModels;
             const userActiveModels = result.userActiveModels;
 
-            const activeModels = userActiveModels
+            // 构建提供商映射（包括自定义提供商）
+            const providerMap = {
+                google: 'Google',
+                openai: 'OpenAI',
+                anthropic: 'Claude',
+                siliconflow: 'SiliconFlow',
+                openrouter: 'OpenRouter',
+                deepseek: 'DeepSeek'
+            };
+
+            // 添加自定义提供商到映射
+            if (result.customProviders && Array.isArray(result.customProviders)) {
+                result.customProviders.forEach(provider => {
+                    providerMap[provider.id] = provider.id;
+                });
+            }
+
+            const activeModelOptions = userActiveModels
                 .map(modelId => managedModels.find(model => model.id === modelId))
                 .filter(model => model !== undefined)
-                .map(model => model.id);
+                .map(model => {
+                    const providerName = providerMap[model.providerId] || model.providerId || 'Unknown';
+                    return {
+                        value: model.id,
+                        text: model.displayName,
+                        providerId: model.providerId,
+                        providerName: providerName
+                    };
+                });
 
-            console.log('[Background] Returning active models:', activeModels);
-            sendResponse({ success: true, models: activeModels });
+            console.log('[Background] Returning active model options:', activeModelOptions);
+            sendResponse({ success: true, models: activeModelOptions });
         } else {
-            // 如果没有存储数据，返回默认模型
-            const defaultModels = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite-preview-06-17'];
-            console.log('[Background] No stored models, returning defaults:', defaultModels);
-            sendResponse({ success: true, models: defaultModels });
+            // 如果没有存储数据，返回默认模型选项
+            const defaultModelOptions = [
+                { value: 'gemini-2.5-flash', text: 'Gemini 2.5 Flash', providerId: 'google', providerName: 'Google' },
+                { value: 'gemini-2.5-flash-thinking', text: 'Gemini 2.5 Flash Thinking', providerId: 'google', providerName: 'Google' },
+                { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'Gemini 2.5 Flash Lite', providerId: 'google', providerName: 'Google' }
+            ];
+            console.log('[Background] No stored models, returning defaults:', defaultModelOptions);
+            sendResponse({ success: true, models: defaultModelOptions });
         }
     } catch (error) {
         console.error('[Background] Error getting available models:', error);
-        // 返回默认模型作为回退
-        const fallbackModels = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite-preview-06-17'];
-        sendResponse({ success: true, models: fallbackModels });
+        // 返回默认模型选项作为回退
+        const fallbackModelOptions = [
+            { value: 'gemini-2.5-flash', text: 'Gemini 2.5 Flash', providerId: 'google', providerName: 'Google' },
+            { value: 'gemini-2.5-flash-thinking', text: 'Gemini 2.5 Flash Thinking', providerId: 'google', providerName: 'Google' },
+            { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'Gemini 2.5 Flash Lite', providerId: 'google', providerName: 'Google' }
+        ];
+        sendResponse({ success: true, models: fallbackModelOptions });
     }
 }
 

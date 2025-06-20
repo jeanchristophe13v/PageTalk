@@ -404,7 +404,34 @@
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.8);
     font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: normal; /* 确保不是加粗 */
     cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+/* 模型选择器分组样式 - 统一样式 */
+.pagetalk-window-controls select optgroup {
+    font-weight: 600;
+    color: #333;
+    background-color: transparent;
+    padding: 2px 4px;
+    margin: 1px 0;
+    font-size: 11px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.pagetalk-window-controls select option {
+    padding: 3px 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12px;
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.pagetalk-window-controls select option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .pagetalk-window-controls button {
@@ -1275,6 +1302,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg); /* 16px 圆角，与主面板保持一致 */
     font-size: clamp(12px, 3vw, 13px);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: normal; /* 确保不是加粗 */
     outline: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--input-background);
@@ -1294,6 +1323,25 @@
     box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
     background-color: var(--card-background);
     transform: none; /* 取消选择框的上抬效果 */
+}
+
+/* 划词助手设置页面模型选择器样式 - 统一样式 */
+#settings-text-selection-helper .setting-group select optgroup {
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: transparent;
+    padding: 4px 8px;
+    margin: 2px 0;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#settings-text-selection-helper .setting-group select option {
+    padding: 6px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--background-color);
 }
 
 .pagetalk-function-window .setting-group {
@@ -1320,7 +1368,8 @@
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.8);
     font-size: 13px;
-    font-family: inherit;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: normal; /* 确保不是加粗 */
     outline: none;
     transition: border-color 0.2s ease;
 }
@@ -1329,6 +1378,25 @@
 .pagetalk-function-window .setting-group textarea:focus {
     border-color: #007AFF;
     box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+}
+
+/* 划词助手弹窗中的模型选择器样式 - 统一样式 */
+.pagetalk-function-window .setting-group select optgroup {
+    font-weight: 600;
+    color: #333;
+    background-color: transparent;
+    padding: 2px 4px;
+    margin: 1px 0;
+    font-size: 11px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.pagetalk-function-window .setting-group select option {
+    padding: 3px 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12px;
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.9);
 }
 
 #settings-text-selection-helper .setting-group textarea {
@@ -1698,6 +1766,31 @@
 .custom-option-dialog-content {
     padding: var(--spacing-lg);
     background: var(--card-background);
+}
+
+/* 自定义选项对话框中的 select 元素样式 */
+.custom-option-dialog select {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: normal; /* 确保不是加粗 */
+}
+
+/* 自定义选项对话框中的模型选择器样式 - 统一样式 */
+.custom-option-dialog select optgroup {
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: transparent;
+    padding: 4px 8px;
+    margin: 2px 0;
+    font-size: 13px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.custom-option-dialog select option {
+    padding: 6px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    color: var(--text-color);
+    background-color: var(--background-color);
 }
 
 .custom-option-dialog-footer {

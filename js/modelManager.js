@@ -783,7 +783,7 @@ class ModelManager {
     /**
      * 生成用于UI显示的模型选项
      * @param {boolean} includeInactive - 是否包含未激活的模型
-     * @returns {Array} 格式化的选项数组 [{value, text, disabled}]
+     * @returns {Array} 格式化的选项数组 [{value, text, disabled, providerId, providerName}]
      */
     getModelOptionsForUI(includeInactive = false) {
         const models = includeInactive ? this.managedModels : this.getUserActiveModels();
@@ -791,14 +791,27 @@ class ModelManager {
         // 按模型ID进行字母排序
         const sortedModels = [...models].sort((a, b) => a.id.localeCompare(b.id));
 
-        return sortedModels.map(model => ({
-            value: model.id,
-            text: model.displayName,
-            disabled: includeInactive ? !this.isModelActive(model.id) : false,
-            isAlias: model.isAlias,
-            isDefault: model.isDefault,
-            canDelete: model.canDelete !== false // 默认可删除，除非明确设置为false
-        }));
+        return sortedModels.map(model => {
+            // 获取提供商信息
+            let providerName = model.providerId || 'unknown';
+            if (window.ProviderManager) {
+                const provider = window.ProviderManager.getProvider(model.providerId);
+                if (provider) {
+                    providerName = provider.name;
+                }
+            }
+
+            return {
+                value: model.id,
+                text: model.displayName,
+                disabled: includeInactive ? !this.isModelActive(model.id) : false,
+                isAlias: model.isAlias,
+                isDefault: model.isDefault,
+                canDelete: model.canDelete !== false, // 默认可删除，除非明确设置为false
+                providerId: model.providerId,
+                providerName: providerName
+            };
+        });
     }
 
     /**

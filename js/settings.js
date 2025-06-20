@@ -517,18 +517,54 @@ export async function initModelSelection(state, elements) {
     // 获取用户可用的模型选项
     const modelOptions = modelManager.getModelOptionsForUI();
 
+    // 填充选择器的通用函数 - 按提供商分组
     const populateSelect = (selectElement) => {
         if (!selectElement) return;
         selectElement.innerHTML = '';
 
+        // 按提供商分组模型
+        const modelsByProvider = {};
         modelOptions.forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option.value;
-            optionElement.textContent = option.text;
-            if (option.disabled) {
-                optionElement.disabled = true;
+            const providerId = option.providerId || 'unknown';
+            const providerName = option.providerName || 'Unknown';
+
+            if (!modelsByProvider[providerId]) {
+                modelsByProvider[providerId] = {
+                    name: providerName,
+                    models: []
+                };
             }
-            selectElement.appendChild(optionElement);
+            modelsByProvider[providerId].models.push(option);
+        });
+
+        // 按提供商名称排序
+        const sortedProviders = Object.entries(modelsByProvider).sort(([, a], [, b]) =>
+            a.name.localeCompare(b.name)
+        );
+
+        // 为每个提供商创建 optgroup
+        sortedProviders.forEach(([providerId, providerData]) => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = providerData.name;
+            optgroup.setAttribute('data-provider-id', providerId);
+
+            // 按模型名称排序
+            const sortedModels = providerData.models.sort((a, b) => a.text.localeCompare(b.text));
+
+            sortedModels.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.text; // 不再显示提供商名称，因为已经分组了
+                if (option.disabled) {
+                    optionElement.disabled = true;
+                }
+                // 添加数据属性用于样式控制
+                optionElement.setAttribute('data-provider-id', option.providerId || '');
+                optionElement.setAttribute('data-provider-name', option.providerName || '');
+                optgroup.appendChild(optionElement);
+            });
+
+            selectElement.appendChild(optgroup);
         });
 
         // 确保当前状态的模型被选中，或默认选择第一个
@@ -674,11 +710,46 @@ async function removeModelFromSelection(modelId) {
             const currentValue = selectElement.value;
             selectElement.innerHTML = '';
 
+            // 按提供商分组模型
+            const modelsByProvider = {};
             modelOptions.forEach(option => {
-                const optionElement = document.createElement('option');
-                optionElement.value = option.value;
-                optionElement.textContent = option.text;
-                selectElement.appendChild(optionElement);
+                const providerId = option.providerId || 'unknown';
+                const providerName = option.providerName || 'Unknown';
+
+                if (!modelsByProvider[providerId]) {
+                    modelsByProvider[providerId] = {
+                        name: providerName,
+                        models: []
+                    };
+                }
+                modelsByProvider[providerId].models.push(option);
+            });
+
+            // 按提供商名称排序
+            const sortedProviders = Object.entries(modelsByProvider).sort(([, a], [, b]) =>
+                a.name.localeCompare(b.name)
+            );
+
+            // 为每个提供商创建 optgroup
+            sortedProviders.forEach(([providerId, providerData]) => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = providerData.name;
+                optgroup.setAttribute('data-provider-id', providerId);
+
+                // 按模型名称排序
+                const sortedModels = providerData.models.sort((a, b) => a.text.localeCompare(b.text));
+
+                sortedModels.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    // 添加数据属性用于样式控制
+                    optionElement.setAttribute('data-provider-id', option.providerId || '');
+                    optionElement.setAttribute('data-provider-name', option.providerName || '');
+                    optgroup.appendChild(optionElement);
+                });
+
+                selectElement.appendChild(optgroup);
             });
 
             // 如果当前选中的模型被删除了，选择第一个可用的
