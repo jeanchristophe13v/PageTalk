@@ -8,45 +8,53 @@
 
 /* 设置界面样式 */
 #settings {
-    padding: clamp(var(--spacing-md), 4vw, var(--spacing-xl));
+    padding: var(--spacing-md) var(--spacing-xl) var(--spacing-sm);
     box-sizing: border-box;
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: var(--background-color); /* Settings tab uses main background */
+    background-color: var(--background-color);
 }
 
-#settings .settings-container { 
-    /* background-color: var(--background-color); /* Removed, settings section has this */
-    padding: 0; 
+#settings .settings-container {
+    padding: 0;
     max-width: 100%;
-    width: 100%; 
+    width: 100%;
     overflow-x: hidden;
-    flex: 1; 
-    display: flex; 
+    flex: 1;
+    display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    gap: var(--spacing-xs);
 }
 
 /* 设置子内容区域标题 */
 .settings-sub-content h2 {
-    font-size: clamp(16px, 4vw, 18px); 
-    margin-bottom: var(--spacing-lg); 
-    color: var(--text-color); 
+    font-size: 18px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
     font-weight: 600;
     padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border-color);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+}
+
+/* 模型设置页面标题保持在最顶部 */
+#settings-model h2 {
+    order: 0;
+    margin-bottom: var(--spacing-md);
 }
 
 /* 设置内部导航 */
 .settings-nav {
     display: flex;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
     padding-bottom: var(--spacing-sm);
-    flex-shrink: 0; 
-    align-items: center; 
+    flex-shrink: 0;
+    align-items: center;
 }
 
 .settings-nav-btn {
@@ -55,13 +63,17 @@
     background-color: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: clamp(12px, 3.5vw, 14px);
+    font-size: 14px;
     font-weight: 500;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     transform: scale(1);
     position: relative;
     overflow: hidden;
+    letter-spacing: -0.01em;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
 }
 
 .settings-nav-btn::before {
@@ -95,8 +107,9 @@
 .settings-nav-btn.active {
     color: var(--primary-color);
     font-weight: 600;
-    background-color: rgba(76, 110, 245, 0.15);
+    background-color: rgba(76, 110, 245, 0.12);
     transform: scale(1);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.15);
 }
 /* Push close button to the right */
 #close-panel-settings {
@@ -113,12 +126,20 @@
     padding: var(--spacing-sm) 0;
     min-height: 0;
     opacity: 0;
-    transform: translateY(0); /* 修改：移除初始位移避免溢出 */
-    transition: opacity 0.2s ease; /* 简化：只使用透明度过渡 */
+    transform: translateY(0);
+    transition: opacity 0.25s ease;
 }
+
 .settings-sub-content.active {
     display: block;
-    animation: settingsContentFadeIn 0.2s ease forwards; /* 简化动画 */
+    animation: settingsContentFadeIn 0.25s ease forwards;
+}
+
+/* 模型设置页面激活时使用flexbox布局以支持order属性 */
+#settings-model.active {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0; /* 移除gap，使用各组件自己的margin控制间距 */
 }
 
 @keyframes settingsContentFadeIn {
@@ -132,9 +153,9 @@
 
 /* 通用设置特定样式 */
 #settings-general .setting-group {
-    margin-bottom: var(--spacing-lg);
-    padding-bottom: var(--spacing-md);
-    border-bottom: 1px solid var(--border-color); 
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
 }
 #settings-general .setting-group:last-of-type {
     border-bottom: none;
@@ -185,29 +206,53 @@
 
 /* 设置组 (通用表单元素容器) */
 .setting-group {
-    margin-bottom: var(--spacing-lg); /* Default bottom margin for groups */
+    margin-bottom: var(--spacing-md); /* 更紧凑间距 */
 }
 .setting-group label {
     display: block;
     margin-bottom: var(--spacing-sm);
-    font-size: clamp(12px, 3vw, 13px);
+    font-size: 13px;
     font-weight: 500;
     color: var(--text-color);
+    letter-spacing: -0.01em;
 }
 .setting-group input[type="text"],
 .setting-group input[type="password"],
 .setting-group input[type="number"],
-.setting-group textarea,
+.setting-group textarea {
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    outline: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--input-background);
+    transform: translateY(0);
+    min-height: 40px;
+    box-sizing: border-box;
+}
+
 .setting-group select {
     width: 100%;
-    padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg); /* 16px 圆角 */
-    font-size: clamp(12px, 3vw, 13px);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    font-weight: 500;
     outline: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    background-color: var(--input-background); /* Use variable */
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: var(--input-background);
     transform: translateY(0);
+    min-height: 40px;
+    box-sizing: border-box;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-sm) center;
+    background-size: 14px;
+    padding-right: calc(var(--spacing-md) + 20px);
 }
 
 /* 代理地址输入容器样式 */
@@ -265,36 +310,40 @@
 .setting-group input:focus,
 .setting-group textarea:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1), 0 2px 8px rgba(49, 123, 245, 0.05);
-    background-color: var(--card-background); /* Use variable */
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
+    background-color: var(--card-background);
+    transform: none;
 }
 
 .setting-group select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
-    background-color: var(--card-background); /* Use variable */
-    transform: none; /* 取消选择框的上抬效果 */
+    background-color: var(--card-background);
+    transform: none;
 }
 
 /* 输入时的微妙反馈 */
 .setting-group input:not(:placeholder-shown),
 .setting-group textarea:not(:placeholder-shown) {
-    border-color: rgba(49, 123, 245, 0.3);
+    border-color: rgba(49, 123, 245, 0.4);
+    background-color: rgba(76, 110, 245, 0.02);
 }
 .setting-group textarea {
-    min-height: 80px;
+    min-height: 100px;
     resize: vertical;
+    line-height: 1.5;
 }
 .hint {
-    font-size: clamp(10px, 2.5vw, 11px);
+    font-size: 12px;
     color: var(--text-secondary);
-    margin-top: var(--spacing-xs);
-    padding-left: var(--spacing-md); /* Add padding to move text to the right */
+    margin-top: var(--spacing-sm);
+    padding-left: var(--spacing-sm);
+    line-height: 1.4;
 }
-.hint a { /* Style for links inside hints */
+.hint a {
     color: var(--primary-color);
     text-decoration: none;
+    font-weight: 500;
 }
 .hint a:hover {
     text-decoration: underline;
@@ -361,45 +410,133 @@
 
 /* === 多供应商设置样式 === */
 .provider-selection-section {
-    margin-bottom: 20px;
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    /* 移动到AI供应商下方，调整顺序 */
+    order: 2;
+}
+
+.provider-selection-container {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.provider-selection-container select {
+    flex: 1;
+}
+
+.add-provider-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.add-provider-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.3);
+    color: white; /* 确保悬浮时文字保持白色 */
+}
+
+.add-provider-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 .provider-settings-container {
-    margin-bottom: 20px;
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    /* AI供应商配置区域保持在中间位置 */
+    order: 3;
 }
 
 .provider-settings {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
     background: var(--card-background);
+    transition: all 0.2s ease;
+}
+
+.provider-settings:hover {
+    border-color: rgba(76, 110, 245, 0.2);
+    box-shadow: 0 2px 12px rgba(76, 110, 245, 0.08);
 }
 
 .provider-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .provider-icon {
     width: 24px;
     height: 24px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .provider-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-color);
+    letter-spacing: -0.01em;
+    flex: 1;
+}
+
+.edit-custom-provider-btn,
+.remove-custom-provider-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+    margin-left: var(--spacing-xs);
+}
+
+.edit-custom-provider-btn:hover {
+    color: var(--primary-color);
+    background: rgba(76, 110, 245, 0.1);
+}
+
+.remove-custom-provider-btn:hover {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+.edit-custom-provider-btn svg,
+.remove-custom-provider-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.provider-header .edit-custom-provider-btn:first-of-type {
+    margin-left: auto;
 }
 
 .provider-actions {
     display: flex;
-    gap: 12px;
-    margin-top: 16px;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-color);
 }
 
 .test-api-key-btn,
@@ -407,11 +544,12 @@
     background-color: var(--primary-color);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: clamp(11px, 2.5vw, 12px);
+    font-size: 12px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     min-width: 60px;
     height: 32px;
@@ -424,6 +562,8 @@
 .discover-models-btn:hover {
     background-color: var(--secondary-color);
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.25);
 }
 
 .test-api-key-btn:disabled,
@@ -432,25 +572,216 @@
     color: var(--text-secondary);
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
 }
 
 .model-selection-section {
-    margin-top: 20px;
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    /* 当前模型选择移到最顶部 */
+    order: 1;
 }
 
 /* 模型设置特定外框 */
 .model-settings-group-box {
     border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-lg);
-    padding: clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    padding: var(--spacing-lg);
     border: 1px solid var(--border-color);
-    width: 100%;
-    background-color: var(--card-background); /* Give it a card background */
+    width: auto;
+    background-color: var(--card-background);
+    transition: all 0.2s ease;
 }
+
+.model-settings-group-box:hover {
+    border-color: rgba(76, 110, 245, 0.2);
+    box-shadow: 0 2px 12px rgba(76, 110, 245, 0.08);
+}
+
+/* === 自定义提供商模态框样式 === */
+.custom-provider-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.custom-provider-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-provider-modal-content {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.custom-provider-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.custom-provider-header .provider-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.custom-provider-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    flex: 1;
+}
+
+.custom-provider-close {
+    position: absolute;
+    right: var(--spacing-lg);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.custom-provider-close:hover {
+    color: var(--text-color);
+}
+
+.custom-provider-form {
+    padding: var(--spacing-lg);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    background: var(--input-background);
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+.form-group input.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-hint {
+    margin-top: var(--spacing-xs);
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+.custom-provider-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-secondary,
+.btn-primary {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.btn-secondary {
+    background: var(--border-color);
+    color: var(--text-color);
+}
+
+.btn-secondary:hover {
+    background: var(--text-secondary);
+    color: white;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.3);
+}
+
+.btn-primary:disabled {
+    background: var(--border-color);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .model-settings-group-box .setting-group {
     border-bottom: none;
-    margin-bottom: var(--spacing-md); 
-    padding-bottom: 0; 
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: 0;
 }
 .model-settings-group-box .setting-group:last-child {
     margin-bottom: 0;
@@ -458,18 +789,28 @@
 
 /* 模型管理区域 */
 .model-management-section {
-    margin-top: var(--spacing-lg);
-    padding: var(--spacing-md);
+    margin: 0 var(--spacing-lg) var(--spacing-md);
+    padding: var(--spacing-lg);
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
+    /* 已选择的模型移到AI供应商下方 */
+    order: 4;
+    transition: all 0.2s ease;
+}
+
+.model-management-section:hover {
+    border-color: rgba(76, 110, 245, 0.2);
+    box-shadow: 0 2px 12px rgba(76, 110, 245, 0.08);
 }
 
 .model-management-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .model-management-header h4 {
@@ -477,35 +818,36 @@
     font-size: 14px;
     font-weight: 600;
     color: var(--text-color);
+    letter-spacing: -0.01em;
 }
 
 .selected-models-container {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
-    min-height: 60px;
+    min-height: 50px;
     padding: var(--spacing-sm);
     border: 2px dashed var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background-color: var(--background-color);
-    transition: border-color 0.2s ease;
+    transition: all 0.25s ease;
 }
 
 .selected-models-container:empty::before {
     content: attr(data-empty-text);
     color: var(--text-secondary);
-    font-size: 13px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: 44px;
+    height: 30px;
 }
 
 .selected-models-container:not(:empty) {
     border-style: solid;
-    border-color: #acc1ff;
-    background-color: rgba(76, 110, 245, 0.02);
+    border-color: rgba(76, 110, 245, 0.3);
+    background-color: rgba(76, 110, 245, 0.04);
 }
 
 .model-card {
@@ -515,19 +857,20 @@
     padding: var(--spacing-xs) var(--spacing-sm);
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     font-size: 12px;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     color: var(--text-color);
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     max-width: 200px;
+    min-height: 28px;
 }
 
 .model-card:hover {
     border-color: var(--primary-color);
     background-color: var(--button-hover-bg);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.1);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.15);
 }
 
 .model-card-name {
@@ -536,6 +879,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-weight: 500;
+    letter-spacing: -0.01em;
 }
 
 .model-card-remove {
@@ -544,7 +888,7 @@
     color: var(--text-secondary);
     cursor: pointer;
     padding: 2px;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -557,6 +901,7 @@
 .model-card-remove:hover {
     color: var(--error-color);
     background-color: rgba(234, 67, 53, 0.1);
+    transform: scale(1.1);
 }
 
 .model-card-remove svg {
@@ -570,9 +915,13 @@
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--spacing-sm);
-    margin-top: var(--spacing-lg);
+    gap: var(--spacing-md);
+    margin: var(--spacing-md) var(--spacing-lg) 0;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-color);
     position: relative;
+    /* 保存区域放在最后 */
+    order: 5;
 }
 .model-save-area .connection-status {
      position: relative;
@@ -633,30 +982,32 @@
 
 /* 连接状态提示 (模型设置页) */
 .connection-status {
-    margin-top: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-md); /* Adjusted padding */
-    border-radius: var (--radius-md);
-    font-size: 13px;
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-lg);
+    font-size: 12px;
     display: none;
     opacity: 0;
     transform: translateY(10px);
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .connection-status.success {
     display: block;
     opacity: 1;
     transform: translateY(0);
-    background-color: rgba(52, 168, 83, 0.1);
+    background-color: rgba(52, 168, 83, 0.12);
     color: var(--success-color);
     border: 1px solid rgba(52, 168, 83, 0.3);
+    box-shadow: 0 2px 8px rgba(52, 168, 83, 0.1);
 }
 .connection-status.error {
     display: block;
     opacity: 1;
     transform: translateY(0);
-    background-color: rgba(234, 67, 53, 0.1);
-    color: var(--error-color); 
+    background-color: rgba(234, 67, 53, 0.12);
+    color: var(--error-color);
     border: 1px solid rgba(234, 67, 53, 0.3);
+    box-shadow: 0 2px 8px rgba(234, 67, 53, 0.1);
 }
 
 
@@ -999,24 +1350,33 @@
     display: flex;
     align-items: center;
 }
-.api-key-input-container input { /* Specifically target input within this container */
-    padding-right: 30px; /* Space for the toggle button */
+.api-key-input-container input {
+    padding-right: 40px; /* 紧凑的右侧空间 */
 }
 .toggle-api-key-button {
     position: absolute;
-    right: 8px; 
+    right: var(--spacing-sm);
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: var(--spacing-xs);
     margin: 0;
     outline: none;
-    color: var(--text-secondary); /* Default color */
+    color: var(--text-secondary);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .toggle-api-key-button:hover {
-    color: var(--text-color); /* Darker on hover */
+    color: var(--text-color);
+    background-color: var(--button-hover-bg);
+    transform: translateY(-50%) scale(1.1);
 }
 
 

@@ -404,14 +404,31 @@ async function handleUnifiedAPICall(message, sendResponse, sender) {
 }
 
 /**
- * 在background中直接调用API（支持流式）
+ * 智能格式化 API URL
+ * 自动添加 /v1/ 到基础 URL，除非它们已经包含版本路径
  */
-async function callAPIDirectlyWithStream(modelConfig, providerSettings, messages, options, streamCallback) {
-    const { providerId, apiModelName, params } = modelConfig;
-    const { apiKey } = providerSettings;
+function formatApiUrl(apiHost, providerId, endpoint) {
+    // OpenRouter 的 apiHost 已包含 /api/v1
+    if (providerId === 'openrouter') {
+        return `${apiHost}${endpoint}`;
+    }
 
-    // 获取供应商配置
-    const providerConfigs = {
+    // 检查 URL 是否已经包含版本路径
+    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\//.test(apiHost);
+
+    if (hasVersionPath) {
+        return `${apiHost}${endpoint}`;
+    } else {
+        return `${apiHost}/v1${endpoint}`;
+    }
+}
+
+/**
+ * 获取提供商配置（包括自定义提供商）
+ */
+async function getProviderConfig(providerId) {
+    // 内置提供商配置
+    const builtinProviders = {
         google: {
             type: 'gemini',
             apiHost: 'https://generativelanguage.googleapis.com'
@@ -420,7 +437,7 @@ async function callAPIDirectlyWithStream(modelConfig, providerSettings, messages
             type: 'openai_compatible',
             apiHost: 'https://api.openai.com'
         },
-        claude: {
+        anthropic: {
             type: 'anthropic',
             apiHost: 'https://api.anthropic.com'
         },
@@ -438,7 +455,39 @@ async function callAPIDirectlyWithStream(modelConfig, providerSettings, messages
         }
     };
 
-    const provider = providerConfigs[providerId];
+    // 首先检查是否是内置提供商
+    if (builtinProviders[providerId]) {
+        return builtinProviders[providerId];
+    }
+
+    // 如果不是内置提供商，从存储中获取自定义提供商
+    try {
+        const result = await chrome.storage.sync.get(['customProviders']);
+        if (result.customProviders && Array.isArray(result.customProviders)) {
+            const customProvider = result.customProviders.find(provider => provider.id === providerId);
+            if (customProvider) {
+                return {
+                    type: customProvider.type || 'openai_compatible',
+                    apiHost: customProvider.apiHost
+                };
+            }
+        }
+    } catch (error) {
+        console.error('[Background] Error loading custom providers:', error);
+    }
+
+    return null;
+}
+
+/**
+ * 在background中直接调用API（支持流式）
+ */
+async function callAPIDirectlyWithStream(modelConfig, providerSettings, messages, options, streamCallback) {
+    const { providerId, apiModelName, params } = modelConfig;
+    const { apiKey } = providerSettings;
+
+    // 获取供应商配置（包括自定义提供商）
+    const provider = await getProviderConfig(providerId);
     if (!provider) {
         throw new Error(`Unsupported provider: ${providerId}`);
     }
@@ -1088,8 +1137,8 @@ async function callOpenAICompatibleAPIInBackgroundStream(apiHost, apiKey, modelN
         headers['X-Title'] = 'PageTalk Browser Extension';
     }
 
-    // OpenRouter使用不同的端点路径
-    const endpoint = providerId === 'openrouter' ? `${apiHost}/chat/completions` : `${apiHost}/v1/chat/completions`;
+    // 智能构建端点URL
+    const endpoint = formatApiUrl(apiHost, providerId, '/chat/completions');
     console.log('[Background] Calling OpenAI-compatible API with streaming:', endpoint);
 
     const response = await makeApiRequest(endpoint, {

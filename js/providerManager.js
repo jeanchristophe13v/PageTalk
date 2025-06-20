@@ -17,6 +17,7 @@
  * - apiKeyNeeded: 是否需要用户提供 API Key
  * - icon: 供应商图标文件名（存储在 icons/ 目录下）
  * - description: 供应商描述
+ * - isCustom: 是否为用户自定义提供商
  */
 export const providers = {
     google: {
@@ -168,6 +169,162 @@ export function getProviderOptionsForUI() {
     }));
 }
 
+/**
+ * 自定义提供商管理
+ */
+
+/**
+ * 添加自定义提供商
+ * @param {Object} customProvider - 自定义提供商配置
+ * @param {string} customProvider.id - 提供商ID（可选，留空自动生成）
+ * @param {string} customProvider.baseUrl - API基础URL
+ * @param {string} customProvider.apiKey - API密钥
+ * @returns {Promise<Object>} 添加结果 {success: boolean, providerId?: string, error?: string}
+ */
+export async function addCustomProvider(customProvider) {
+    try {
+        // 验证输入
+        if (!customProvider.baseUrl || !customProvider.apiKey) {
+            return { success: false, error: 'Base URL and API Key are required' };
+        }
+
+        // 验证URL格式
+        try {
+            new URL(customProvider.baseUrl);
+        } catch (e) {
+            return { success: false, error: 'Invalid URL format' };
+        }
+
+        // 生成提供商ID
+        let providerId = customProvider.id;
+        if (!providerId) {
+            providerId = generateCustomProviderId();
+        } else {
+            // 检查ID是否已存在
+            if (providers[providerId]) {
+                return { success: false, error: 'Provider ID already exists' };
+            }
+        }
+
+        // 创建提供商配置
+        const providerConfig = {
+            id: providerId,
+            name: customProvider.id || providerId,
+            type: 'openai_compatible',
+            apiHost: customProvider.baseUrl.replace(/\/$/, ''), // 移除末尾斜杠
+            apiKeyUrl: '',
+            modelsUrl: '',
+            apiKeyNeeded: true,
+            icon: 'OpenAI.svg', // 使用OpenAI图标
+            description: `Custom OpenAI Compatible Provider: ${providerId}`,
+            isCustom: true
+        };
+
+        // 添加到providers对象
+        providers[providerId] = providerConfig;
+
+        // 保存自定义提供商到存储
+        await saveCustomProviders();
+
+        // 如果有ModelManager实例，设置API Key
+        if (window.ModelManager?.instance) {
+            await window.ModelManager.instance.setProviderSettings(providerId, {
+                apiKey: customProvider.apiKey
+            });
+        }
+
+        console.log(`[ProviderManager] Added custom provider: ${providerId}`);
+        return { success: true, providerId };
+
+    } catch (error) {
+        console.error('[ProviderManager] Error adding custom provider:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * 生成自定义提供商ID
+ * @returns {string} 生成的ID
+ */
+function generateCustomProviderId() {
+    const baseId = 'openai-compatible';
+    let counter = 1;
+    let providerId = baseId;
+
+    while (providers[providerId]) {
+        counter++;
+        providerId = `${baseId}-${counter}`;
+    }
+
+    return providerId;
+}
+
+/**
+ * 删除自定义提供商
+ * @param {string} providerId - 提供商ID
+ * @returns {Promise<boolean>} 是否删除成功
+ */
+export async function removeCustomProvider(providerId) {
+    try {
+        const provider = providers[providerId];
+        if (!provider || !provider.isCustom) {
+            console.warn(`[ProviderManager] Cannot remove non-custom provider: ${providerId}`);
+            return false;
+        }
+
+        // 从providers对象中删除
+        delete providers[providerId];
+
+        // 保存到存储
+        await saveCustomProviders();
+
+        console.log(`[ProviderManager] Removed custom provider: ${providerId}`);
+        return true;
+
+    } catch (error) {
+        console.error('[ProviderManager] Error removing custom provider:', error);
+        return false;
+    }
+}
+
+/**
+ * 获取所有自定义提供商
+ * @returns {Array<Object>} 自定义提供商列表
+ */
+export function getCustomProviders() {
+    return Object.values(providers).filter(provider => provider.isCustom);
+}
+
+/**
+ * 保存自定义提供商到Chrome存储
+ */
+export async function saveCustomProviders() {
+    const customProviders = getCustomProviders();
+    return new Promise((resolve) => {
+        chrome.storage.sync.set({ customProviders }, () => {
+            resolve();
+        });
+    });
+}
+
+/**
+ * 从Chrome存储加载自定义提供商
+ */
+export async function loadCustomProviders() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['customProviders'], (result) => {
+            if (result.customProviders && Array.isArray(result.customProviders)) {
+                // 将自定义提供商添加到providers对象
+                result.customProviders.forEach(provider => {
+                    providers[provider.id] = provider;
+                });
+                console.log(`[ProviderManager] Loaded ${result.customProviders.length} custom providers`);
+            }
+            resolve();
+        });
+    });
+}
+
 // 导出到全局作用域以便其他模块使用
 if (typeof window !== 'undefined') {
     window.ProviderManager = {
@@ -179,6 +336,11 @@ if (typeof window !== 'undefined') {
         getProvidersByType,
         isValidProviderId,
         getProviderIconPath,
-        getProviderOptionsForUI
+        getProviderOptionsForUI,
+        addCustomProvider,
+        removeCustomProvider,
+        getCustomProviders,
+        loadCustomProviders,
+        saveCustomProviders
     };
 }

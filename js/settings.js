@@ -74,6 +74,10 @@ function detectUserLanguage() {
  * @param {function} applyThemeCallback - Callback
  */
 export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback) {
+    // 设置全局变量以便动态创建的按钮可以访问
+    window.settingsState = state;
+    window.settingsElements = elements;
+
     chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress', 'providerSettings'], async (syncResult) => {
         // 初始化 ModelManager
         if (window.ModelManager?.instance) {
@@ -94,11 +98,17 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         }
         if (syncResult.model) state.model = syncResult.model;
 
+        // 加载自定义提供商
+        await window.ProviderManager?.loadCustomProviders();
+
         // 加载供应商设置到 UI
         await loadProviderSettingsToUI(elements);
 
         // 初始化供应商选择器
         await initProviderSelection(elements);
+
+        // 初始化自定义提供商功能
+        initCustomProviderModal();
 
         // 设置模型选择器
         if (elements.modelSelection) elements.modelSelection.value = state.model;
@@ -690,8 +700,9 @@ async function removeModelFromSelection(modelId) {
  * @param {Array} models - 可选择的模型列表
  * @param {Object} currentTranslations - 当前翻译对象
  * @param {function} onConfirm - 确认回调函数
+ * @param {function} onCancel - 取消回调函数（可选）
  */
-function showModelSelectionDialog(models, currentTranslations, onConfirm) {
+function showModelSelectionDialog(models, currentTranslations, onConfirm, onCancel = null) {
     // 创建对话框
     const dialog = document.createElement('div');
     dialog.className = 'model-discovery-dialog';
@@ -704,6 +715,13 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
                 </div>
                 <div class="dialog-body">
                     <p class="model-count">${_('modelsFoundMessage', { count: models.length }, currentTranslations)}</p>
+                    <div class="search-container">
+                        <input type="text" class="model-search-input" placeholder="${_('searchModelsPlaceholder', {}, currentTranslations)}" autocomplete="off">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </div>
                     <div class="model-list">
                         ${models.map(model => `
                             <div class="model-item" data-model-id="${model.id}">
@@ -808,6 +826,39 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
             margin: 0 0 20px 0;
             color: #6c757d;
             font-size: 14px;
+        }
+
+        .model-discovery-dialog .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .model-discovery-dialog .model-search-input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .model-discovery-dialog .model-search-input:focus {
+            border-color: #007bff;
+            background: #f8f9ff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        .model-discovery-dialog .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 14px;
+            width: 16px;
+            height: 16px;
+            color: #6c757d;
+            pointer-events: none;
         }
 
         .model-discovery-dialog .model-list {
@@ -1004,6 +1055,22 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
             color: var(--text-secondary);
         }
 
+        body.dark-mode .model-discovery-dialog .model-search-input {
+            background: var(--input-background);
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        body.dark-mode .model-discovery-dialog .model-search-input:focus {
+            border-color: var(--primary-color);
+            background: rgba(116, 143, 252, 0.1);
+            box-shadow: 0 0 0 3px rgba(116, 143, 252, 0.2);
+        }
+
+        body.dark-mode .model-discovery-dialog .search-icon {
+            color: var(--text-secondary);
+        }
+
         body.dark-mode .model-discovery-dialog .model-list::-webkit-scrollbar-track {
             background: var(--background-color);
         }
@@ -1108,8 +1175,26 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
     const confirmBtn = dialog.querySelector('.confirm-btn');
     const closeBtn = dialog.querySelector('.close-btn');
     const selectedCountSpan = dialog.querySelector('.selected-count');
+    const searchInput = dialog.querySelector('.model-search-input');
+    const modelList = dialog.querySelector('.model-list');
     const modelItems = dialog.querySelectorAll('.model-item');
     const checkboxes = dialog.querySelectorAll('input[type="checkbox"]');
+
+    // 搜索过滤功能
+    function filterModels(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+
+        modelItems.forEach(item => {
+            const modelName = item.querySelector('.model-name').textContent.toLowerCase();
+            const matches = modelName.includes(term);
+
+            if (matches) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
 
     // 更新选中计数
     function updateSelectedCount() {
@@ -1122,6 +1207,10 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
     function closeDialog() {
         document.body.removeChild(dialog);
         document.head.removeChild(style);
+        // 调用取消回调（如果提供）
+        if (onCancel && typeof onCancel === 'function') {
+            onCancel();
+        }
     }
 
     // 模型项点击事件
@@ -1158,6 +1247,11 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm) {
             }
             updateSelectedCount();
         });
+    });
+
+    // 搜索输入事件
+    searchInput.addEventListener('input', (e) => {
+        filterModels(e.target.value);
     });
 
     // 按钮事件
@@ -1219,18 +1313,18 @@ async function initProviderSelection(elements) {
     providerSelect.value = 'google';
 
     // 显示对应的供应商设置
-    showProviderSettings('google');
+    await showProviderSettings('google');
 
     // 监听供应商切换
-    providerSelect.addEventListener('change', (e) => {
-        showProviderSettings(e.target.value);
+    providerSelect.addEventListener('change', async (e) => {
+        await showProviderSettings(e.target.value);
     });
 }
 
 /**
  * 显示指定供应商的设置区域
  */
-function showProviderSettings(providerId) {
+async function showProviderSettings(providerId) {
     // 隐藏所有供应商设置
     const allProviderSettings = document.querySelectorAll('.provider-settings');
     allProviderSettings.forEach(setting => {
@@ -1238,9 +1332,22 @@ function showProviderSettings(providerId) {
     });
 
     // 显示选中的供应商设置
-    const targetSettings = document.getElementById(`provider-settings-${providerId}`);
+    let targetSettings = document.getElementById(`provider-settings-${providerId}`);
+
+    // 如果设置区域不存在，检查是否是自定义提供商并创建
+    if (!targetSettings) {
+        const provider = window.ProviderManager?.getProvider(providerId);
+        if (provider && provider.isCustom) {
+            console.log(`[Settings] Creating settings area for custom provider: ${providerId}`);
+            await createCustomProviderSettings();
+            targetSettings = document.getElementById(`provider-settings-${providerId}`);
+        }
+    }
+
     if (targetSettings) {
         targetSettings.style.display = 'block';
+    } else {
+        console.warn(`[Settings] Settings area not found for provider: ${providerId}`);
     }
 }
 
@@ -1249,6 +1356,9 @@ function showProviderSettings(providerId) {
  */
 async function loadProviderSettingsToUI(elements) {
     if (!window.ModelManager?.instance) return;
+
+    // 首先确保为自定义提供商创建设置区域
+    await createCustomProviderSettings();
 
     const modelManager = window.ModelManager.instance;
     const providerIds = window.ProviderManager?.getProviderIds() || [];
@@ -1284,31 +1394,42 @@ async function checkAnyProviderConnected() {
  * 设置供应商事件监听器
  */
 export function setupProviderEventListeners(state, elements, showToastCallback, updateConnectionIndicatorCallback) {
-    // API Key 可见性切换
-    const toggleButtons = document.querySelectorAll('.toggle-api-key-button');
-    toggleButtons.forEach(button => {
-        button.addEventListener('click', () => {
+    // 使用事件委托来处理动态创建的元素
+    const container = document.querySelector('.provider-settings-container');
+    if (!container) return;
+
+    // 防止重复绑定事件监听器
+    if (container.dataset.eventListenersSetup === 'true') {
+        console.log('[Settings] Provider event listeners already setup, skipping...');
+        return;
+    }
+    container.dataset.eventListenersSetup = 'true';
+
+    // API Key 可见性切换 - 使用事件委托
+    container.addEventListener('click', (e) => {
+        if (e.target.closest('.toggle-api-key-button')) {
+            const button = e.target.closest('.toggle-api-key-button');
             const targetId = button.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = button.querySelector('.eye-icon');
             const eyeSlashIcon = button.querySelector('.eye-slash-icon');
 
-            if (input.type === 'password') {
+            if (input && input.type === 'password') {
                 input.type = 'text';
                 eyeIcon.style.display = 'none';
                 eyeSlashIcon.style.display = 'block';
-            } else {
+            } else if (input) {
                 input.type = 'password';
                 eyeIcon.style.display = 'block';
                 eyeSlashIcon.style.display = 'none';
             }
-        });
+        }
     });
 
-    // API Key 输入事件
-    const apiKeyInputs = document.querySelectorAll('[id$="-api-key"]');
-    apiKeyInputs.forEach(input => {
-        input.addEventListener('blur', async () => {
+    // API Key 输入事件 - 使用事件委托
+    container.addEventListener('blur', async (e) => {
+        if (e.target.matches('[id$="-api-key"]')) {
+            const input = e.target;
             const providerId = input.id.replace('-api-key', '');
             const apiKey = input.value.trim();
 
@@ -1322,25 +1443,25 @@ export function setupProviderEventListeners(state, elements, showToastCallback, 
                     updateConnectionIndicatorCallback();
                 }
             }
-        });
-    });
+        }
+    }, true); // 使用捕获阶段
 
-    // 测试连接按钮
-    const testButtons = document.querySelectorAll('.test-api-key-btn');
-    testButtons.forEach(button => {
-        button.addEventListener('click', async () => {
+    // 测试连接按钮 - 使用事件委托
+    container.addEventListener('click', async (e) => {
+        if (e.target.closest('.test-api-key-btn')) {
+            const button = e.target.closest('.test-api-key-btn');
             const providerId = button.getAttribute('data-provider');
             await handleTestApiKey(providerId, showToastCallback);
-        });
+        }
     });
 
-    // 发现模型按钮
-    const discoverButtons = document.querySelectorAll('.discover-models-btn');
-    discoverButtons.forEach(button => {
-        button.addEventListener('click', async () => {
+    // 发现模型按钮 - 使用事件委托
+    container.addEventListener('click', async (e) => {
+        if (e.target.closest('.discover-models-btn')) {
+            const button = e.target.closest('.discover-models-btn');
             const providerId = button.getAttribute('data-provider');
             await handleDiscoverModelsForProvider(providerId, state, elements, showToastCallback);
-        });
+        }
     });
 }
 
@@ -1369,6 +1490,11 @@ async function handleTestApiKey(providerId, showToastCallback) {
     }
 
     const testButton = document.querySelector(`.test-api-key-btn[data-provider="${providerId}"]`);
+    if (!testButton) {
+        console.error(`[Settings] Test button not found for provider: ${providerId}`);
+        return;
+    }
+
     const originalText = testButton.textContent;
 
     try {
@@ -1386,8 +1512,10 @@ async function handleTestApiKey(providerId, showToastCallback) {
         console.error(`[Settings] Test API Key failed for ${providerId}:`, error);
         showToastCallback(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
     } finally {
-        testButton.disabled = false;
-        testButton.textContent = originalText;
+        if (testButton) {
+            testButton.disabled = false;
+            testButton.textContent = originalText;
+        }
     }
 }
 
@@ -1416,7 +1544,20 @@ async function handleDiscoverModelsForProvider(providerId, state, elements, show
     }
 
     const discoverButton = document.querySelector(`.discover-models-btn[data-provider="${providerId}"]`);
+    if (!discoverButton) {
+        console.error(`[Settings] Discover button not found for provider: ${providerId}`);
+        return;
+    }
+
     const originalText = discoverButton.textContent;
+
+    // 恢复按钮状态的函数
+    const restoreButtonState = () => {
+        if (discoverButton) {
+            discoverButton.disabled = false;
+            discoverButton.textContent = originalText;
+        }
+    };
 
     try {
         discoverButton.disabled = true;
@@ -1440,34 +1581,572 @@ async function handleDiscoverModelsForProvider(providerId, state, elements, show
 
         // 显示模型选择对话框
         showModelSelectionDialog(newModels, currentTranslations, async (selectedModelIds) => {
-            if (selectedModelIds.length > 0) {
-                // 使用 ModelManager 的批量添加方法
-                const result = await modelManager.addDiscoveredModels(discoveredModels, selectedModelIds);
-                const totalProcessed = result.added + result.activated;
+            try {
+                if (selectedModelIds.length > 0) {
+                    // 使用 ModelManager 的批量添加方法
+                    const result = await modelManager.addDiscoveredModels(discoveredModels, selectedModelIds);
+                    const totalProcessed = result.added + result.activated;
 
-                if (totalProcessed > 0) {
-                    // 重新初始化模型选择器和卡片显示
-                    await initModelSelection(state, elements);
-                    await updateModelCardsDisplay();
+                    if (totalProcessed > 0) {
+                        // 重新初始化模型选择器和卡片显示
+                        await initModelSelection(state, elements);
+                        await updateModelCardsDisplay();
 
-                    if (result.added > 0 && result.activated > 0) {
-                        showToastCallback(_('modelsAddedAndReactivatedSuccess', { added: result.added, activated: result.activated }, currentTranslations), 'success');
-                    } else if (result.added > 0) {
-                        showToastCallback(_('modelsAddedSuccess', { count: result.added }, currentTranslations), 'success');
-                    } else if (result.activated > 0) {
-                        showToastCallback(_('modelsReactivatedSuccess', { count: result.activated }, currentTranslations), 'success');
+                        if (result.added > 0 && result.activated > 0) {
+                            showToastCallback(_('modelsAddedAndReactivatedSuccess', { added: result.added, activated: result.activated }, currentTranslations), 'success');
+                        } else if (result.added > 0) {
+                            showToastCallback(_('modelsAddedSuccess', { count: result.added }, currentTranslations), 'success');
+                        } else if (result.activated > 0) {
+                            showToastCallback(_('modelsReactivatedSuccess', { count: result.activated }, currentTranslations), 'success');
+                        }
+                    } else {
+                        showToastCallback(_('fetchModelsError', { error: 'Unknown error' }, currentTranslations), 'error');
                     }
-                } else {
-                    showToastCallback(_('fetchModelsError', { error: 'Unknown error' }, currentTranslations), 'error');
                 }
+            } finally {
+                // 确保在对话框关闭后恢复按钮状态
+                restoreButtonState();
             }
-        });
+        }, restoreButtonState); // 传递恢复函数作为取消回调
 
     } catch (error) {
         console.error(`[Settings] Discover models failed for ${providerId}:`, error);
         showToastCallback(_('fetchModelsError', { error: error.message }, currentTranslations), 'error');
+        restoreButtonState();
+    }
+}
+
+// === 自定义提供商功能 ===
+
+/**
+ * 初始化自定义提供商模态框
+ */
+function initCustomProviderModal() {
+    const addProviderBtn = document.getElementById('add-provider-btn');
+    const modal = document.getElementById('custom-provider-modal');
+    const closeBtn = modal?.querySelector('.custom-provider-close');
+    const cancelBtn = document.getElementById('custom-provider-cancel');
+    const saveBtn = document.getElementById('custom-provider-save');
+
+    if (!addProviderBtn || !modal) return;
+
+    // 防止重复绑定事件监听器
+    if (modal.dataset.eventListenersSetup === 'true') {
+        console.log('[Settings] Custom provider modal event listeners already setup, skipping...');
+        return;
+    }
+    modal.dataset.eventListenersSetup = 'true';
+
+    // 打开模态框
+    addProviderBtn.addEventListener('click', () => {
+        openCustomProviderModal();
+    });
+
+    // 关闭模态框
+    const closeModal = () => {
+        modal.classList.remove('show');
+        clearCustomProviderForm();
+    };
+
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+
+    // 点击背景关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // 保存自定义提供商
+    saveBtn?.addEventListener('click', async () => {
+        await saveCustomProvider();
+    });
+
+    // 表单验证
+    const form = modal.querySelector('.custom-provider-form');
+    if (form) {
+        form.addEventListener('input', validateCustomProviderForm);
+    }
+}
+
+/**
+ * 打开自定义提供商模态框
+ */
+function openCustomProviderModal() {
+    const modal = document.getElementById('custom-provider-modal');
+    if (!modal) return;
+
+    clearCustomProviderForm();
+    modal.classList.add('show');
+
+    // 聚焦到第一个输入框
+    const firstInput = modal.querySelector('input');
+    if (firstInput) {
+        setTimeout(() => firstInput.focus(), 100);
+    }
+}
+
+/**
+ * 清空自定义提供商表单
+ */
+function clearCustomProviderForm() {
+    const modal = document.getElementById('custom-provider-modal');
+    if (!modal) return;
+
+    const inputs = modal.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.value = '';
+        input.classList.remove('error');
+        input.disabled = false; // 重置禁用状态
+    });
+
+    // 重置保存按钮
+    const saveBtn = document.getElementById('custom-provider-save');
+    if (saveBtn) {
+        saveBtn.textContent = getCurrentTranslations().customProviderSave || '添加';
+        delete saveBtn.dataset.editMode;
+        delete saveBtn.dataset.editProviderId;
+    }
+
+    validateCustomProviderForm();
+}
+
+/**
+ * 验证自定义提供商表单
+ */
+function validateCustomProviderForm() {
+    const modal = document.getElementById('custom-provider-modal');
+    const saveBtn = document.getElementById('custom-provider-save');
+    if (!modal || !saveBtn) return;
+
+    const baseUrlInput = document.getElementById('custom-provider-baseurl');
+    const apiKeyInput = document.getElementById('custom-provider-apikey');
+
+    const baseUrl = baseUrlInput?.value.trim();
+    const apiKey = apiKeyInput?.value.trim();
+
+    // 验证必填字段
+    let isValid = true;
+
+    if (!baseUrl) {
+        isValid = false;
+    } else {
+        // 验证URL格式
+        try {
+            new URL(baseUrl);
+            baseUrlInput.classList.remove('error');
+        } catch (e) {
+            isValid = false;
+            baseUrlInput.classList.add('error');
+        }
+    }
+
+    if (!apiKey) {
+        isValid = false;
+    }
+
+    saveBtn.disabled = !isValid;
+}
+
+/**
+ * 保存自定义提供商
+ */
+async function saveCustomProvider() {
+    const modal = document.getElementById('custom-provider-modal');
+    const saveBtn = document.getElementById('custom-provider-save');
+    if (!modal || !saveBtn) return;
+
+    const providerIdInput = document.getElementById('custom-provider-id');
+    const baseUrlInput = document.getElementById('custom-provider-baseurl');
+    const apiKeyInput = document.getElementById('custom-provider-apikey');
+
+    const providerId = providerIdInput?.value.trim();
+    const baseUrl = baseUrlInput?.value.trim();
+    const apiKey = apiKeyInput?.value.trim();
+
+    const isEditMode = saveBtn.dataset.editMode === 'true';
+    const editProviderId = saveBtn.dataset.editProviderId;
+
+    if (!baseUrl || !apiKey) {
+        // 需要从全局获取showToast函数
+        if (window.showToastUI) {
+            window.showToastUI(getCurrentTranslations().customProviderError, 'error');
+        }
+        return;
+    }
+
+    // 禁用保存按钮
+    saveBtn.disabled = true;
+    saveBtn.textContent = getCurrentTranslations().loading || '保存中...';
+
+    try {
+        let result;
+
+        if (isEditMode && editProviderId) {
+            // 编辑模式：更新现有提供商
+            result = await updateCustomProvider(editProviderId, {
+                baseUrl: baseUrl,
+                apiKey: apiKey
+            });
+        } else {
+            // 添加模式：创建新提供商
+            result = await window.ProviderManager.addCustomProvider({
+                id: providerId,
+                baseUrl: baseUrl,
+                apiKey: apiKey
+            });
+        }
+
+        if (result.success) {
+            // 成功操作
+            const successMessage = isEditMode ?
+                getCurrentTranslations().customProviderUpdateSuccess :
+                getCurrentTranslations().customProviderSuccess;
+
+            if (window.showToastUI) {
+                window.showToastUI(successMessage, 'success');
+            }
+
+            // 关闭模态框
+            modal.classList.remove('show');
+            clearCustomProviderForm();
+
+            // 刷新供应商选择器
+            await refreshProviderSelection();
+
+            // 选择相关提供商并填入API Key
+            const targetProviderId = isEditMode ? editProviderId : result.providerId;
+            const providerSelect = document.getElementById('provider-select');
+            if (providerSelect && targetProviderId) {
+                providerSelect.value = targetProviderId;
+                await showProviderSettings(targetProviderId);
+
+                // 自动填入API Key
+                setTimeout(() => {
+                    const apiKeyInput = document.getElementById(`${targetProviderId}-api-key`);
+                    if (apiKeyInput) {
+                        apiKeyInput.value = apiKey;
+                    }
+                }, 100);
+            }
+
+        } else {
+            // 显示错误信息
+            let errorMessage = getCurrentTranslations().customProviderError;
+            if (result.error === 'Provider ID already exists') {
+                errorMessage = getCurrentTranslations().customProviderExists;
+            } else if (result.error === 'Invalid URL format') {
+                errorMessage = getCurrentTranslations().customProviderInvalidUrl;
+            }
+            if (window.showToastUI) {
+                window.showToastUI(errorMessage, 'error');
+            }
+        }
+
+    } catch (error) {
+        console.error('[Settings] Error saving custom provider:', error);
+        if (window.showToastUI) {
+            window.showToastUI(getCurrentTranslations().customProviderError, 'error');
+        }
     } finally {
-        discoverButton.disabled = false;
-        discoverButton.textContent = originalText;
+        // 恢复保存按钮状态
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            const defaultText = isEditMode ?
+                (getCurrentTranslations().customProviderEdit || '保存') :
+                (getCurrentTranslations().customProviderSave || '添加');
+            saveBtn.textContent = defaultText;
+        }
+    }
+}
+
+/**
+ * 更新自定义提供商
+ */
+async function updateCustomProvider(providerId, updates) {
+    try {
+        const provider = window.ProviderManager?.getProvider(providerId);
+        if (!provider || !provider.isCustom) {
+            return { success: false, error: 'Provider not found or not custom' };
+        }
+
+        // 验证URL格式
+        if (updates.baseUrl) {
+            try {
+                new URL(updates.baseUrl);
+            } catch (e) {
+                return { success: false, error: 'Invalid URL format' };
+            }
+        }
+
+        // 更新提供商配置
+        if (updates.baseUrl) {
+            provider.apiHost = updates.baseUrl.replace(/\/$/, ''); // 移除末尾斜杠
+        }
+
+        // 更新API Key
+        if (updates.apiKey && window.ModelManager?.instance) {
+            await window.ModelManager.instance.setProviderSettings(providerId, {
+                apiKey: updates.apiKey
+            });
+        }
+
+        // 保存自定义提供商到存储
+        await window.ProviderManager?.saveCustomProviders?.();
+
+        console.log(`[Settings] Updated custom provider: ${providerId}`);
+        return { success: true, providerId };
+
+    } catch (error) {
+        console.error('[Settings] Error updating custom provider:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * 刷新供应商选择器
+ */
+async function refreshProviderSelection() {
+    const providerSelect = document.getElementById('provider-select');
+    if (!providerSelect) return;
+
+    const currentValue = providerSelect.value;
+
+    // 获取更新后的供应商选项
+    const providerOptions = window.ProviderManager?.getProviderOptionsForUI() || [];
+
+    // 清空并重新填充选项
+    providerSelect.innerHTML = '';
+    providerOptions.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option.value;
+        optionElement.textContent = option.text;
+        providerSelect.appendChild(optionElement);
+    });
+
+    // 尝试恢复之前的选择
+    if (currentValue && providerOptions.find(opt => opt.value === currentValue)) {
+        providerSelect.value = currentValue;
+    }
+
+    // 确保为新的自定义提供商创建设置区域
+    await createCustomProviderSettings();
+}
+
+/**
+ * 为自定义提供商创建设置区域
+ */
+async function createCustomProviderSettings() {
+    const container = document.querySelector('.provider-settings-container');
+    if (!container) return;
+
+    const customProviders = window.ProviderManager?.getCustomProviders() || [];
+
+    customProviders.forEach(provider => {
+        // 检查是否已存在设置区域
+        const existingSettings = document.getElementById(`provider-settings-${provider.id}`);
+        if (existingSettings) return;
+
+        // 创建设置区域
+        const settingsDiv = createProviderSettingsElement(provider);
+        container.appendChild(settingsDiv);
+    });
+}
+
+/**
+ * 创建提供商设置元素
+ */
+function createProviderSettingsElement(provider) {
+    const settingsDiv = document.createElement('div');
+    settingsDiv.id = `provider-settings-${provider.id}`;
+    settingsDiv.className = 'provider-settings';
+    settingsDiv.style.display = 'none';
+
+    const currentTranslations = getCurrentTranslations();
+
+    settingsDiv.innerHTML = `
+        <div class="provider-header">
+            <img src="../icons/${provider.icon}" alt="${provider.name}" class="provider-icon">
+            <h3>${provider.name}</h3>
+            ${provider.isCustom ? `
+                <button class="edit-custom-provider-btn" data-provider="${provider.id}" title="${currentTranslations.customProviderEdit || '编辑提供商'}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.707 13.707a1 1 0 0 1-.39.242l-3 1a1 1 0 0 1-1.266-1.265l1-3a1 1 0 0 1 .242-.391L10.086 2.5a2 2 0 0 1 2.828 0l.586.586a2 2 0 0 1 0 2.828L5.707 13.707zM3 11l7.5-7.5 1 1L4 12l-1-1zm0 2.5l1-1L5.5 14l-1 1-1.5-1.5z"/>
+                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                    </svg>
+                </button>
+                <button class="remove-custom-provider-btn" data-provider="${provider.id}" title="${currentTranslations.customProviderDelete || '删除提供商'}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                </button>
+            ` : ''}
+        </div>
+        <div class="setting-group">
+            <label for="${provider.id}-api-key">API Key:</label>
+            <div class="api-key-input-container">
+                <input type="password" id="${provider.id}-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="${currentTranslations.providerApiKeyPlaceholder}">
+                <button class="toggle-api-key-button" type="button" data-target="${provider.id}-api-key">
+                    <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.1 13.1 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.1 13.1 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.1 13.1 0 0 1 1.172 8z"/>
+                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                    </svg>
+                    <svg class="eye-slash-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
+                        <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
+                        <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
+                        <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
+                    </svg>
+                </button>
+            </div>
+            ${provider.apiHost ? `<p class="hint">Base URL: ${provider.apiHost}</p>` : ''}
+        </div>
+        <div class="provider-actions">
+            <button class="test-api-key-btn" data-provider="${provider.id}" data-i18n="testConnection">${currentTranslations.testConnection}</button>
+            <button class="discover-models-btn" data-provider="${provider.id}" data-i18n="discoverModels">${currentTranslations.discoverModels}</button>
+        </div>
+    `;
+
+    // 添加眼睛按钮事件监听器
+    const toggleButton = settingsDiv.querySelector('.toggle-api-key-button');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', () => {
+            const targetId = toggleButton.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const eyeIcon = toggleButton.querySelector('.eye-icon');
+            const eyeSlashIcon = toggleButton.querySelector('.eye-slash-icon');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                eyeIcon.style.display = 'none';
+                eyeSlashIcon.style.display = 'block';
+            } else {
+                input.type = 'password';
+                eyeIcon.style.display = 'block';
+                eyeSlashIcon.style.display = 'none';
+            }
+        });
+    }
+
+    // 注意：不在这里添加事件监听器，因为已经通过事件委托在 setupProviderEventListeners 中处理了
+    // 这样可以避免重复绑定事件监听器导致的问题
+
+    // 添加自定义提供商按钮事件监听器
+    if (provider.isCustom) {
+        const editBtn = settingsDiv.querySelector('.edit-custom-provider-btn');
+        const removeBtn = settingsDiv.querySelector('.remove-custom-provider-btn');
+
+        if (editBtn) {
+            editBtn.addEventListener('click', () => editCustomProvider(provider.id));
+        }
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', () => showDeleteCustomProviderModal(provider.id));
+        }
+    }
+
+    return settingsDiv;
+}
+
+/**
+ * 编辑自定义提供商
+ */
+function editCustomProvider(providerId) {
+    const provider = window.ProviderManager?.getProvider(providerId);
+    if (!provider || !provider.isCustom) {
+        console.error('[Settings] Cannot edit non-custom provider:', providerId);
+        return;
+    }
+
+    // 获取当前API Key
+    const apiKey = window.ModelManager?.instance?.getProviderApiKey(providerId) || '';
+
+    // 打开模态框并填入当前值
+    openCustomProviderModal();
+
+    // 填入当前值
+    const modal = document.getElementById('custom-provider-modal');
+    if (modal) {
+        const providerIdInput = document.getElementById('custom-provider-id');
+        const baseUrlInput = document.getElementById('custom-provider-baseurl');
+        const apiKeyInput = document.getElementById('custom-provider-apikey');
+        const saveBtn = document.getElementById('custom-provider-save');
+
+        if (providerIdInput) providerIdInput.value = provider.id;
+        if (baseUrlInput) baseUrlInput.value = provider.apiHost;
+        if (apiKeyInput) apiKeyInput.value = apiKey;
+
+        // 更改保存按钮文本和功能
+        if (saveBtn) {
+            saveBtn.textContent = getCurrentTranslations().customProviderEdit || '保存';
+            saveBtn.dataset.editMode = 'true';
+            saveBtn.dataset.editProviderId = providerId;
+        }
+
+        // 禁用Provider ID输入框（编辑时不允许修改ID）
+        if (providerIdInput) {
+            providerIdInput.disabled = true;
+        }
+    }
+}
+
+/**
+ * 显示删除自定义提供商的模态框
+ */
+function showDeleteCustomProviderModal(providerId) {
+    const provider = window.ProviderManager?.getProvider(providerId);
+    if (!provider) return;
+
+    const currentTranslations = getCurrentTranslations();
+    const confirmMessage = currentTranslations.customProviderDeleteConfirm?.replace('{name}', provider.name) ||
+                          `确定要删除提供商 "${provider.name}" 吗？`;
+
+    if (confirm(confirmMessage)) {
+        removeCustomProvider(providerId);
+    }
+}
+
+/**
+ * 删除自定义提供商
+ */
+async function removeCustomProvider(providerId) {
+
+    try {
+        const success = await window.ProviderManager.removeCustomProvider(providerId);
+
+        if (success) {
+            // 移除设置区域
+            const settingsElement = document.getElementById(`provider-settings-${providerId}`);
+            if (settingsElement) {
+                settingsElement.remove();
+            }
+
+            // 刷新供应商选择器
+            await refreshProviderSelection();
+
+            // 如果当前选择的是被删除的提供商，切换到默认提供商
+            const providerSelect = document.getElementById('provider-select');
+            if (providerSelect && providerSelect.value === providerId) {
+                providerSelect.value = 'google';
+                await showProviderSettings('google');
+            }
+
+            if (window.showToastUI) {
+                const currentTranslations = getCurrentTranslations();
+                window.showToastUI(currentTranslations.customProviderDeleteSuccess || '自定义提供商已删除', 'success');
+            }
+        } else {
+            if (window.showToastUI) {
+                const currentTranslations = getCurrentTranslations();
+                window.showToastUI(currentTranslations.customProviderDeleteError || '删除提供商失败', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('[Settings] Error removing custom provider:', error);
+        if (window.showToastUI) {
+            const currentTranslations = getCurrentTranslations();
+            window.showToastUI(currentTranslations.customProviderDeleteError || '删除提供商失败', 'error');
+        }
     }
 }

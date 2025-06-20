@@ -1180,6 +1180,7 @@ window.addCopyButtonToCodeBlock = addCopyButtonToCodeBlockUI; // Expose wrappers
 window.addMessageActionButtons = addMessageActionButtonsUI;
 // window.updateStreamingMessage and window.finalizeBotMessage are set in init()
 window.showToast = showToastUI; // Expose toast globally if needed
+window.showToastUI = showToastUI; // Also expose as showToastUI for consistency
 
 // 假设这是在"首次操作"完成，并且聊天消息等已添加到DOM之后
 function onFirstOperationComplete() {

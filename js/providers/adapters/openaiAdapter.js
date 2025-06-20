@@ -31,6 +31,30 @@ function getCurrentTranslations() {
 }
 
 /**
+ * 智能格式化 API URL
+ * 自动添加 /v1/ 到基础 URL，除非它们已经包含版本路径
+ * @param {string} apiHost - API 主机地址
+ * @param {string} providerId - 供应商ID
+ * @param {string} endpoint - 端点路径
+ * @returns {string} 格式化后的完整 URL
+ */
+function formatApiUrl(apiHost, providerId, endpoint) {
+    // OpenRouter 的 apiHost 已包含 /api/v1
+    if (providerId === 'openrouter') {
+        return `${apiHost}${endpoint}`;
+    }
+
+    // 检查 URL 是否已经包含版本路径
+    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\//.test(apiHost);
+
+    if (hasVersionPath) {
+        return `${apiHost}${endpoint}`;
+    } else {
+        return `${apiHost}/v1${endpoint}`;
+    }
+}
+
+/**
  * OpenAI 兼容 API 适配器
  * @param {Object} modelConfig - 模型配置 {apiModelName, params, providerId}
  * @param {Object} provider - 供应商配置
@@ -81,10 +105,8 @@ export async function openaiAdapter(modelConfig, provider, providerSettings, mes
         headers['X-Title'] = 'PageTalk Browser Extension';
     }
     
-    // 构建 API URL - OpenRouter 的 apiHost 已包含 /api/v1，其他供应商需要添加 /v1
-    const endpoint = provider.id === 'openrouter'
-        ? `${apiHost}/chat/completions`
-        : `${apiHost}/v1/chat/completions`;
+    // 构建 API URL - 智能处理不同供应商的 URL 格式
+    const endpoint = formatApiUrl(apiHost, provider.id, '/chat/completions');
     
     try {
         const response = await fetch(endpoint, {
@@ -233,10 +255,8 @@ export async function fetchOpenAIModels(provider, providerSettings) {
             headers['X-Title'] = 'PageTalk Browser Extension';
         }
         
-        // 构建模型列表端点 - OpenRouter 的 apiHost 已包含 /api/v1
-        const modelsEndpoint = provider.id === 'openrouter'
-            ? `${apiHost}/models`
-            : `${apiHost}/v1/models`;
+        // 构建模型列表端点 - 智能处理不同供应商的 URL 格式
+        const modelsEndpoint = formatApiUrl(apiHost, provider.id, '/models');
 
         const response = await fetch(modelsEndpoint, {
             method: 'GET',
@@ -295,10 +315,8 @@ export async function testOpenAIApiKey(provider, providerSettings, testModel = n
             headers['X-Title'] = 'PageTalk Browser Extension';
         }
         
-        // 构建模型列表端点 - OpenRouter 的 apiHost 已包含 /api/v1
-        const modelsEndpoint = provider.id === 'openrouter'
-            ? `${apiHost}/models`
-            : `${apiHost}/v1/models`;
+        // 构建模型列表端点 - 智能处理不同供应商的 URL 格式
+        const modelsEndpoint = formatApiUrl(apiHost, provider.id, '/models');
 
         const response = await fetch(modelsEndpoint, {
             method: 'GET',

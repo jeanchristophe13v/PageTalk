@@ -408,9 +408,17 @@
                         <div class="provider-selection-section">
                             <div class="setting-group">
                                 <label for="provider-select" data-i18n="aiProviderLabel">AI 供应商：</label>
-                                <select id="provider-select">
-                                    <!-- 供应商选项将通过 JavaScript 动态填充 -->
-                                </select>
+                                <div class="provider-selection-container">
+                                    <select id="provider-select">
+                                        <!-- 供应商选项将通过 JavaScript 动态填充 -->
+                                    </select>
+                                    <button id="add-provider-btn" class="add-provider-btn" data-i18n="addProvider" title="添加自定义提供商">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                        </svg>
+                                        <span data-i18n="addProvider">添加</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -672,6 +680,35 @@
         <span class="close-modal mermaid-close-modal">&times;</span>
         <div id="mermaid-modal-content" class="modal-content mermaid-modal-content">
             <!-- 放大的 Mermaid SVG 将被注入这里 -->
+        </div>
+    </div>
+
+    <!-- 新增：自定义提供商模态框 -->
+    <div id="custom-provider-modal" class="custom-provider-modal">
+        <div class="custom-provider-modal-content">
+            <div class="custom-provider-header">
+                <img src="../icons/OpenAI.svg" alt="OpenAI Compatible" class="provider-icon">
+                <h3 data-i18n="customProviderTitle">OpenAI Compatible</h3>
+                <span class="close-modal custom-provider-close">&times;</span>
+            </div>
+            <div class="custom-provider-form">
+                <div class="form-group">
+                    <label for="custom-provider-id" data-i18n="customProviderIdLabel">Provider ID:</label>
+                    <input type="text" id="custom-provider-id" data-i18n-placeholder="customProviderIdPlaceholder" placeholder="输入提供商ID（可选）">
+                </div>
+                <div class="form-group">
+                    <label for="custom-provider-baseurl" data-i18n="customProviderBaseUrlLabel">Base URL:</label>
+                    <input type="url" id="custom-provider-baseurl" data-i18n-placeholder="customProviderBaseUrlPlaceholder" placeholder="https://api.example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="custom-provider-apikey" data-i18n="customProviderApiKeyLabel">API Key:</label>
+                    <input type="text" id="custom-provider-apikey" data-i18n-placeholder="customProviderApiKeyPlaceholder" placeholder="输入您的API Key" required>
+                </div>
+                <div class="custom-provider-actions">
+                    <button type="button" id="custom-provider-cancel" class="btn-secondary" data-i18n="cancel">取消</button>
+                    <button type="button" id="custom-provider-save" class="btn-primary" data-i18n="customProviderSave">添加</button>
+                </div>
+            </div>
         </div>
     </div>
 
