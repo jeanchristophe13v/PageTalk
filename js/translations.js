@@ -269,7 +269,7 @@ if (typeof window.translations === 'undefined') {
     // --- 代理设置相关翻译 ---
     'proxyAddressLabel': '代理地址：',
     'proxyAddressPlaceholder': 'http://127.0.0.1:7890 或 socks5://127.0.0.1:1080',
-    'proxyAddressHint': '支持 HTTP 和 SOCKS5 代理，留空则禁用代理。',
+    'proxyAddressHint': '支持 HTTP 和 SOCKS5 代理，适用于所有AI供应商，留空则禁用代理。',
     'proxySetSuccess': '代理设置已应用',
     'proxySetError': '代理设置失败：{error}',
     'proxyCleared': '代理设置已清除',
@@ -616,7 +616,7 @@ if (typeof window.translations === 'undefined') {
     // --- Proxy Settings Related Translations ---
     'proxyAddressLabel': 'Proxy Url:',
     'proxyAddressPlaceholder': 'http://127.0.0.1:7890 or socks5://127.0.0.1:1080',
-    'proxyAddressHint': 'Supports HTTP and SOCKS5 proxies, leave empty to disable.',
+    'proxyAddressHint': 'Supports HTTP and SOCKS5 proxies for all AI providers, leave empty to disable.',
     'proxySetSuccess': 'Proxy settings applied',
     'proxySetError': 'Failed to set proxy: {error}',
     'proxyCleared': 'Proxy settings cleared',

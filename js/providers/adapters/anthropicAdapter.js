@@ -4,6 +4,9 @@
  * 处理 Anthropic Claude API 的请求格式转换和响应解析
  */
 
+// 导入统一代理请求工具
+import { makeProxyRequest } from '../../utils/proxyRequest.js';
+
 /**
  * 获取当前翻译对象
  * @returns {Object} 当前翻译对象
@@ -76,7 +79,7 @@ export async function anthropicAdapter(modelConfig, provider, providerSettings, 
     const endpoint = `${apiHost}/v1/messages`;
     
     try {
-        const response = await fetch(endpoint, {
+        const response = await makeProxyRequest(endpoint, {
             method: 'POST',
             headers,
             body: JSON.stringify(requestBody),
@@ -314,7 +317,7 @@ export async function testAnthropicApiKey(provider, providerSettings, testModel 
             max_tokens: 10
         };
         
-        const response = await fetch(`${apiHost}/v1/messages`, {
+        const response = await makeProxyRequest(`${apiHost}/v1/messages`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -42,25 +42,53 @@ function getCurrentTranslations() {
 }
 
 /**
- * 代理请求函数 - 选择性代理实现，仅对 Gemini API 使用代理
+ * 检查URL是否为AI API请求
+ * @param {string} url - 请求URL
+ * @returns {boolean} 是否为AI API请求
+ */
+function isAIApiRequest(url) {
+    try {
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname;
+
+        // 检查是否匹配已知的AI API域名
+        const aiApiDomains = [
+            'generativelanguage.googleapis.com',  // Google Gemini
+            'api.openai.com',                     // OpenAI
+            'api.anthropic.com',                  // Anthropic Claude
+            'api.siliconflow.cn',                 // SiliconFlow
+            'openrouter.ai',                      // OpenRouter
+            'api.deepseek.com',                   // DeepSeek
+            'open.bigmodel.cn'                    // ChatGLM
+        ];
+
+        return aiApiDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+    } catch (error) {
+        console.warn('[API] Error parsing URL for AI API check:', url, error);
+        return false;
+    }
+}
+
+/**
+ * 代理请求函数 - 选择性代理实现，支持所有AI API
  * 注意：在 content script 环境中，我们通过 background.js 来处理代理请求
  */
 async function makeProxyRequest(url, options = {}, proxyAddress = '') {
-    // 检查是否为 Gemini API 请求
-    const isGeminiAPI = url.includes('generativelanguage.googleapis.com');
+    // 检查是否为 AI API 请求
+    const isAIAPI = isAIApiRequest(url);
 
-    // 如果没有配置代理或不是 Gemini API 请求，直接使用fetch
-    if (!proxyAddress || proxyAddress.trim() === '' || !isGeminiAPI) {
-        if (!isGeminiAPI) {
-            console.log('[API] Non-Gemini API request, using direct fetch:', url);
+    // 如果没有配置代理或不是 AI API 请求，直接使用fetch
+    if (!proxyAddress || proxyAddress.trim() === '' || !isAIAPI) {
+        if (!isAIAPI) {
+            console.log('[API] Non-AI API request, using direct fetch:', url);
         } else {
-            console.log('[API] No proxy configured for Gemini API, using direct fetch');
+            console.log('[API] No proxy configured for AI API, using direct fetch');
         }
         return fetch(url, options);
     }
 
-    // 对于 Gemini API 请求，如果配置了代理，通过 background.js 处理
-    console.log('[API] Gemini API request with proxy, delegating to background.js');
+    // 对于 AI API 请求，如果配置了代理，通过 background.js 处理
+    console.log('[API] AI API request with proxy, delegating to background.js:', url);
 
     // 在 content script 环境中，我们需要通过 background.js 来处理代理请求
     // 这里保持原有逻辑，实际的代理处理在 background.js 中完成
@@ -69,7 +97,7 @@ async function makeProxyRequest(url, options = {}, proxyAddress = '') {
         const proxyUrl = new URL(proxyAddress.trim());
         const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
 
-        console.log('[API] Using proxy for Gemini API:', proxyAddress, 'scheme:', proxyScheme);
+        console.log('[API] Using proxy for AI API:', proxyAddress, 'scheme:', proxyScheme);
 
         // 直接使用 fetch，让 background.js 的代理逻辑处理
         return fetch(url, options);

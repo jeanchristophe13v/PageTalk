@@ -717,7 +717,121 @@ async function reinjectScriptsToTab(tabId) {
 }
 
 /**
- * 更新代理设置 - 使用选择性代理，只对 Gemini API 域名使用代理
+ * 获取所有供应商的API域名
+ * @returns {Array<string>} 域名列表
+ */
+function getAllApiDomains() {
+    const domains = new Set();
+
+    // 从内置供应商配置中提取域名
+    const builtinProviders = {
+        google: 'https://generativelanguage.googleapis.com',
+        openai: 'https://api.openai.com',
+        anthropic: 'https://api.anthropic.com',
+        siliconflow: 'https://api.siliconflow.cn',
+        openrouter: 'https://openrouter.ai/api/v1',
+        deepseek: 'https://api.deepseek.com',
+        chatglm: 'https://open.bigmodel.cn/api/paas/v4'
+    };
+
+    // 添加内置供应商域名
+    Object.values(builtinProviders).forEach(apiHost => {
+        try {
+            const url = new URL(apiHost);
+            domains.add(url.hostname);
+        } catch (error) {
+            console.warn('[Background] Invalid API host:', apiHost);
+        }
+    });
+
+    // 从存储中获取自定义供应商域名
+    try {
+        // 这里我们需要同步获取，但由于chrome.storage是异步的，
+        // 我们将在调用此函数的地方处理异步逻辑
+        if (window.customProviderDomains) {
+            window.customProviderDomains.forEach(domain => domains.add(domain));
+        }
+    } catch (error) {
+        console.warn('[Background] Error getting custom provider domains:', error);
+    }
+
+    const domainList = Array.from(domains);
+    console.log('[Background] Collected API domains for proxy:', domainList);
+    return domainList;
+}
+
+/**
+ * 异步获取所有供应商的API域名（包括自定义供应商）
+ * @returns {Promise<Array<string>>} 域名列表
+ */
+async function getAllApiDomainsAsync() {
+    const domains = new Set();
+
+    // 从内置供应商配置中提取域名
+    const builtinProviders = {
+        google: 'https://generativelanguage.googleapis.com',
+        openai: 'https://api.openai.com',
+        anthropic: 'https://api.anthropic.com',
+        siliconflow: 'https://api.siliconflow.cn',
+        openrouter: 'https://openrouter.ai/api/v1',
+        deepseek: 'https://api.deepseek.com',
+        chatglm: 'https://open.bigmodel.cn/api/paas/v4'
+    };
+
+    // 添加内置供应商域名
+    Object.values(builtinProviders).forEach(apiHost => {
+        try {
+            const url = new URL(apiHost);
+            domains.add(url.hostname);
+        } catch (error) {
+            console.warn('[Background] Invalid API host:', apiHost);
+        }
+    });
+
+    // 从存储中获取自定义供应商域名
+    try {
+        const result = await chrome.storage.sync.get(['customProviders']);
+        if (result.customProviders && Array.isArray(result.customProviders)) {
+            result.customProviders.forEach(provider => {
+                if (provider.apiHost) {
+                    try {
+                        const url = new URL(provider.apiHost);
+                        domains.add(url.hostname);
+                    } catch (error) {
+                        console.warn('[Background] Invalid custom provider API host:', provider.apiHost);
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.warn('[Background] Error getting custom providers from storage:', error);
+    }
+
+    const domainList = Array.from(domains);
+    console.log('[Background] Collected API domains for proxy (async):', domainList);
+    return domainList;
+}
+
+/**
+ * 生成PAC脚本数据
+ * @param {Array<string>} domains - 需要代理的域名列表
+ * @param {string} proxyHost - 代理主机
+ * @param {string|number} proxyPort - 代理端口
+ * @returns {string} PAC脚本内容
+ */
+function generatePacScript(domains, proxyHost, proxyPort) {
+    const domainChecks = domains.map(domain => `host === "${domain}"`).join(' || ');
+
+    return `function FindProxyForURL(url, host) {
+    if (${domainChecks}) {
+        return "PROXY ${proxyHost}:${proxyPort}";
+    }
+    return "DIRECT";
+}`;
+}
+
+/**
+ * 更新代理设置 - 使用选择性代理，支持所有AI供应商的API域名
  */
 async function updateProxySettings() {
     try {
@@ -751,14 +865,12 @@ async function updateProxySettings() {
             return;
         }
 
-        // 构建选择性代理配置 - 只对 Gemini API 使用代理
+        // 获取所有需要代理的API域名
+        const apiDomains = await getAllApiDomainsAsync();
+
+        // 构建选择性代理配置 - 支持所有AI供应商的API域名
         const proxyPort = proxyUrl.port || getDefaultPort(proxyUrl.protocol);
-        const pacScriptData = 'function FindProxyForURL(url, host) {\n' +
-            '    if (host === "generativelanguage.googleapis.com") {\n' +
-            '        return "PROXY ' + proxyUrl.hostname + ':' + proxyPort + '";\n' +
-            '    }\n' +
-            '    return "DIRECT";\n' +
-            '}';
+        const pacScriptData = generatePacScript(apiDomains, proxyUrl.hostname, proxyPort);
 
         const proxyConfig = {
             mode: "pac_script",
@@ -776,7 +888,8 @@ async function updateProxySettings() {
         }
 
         // 应用代理设置
-        console.log('[Background] Applying selective proxy settings for Gemini API only:', proxyAddress);
+        console.log('[Background] Applying selective proxy settings for all AI API domains:', proxyAddress);
+        console.log('[Background] Proxy will be applied to domains:', apiDomains);
         await chrome.proxy.settings.set({
             value: proxyConfig,
             scope: 'regular'
@@ -847,6 +960,34 @@ async function clearNetworkCache() {
 }
 
 /**
+ * 检查URL是否为AI API请求
+ * @param {string} url - 请求URL
+ * @returns {boolean} 是否为AI API请求
+ */
+function isAIApiRequest(url) {
+    try {
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname;
+
+        // 检查是否匹配已知的AI API域名
+        const aiApiDomains = [
+            'generativelanguage.googleapis.com',  // Google Gemini
+            'api.openai.com',                     // OpenAI
+            'api.anthropic.com',                  // Anthropic Claude
+            'api.siliconflow.cn',                 // SiliconFlow
+            'openrouter.ai',                      // OpenRouter
+            'api.deepseek.com',                   // DeepSeek
+            'open.bigmodel.cn'                    // ChatGLM
+        ];
+
+        return aiApiDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+    } catch (error) {
+        console.warn('[Background] Error parsing URL for AI API check:', url, error);
+        return false;
+    }
+}
+
+/**
  * 代理请求函数 - 简化版本，依赖 PAC 脚本进行选择性代理
  */
 async function makeProxyRequest(url, options = {}, proxyAddress = '') {
@@ -856,13 +997,13 @@ async function makeProxyRequest(url, options = {}, proxyAddress = '') {
         return fetch(url, options);
     }
 
-    // 检查是否为 Gemini API 请求
-    const isGeminiAPI = url.includes('generativelanguage.googleapis.com');
+    // 检查是否为 AI API 请求
+    const isAIAPI = isAIApiRequest(url);
 
-    if (isGeminiAPI) {
-        console.log('[Background] Gemini API request, using configured proxy via PAC script');
+    if (isAIAPI) {
+        console.log('[Background] AI API request detected, using configured proxy via PAC script:', url);
     } else {
-        console.log('[Background] Non-Gemini API request, will use direct connection via PAC script');
+        console.log('[Background] Non-AI API request, will use direct connection via PAC script:', url);
     }
 
     // 直接使用 fetch，让 PAC 脚本决定是否使用代理
@@ -946,13 +1087,11 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
             const proxyUrl = new URL(proxyAddress.trim());
             const proxyPort = proxyUrl.port || getDefaultPort(proxyUrl.protocol);
 
-            // 构建测试代理配置 - 只对 Gemini API 使用代理
-            const testPacScriptData = 'function FindProxyForURL(url, host) {\n' +
-                '    if (host === "generativelanguage.googleapis.com") {\n' +
-                '        return "PROXY ' + proxyUrl.hostname + ':' + proxyPort + '";\n' +
-                '    }\n' +
-                '    return "DIRECT";\n' +
-                '}';
+            // 获取所有需要代理的API域名
+            const apiDomains = await getAllApiDomainsAsync();
+
+            // 构建测试代理配置 - 支持所有AI供应商的API域名
+            const testPacScriptData = generatePacScript(apiDomains, proxyUrl.hostname, proxyPort);
 
             const testProxyConfig = {
                 mode: "pac_script",
@@ -967,29 +1106,51 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
                 scope: 'regular'
             });
 
-            console.log('[Background] Applied test proxy config');
+            console.log('[Background] Applied test proxy config for domains:', apiDomains);
 
             // 等待代理设置生效
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // 使用 Gemini API 端点进行测试（不需要 API key 的端点）
-            const testUrl = 'https://generativelanguage.googleapis.com/';
-            const response = await fetch(testUrl, {
-                method: 'GET',
-                signal: AbortSignal.timeout(10000),
-                cache: 'no-cache'
-            });
+            // 测试多个AI API端点以验证代理连接
+            const testEndpoints = [
+                'https://generativelanguage.googleapis.com/',  // Google Gemini
+                'https://api.openai.com/',                     // OpenAI
+                'https://api.anthropic.com/'                   // Anthropic
+            ];
 
-            // 检查响应状态
-            if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
-                // 代理工作正常
-                console.log('[Background] Proxy test successful, status:', response.status);
+            let successCount = 0;
+            let lastError = null;
+
+            for (const testUrl of testEndpoints) {
+                try {
+                    console.log('[Background] Testing proxy with endpoint:', testUrl);
+                    const response = await fetch(testUrl, {
+                        method: 'GET',
+                        signal: AbortSignal.timeout(8000),
+                        cache: 'no-cache'
+                    });
+
+                    // 检查响应状态（401/403/404都表示代理连接成功，只是没有认证）
+                    if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
+                        successCount++;
+                        console.log(`[Background] Proxy test successful for ${testUrl}, status:`, response.status);
+                        break; // 只要有一个成功就足够了
+                    } else {
+                        lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`[Background] Proxy test failed for ${testUrl}:`, error.message);
+                }
+            }
+
+            if (successCount > 0) {
                 sendResponse({
                     success: true,
-                    message: `Proxy connection successful (HTTP ${response.status})`
+                    message: `Proxy connection successful (tested ${successCount} endpoint${successCount > 1 ? 's' : ''})`
                 });
             } else {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw lastError || new Error('All proxy tests failed');
             }
 
         } finally {
@@ -1056,7 +1217,7 @@ function stopProxyHealthCheck() {
 }
 
 /**
- * 检查代理健康状态 - 使用当前代理设置测试 Gemini API
+ * 检查代理健康状态 - 使用当前代理设置测试AI API端点
  */
 async function checkProxyHealth() {
     try {
@@ -1072,30 +1233,46 @@ async function checkProxyHealth() {
 
         console.log('[Background] Checking proxy health for:', proxyAddress);
 
-        // 使用 Gemini API 的健康检查端点
-        const testUrl = 'https://generativelanguage.googleapis.com/';
+        // 使用多个AI API端点进行健康检查，提高可靠性
+        const healthCheckEndpoints = [
+            'https://generativelanguage.googleapis.com/',  // Google Gemini
+            'https://api.openai.com/',                     // OpenAI
+            'https://api.anthropic.com/'                   // Anthropic
+        ];
 
-        try {
-            // 直接使用当前的代理设置进行健康检查
-            const response = await fetch(testUrl, {
-                method: 'GET',
-                signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT),
-                cache: 'no-cache'
-            });
+        let healthCheckPassed = false;
 
-            if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
-                // 代理工作正常
-                if (consecutiveFailures > 0) {
-                    console.log('[Background] Proxy recovered, resetting failure count');
-                    consecutiveFailures = 0;
+        for (const testUrl of healthCheckEndpoints) {
+            try {
+                // 直接使用当前的代理设置进行健康检查
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT),
+                    cache: 'no-cache'
+                });
+
+                if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
+                    // 代理工作正常
+                    healthCheckPassed = true;
+                    console.log(`[Background] Proxy health check passed for ${testUrl}, status:`, response.status);
+                    break; // 只要有一个端点成功就认为代理正常
                 }
-            } else {
-                throw new Error(`HTTP ${response.status}`);
+            } catch (fetchError) {
+                // 继续尝试下一个端点
+                console.warn(`[Background] Health check failed for ${testUrl}:`, fetchError.message);
             }
+        }
 
-        } catch (fetchError) {
+        if (healthCheckPassed) {
+            // 代理工作正常
+            if (consecutiveFailures > 0) {
+                console.log('[Background] Proxy recovered, resetting failure count');
+                consecutiveFailures = 0;
+            }
+        } else {
+            // 所有端点都失败
             consecutiveFailures++;
-            console.warn(`[Background] Proxy health check failed (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}):`, fetchError.message);
+            console.warn(`[Background] Proxy health check failed for all endpoints (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES})`);
 
             // 如果连续失败次数达到阈值，自动清除代理
             if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {

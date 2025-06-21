@@ -5,6 +5,9 @@
  * 支持：OpenAI、SiliconFlow、OpenRouter、DeepSeek 等
  */
 
+// 导入统一代理请求工具
+import { makeProxyRequest } from '../../utils/proxyRequest.js';
+
 /**
  * 获取当前翻译对象
  * @returns {Object} 当前翻译对象
@@ -122,7 +125,7 @@ export async function openaiAdapter(modelConfig, provider, providerSettings, mes
     const endpoint = formatApiUrl(apiHost, provider.id, '/chat/completions');
     
     try {
-        const response = await fetch(endpoint, {
+        const response = await makeProxyRequest(endpoint, {
             method: 'POST',
             headers,
             body: JSON.stringify(requestBody),
@@ -341,7 +344,7 @@ export async function fetchOpenAIModels(provider, providerSettings) {
         // 构建模型列表端点 - 智能处理不同供应商的 URL 格式
         const modelsEndpoint = formatApiUrl(apiHost, provider.id, '/models');
 
-        const response = await fetch(modelsEndpoint, {
+        const response = await makeProxyRequest(modelsEndpoint, {
             method: 'GET',
             headers
         });
@@ -409,7 +412,7 @@ export async function testOpenAIApiKey(provider, providerSettings, testModel = n
                 temperature: 0.1
             };
 
-            const response = await fetch(chatEndpoint, {
+            const response = await makeProxyRequest(chatEndpoint, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(testRequestBody)
@@ -462,7 +465,7 @@ export async function testOpenAIApiKey(provider, providerSettings, testModel = n
         // 构建模型列表端点 - 智能处理不同供应商的 URL 格式
         const modelsEndpoint = formatApiUrl(apiHost, provider.id, '/models');
 
-        const response = await fetch(modelsEndpoint, {
+        const response = await makeProxyRequest(modelsEndpoint, {
             method: 'GET',
             headers
         });

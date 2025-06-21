@@ -4,6 +4,9 @@
  * 处理 Google Gemini API 的请求格式转换和响应解析
  */
 
+// 导入统一代理请求工具
+import { makeProxyRequest } from '../../utils/proxyRequest.js';
+
 /**
  * 获取当前翻译对象
  * @returns {Object} 当前翻译对象
@@ -76,7 +79,7 @@ export async function geminiAdapter(modelConfig, provider, providerSettings, mes
     const endpoint = `${apiHost}/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
     
     try {
-        const response = await fetch(endpoint, {
+        const response = await makeProxyRequest(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody),
@@ -206,7 +209,7 @@ export async function fetchGeminiModels(provider, providerSettings) {
     const apiHost = providerSettings.apiHost || provider.apiHost;
     
     try {
-        const response = await fetch(`${apiHost}/v1beta/models?key=${apiKey}`, {
+        const response = await makeProxyRequest(`${apiHost}/v1beta/models?key=${apiKey}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -273,7 +276,7 @@ export async function testGeminiApiKey(provider, providerSettings, testModel = '
             }
         };
         
-        const response = await fetch(`${apiHost}/v1beta/models/${actualTestModel}:generateContent?key=${apiKey}`, {
+        const response = await makeProxyRequest(`${apiHost}/v1beta/models/${actualTestModel}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
