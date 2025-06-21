@@ -159,7 +159,7 @@ export function updateAgentsListUI(state, elements, currentTranslations, autoSav
         maxTokensGroup.className = 'setting-group';
         maxTokensGroup.innerHTML = `
             <label for="max-tokens-${agent.id}">${_('agentMaxOutputLabel', {}, currentTranslations)}</label>
-            <input type="number" id="max-tokens-${agent.id}" value="${agent.maxTokens}" min="50" max="65536">
+            <input type="number" id="max-tokens-${agent.id}" value="${agent.maxTokens}" min="50" max="65536" placeholder="使用模型默认值">
         `;
         maxTokensGroup.querySelector('input').addEventListener('input', () => {
             clearTimeout(agentItem._saveTimeout);
@@ -254,19 +254,31 @@ export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgen
     const newSystemPrompt = systemPromptInput ? systemPromptInput.value : state.agents[agentIndex].systemPrompt;
     const newTemperature = temperatureInput ? parseFloat(temperatureInput.value) : state.agents[agentIndex].temperature;
     const newTopP = topPInput ? parseFloat(topPInput.value) : state.agents[agentIndex].topP;
-    const newMaxTokens = maxTokensInput ? parseInt(maxTokensInput.value, 10) : state.agents[agentIndex].maxTokens;
+
+    // --- 修复最大输出长度处理逻辑 ---
+    // 处理 maxTokens 的逻辑，正确处理空字符串情况
+    let newMaxTokens;
+    const maxTokensValue = maxTokensInput ? maxTokensInput.value.trim() : '';
+
+    if (maxTokensValue === '') {
+        // 如果输入为空，显式设置为空字符串，表示使用模型的默认值
+        newMaxTokens = '';
+    } else {
+        // 如果输入不为空，解析为数字并进行验证
+        newMaxTokens = parseInt(maxTokensValue, 10);
+        if (isNaN(newMaxTokens) || newMaxTokens < 50 || newMaxTokens > 65536) {
+            showToastCallback(_('agentSaveFailedMaxTokensInvalid', {}, currentTranslations), 'error');
+            if (maxTokensInput) maxTokensInput.value = state.agents[agentIndex].maxTokens;
+            return;
+        }
+    }
+    // --- 修复结束 ---
 
     // Validate Name (cannot be empty)
     if (!newName) {
         showToastCallback(_('agentSaveFailedNameEmpty', {}, currentTranslations), 'error'); // Need translation key
         // Optionally revert the input field value
         if (nameInput) nameInput.value = state.agents[agentIndex].name;
-        return;
-    }
-    // Validate Max Tokens
-    if (isNaN(newMaxTokens) || newMaxTokens < 50 || newMaxTokens > 65536) {
-        showToastCallback(_('agentSaveFailedMaxTokensInvalid', {}, currentTranslations), 'error'); // Need translation key
-        if (maxTokensInput) maxTokensInput.value = state.agents[agentIndex].maxTokens;
         return;
     }
 
@@ -331,6 +343,46 @@ export function createNewAgent(state, updateAgentsListCallback, updateAgentSelec
     updateAgentsListCallback(); // Update UI list
     loadCurrentAgentSettingsIntoState(state); // Load new agent settings into global state
     updateAgentSelectionInChatCallback(); // Update chat dropdown
+
+    // 自动展开新创建的助手并滚动到其设置界面
+    setTimeout(() => {
+        const agentsList = document.getElementById('agents-list');
+        if (agentsList) {
+            // 找到新创建的助手元素
+            const newAgentElement = agentsList.querySelector(`[data-agent-id="${newAgent.id}"]`);
+            if (newAgentElement) {
+                // 折叠其他所有助手
+                agentsList.querySelectorAll('.agent-item.expanded').forEach(item => {
+                    item.classList.remove('expanded');
+                });
+
+                // 展开新助手
+                newAgentElement.classList.add('expanded');
+
+                // 等待展开动画完成后滚动到设置区域
+                setTimeout(() => {
+                    // 找到新助手的第一个输入框（助手名称输入框）
+                    const firstInput = newAgentElement.querySelector(`#agent-name-${newAgent.id}`);
+                    if (firstInput) {
+                        // 滚动到第一个输入框位置
+                        firstInput.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        // 可选：聚焦到输入框，方便用户立即编辑
+                        firstInput.focus();
+                        firstInput.select(); // 选中默认名称，方便用户直接输入新名称
+                    } else {
+                        // 如果找不到输入框，就滚动到助手元素
+                        newAgentElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }, 150); // 等待展开动画完成
+            }
+        }
+    }, 100); // 短暂延迟确保DOM已更新
 
     showToastCallback(_('newAgentCreatedToast', {}, currentTranslations), 'success');
     saveAgentsListCallback(); // Save the updated list and current ID
@@ -646,8 +698,8 @@ function validateImportedAgent(agent, index, currentTranslations) {
     if (typeof agent.temperature !== 'number' || isNaN(agent.temperature) || agent.temperature < 0 || agent.temperature > 1) {
         errors.push(`${prefix} ${_('importValidationErrorInvalidTemp', {}, currentTranslations)}`); // Need translation
     }
-    // Validate Max Tokens
-    if (typeof agent.maxTokens !== 'number' || !Number.isInteger(agent.maxTokens) || agent.maxTokens < 50 || agent.maxTokens > 65536) {
+    // Validate Max Tokens - 允许空字符串或有效数字
+    if (agent.maxTokens !== '' && (typeof agent.maxTokens !== 'number' || !Number.isInteger(agent.maxTokens) || agent.maxTokens < 50 || agent.maxTokens > 65536)) {
         errors.push(`${prefix} ${_('importValidationErrorInvalidTokens', {}, currentTranslations)}`); // Need translation
     }
     // Validate Top P

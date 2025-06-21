@@ -52,14 +52,16 @@ function getChatHistory(windowId) {
  */
 function addToChatHistory(windowId, role, content) {
     const history = getChatHistory(windowId);
-    history.push({ role, content });
+    // 确保角色是 'user' 或 'assistant'
+    const validRole = role === 'model' ? 'assistant' : role;
+    history.push({ role: validRole, content });
 
     // 限制历史记录为最近10条消息（5轮对话）
     if (history.length > 10) {
         history.splice(0, history.length - 10);
     }
 
-    console.log(`[TextSelectionHelper] Added ${role} message to history for window ${windowId}, total: ${history.length}`);
+    console.log(`[TextSelectionHelper] Added ${validRole} message to history for window ${windowId}, total: ${history.length}`);
 }
 
 /**
@@ -72,23 +74,22 @@ function clearChatHistory(windowId) {
 
 /**
  * 构建包含历史记录的完整消息
+ * @deprecated This function is no longer recommended. Build a message array instead.
+ * 此函数已不推荐使用。请直接构建消息数组。
  */
 function buildMessageWithHistory(windowId, currentMessage) {
+    // 此函数的逻辑将被新的构建消息数组的方式取代
+    // 为了安全起见，我们保留它，但新的代码将不再调用它
     const history = getChatHistory(windowId);
-
     if (history.length === 0) {
         return currentMessage;
     }
-
-    // 构建历史记录部分
     let historyText = '\n\n{{history}}\n以下是此前的对话历史（最近10条消息）：\n';
-    history.forEach((msg, index) => {
+    history.forEach(msg => {
         const roleLabel = msg.role === 'user' ? '用户' : '助手';
         historyText += `${roleLabel}：${msg.content}\n`;
     });
     historyText += '{{/history}}\n\n';
-
-    // 将历史记录插入到当前消息中
     return currentMessage + historyText;
 }
 
@@ -1867,15 +1868,23 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
             }
         }
 
-        // 构建优化的消息，支持空上下文
-        let message;
-        if (contextForThisRequest && contextForThisRequest.length > 0 && contextForThisRequest !== selectedText) {
-            // 有有效上下文时包含上下文
-            message = `${optionSettings.systemPrompt}\n\n选中文本：${selectedText}\n\n相关上下文：${contextForThisRequest}`;
-        } else {
-            // 无上下文或上下文无效时，告知AI上下文可能为空
-            message = `${optionSettings.systemPrompt}\n\n注意：以下是用户选中的文本，可能没有额外的上下文信息，请基于选中的文本本身和你的知识进行回答。\n\n选中文本：${selectedText}`;
+        // --- 核心修改：构建结构化消息数组 ---
+        const messages = [];
+
+        // 1. 系统提示词
+        let systemPrompt = optionSettings.systemPrompt || '你是一个有用的助手。';
+
+        // 2. 将选中文本和页面上下文作为系统指令的一部分
+        systemPrompt += `\n\n# 任务背景\n用户选中了以下文本，请按照指令进行处理。`;
+        systemPrompt += `\n- **选中文本**: "${selectedText}"`;
+        if (contextForThisRequest && contextForThisRequest !== selectedText) {
+            systemPrompt += `\n- **相关上下文**: "${contextForThisRequest}"`;
         }
+
+        messages.push({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'user', content: '请按照系统指令处理上述文本。' });
+
+        // --- 修改结束 ---
 
         // 准备响应区域
         const responseArea = windowElement.querySelector('.pagetalk-response-area');
@@ -1906,7 +1915,7 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
         let fullResponse = '';
 
         // 发送到 AI API (流式输出)
-        await callAIAPI(message, optionSettings.model, optionSettings.temperature, (text, isComplete) => {
+        await callAIAPI(messages, optionSettings.model, optionSettings.temperature, (text, isComplete) => {
             fullResponse = text;
             if (responseContent) {
                 // 使用主面板相同的 markdown 渲染器
@@ -2165,18 +2174,36 @@ async function sendChatMessage(windowElement) {
             }
         }
 
-        // 构建基础消息
-        let baseMessage;
-        if (contextForChat && contextForChat.length > 0 && contextForChat !== selectedText) {
-            // 有有效上下文时包含上下文
-            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${message}`;
-        } else {
-            // 无上下文或上下文无效时，告知AI上下文可能为空
-            baseMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${message}`;
-        }
+        // --- 核心修改：构建结构化消息数组 ---
+        const messages = [];
 
-        // 构建包含历史记录的完整消息
-        const fullMessage = buildMessageWithHistory(windowId, baseMessage);
+        // 1. 获取助手和系统提示词
+        const currentAgent = await getCurrentWindowAgent(windowElement) || await getCurrentMainPanelAgent();
+        let systemPrompt = (currentAgent && currentAgent.systemPrompt)
+            ? currentAgent.systemPrompt
+            : '你是一个有用的划词助手。';
+
+        // 2. 将选中文本和页面上下文作为系统指令的一部分
+        systemPrompt += `\n\n# 对话背景\n用户在网页上划选了以下文本进行对话，请始终围绕此核心文本展开。`;
+        systemPrompt += `\n- **核心文本**: "${selectedText}"`;
+        if (contextForChat && contextForChat !== selectedText) {
+            systemPrompt += `\n- **相关上下文**: "${contextForChat}"`;
+        }
+        messages.push({ role: 'system', content: systemPrompt });
+
+        // 3. 添加聊天历史
+        const history = getChatHistory(windowId);
+        history.forEach(histMsg => {
+            // 只添加用户和助手的消息到历史记录中
+            if (histMsg.role === 'user' || histMsg.role === 'assistant') {
+                 messages.push(histMsg);
+            }
+        });
+
+        // 注意：当前用户消息已经通过 addToChatHistory 添加到 history 数组的末尾，
+        // 所以上面的循环已经包含了当前用户消息。我们不需要再单独添加。
+
+        // --- 修改结束 ---
 
         // 重置滚动状态（新请求开始）
         functionWindowScrolledUp = false;
@@ -2241,34 +2268,13 @@ async function sendChatMessage(windowElement) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
         const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
-        // 获取当前窗口选择的助手设置，如果没有选择则使用主面板助手设置
-        let currentAgent = await getCurrentWindowAgent(windowElement);
-        if (!currentAgent) {
-            currentAgent = await getCurrentMainPanelAgent();
-        }
         const temperature = currentAgent ? currentAgent.temperature : 0.7;
-        const maxOutputLength = currentAgent ? currentAgent.maxTokens : 65536;
+        const maxOutputLength = currentAgent ? currentAgent.maxTokens : null;
 
         console.log('[TextSelectionHelper] Chat using agent:', currentAgent ? currentAgent.name : 'default', 'temperature:', temperature);
 
-        // 构建最终消息，如果有助手则使用助手的系统提示词替换默认的划词助手提示词
-        let finalMessage = buildMessageWithHistory(windowId, baseMessage);
-        if (currentAgent && currentAgent.systemPrompt) {
-            // 使用助手的系统提示词替换默认的划词助手提示词
-            const contextForChat = chatSettings.contextMode === 'full' ? selectionContext :
-                (chatSettings.contextBefore > 0 || chatSettings.contextAfter > 0 ?
-                    extractSelectionContext(window.getSelection(), chatSettings.contextBefore || 500, chatSettings.contextAfter || 500) : '');
-
-            const _tr = getTranslationFunction();
-            const agentBaseMessage = contextForChat && contextForChat.length > 0 && contextForChat !== selectedText ?
-                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('relatedContext')}: ${contextForChat}\n\n${_tr('userQuestion')}: ${message}` :
-                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('userQuestion')}: ${message}`;
-
-            finalMessage = buildMessageWithHistory(windowId, agentBaseMessage);
-        }
-
-        // 发送到 AI (流式输出)
-        await callAIAPI(finalMessage, currentModel, temperature, (text, isComplete) => {
+        // 调用API，现在传递的是消息数组
+        await callAIAPI(messages, currentModel, temperature, (text, isComplete) => {
             // 检查流式状态是否仍然有效（可能已被中断）
             const currentStreamingState = streamingStates.get(windowId);
             if (!currentStreamingState || !currentStreamingState.isStreaming) {
@@ -2656,18 +2662,33 @@ async function regenerateChatMessage(windowElement, userMessage) {
             }
         }
 
-        // 构建基础消息
-        let baseMessage;
-        if (contextForChat && contextForChat.length > 0 && contextForChat !== selectedText) {
-            // 有有效上下文时包含上下文
-            baseMessage = `你是一个划词助手，会参考上下文和你的知识，基于用户选中的文本与用户进行对话：\n\n选中文本：${selectedText}\n\n相关上下文：${contextForChat}\n\n用户问题：${userMessage}`;
-        } else {
-            // 无上下文或上下文无效时，告知AI上下文可能为空
-            baseMessage = `你是一个划词助手，会参考你的知识，基于用户选中的文本与用户进行对话。注意：可能没有额外的上下文信息，请基于文本本身和你的知识进行回答：\n\n选中文本：${selectedText}\n\n用户问题：${userMessage}`;
-        }
+        // --- 核心修改：构建结构化消息数组 ---
+        const messages = [];
 
-        // 构建包含历史记录的完整消息
-        const fullMessage = buildMessageWithHistory(windowId, baseMessage);
+        // 1. 获取助手和系统提示词
+        const currentAgent = await getCurrentWindowAgent(windowElement) || await getCurrentMainPanelAgent();
+        let systemPrompt = (currentAgent && currentAgent.systemPrompt)
+            ? currentAgent.systemPrompt
+            : '你是一个有用的划词助手。';
+
+        // 2. 将选中文本和页面上下文作为系统指令的一部分
+        systemPrompt += `\n\n# 对话背景\n用户在网页上划选了以下文本进行对话，请始终围绕此核心文本展开。`;
+        systemPrompt += `\n- **核心文本**: "${selectedText}"`;
+        if (contextForChat && contextForChat !== selectedText) {
+            systemPrompt += `\n- **相关上下文**: "${contextForChat}"`;
+        }
+        messages.push({ role: 'system', content: systemPrompt });
+
+        // 3. 添加聊天历史
+        const history = getChatHistory(windowId);
+        history.forEach(histMsg => {
+            // 只添加用户和助手的消息到历史记录中
+            if (histMsg.role === 'user' || histMsg.role === 'assistant') {
+                 messages.push(histMsg);
+            }
+        });
+
+        // --- 修改结束 ---
 
         // 设置流式状态
         const requestId = 'regenerate-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
@@ -2740,34 +2761,13 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
         const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
 
-        // 获取当前窗口选择的助手设置，如果没有选择则使用主面板助手设置
-        let currentAgent = await getCurrentWindowAgent(windowElement);
-        if (!currentAgent) {
-            currentAgent = await getCurrentMainPanelAgent();
-        }
         const temperature = currentAgent ? currentAgent.temperature : 0.7;
-        const maxOutputLength = currentAgent ? currentAgent.maxTokens : 65536;
+        const maxOutputLength = currentAgent ? currentAgent.maxTokens : null;
 
         console.log('[TextSelectionHelper] Regenerate using agent:', currentAgent ? currentAgent.name : 'default', 'temperature:', temperature);
 
-        // 构建最终消息，如果有助手则使用助手的系统提示词替换默认的划词助手提示词
-        let finalMessage = buildMessageWithHistory(windowId, baseMessage);
-        if (currentAgent && currentAgent.systemPrompt) {
-            // 使用助手的系统提示词替换默认的划词助手提示词
-            const contextForChat = chatSettings.contextMode === 'full' ? selectionContext :
-                (chatSettings.contextBefore > 0 || chatSettings.contextAfter > 0 ?
-                    extractSelectionContext(window.getSelection(), chatSettings.contextBefore || 500, chatSettings.contextAfter || 500) : '');
-
-            const _tr = getTranslationFunction();
-            const agentBaseMessage = contextForChat && contextForChat.length > 0 && contextForChat !== selectedText ?
-                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('relatedContext')}: ${contextForChat}\n\n${_tr('userQuestion')}: ${userMessage}` :
-                `${currentAgent.systemPrompt}\n\n${_tr('selectedText')}: ${selectedText}\n\n${_tr('userQuestion')}: ${userMessage}`;
-
-            finalMessage = buildMessageWithHistory(windowId, agentBaseMessage);
-        }
-
         // 发送到 AI (流式输出)
-        await callAIAPI(finalMessage, currentModel, temperature, (text, isComplete) => {
+        await callAIAPI(messages, currentModel, temperature, (text, isComplete) => {
             // 检查流式状态是否仍然有效（可能已被中断）
             const currentStreamingState = streamingStates.get(windowId);
             if (!currentStreamingState || !currentStreamingState.isStreaming) {
@@ -2955,77 +2955,60 @@ function escapeHtml(text) {
 
 /**
  * 调用 AI API - 通过background.js独立处理，支持流式输出
+ * @param {Array} messages - 结构化的消息数组
+ * @param {string} model - 模型名称
+ * @param {number} temperature - 温度参数
+ * @param {function} onStream - 流式回调函数
+ * @param {number|null} maxOutputLength - 最大输出长度
  */
-async function callAIAPI(message, model, temperature, onStream = null, maxOutputLength = null) {
+async function callAIAPI(messages, model, temperature, onStream, maxOutputLength = null) {
     try {
         console.log('[TextSelectionHelper] Calling API via background for model:', model);
 
-        // 生成唯一的流ID
         const streamId = 'stream_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 
-        // 构建标准化的消息数组
-        const messages = [
-            {
-                role: 'user',
-                content: message
-            }
-        ];
-
-        // 构建调用选项
         const callOptions = {
             temperature: temperature,
-            topP: 0.95
+            topP: 0.95,
         };
-
-        // 只有当明确设置了maxOutputLength且大于0时才添加该参数
         if (maxOutputLength && parseInt(maxOutputLength) > 0) {
             callOptions.maxTokens = parseInt(maxOutputLength);
         }
 
-        // 设置流式监听器
         let accumulatedText = '';
         const streamListener = (message) => {
             if (message.action === 'streamUpdate' && message.streamId === streamId) {
                 if (message.chunk) {
                     accumulatedText += message.chunk;
-                    if (onStream) {
-                        onStream(accumulatedText, false);
-                    }
+                    if (onStream) onStream(accumulatedText, false);
                 }
-                if (message.isComplete && onStream) {
-                    onStream(accumulatedText, true);
+                if (message.isComplete) {
+                    if (onStream) onStream(accumulatedText, true);
+                    chrome.runtime.onMessage.removeListener(streamListener);
                 }
             }
         };
-
-        // 添加消息监听器
         chrome.runtime.onMessage.addListener(streamListener);
 
-        try {
-            // 通过background.js调用API
-            const response = await new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage({
-                    action: 'callUnifiedAPI',
-                    model: model,
-                    messages: messages,
-                    options: callOptions,
-                    streamId: streamId
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else if (response && response.success) {
-                        resolve(response.response);
-                    } else {
-                        reject(new Error(response ? response.error : 'Unknown error'));
-                    }
-                });
+        const response = await new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage({
+                action: 'callUnifiedAPI',
+                model: model,
+                messages: messages, // 直接传递消息数组
+                options: callOptions,
+                streamId: streamId
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else if (response && response.success) {
+                    resolve(response.response);
+                } else {
+                    reject(new Error(response ? response.error : 'Unknown error'));
+                }
             });
+        });
 
-            return response;
-        } finally {
-            // 移除监听器
-            chrome.runtime.onMessage.removeListener(streamListener);
-        }
+        return response;
     } catch (error) {
         console.error('[TextSelectionHelper] API call error:', error);
         throw error;

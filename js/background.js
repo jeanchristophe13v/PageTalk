@@ -446,8 +446,13 @@ function formatApiUrl(apiHost, providerId, endpoint) {
         return `${apiHost}${endpoint}`;
     }
 
+    // ChatGLM 的 apiHost 已包含完整路径 /api/paas/v4
+    if (providerId === 'chatglm') {
+        return `${apiHost}${endpoint}`;
+    }
+
     // 检查 URL 是否已经包含版本路径
-    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\//.test(apiHost);
+    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\/|\/paas\/v\d+/.test(apiHost);
 
     if (hasVersionPath) {
         return `${apiHost}${endpoint}`;
@@ -485,6 +490,10 @@ async function getProviderConfig(providerId) {
         deepseek: {
             type: 'openai_compatible',
             apiHost: 'https://api.deepseek.com'
+        },
+        chatglm: {
+            type: 'openai_compatible',
+            apiHost: 'https://open.bigmodel.cn/api/paas/v4'
         }
     };
 
@@ -1160,9 +1169,17 @@ async function callOpenAICompatibleAPIInBackgroundStream(apiHost, apiKey, modelN
     }
 
     const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
     };
+
+    // 根据供应商设置认证方式
+    if (providerId === 'chatglm') {
+        // ChatGLM 使用直接的 API key 认证，不需要 Bearer 前缀
+        headers['Authorization'] = apiKey;
+    } else {
+        // 其他供应商使用标准的 Bearer 认证
+        headers['Authorization'] = `Bearer ${apiKey}`;
+    }
 
     // OpenRouter特殊请求头
     if (providerId === 'openrouter') {

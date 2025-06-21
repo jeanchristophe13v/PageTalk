@@ -272,11 +272,15 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             contents: [], // Initialize contents array
             generationConfig: {
                 temperature: parseFloat(stateRef.temperature),
-                maxOutputTokens: parseInt(stateRef.maxTokens),
                 topP: parseFloat(stateRef.topP),
             },
             tools: []
         };
+
+        // 只有当用户明确设置了maxTokens且大于0时才添加该参数
+        if (stateRef.maxTokens && parseInt(stateRef.maxTokens) > 0) {
+            requestBody.generationConfig.maxOutputTokens = parseInt(stateRef.maxTokens);
+        }
 
         // 应用模型特定的参数
         if (modelParams?.generationConfig) {
@@ -937,12 +941,18 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
         };
 
         // 调用统一API接口
-        await window.PageTalkAPI.callApi(stateRef.model, messages, streamCallback, {
+        const callOptions = {
             temperature: parseFloat(stateRef.temperature),
-            maxTokens: parseInt(stateRef.maxTokens),
             topP: parseFloat(stateRef.topP),
             signal: controller.signal
-        });
+        };
+
+        // 只有当用户明确设置了maxTokens且大于0时才添加该参数
+        if (stateRef.maxTokens && parseInt(stateRef.maxTokens) > 0) {
+            callOptions.maxTokens = parseInt(stateRef.maxTokens);
+        }
+
+        await window.PageTalkAPI.callApi(stateRef.model, messages, streamCallback, callOptions);
 
         // 清除图片和视频（仅在初始发送时）
         if ((stateRef.images.length > 0 || stateRef.videos.length > 0) && thinkingElement && historyForApi === null) {
