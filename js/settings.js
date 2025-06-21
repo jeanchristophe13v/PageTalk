@@ -101,6 +101,9 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         // 加载自定义提供商
         await window.ProviderManager?.loadCustomProviders();
 
+        // 创建所有供应商的设置UI
+        await createAllProviderSettings();
+
         // 加载供应商设置到 UI
         await loadProviderSettingsToUI(elements);
 
@@ -1405,12 +1408,12 @@ async function showProviderSettings(providerId) {
     // 显示选中的供应商设置
     let targetSettings = document.getElementById(`provider-settings-${providerId}`);
 
-    // 如果设置区域不存在，检查是否是自定义提供商并创建
+    // 如果设置区域不存在，创建它
     if (!targetSettings) {
         const provider = window.ProviderManager?.getProvider(providerId);
-        if (provider && provider.isCustom) {
-            console.log(`[Settings] Creating settings area for custom provider: ${providerId}`);
-            await createCustomProviderSettings();
+        if (provider) {
+            console.log(`[Settings] Creating settings area for provider: ${providerId}`);
+            await createAllProviderSettings();
             targetSettings = document.getElementById(`provider-settings-${providerId}`);
         }
     }
@@ -1428,8 +1431,8 @@ async function showProviderSettings(providerId) {
 async function loadProviderSettingsToUI(elements) {
     if (!window.ModelManager?.instance) return;
 
-    // 首先确保为自定义提供商创建设置区域
-    await createCustomProviderSettings();
+    // 首先确保为所有供应商创建设置区域
+    await createAllProviderSettings();
 
     const modelManager = window.ModelManager.instance;
     const providerIds = window.ProviderManager?.getProviderIds() || [];
@@ -2056,19 +2059,20 @@ async function refreshProviderSelection() {
     }
 
     // 确保为新的自定义提供商创建设置区域
-    await createCustomProviderSettings();
+    await createAllProviderSettings();
 }
 
 /**
- * 为自定义提供商创建设置区域
+ * 为所有供应商创建设置区域（包括内置和自定义）
  */
-async function createCustomProviderSettings() {
+async function createAllProviderSettings() {
     const container = document.querySelector('.provider-settings-container');
     if (!container) return;
 
-    const customProviders = window.ProviderManager?.getCustomProviders() || [];
+    // 获取所有供应商（内置 + 自定义）
+    const allProviders = window.ProviderManager?.getAllProviders() || {};
 
-    customProviders.forEach(provider => {
+    Object.values(allProviders).forEach(provider => {
         // 检查是否已存在设置区域
         const existingSettings = document.getElementById(`provider-settings-${provider.id}`);
         if (existingSettings) return;
@@ -2077,6 +2081,31 @@ async function createCustomProviderSettings() {
         const settingsDiv = createProviderSettingsElement(provider);
         container.appendChild(settingsDiv);
     });
+}
+
+/**
+ * 为自定义提供商创建设置区域（保持向后兼容）
+ */
+async function createCustomProviderSettings() {
+    // 直接调用创建所有供应商设置的函数
+    await createAllProviderSettings();
+}
+
+/**
+ * 获取供应商API Key链接文本
+ */
+function getProviderApiKeyLinkText(provider) {
+    const linkTexts = {
+        'google': 'Google AI Studio',
+        'openai': 'OpenAI Platform',
+        'anthropic': 'Anthropic Console',
+        'siliconflow': 'SiliconFlow 控制台',
+        'openrouter': 'OpenRouter 设置',
+        'deepseek': 'DeepSeek 平台',
+        'chatglm': '智谱AI 平台'
+    };
+
+    return linkTexts[provider.id] || provider.name;
 }
 
 /**
@@ -2125,7 +2154,8 @@ function createProviderSettingsElement(provider) {
                     </svg>
                 </button>
             </div>
-            ${provider.apiHost ? `<p class="hint">Base URL: ${provider.apiHost}</p>` : ''}
+            ${provider.apiKeyUrl ? `<p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="${provider.apiKeyUrl}" target="_blank" rel="noopener">${getProviderApiKeyLinkText(provider)}</a></p>` : ''}
+            ${provider.isCustom && provider.apiHost ? `<p class="hint">Base URL: ${provider.apiHost}</p>` : ''}
         </div>
         <div class="provider-actions">
             <button class="test-api-key-btn" data-provider="${provider.id}" data-i18n="testConnection">${currentTranslations.testConnection}</button>
