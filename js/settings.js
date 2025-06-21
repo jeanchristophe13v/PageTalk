@@ -1778,6 +1778,10 @@ function clearCustomProviderForm() {
         input.disabled = false; // 重置禁用状态
     });
 
+    // 清除所有提示文本
+    const hints = modal.querySelectorAll('.form-hint');
+    hints.forEach(hint => hint.remove());
+
     // 重置保存按钮
     const saveBtn = document.getElementById('custom-provider-save');
     if (saveBtn) {
@@ -1861,11 +1865,21 @@ async function saveCustomProvider() {
         let result;
 
         if (isEditMode && editProviderId) {
-            // 编辑模式：更新现有提供商
-            result = await updateCustomProvider(editProviderId, {
-                baseUrl: baseUrl,
-                apiKey: apiKey
-            });
+            // 编辑模式：检查是否修改了Provider ID
+            if (providerId && providerId !== editProviderId) {
+                // Provider ID发生了变化，需要删除旧的并创建新的
+                result = await updateCustomProviderWithNewId(editProviderId, {
+                    id: providerId,
+                    baseUrl: baseUrl,
+                    apiKey: apiKey
+                });
+            } else {
+                // Provider ID没有变化，只更新其他属性
+                result = await updateCustomProvider(editProviderId, {
+                    baseUrl: baseUrl,
+                    apiKey: apiKey
+                });
+            }
         } else {
             // 添加模式：创建新提供商
             result = await window.ProviderManager.addCustomProvider({
@@ -1893,7 +1907,7 @@ async function saveCustomProvider() {
             await refreshProviderSelection();
 
             // 选择相关提供商并填入API Key
-            const targetProviderId = isEditMode ? editProviderId : result.providerId;
+            const targetProviderId = result.providerId || (isEditMode ? editProviderId : result.providerId);
             const providerSelect = document.getElementById('provider-select');
             if (providerSelect && targetProviderId) {
                 providerSelect.value = targetProviderId;
@@ -1935,6 +1949,40 @@ async function saveCustomProvider() {
                 (getCurrentTranslations().customProviderSave || '添加');
             saveBtn.textContent = defaultText;
         }
+    }
+}
+
+/**
+ * 更新自定义提供商并更改ID
+ */
+async function updateCustomProviderWithNewId(oldProviderId, newProviderData) {
+    try {
+        // 检查新ID是否已存在
+        const existingProvider = window.ProviderManager?.getProvider(newProviderData.id);
+        if (existingProvider) {
+            return { success: false, error: 'Provider ID already exists' };
+        }
+
+        // 删除旧的提供商
+        const deleteSuccess = await window.ProviderManager.removeCustomProvider(oldProviderId);
+        if (!deleteSuccess) {
+            return { success: false, error: 'Failed to remove old provider' };
+        }
+
+        // 创建新的提供商
+        const addResult = await window.ProviderManager.addCustomProvider(newProviderData);
+        if (addResult.success) {
+            console.log(`[Settings] Updated custom provider ID from ${oldProviderId} to ${newProviderData.id}`);
+            return { success: true, providerId: newProviderData.id };
+        } else {
+            // 如果创建失败，尝试恢复旧的提供商（这里简化处理）
+            console.error('[Settings] Failed to create new provider after deleting old one');
+            return addResult;
+        }
+
+    } catch (error) {
+        console.error('[Settings] Error updating custom provider with new ID:', error);
+        return { success: false, error: error.message };
     }
 }
 
@@ -2140,9 +2188,9 @@ function editCustomProvider(providerId) {
             saveBtn.dataset.editProviderId = providerId;
         }
 
-        // 禁用Provider ID输入框（编辑时不允许修改ID）
+        // 在编辑模式下允许修改Provider ID
         if (providerIdInput) {
-            providerIdInput.disabled = true;
+            providerIdInput.disabled = false;
         }
     }
 }

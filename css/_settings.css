@@ -751,6 +751,13 @@
     box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
 
+.form-group input:disabled {
+    background-color: var(--background-secondary);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .form-hint {
     margin-top: var(--spacing-xs);
     font-size: 12px;
