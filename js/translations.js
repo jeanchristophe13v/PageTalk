@@ -35,7 +35,7 @@ if (typeof window.translations === 'undefined') {
     'agentSelectLabel': '选择助手',
     'clearContextTitle': '清除聊天记录',
     'closePanelTitle': '关闭面板',
-    'welcomeHeading': '欢迎使用 Pagetalk :)',
+    'welcomeHeading': '欢迎使用 PageTalk :)',
     'summarizeAction': '总结一下',
     'imagePreviewAlt': 'Full size image preview', // Keep English for alt? Or translate? Let's translate.
     'imagePreviewAltTranslated': '全尺寸图片预览',
@@ -397,7 +397,7 @@ if (typeof window.translations === 'undefined') {
     'agentSelectLabel': 'Select Agent',
     'clearContextTitle': 'Clear chat history',
     'closePanelTitle': 'Close Panel',
-    'welcomeHeading': 'Welcome to Pagetalk :)',
+    'welcomeHeading': 'Welcome to PageTalk :)',
     'summarizeAction': 'Summarize',
     'imagePreviewAlt': 'Full size image preview',
     'imagePreviewAltTranslated': 'Full size image preview', // Keep English for alt
