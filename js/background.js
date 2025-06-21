@@ -205,8 +205,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function handleGetAvailableModelsRequest(sendResponse) {
     try {
-        // 从存储中获取模型管理器的数据和自定义提供商
-        const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels', 'customProviders']);
+        // 从存储中获取模型管理器的数据、自定义提供商、供应商设置和旧版本API key
+        const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels', 'customProviders', 'providerSettings', 'apiKey']);
 
         if (result.managedModels && result.userActiveModels) {
             // 获取用户激活的模型
@@ -247,24 +247,40 @@ async function handleGetAvailableModelsRequest(sendResponse) {
             console.log('[Background] Returning active model options:', activeModelOptions);
             sendResponse({ success: true, models: activeModelOptions });
         } else {
-            // 如果没有存储数据，返回默认模型选项
-            const defaultModelOptions = [
+            // 如果没有存储数据，检查是否配置了Google API key再决定是否返回默认模型
+            const hasGoogleApiKey = checkGoogleApiKeyConfigured(result.providerSettings, result.apiKey);
+
+            if (hasGoogleApiKey) {
+                // 用户配置了Google API key，返回默认Gemini模型
+                const defaultModelOptions = [
+                    { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+                    { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+                    { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
+                ];
+                console.log('[Background] No stored models but Google API key configured, returning Gemini defaults:', defaultModelOptions);
+                sendResponse({ success: true, models: defaultModelOptions });
+            } else {
+                // 用户没有配置Google API key，返回空模型列表
+                console.log('[Background] No stored models and no Google API key configured, returning empty list');
+                sendResponse({ success: true, models: [] });
+            }
+        }
+    } catch (error) {
+        console.error('[Background] Error getting available models:', error);
+        // 返回默认模型选项作为回退，但也要检查API key
+        const result = await chrome.storage.sync.get(['providerSettings', 'apiKey']).catch(() => ({}));
+        const hasGoogleApiKey = checkGoogleApiKeyConfigured(result.providerSettings, result.apiKey);
+
+        if (hasGoogleApiKey) {
+            const fallbackModelOptions = [
                 { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
                 { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
                 { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
             ];
-            console.log('[Background] No stored models, returning defaults:', defaultModelOptions);
-            sendResponse({ success: true, models: defaultModelOptions });
+            sendResponse({ success: true, models: fallbackModelOptions });
+        } else {
+            sendResponse({ success: true, models: [] });
         }
-    } catch (error) {
-        console.error('[Background] Error getting available models:', error);
-        // 返回默认模型选项作为回退
-        const fallbackModelOptions = [
-            { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
-            { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
-            { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
-        ];
-        sendResponse({ success: true, models: fallbackModelOptions });
     }
 }
 
@@ -327,6 +343,29 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
             }
         });
     }
+}
+
+/**
+ * 检查Google API key是否已配置
+ * @param {Object} providerSettings - 供应商设置对象
+ * @param {string} legacyApiKey - 旧版本的API key（可选）
+ * @returns {boolean} 是否已配置Google API key
+ */
+function checkGoogleApiKeyConfigured(providerSettings, legacyApiKey = null) {
+    // 首先检查新的供应商设置结构
+    if (providerSettings && providerSettings.google && providerSettings.google.apiKey) {
+        const googleApiKey = providerSettings.google.apiKey;
+        if (googleApiKey && googleApiKey.trim()) {
+            return true;
+        }
+    }
+
+    // 如果新结构中没有，检查旧版本的API key
+    if (legacyApiKey && legacyApiKey.trim()) {
+        return true;
+    }
+
+    return false;
 }
 
 /**

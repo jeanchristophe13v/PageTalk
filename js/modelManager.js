@@ -163,16 +163,16 @@ class ModelManager {
                         return model;
                     });
                 } else {
-                    // 首次使用，初始化为默认模型
-                    this.managedModels = [...DEFAULT_MODELS];
+                    // 首次使用，根据API key配置情况初始化默认模型
+                    this.managedModels = this.getInitialDefaultModels();
                 }
 
                 // 加载用户已选模型列表
                 if (result[STORAGE_KEYS.USER_ACTIVE_MODELS]) {
                     this.userActiveModels = result[STORAGE_KEYS.USER_ACTIVE_MODELS];
                 } else {
-                    // 首次使用，默认选择所有默认模型
-                    this.userActiveModels = DEFAULT_MODELS.map(model => model.id);
+                    // 首次使用，默认选择已添加的管理模型
+                    this.userActiveModels = this.managedModels.map(model => model.id);
                 }
 
                 console.log('[ModelManager] Loaded from storage:', {
@@ -239,6 +239,56 @@ class ModelManager {
     }
 
     /**
+     * 获取初始默认模型列表（根据API key配置情况）
+     * @returns {Array} 初始默认模型列表
+     */
+    getInitialDefaultModels() {
+        const initialModels = [];
+
+        // 检查是否配置了Google API key
+        const hasGoogleApiKey = this.checkGoogleApiKeyConfigured();
+
+        if (hasGoogleApiKey) {
+            // 如果配置了Google API key，添加Google的默认模型
+            const googleModels = DEFAULT_MODELS.filter(model => model.providerId === 'google');
+            initialModels.push(...googleModels);
+            console.log('[ModelManager] Google API key found, adding Google default models');
+        } else {
+            console.log('[ModelManager] No Google API key found, skipping Google default models');
+        }
+
+        // 这里可以添加其他供应商的默认模型检查逻辑
+        // 例如：如果配置了OpenAI API key，添加OpenAI的默认模型等
+
+        return initialModels;
+    }
+
+    /**
+     * 检查Google API key是否已配置
+     * @returns {boolean} 是否已配置Google API key
+     */
+    checkGoogleApiKeyConfigured() {
+        // 首先检查新的供应商设置结构
+        if (this.providerSettings && this.providerSettings.google && this.providerSettings.google.apiKey) {
+            const googleApiKey = this.providerSettings.google.apiKey;
+            if (googleApiKey && googleApiKey.trim()) {
+                return true;
+            }
+        }
+
+        // 如果新结构中没有，检查旧版本的API key（同步方式）
+        try {
+            // 这里我们需要同步检查，但chrome.storage是异步的
+            // 我们将在migrateIfNeeded中处理旧版本API key的迁移
+            // 所以这里只检查已经迁移到新结构的API key
+            return false;
+        } catch (error) {
+            console.warn('[ModelManager] Error checking legacy API key:', error);
+            return false;
+        }
+    }
+
+    /**
      * 数据迁移（如果需要）
      */
     async migrateIfNeeded() {
@@ -261,6 +311,14 @@ class ModelManager {
                         }
                         this.providerSettings.google.apiKey = result[STORAGE_KEYS.OLD_API_KEY];
                         console.log('[ModelManager] Migrated API key to Google provider settings');
+
+                        // 如果之前没有管理的模型，现在有了Google API key，添加Google默认模型
+                        if (this.managedModels.length === 0) {
+                            const googleModels = DEFAULT_MODELS.filter(model => model.providerId === 'google');
+                            this.managedModels.push(...googleModels);
+                            this.userActiveModels.push(...googleModels.map(model => model.id));
+                            console.log('[ModelManager] Added Google default models after API key migration');
+                        }
                     }
 
                     // 迁移旧的选中模型列表
@@ -320,8 +378,9 @@ class ModelManager {
      * 重置为默认设置
      */
     async resetToDefaults() {
-        this.managedModels = [...DEFAULT_MODELS];
-        this.userActiveModels = DEFAULT_MODELS.map(model => model.id);
+        // 根据API key配置情况重置默认模型
+        this.managedModels = this.getInitialDefaultModels();
+        this.userActiveModels = this.managedModels.map(model => model.id);
         await this.saveToStorage();
         this.initialized = true;
         console.log('[ModelManager] Reset to defaults');
@@ -434,6 +493,40 @@ class ModelManager {
      */
     async setProviderApiKey(providerId, apiKey) {
         await this.setProviderSettings(providerId, { apiKey });
+
+        // 如果是Google供应商且之前没有Google模型，添加默认模型
+        if (providerId === 'google' && apiKey && apiKey.trim()) {
+            await this.ensureGoogleDefaultModels();
+        }
+    }
+
+    /**
+     * 确保Google默认模型存在（当配置了Google API key时）
+     */
+    async ensureGoogleDefaultModels() {
+        const googleModels = DEFAULT_MODELS.filter(model => model.providerId === 'google');
+        let hasChanges = false;
+
+        for (const defaultModel of googleModels) {
+            // 检查是否已存在于管理列表中
+            if (!this.managedModels.find(model => model.id === defaultModel.id)) {
+                this.managedModels.push({ ...defaultModel });
+                hasChanges = true;
+                console.log(`[ModelManager] Added missing Google default model: ${defaultModel.id}`);
+            }
+
+            // 检查是否已激活
+            if (!this.userActiveModels.includes(defaultModel.id)) {
+                this.userActiveModels.push(defaultModel.id);
+                hasChanges = true;
+                console.log(`[ModelManager] Activated Google default model: ${defaultModel.id}`);
+            }
+        }
+
+        if (hasChanges) {
+            await this.saveToStorage();
+            console.log('[ModelManager] Google default models ensured');
+        }
     }
 
     /**
