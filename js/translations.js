@@ -277,7 +277,7 @@ if (typeof window.translations === 'undefined') {
     'proxyInvalidUrl': '代理地址格式无效，请检查格式',
 
     // --- 多供应商设置相关翻译 ---
-    'aiProviderLabel': 'AI 供应商：',
+    'aiProviderLabel': '供应商：',
     'testConnection': '测试',
     'discoverModels': '添加',
     'currentModelLabel': '当前模型：',
@@ -624,7 +624,7 @@ if (typeof window.translations === 'undefined') {
     'proxyInvalidUrl': 'Invalid proxy url format, please check the format',
 
     // --- Multi-Provider Settings Related Translations ---
-    'aiProviderLabel': 'AI Provider:',
+    'aiProviderLabel': 'Provider:',
     'testConnection': 'Test',
     'discoverModels': 'Add',
     'currentModelLabel': 'Current Model:',

@@ -590,7 +590,7 @@
 }
 
 .model-selection-section select optgroup {
-    font-weight: 600;
+    font-weight: bold;
     color: var(--text-color);
     background-color: transparent;
     padding: 4px 8px;

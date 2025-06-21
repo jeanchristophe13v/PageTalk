@@ -26,7 +26,7 @@ const DEFAULT_MODELS = [
     // Google Gemini 模型
     {
         id: 'gemini-2.5-flash',
-        displayName: 'Gemini 2.5 Flash',
+        displayName: 'gemini-2.5-flash',
         apiModelName: 'gemini-2.5-flash',
         providerId: 'google',
         params: { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } },
@@ -36,7 +36,7 @@ const DEFAULT_MODELS = [
     },
     {
         id: 'gemini-2.5-flash-thinking',
-        displayName: 'Gemini 2.5 Flash (Thinking)',
+        displayName: 'gemini-2.5-flash-thinking',
         apiModelName: 'gemini-2.5-flash',
         providerId: 'google',
         params: null, // 不设置thinkingBudget，使用默认思考模式
@@ -46,7 +46,7 @@ const DEFAULT_MODELS = [
     },
     {
         id: 'gemini-2.5-pro',
-        displayName: 'Gemini 2.5 Pro',
+        displayName: 'gemini-2.5-pro',
         apiModelName: 'gemini-2.5-pro',
         providerId: 'google',
         params: null,
@@ -56,65 +56,13 @@ const DEFAULT_MODELS = [
     },
     {
         id: 'gemini-2.5-flash-lite-preview-06-17',
-        displayName: 'Gemini 2.5 Flash Lite',
+        displayName: 'gemini-2.5-flash-lite-preview-06-17',
         apiModelName: 'gemini-2.5-flash-lite-preview-06-17',
         providerId: 'google',
         params: null,
         isAlias: false,
         isDefault: true,
         canDelete: true // 可以删除
-    },
-
-    // ChatGLM 模型
-    {
-        id: 'glm-4-plus',
-        displayName: 'GLM-4-Plus',
-        apiModelName: 'glm-4-plus',
-        providerId: 'chatglm',
-        params: null,
-        isAlias: false,
-        isDefault: true,
-        canDelete: true
-    },
-    {
-        id: 'glm-4-0520',
-        displayName: 'GLM-4-0520',
-        apiModelName: 'glm-4-0520',
-        providerId: 'chatglm',
-        params: null,
-        isAlias: false,
-        isDefault: true,
-        canDelete: true
-    },
-    {
-        id: 'glm-4-long',
-        displayName: 'GLM-4-Long',
-        apiModelName: 'glm-4-long',
-        providerId: 'chatglm',
-        params: null,
-        isAlias: false,
-        isDefault: true,
-        canDelete: true
-    },
-    {
-        id: 'glm-4-flashx',
-        displayName: 'GLM-4-FlashX',
-        apiModelName: 'glm-4-flashx',
-        providerId: 'chatglm',
-        params: null,
-        isAlias: false,
-        isDefault: true,
-        canDelete: true
-    },
-    {
-        id: 'glm-4-flash',
-        displayName: 'GLM-4-Flash',
-        apiModelName: 'glm-4-flash',
-        providerId: 'chatglm',
-        params: null,
-        isAlias: false,
-        isDefault: true,
-        canDelete: true
     }
 ];
 

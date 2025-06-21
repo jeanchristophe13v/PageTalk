@@ -1479,20 +1479,26 @@ export function setupProviderEventListeners(state, elements, showToastCallback, 
     // API Key 可见性切换 - 使用事件委托
     container.addEventListener('click', (e) => {
         if (e.target.closest('.toggle-api-key-button')) {
+            console.log('[Settings] Toggle API key button clicked via event delegation');
             const button = e.target.closest('.toggle-api-key-button');
             const targetId = button.getAttribute('data-target');
             const input = document.getElementById(targetId);
             const eyeIcon = button.querySelector('.eye-icon');
             const eyeSlashIcon = button.querySelector('.eye-slash-icon');
 
+            console.log('[Settings] Target input:', targetId, input);
+            console.log('[Settings] Eye icons:', eyeIcon, eyeSlashIcon);
+
             if (input && input.type === 'password') {
                 input.type = 'text';
                 eyeIcon.style.display = 'none';
                 eyeSlashIcon.style.display = 'block';
+                console.log('[Settings] Changed to text type');
             } else if (input) {
                 input.type = 'password';
                 eyeIcon.style.display = 'block';
                 eyeSlashIcon.style.display = 'none';
+                console.log('[Settings] Changed to password type');
             }
         }
     });
@@ -2079,28 +2085,7 @@ function createProviderSettingsElement(provider) {
         </div>
     `;
 
-    // 添加眼睛按钮事件监听器
-    const toggleButton = settingsDiv.querySelector('.toggle-api-key-button');
-    if (toggleButton) {
-        toggleButton.addEventListener('click', () => {
-            const targetId = toggleButton.getAttribute('data-target');
-            const input = document.getElementById(targetId);
-            const eyeIcon = toggleButton.querySelector('.eye-icon');
-            const eyeSlashIcon = toggleButton.querySelector('.eye-slash-icon');
-
-            if (input.type === 'password') {
-                input.type = 'text';
-                eyeIcon.style.display = 'none';
-                eyeSlashIcon.style.display = 'block';
-            } else {
-                input.type = 'password';
-                eyeIcon.style.display = 'block';
-                eyeSlashIcon.style.display = 'none';
-            }
-        });
-    }
-
-    // 注意：不在这里添加事件监听器，因为已经通过事件委托在 setupProviderEventListeners 中处理了
+    // 注意：不在这里添加API Key切换按钮的事件监听器，因为已经通过事件委托在 setupProviderEventListeners 中处理了
     // 这样可以避免重复绑定事件监听器导致的问题
 
     // 添加自定义提供商按钮事件监听器

@@ -1000,7 +1000,7 @@
 
 /* 聊天首页模型选择器分组样式 - 统一样式 */
 .chat-model-selector select optgroup {
-    font-weight: 600;
+    font-weight: bold;
     color: var(--text-color);
     background-color: transparent;
     padding: 4px 8px;

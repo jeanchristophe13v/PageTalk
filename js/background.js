@@ -220,7 +220,8 @@ async function handleGetAvailableModelsRequest(sendResponse) {
                 anthropic: 'Claude',
                 siliconflow: 'SiliconFlow',
                 openrouter: 'OpenRouter',
-                deepseek: 'DeepSeek'
+                deepseek: 'DeepSeek',
+                chatglm: 'ChatGLM' // Fixed: Add ChatGLM to the provider map.
             };
 
             // 添加自定义提供商到映射
@@ -248,9 +249,9 @@ async function handleGetAvailableModelsRequest(sendResponse) {
         } else {
             // 如果没有存储数据，返回默认模型选项
             const defaultModelOptions = [
-                { value: 'gemini-2.5-flash', text: 'Gemini 2.5 Flash', providerId: 'google', providerName: 'Google' },
-                { value: 'gemini-2.5-flash-thinking', text: 'Gemini 2.5 Flash Thinking', providerId: 'google', providerName: 'Google' },
-                { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'Gemini 2.5 Flash Lite', providerId: 'google', providerName: 'Google' }
+                { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+                { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+                { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
             ];
             console.log('[Background] No stored models, returning defaults:', defaultModelOptions);
             sendResponse({ success: true, models: defaultModelOptions });
@@ -259,9 +260,9 @@ async function handleGetAvailableModelsRequest(sendResponse) {
         console.error('[Background] Error getting available models:', error);
         // 返回默认模型选项作为回退
         const fallbackModelOptions = [
-            { value: 'gemini-2.5-flash', text: 'Gemini 2.5 Flash', providerId: 'google', providerName: 'Google' },
-            { value: 'gemini-2.5-flash-thinking', text: 'Gemini 2.5 Flash Thinking', providerId: 'google', providerName: 'Google' },
-            { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'Gemini 2.5 Flash Lite', providerId: 'google', providerName: 'Google' }
+            { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+            { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+            { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
         ];
         sendResponse({ success: true, models: fallbackModelOptions });
     }
@@ -731,7 +732,7 @@ function getAllApiDomains() {
         siliconflow: 'https://api.siliconflow.cn',
         openrouter: 'https://openrouter.ai/api/v1',
         deepseek: 'https://api.deepseek.com',
-        chatglm: 'https://open.bigmodel.cn/api/paas/v4'
+        chatglm: 'https://open.bigmodel.cn/api/paas/v4' // Fixed: Add ChatGLM domain.
     };
 
     // 添加内置供应商域名
@@ -775,7 +776,7 @@ async function getAllApiDomainsAsync() {
         siliconflow: 'https://api.siliconflow.cn',
         openrouter: 'https://openrouter.ai/api/v1',
         deepseek: 'https://api.deepseek.com',
-        chatglm: 'https://open.bigmodel.cn/api/paas/v4'
+        chatglm: 'https://open.bigmodel.cn/api/paas/v4' // Fixed: Add ChatGLM domain.
     };
 
     // 添加内置供应商域名

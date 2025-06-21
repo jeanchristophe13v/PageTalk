@@ -413,7 +413,7 @@
 
 /* 模型选择器分组样式 - 统一样式 */
 .pagetalk-window-controls select optgroup {
-    font-weight: 600;
+    font-weight: bold;
     color: #333;
     background-color: transparent;
     padding: 2px 4px;
@@ -1327,7 +1327,7 @@
 
 /* 划词助手设置页面模型选择器样式 - 统一样式 */
 #settings-text-selection-helper .setting-group select optgroup {
-    font-weight: 600;
+    font-weight: bold;
     color: var(--text-color);
     background-color: transparent;
     padding: 4px 8px;
@@ -1382,7 +1382,7 @@
 
 /* 划词助手弹窗中的模型选择器样式 - 统一样式 */
 .pagetalk-function-window .setting-group select optgroup {
-    font-weight: 600;
+    font-weight: bold;
     color: #333;
     background-color: transparent;
     padding: 2px 4px;
