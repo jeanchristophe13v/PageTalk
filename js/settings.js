@@ -22,7 +22,7 @@ function getCurrentTranslations() {
     // 尝试从全局获取当前语言
     let currentLanguage = 'zh-CN';
 
-    // 尝试从全局状态获取语言设置
+    // 优先从全局状态获取语言设置
     if (typeof window !== 'undefined' && window.state && window.state.language) {
         currentLanguage = window.state.language;
     }
@@ -34,8 +34,11 @@ function getCurrentTranslations() {
     // 从window.translations获取翻译
     if (typeof window !== 'undefined' && window.translations) {
         const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
+        console.debug('[Settings] getCurrentTranslations:', currentLanguage, Object.keys(translations).length, 'keys');
         return translations;
     }
+
+    console.warn('[Settings] No translations available, returning empty object');
     return {};
 }
 
@@ -77,6 +80,18 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
     // 设置全局变量以便动态创建的按钮可以访问
     window.settingsState = state;
     window.settingsElements = elements;
+
+    // 监听语言变化事件，更新动态创建的UI元素
+    document.addEventListener('pagetalk:languageChanged', (event) => {
+        console.log('[Settings] Received language change event:', event.detail);
+        const newLanguage = event.detail.newLanguage;
+
+        // 更新手动添加按钮的翻译
+        const currentTranslations = getCurrentTranslations();
+        updateManualAddButton(currentTranslations);
+
+        console.log('[Settings] Updated manual add button for language:', newLanguage);
+    });
 
     chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress', 'providerSettings'], async (syncResult) => {
         // 初始化 ModelManager
@@ -617,6 +632,9 @@ export async function updateModelCardsDisplay() {
         const card = createModelCard(model, currentTranslations);
         container.appendChild(card);
     });
+
+    // 添加或更新手动添加按钮到header区域
+    updateManualAddButton(currentTranslations);
 }
 
 /**
@@ -659,6 +677,51 @@ function createModelCard(model, currentTranslations) {
     }
 
     return card;
+}
+
+/**
+ * 更新手动添加模型按钮到header区域
+ * @param {Object} currentTranslations - 当前翻译对象
+ */
+function updateManualAddButton(currentTranslations) {
+    const header = document.querySelector('.model-management-header');
+    if (!header) return;
+
+    // 移除已存在的按钮
+    const existingButton = header.querySelector('.manual-add-model-btn');
+    if (existingButton) {
+        existingButton.remove();
+    }
+
+    // 创建新按钮
+    const button = createManualAddButton(currentTranslations);
+    header.appendChild(button);
+}
+
+/**
+ * 创建手动添加模型按钮
+ * @param {Object} currentTranslations - 当前翻译对象
+ * @returns {HTMLElement} 按钮元素
+ */
+function createManualAddButton(currentTranslations) {
+    const button = document.createElement('button');
+    button.className = 'manual-add-model-btn';
+    button.title = _('manualAddModel', {}, currentTranslations);
+    button.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
+        <span>${_('manualAddModel', {}, currentTranslations)}</span>
+    `;
+
+    // 添加点击事件监听器
+    button.addEventListener('click', () => {
+        // 获取最新的翻译对象
+        const latestTranslations = getCurrentTranslations();
+        showManualAddModelDialog(latestTranslations);
+    });
+
+    return button;
 }
 
 /**
@@ -1693,6 +1756,291 @@ async function handleDiscoverModelsForProvider(providerId, state, elements, show
         console.error(`[Settings] Discover models failed for ${providerId}:`, error);
         showToastCallback(_('fetchModelsError', { error: error.message }, currentTranslations), 'error');
         restoreButtonState();
+    }
+}
+
+// === 手动添加模型功能 ===
+
+/**
+ * 显示手动添加模型对话框
+ * @param {Object} currentTranslations - 当前翻译对象
+ */
+function showManualAddModelDialog(currentTranslations) {
+    // 移除已存在的对话框
+    const existingDialog = document.querySelector('.manual-add-model-dialog');
+    if (existingDialog) {
+        existingDialog.remove();
+    }
+
+    // 获取可用的供应商列表
+    const providers = window.ProviderManager?.getAllProviders() || {};
+    const providerOptions = Object.values(providers).map(provider => ({
+        value: provider.id,
+        text: provider.name
+    }));
+
+    // 创建对话框
+    const dialog = document.createElement('div');
+    dialog.className = 'manual-add-model-dialog';
+    dialog.innerHTML = `
+        <div class="dialog-overlay">
+            <div class="dialog-content">
+                <div class="dialog-header">
+                    <h3>${_('manualAddModelDialogTitle', {}, currentTranslations)}</h3>
+                    <button type="button" class="close-btn" aria-label="${_('close', {}, currentTranslations)}">×</button>
+                </div>
+                <div class="dialog-body">
+                    <div class="form-group">
+                        <label for="manual-model-name">${_('manualAddModelName', {}, currentTranslations)} *</label>
+                        <input type="text" id="manual-model-name" class="form-input"
+                               placeholder="${_('manualAddModelNamePlaceholder', {}, currentTranslations)}"
+                               autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="manual-model-id">${_('manualAddModelId', {}, currentTranslations)} *</label>
+                        <input type="text" id="manual-model-id" class="form-input"
+                               placeholder="${_('manualAddModelIdPlaceholder', {}, currentTranslations)}"
+                               autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="manual-model-provider">${_('manualAddModelProvider', {}, currentTranslations)} *</label>
+                        <select id="manual-model-provider" class="form-select" required>
+                            <option value="">${_('manualAddModelProviderPlaceholder', {}, currentTranslations)}</option>
+                            ${providerOptions.map(option =>
+                                `<option value="${option.value}">${option.text}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="dialog-footer">
+                    <div class="dialog-actions">
+                        <button type="button" class="cancel-btn">${_('manualAddModelCancel', {}, currentTranslations)}</button>
+                        <button type="button" class="confirm-btn" disabled>${_('manualAddModelConfirm', {}, currentTranslations)}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 添加到页面
+    document.body.appendChild(dialog);
+
+    // 获取表单元素
+    const nameInput = dialog.querySelector('#manual-model-name');
+    const idInput = dialog.querySelector('#manual-model-id');
+    const providerSelect = dialog.querySelector('#manual-model-provider');
+    const confirmBtn = dialog.querySelector('.confirm-btn');
+    const cancelBtn = dialog.querySelector('.cancel-btn');
+    const closeBtn = dialog.querySelector('.close-btn');
+
+    // 表单验证函数
+    const validateForm = () => {
+        const name = nameInput.value.trim();
+        const id = idInput.value.trim();
+        const provider = providerSelect.value;
+
+        const isValid = name && id && provider;
+        confirmBtn.disabled = !isValid;
+        return isValid;
+    };
+
+    // 添加输入事件监听器
+    nameInput.addEventListener('input', validateForm);
+    idInput.addEventListener('input', validateForm);
+    providerSelect.addEventListener('change', validateForm);
+
+    // 关闭对话框函数
+    const closeDialog = () => {
+        // 移除语言变化监听器
+        document.removeEventListener('pagetalk:languageChanged', handleDialogLanguageChange);
+        dialog.remove();
+    };
+
+    // 语言变化处理函数
+    const handleDialogLanguageChange = (event) => {
+        console.log('[Settings] Manual add dialog received language change event:', event.detail);
+        const newLanguage = event.detail.newLanguage;
+        const newTranslations = getCurrentTranslations();
+
+        // 更新对话框中的文本
+        updateManualAddDialogTranslations(dialog, newTranslations);
+    };
+
+    // 添加语言变化监听器
+    document.addEventListener('pagetalk:languageChanged', handleDialogLanguageChange);
+
+    // 添加事件监听器
+    closeBtn.addEventListener('click', closeDialog);
+    cancelBtn.addEventListener('click', closeDialog);
+
+    // 点击背景关闭
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            closeDialog();
+        }
+    });
+
+    // 确认添加
+    confirmBtn.addEventListener('click', async () => {
+        if (!validateForm()) return;
+
+        const name = nameInput.value.trim();
+        const id = idInput.value.trim();
+        const providerId = providerSelect.value;
+
+        // 获取最新的翻译对象
+        const latestTranslations = getCurrentTranslations();
+        await handleManualAddModel(name, id, providerId, latestTranslations, closeDialog);
+    });
+
+    // 聚焦到第一个输入框
+    setTimeout(() => nameInput.focus(), 100);
+}
+
+/**
+ * 更新手动添加模型对话框的翻译
+ * @param {HTMLElement} dialog - 对话框元素
+ * @param {Object} translations - 翻译对象
+ */
+function updateManualAddDialogTranslations(dialog, translations) {
+    if (!dialog || !translations) return;
+
+    // 更新标题
+    const title = dialog.querySelector('.dialog-header h3');
+    if (title) {
+        title.textContent = _('manualAddModelDialogTitle', {}, translations);
+    }
+
+    // 更新关闭按钮
+    const closeBtn = dialog.querySelector('.close-btn');
+    if (closeBtn) {
+        closeBtn.setAttribute('aria-label', _('close', {}, translations));
+    }
+
+    // 更新表单标签
+    const nameLabel = dialog.querySelector('label[for="manual-model-name"]');
+    if (nameLabel) {
+        nameLabel.textContent = _('manualAddModelName', {}, translations) + ' *';
+    }
+
+    const idLabel = dialog.querySelector('label[for="manual-model-id"]');
+    if (idLabel) {
+        idLabel.textContent = _('manualAddModelId', {}, translations) + ' *';
+    }
+
+    const providerLabel = dialog.querySelector('label[for="manual-model-provider"]');
+    if (providerLabel) {
+        providerLabel.textContent = _('manualAddModelProvider', {}, translations) + ' *';
+    }
+
+    // 更新输入框占位符
+    const nameInput = dialog.querySelector('#manual-model-name');
+    if (nameInput) {
+        nameInput.placeholder = _('manualAddModelNamePlaceholder', {}, translations);
+    }
+
+    const idInput = dialog.querySelector('#manual-model-id');
+    if (idInput) {
+        idInput.placeholder = _('manualAddModelIdPlaceholder', {}, translations);
+    }
+
+    // 更新选择框占位符
+    const providerSelect = dialog.querySelector('#manual-model-provider');
+    if (providerSelect) {
+        const placeholderOption = providerSelect.querySelector('option[value=""]');
+        if (placeholderOption) {
+            placeholderOption.textContent = _('manualAddModelProviderPlaceholder', {}, translations);
+        }
+    }
+
+    // 更新按钮文本
+    const cancelBtn = dialog.querySelector('.cancel-btn');
+    if (cancelBtn) {
+        cancelBtn.textContent = _('manualAddModelCancel', {}, translations);
+    }
+
+    const confirmBtn = dialog.querySelector('.confirm-btn');
+    if (confirmBtn) {
+        confirmBtn.textContent = _('manualAddModelConfirm', {}, translations);
+    }
+}
+
+/**
+ * 处理手动添加模型
+ * @param {string} modelName - 模型名称
+ * @param {string} modelId - 模型ID
+ * @param {string} providerId - 供应商ID
+ * @param {Object} currentTranslations - 当前翻译对象
+ * @param {Function} closeDialog - 关闭对话框的函数
+ */
+async function handleManualAddModel(modelName, modelId, providerId, currentTranslations, closeDialog) {
+    if (!window.ModelManager?.instance) {
+        if (window.showToastUI) {
+            window.showToastUI(_('manualAddModelError', {}, currentTranslations), 'error');
+        }
+        return;
+    }
+
+    const modelManager = window.ModelManager.instance;
+
+    try {
+        // 检查模型是否已存在
+        const existingModel = modelManager.getModelById(modelId);
+        if (existingModel) {
+            if (window.showToastUI) {
+                window.showToastUI(_('manualAddModelExists', {}, currentTranslations), 'error');
+            }
+            return;
+        }
+
+        // 创建模型定义
+        const modelDefinition = {
+            id: modelId,
+            displayName: modelName,
+            apiModelName: modelId,
+            providerId: providerId,
+            params: null,
+            isAlias: false,
+            isDefault: false,
+            canDelete: true
+        };
+
+        // 添加模型
+        const success = await modelManager.addModel(modelDefinition);
+
+        if (success) {
+            // 激活模型
+            await modelManager.activateModel(modelId);
+
+            // 更新UI
+            await updateModelCardsDisplay();
+
+            // 重新初始化模型选择器
+            const state = window.state || {};
+            const elements = {
+                modelSelection: document.getElementById('model-selection'),
+                chatModelSelection: document.getElementById('chat-model-selection')
+            };
+            await initModelSelection(state, elements);
+
+            // 显示成功消息
+            if (window.showToastUI) {
+                window.showToastUI(_('manualAddModelSuccess', {}, currentTranslations), 'success');
+            }
+
+            // 关闭对话框
+            closeDialog();
+        } else {
+            if (window.showToastUI) {
+                window.showToastUI(_('manualAddModelError', {}, currentTranslations), 'error');
+            }
+        }
+
+    } catch (error) {
+        console.error('[Settings] Error adding manual model:', error);
+        if (window.showToastUI) {
+            window.showToastUI(_('manualAddModelError', {}, currentTranslations), 'error');
+        }
     }
 }
 

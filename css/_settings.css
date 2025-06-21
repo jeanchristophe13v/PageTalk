@@ -870,16 +870,7 @@
     transition: all 0.25s ease;
 }
 
-.selected-models-container:empty::before {
-    content: attr(data-empty-text);
-    color: var(--text-secondary);
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 30px;
-}
+/* 移除空状态显示，因为现在总是有手动添加按钮 */
 
 .selected-models-container:not(:empty) {
     border-style: solid;
@@ -944,6 +935,207 @@
 .model-card-remove svg {
     width: 12px;
     height: 12px;
+}
+
+/* 手动添加模型按钮 */
+.manual-add-model-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 6px 12px;
+    background-color: #32a45cd4;
+    border: 1px solid #16a34a;
+    border-radius: var(--radius-md);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 28px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.manual-add-model-btn:hover {
+    background-color: #16a34a;
+    border-color: #15803d;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+}
+
+.manual-add-model-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* 更新原有的header样式以支持按钮 */
+.model-management-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    letter-spacing: -0.01em;
+    flex: 1;
+}
+
+/* 手动添加模型对话框 */
+.manual-add-model-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.manual-add-model-dialog .dialog-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+}
+
+.manual-add-model-dialog .dialog-content {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 480px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.manual-add-model-dialog .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.manual-add-model-dialog .dialog-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.manual-add-model-dialog .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.manual-add-model-dialog .close-btn:hover {
+    color: var(--text-color);
+    background-color: var(--button-hover-bg);
+}
+
+.manual-add-model-dialog .dialog-body {
+    padding: var(--spacing-lg);
+    flex: 1;
+    overflow-y: auto;
+}
+
+.manual-add-model-dialog .form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.manual-add-model-dialog .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.manual-add-model-dialog .form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.manual-add-model-dialog .form-input,
+.manual-add-model-dialog .form-select {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.manual-add-model-dialog .form-input:focus,
+.manual-add-model-dialog .form-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+.manual-add-model-dialog .dialog-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.manual-add-model-dialog .dialog-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+
+.manual-add-model-dialog .cancel-btn,
+.manual-add-model-dialog .confirm-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.manual-add-model-dialog .cancel-btn {
+    background-color: var(--button-secondary-bg);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+.manual-add-model-dialog .cancel-btn:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.manual-add-model-dialog .confirm-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.manual-add-model-dialog .confirm-btn:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+}
+
+.manual-add-model-dialog .confirm-btn:disabled {
+    background-color: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 /* 模型设置状态区域 */

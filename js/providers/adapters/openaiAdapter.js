@@ -196,24 +196,34 @@ function convertMessagesToOpenAIFormat(messages) {
 async function processOpenAIStreamResponse(response, streamCallback) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let buffer = ''; // 用于缓存不完整的数据
 
     try {
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            // 将新数据添加到缓冲区
+            buffer += decoder.decode(value, { stream: true });
+
+            // 按行分割，保留最后一个可能不完整的行
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // 保留最后一个可能不完整的行
 
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
-                    const jsonStr = line.slice(6);
-                    if (jsonStr.trim() === '[DONE]') {
+                    const jsonStr = line.slice(6).trim();
+                    if (jsonStr === '[DONE]') {
                         // 流式输出结束
                         if (streamCallback) {
                             streamCallback('', true);
                         }
                         return;
+                    }
+
+                    // 跳过空的数据行
+                    if (!jsonStr) {
+                        continue;
                     }
 
                     try {
@@ -234,7 +244,45 @@ async function processOpenAIStreamResponse(response, streamCallback) {
                             }
                         }
                     } catch (parseError) {
-                        console.warn('[OpenAIAdapter] Failed to parse SSE data:', parseError);
+                        // 只在调试模式下显示详细错误，避免控制台噪音
+                        if (jsonStr.length > 10) { // 只记录看起来像有效JSON但解析失败的情况
+                            console.debug('[OpenAIAdapter] Failed to parse SSE data:', parseError.message, 'Data:', jsonStr.substring(0, 100));
+                        }
+                    }
+                }
+            }
+        }
+
+        // 处理缓冲区中剩余的数据
+        if (buffer.trim()) {
+            const line = buffer.trim();
+            if (line.startsWith('data: ')) {
+                const jsonStr = line.slice(6).trim();
+                if (jsonStr === '[DONE]') {
+                    if (streamCallback) {
+                        streamCallback('', true);
+                    }
+                    return;
+                }
+
+                if (jsonStr) {
+                    try {
+                        const data = JSON.parse(jsonStr);
+                        const choices = data.choices;
+
+                        if (choices && choices.length > 0) {
+                            const choice = choices[0];
+                            const delta = choice.delta;
+
+                            if (delta && delta.content) {
+                                const text = delta.content;
+                                if (streamCallback) {
+                                    streamCallback(text, false);
+                                }
+                            }
+                        }
+                    } catch (parseError) {
+                        console.debug('[OpenAIAdapter] Failed to parse final SSE data:', parseError.message);
                     }
                 }
             }
