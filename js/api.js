@@ -42,6 +42,257 @@ function getCurrentTranslations() {
 }
 
 /**
+ * XML转义函数
+ * @param {string} unsafe - 需要转义的字符串
+ * @returns {string} 转义后的字符串
+ */
+function escapeXml(unsafe) {
+    if (typeof unsafe !== 'string') {
+        return '';
+    }
+    return unsafe.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            default: return c;
+        }
+    });
+}
+
+/**
+ * 构建系统提示的通用函数
+ * @param {Object} stateRef - 状态引用对象
+ * @param {Array<{title: string, content: string}>|null} explicitContextTabs - 显式上下文标签页
+ * @returns {string} 构建的XML系统提示
+ */
+function buildSystemPrompt(stateRef, explicitContextTabs = null) {
+    // 获取更自然的页面标题
+    let pageTitle = '当前页面';
+
+    if (stateRef.pageContext) {
+        const titleMatch = stateRef.pageContext.match(/^(.{1,100})/);
+        if (titleMatch) {
+            const firstLine = titleMatch[1].trim();
+            if (firstLine.length > 5 && firstLine.length < 80 && !firstLine.includes('function') && !firstLine.includes('class')) {
+                pageTitle = firstLine;
+            }
+        }
+    }
+
+    if (pageTitle === '当前页面' && typeof window !== 'undefined' && window.location) {
+        const url = window.location.href;
+        if (url.includes('github.com')) {
+            pageTitle = 'GitHub页面';
+        } else if (url.includes('stackoverflow.com')) {
+            pageTitle = 'Stack Overflow页面';
+        } else if (url.includes('youtube.com')) {
+            pageTitle = 'YouTube页面';
+        } else if (url.includes('reddit.com')) {
+            pageTitle = 'Reddit页面';
+        } else if (url.includes('wikipedia.org')) {
+            pageTitle = 'Wikipedia页面';
+        }
+    }
+
+    // 构建XML系统提示
+    let xmlSystemPrompt = `
+<instructions>
+  <role>You are a helpful and professional AI assistant. You are capable of understanding and processing text, as well as analyzing images provided in the user's messages. Your primary goal is to answer the user's questions accurately and informatively, drawing upon all provided context, including images and chat history. If an image is provided, please analyze it and use that information in your response.</role>
+  <output_format>
+    <language>Respond in the language used by the user in their most recent query.</language>
+    <markdown>Format your entire response using Markdown.</markdown>
+  </output_format>
+  <context_handling>
+    <general>You have access to the current page content, additional web pages (if selected), and ongoing chat history. Use this information naturally to provide comprehensive and relevant answers.</general>
+    <natural_response_style>
+      <guideline>Answer questions naturally and conversationally. When information comes from the provided page content, integrate it seamlessly without mechanical attribution phrases. You know where the information comes from - just use it naturally.</guideline>
+      <avoid_mechanical_phrases>Do not use rigid phrases like "根据Current Page Document" or "According to the provided document". Instead, when appropriate, use natural language like "这个页面提到", "从内容来看", "页面上显示", or simply present the information directly without attribution if it flows naturally.</avoid_mechanical_phrases>
+      <when_to_attribute>Only mention sources explicitly when:
+        1. There are multiple conflicting sources
+        2. The user specifically asks about source verification
+        3. It's crucial for understanding which specific document/page you're referencing
+        Otherwise, let the information speak for itself.</when_to_attribute>
+    </natural_response_style>
+    <information_usage>
+      <accuracy>Prioritize answering based on the provided context documents. If a question cannot be directly answered from these documents and pertains to general knowledge, you may use your broader knowledge base. Base your answers strictly on verifiable information.</accuracy>
+      <conciseness>Be concise yet comprehensive. When appropriate, synthesize information from multiple provided documents or different parts of a single document, rather than listing disparate facts. Aim to provide a cohesive understanding and avoid unnecessary verbosity or repetition.</conciseness>
+      <no_fabrication>If an answer cannot be found in the provided contexts or your general knowledge, clearly state this. Do not invent information.</no_fabrication>
+      <content_source_handling>
+        You have been given the full text content for the current page and any additional pages selected by the user. When answering questions about these specific documents, rely exclusively on the text provided. Do not attempt to access external URLs. Your knowledge for these provided documents is the embedded text content.
+      </content_source_handling>
+    </information_usage>
+    <ambiguity_handling>
+      <guideline>If the user's query is unclear or open to multiple interpretations, first try to identify the most probable intent and answer accordingly. If no single interpretation is significantly more probable, ask for clarification. Avoid making broad assumptions based on ambiguous queries.</guideline>
+    </ambiguity_handling>
+  </context_handling>
+  <multi_turn_dialogue>
+    <instruction>Carefully consider the entire chat history to understand conversational flow and maintain relevance. Refer to previous turns as needed for coherent, contextually appropriate responses.</instruction>
+  </multi_turn_dialogue>
+  <agent_specific_instructions>
+    ${stateRef.systemPrompt ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
+  </agent_specific_instructions>
+</instructions>
+
+<provided_contexts>
+  <current_page source_title="${escapeXml(pageTitle)}">
+    <content>
+      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No page content was loaded or provided.'}
+    </content>
+  </current_page>
+`;
+
+    if (explicitContextTabs && explicitContextTabs.length > 0) {
+        xmlSystemPrompt += `  <additional_pages>
+`;
+        explicitContextTabs.forEach(tab => {
+            if (tab.content) {
+                xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>\n${escapeXml(tab.content)}\n      </content>\n    </page>\n`;
+            } else {
+                xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>Content for this tab was not loaded or is empty.</content>\n    </page>\n`;
+            }
+        });
+        xmlSystemPrompt += `  </additional_pages>
+`;
+    }
+    xmlSystemPrompt += `</provided_contexts>`;
+
+    return xmlSystemPrompt.trim();
+}
+
+/**
+ * 通用的流式响应处理器
+ * @param {Object} config - 配置对象
+ * @param {HTMLElement} config.thinkingElement - 思考动画元素
+ * @param {boolean} config.insertResponse - 是否插入响应
+ * @param {HTMLElement|null} config.insertAfterElement - 插入位置元素
+ * @param {Object} config.uiCallbacks - UI回调函数
+ * @param {Function} config.onHistoryUpdate - 历史记录更新回调
+ * @returns {Object} 包含流式处理函数的对象
+ */
+function createStreamHandler(config) {
+    let accumulatedText = '';
+    let messageElement = null;
+    let botMessageId = null;
+
+    const { thinkingElement, insertResponse, insertAfterElement, uiCallbacks, onHistoryUpdate } = config;
+
+    return {
+        /**
+         * 处理流式文本块
+         * @param {string} chunk - 文本块
+         */
+        handleChunk: (chunk) => {
+            if (thinkingElement && thinkingElement.parentNode) {
+                thinkingElement.remove();
+            }
+
+            if (!messageElement) {
+                // 创建流式消息元素
+                messageElement = uiCallbacks.addMessageToChat(null, 'bot', {
+                    isStreaming: true,
+                    insertAfterElement: insertResponse ? insertAfterElement : null
+                });
+                botMessageId = messageElement.dataset.messageId;
+
+                // 通知历史记录更新 - 添加占位符
+                if (onHistoryUpdate) {
+                    onHistoryUpdate('add_placeholder', {
+                        messageId: botMessageId,
+                        insertResponse,
+                        targetInsertionIndex: config.targetInsertionIndex
+                    });
+                }
+            }
+
+            accumulatedText += chunk;
+            uiCallbacks.updateStreamingMessage(messageElement, accumulatedText);
+        },
+
+        /**
+         * 完成流式输出
+         */
+        finalize: () => {
+            if (messageElement && botMessageId) {
+                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
+
+                // 通知历史记录更新 - 完成消息
+                if (onHistoryUpdate) {
+                    onHistoryUpdate('finalize_message', {
+                        messageId: botMessageId,
+                        content: accumulatedText
+                    });
+                }
+            } else if (thinkingElement && thinkingElement.parentNode) {
+                thinkingElement.remove();
+                uiCallbacks.addMessageToChat("未能生成回复。", 'bot', {
+                    insertAfterElement: insertResponse ? insertAfterElement : null
+                });
+            }
+        },
+
+        /**
+         * 处理错误情况
+         * @param {Error} error - 错误对象
+         */
+        handleError: (error) => {
+            if (error.name === 'AbortError') {
+                console.log('API call aborted by user.');
+                if (messageElement && botMessageId) {
+                    uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
+                    if (onHistoryUpdate) {
+                        onHistoryUpdate('finalize_message', {
+                            messageId: botMessageId,
+                            content: accumulatedText
+                        });
+                    }
+                } else if (thinkingElement && thinkingElement.parentNode) {
+                    thinkingElement.remove();
+                }
+            } else {
+                console.error('API call failed:', error);
+                if (thinkingElement && thinkingElement.parentNode) {
+                    thinkingElement.remove();
+                }
+
+                const errorText = error.message;
+                if (messageElement) {
+                    accumulatedText += `\n\n--- ${errorText} ---`;
+                    uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
+                    if (onHistoryUpdate) {
+                        onHistoryUpdate('finalize_message', {
+                            messageId: botMessageId,
+                            content: accumulatedText
+                        });
+                    }
+                } else {
+                    const errorElement = uiCallbacks.addMessageToChat(errorText, 'bot', {
+                        insertAfterElement: insertResponse ? insertAfterElement : null
+                    });
+                    if (errorElement && errorElement.dataset.messageId && onHistoryUpdate) {
+                        const errorMessageId = errorElement.dataset.messageId;
+                        errorElement.classList.add('error-message');
+                        onHistoryUpdate('add_error_message', {
+                            messageId: errorMessageId,
+                            content: errorText,
+                            insertResponse,
+                            targetInsertionIndex: config.targetInsertionIndex
+                        });
+                    }
+                }
+            }
+        },
+
+        // 获取当前状态
+        get messageElement() { return messageElement; },
+        get botMessageId() { return botMessageId; },
+        get accumulatedText() { return accumulatedText; }
+    };
+}
+
+/**
  * 检查URL是否为AI API请求
  * @param {string} url - 请求URL
  * @returns {boolean} 是否为AI API请求
@@ -230,27 +481,70 @@ async function _testAndVerifyApiKey(apiKey, model) {
  * @returns {Promise<void>}
  */
 async function callGeminiAPIInternal(userMessage, images = [], videos = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks, explicitContextTabs = null) {
-    let accumulatedText = '';
-    let messageElement = null;
-    let botMessageId = null;
-    const controller = new AbortController(); // Create AbortController
-    window.GeminiAPI.currentAbortController = controller; // Store controller globally
+    const controller = new AbortController();
+    window.GeminiAPI.currentAbortController = controller;
 
-    function escapeXml(unsafe) {
-        if (typeof unsafe !== 'string') {
-            return ''; // Return empty string for non-string inputs or handle error
+    // 创建历史记录更新回调
+    const onHistoryUpdate = (action, data) => {
+        switch (action) {
+            case 'add_placeholder':
+                const botResponsePlaceholder = {
+                    role: 'model',
+                    parts: [{ text: '' }],
+                    id: data.messageId
+                };
+                if (data.insertResponse && data.targetInsertionIndex !== null) {
+                    stateRef.chatHistory.splice(data.targetInsertionIndex, 0, botResponsePlaceholder);
+                    console.log(`Inserted bot placeholder at index ${data.targetInsertionIndex}`);
+                } else {
+                    stateRef.chatHistory.push(botResponsePlaceholder);
+                    console.log(`Appended bot placeholder`);
+                }
+                break;
+
+            case 'finalize_message':
+                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === data.messageId);
+                if (historyIndex !== -1) {
+                    stateRef.chatHistory[historyIndex].parts = [{ text: data.content }];
+                    console.log(`Updated bot message in history at index ${historyIndex}`);
+                } else {
+                    console.error(`Could not find bot message with ID ${data.messageId} in history to finalize.`);
+                    // Fallback: Add if not found
+                    const newAiResponseObject = { role: 'model', parts: [{ text: data.content }], id: data.messageId };
+                    if (insertResponse && targetInsertionIndex !== null) {
+                        stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
+                    } else {
+                        stateRef.chatHistory.push(newAiResponseObject);
+                    }
+                }
+                break;
+
+            case 'add_error_message':
+                const errorMessageObject = {
+                    role: 'model',
+                    parts: [{ text: data.content }],
+                    id: data.messageId
+                };
+                if (data.insertResponse && data.targetInsertionIndex !== null) {
+                    stateRef.chatHistory.splice(data.targetInsertionIndex, 0, errorMessageObject);
+                    console.log(`Inserted error message object into history at index ${data.targetInsertionIndex}`);
+                } else {
+                    stateRef.chatHistory.push(errorMessageObject);
+                    console.log(`Appended error message object to history`);
+                }
+                break;
         }
-        return unsafe.replace(/[<>&'"]/g, function (c) {
-            switch (c) {
-                case '<': return '&lt;';
-                case '>': return '&gt;';
-                case '&': return '&amp;';
-                case '\'': return '&apos;';
-                case '"': return '&quot;';
-                default: return c;
-            }
-        });
-    }
+    };
+
+    // 创建流式处理器
+    const streamHandler = createStreamHandler({
+        thinkingElement,
+        insertResponse,
+        insertAfterElement,
+        targetInsertionIndex,
+        uiCallbacks,
+        onHistoryUpdate
+    });
 
     try {
         // --- Determine actual API model name and configuration using ModelManager ---
@@ -325,104 +619,11 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             delete requestBody.tools;
         }
 
-        // --- 获取更自然的页面标题 ---
-        // 尝试从state中获取页面标题信息，否则使用默认值
-        let pageTitle = '当前页面';
-        
-        // 如果有页面上下文，尝试从中提取标题信息
-        if (stateRef.pageContext) {
-            // 简单的标题提取逻辑 - 查找是否有标题信息
-            const titleMatch = stateRef.pageContext.match(/^(.{1,100})/);
-            if (titleMatch) {
-                const firstLine = titleMatch[1].trim();
-                // 如果第一行看起来像是标题（不太长且不包含大量技术符号）
-                if (firstLine.length > 5 && firstLine.length < 80 && !firstLine.includes('function') && !firstLine.includes('class')) {
-                    pageTitle = firstLine;
-                }
-            }
-        }
-        
-        // 如果pageTitle仍然是默认值，检查URL来推断页面类型
-        if (pageTitle === '当前页面' && typeof window !== 'undefined' && window.location) {
-            const url = window.location.href;
-            if (url.includes('github.com')) {
-                pageTitle = 'GitHub页面';
-            } else if (url.includes('stackoverflow.com')) {
-                pageTitle = 'Stack Overflow页面';
-            } else if (url.includes('youtube.com')) {
-                pageTitle = 'YouTube页面';
-            } else if (url.includes('reddit.com')) {
-                pageTitle = 'Reddit页面';
-            } else if (url.includes('wikipedia.org')) {
-                pageTitle = 'Wikipedia页面';
-            }
-        }
-
-        // --- Construct XML System Prompt ---
-        let xmlSystemPrompt = `
-<instructions>
-  <role>You are a helpful and professional AI assistant. You are capable of understanding and processing text, as well as analyzing images provided in the user's messages. Your primary goal is to answer the user's questions accurately and informatively, drawing upon all provided context, including images and chat history. If an image is provided, please analyze it and use that information in your response.</role>
-  <output_format>
-    <language>Respond in the language used by the user in their most recent query.</language>
-    <markdown>Format your entire response using Markdown.</markdown>
-  </output_format>
-  <context_handling>
-    <general>You have access to the current page content, additional web pages (if selected), and ongoing chat history. Use this information naturally to provide comprehensive and relevant answers.</general>
-    <natural_response_style>
-      <guideline>Answer questions naturally and conversationally. When information comes from the provided page content, integrate it seamlessly without mechanical attribution phrases. You know where the information comes from - just use it naturally.</guideline>
-      <avoid_mechanical_phrases>Do not use rigid phrases like "根据Current Page Document" or "According to the provided document". Instead, when appropriate, use natural language like "这个页面提到", "从内容来看", "页面上显示", or simply present the information directly without attribution if it flows naturally.</avoid_mechanical_phrases>
-      <when_to_attribute>Only mention sources explicitly when:
-        1. There are multiple conflicting sources
-        2. The user specifically asks about source verification
-        3. It's crucial for understanding which specific document/page you're referencing
-        Otherwise, let the information speak for itself.</when_to_attribute>
-    </natural_response_style>
-    <information_usage>
-      <accuracy>Prioritize answering based on the provided context documents. If a question cannot be directly answered from these documents and pertains to general knowledge, you may use your broader knowledge base. Base your answers strictly on verifiable information.</accuracy>
-      <conciseness>Be concise yet comprehensive. When appropriate, synthesize information from multiple provided documents or different parts of a single document, rather than listing disparate facts. Aim to provide a cohesive understanding and avoid unnecessary verbosity or repetition.</conciseness>
-      <no_fabrication>If an answer cannot be found in the provided contexts or your general knowledge, clearly state this. Do not invent information.</no_fabrication>
-      <content_source_handling>
-        You have been given the full text content for the current page and any additional pages selected by the user. When answering questions about these specific documents, rely exclusively on the text provided. Do not attempt to access external URLs. Your knowledge for these provided documents is the embedded text content.
-      </content_source_handling>
-    </information_usage>
-    <ambiguity_handling>
-      <guideline>If the user's query is unclear or open to multiple interpretations, first try to identify the most probable intent and answer accordingly. If no single interpretation is significantly more probable, ask for clarification. Avoid making broad assumptions based on ambiguous queries.</guideline>
-    </ambiguity_handling>
-  </context_handling>
-  <multi_turn_dialogue>
-    <instruction>Carefully consider the entire chat history to understand conversational flow and maintain relevance. Refer to previous turns as needed for coherent, contextually appropriate responses.</instruction>
-  </multi_turn_dialogue>
-  <agent_specific_instructions>
-    ${stateRef.systemPrompt ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
-  </agent_specific_instructions>
-</instructions>
-
-<provided_contexts>
-  <current_page source_title="${escapeXml(pageTitle)}">
-    <content>
-      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No page content was loaded or provided.'}
-    </content>
-  </current_page>
-`;
-
-        if (explicitContextTabs && explicitContextTabs.length > 0) {
-            xmlSystemPrompt += `  <additional_pages>
-`;
-            explicitContextTabs.forEach(tab => {
-                if (tab.content) {
-                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>\n${escapeXml(tab.content)}\n      </content>\n    </page>\n`;
-                } else {
-                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>Content for this tab was not loaded or is empty.</content>\n    </page>\n`;
-                }
-            });
-            xmlSystemPrompt += `  </additional_pages>
-`;
-        }
-        xmlSystemPrompt += `</provided_contexts>`;
-        // --- End XML System Prompt Construction ---
+        // 使用通用的系统提示构建函数
+        const xmlSystemPrompt = buildSystemPrompt(stateRef, explicitContextTabs);
 
         // Add XML system prompt as the first user turn
-        requestBody.contents.push({ role: 'user', parts: [{ text: xmlSystemPrompt.trim() }] });
+        requestBody.contents.push({ role: 'user', parts: [{ text: xmlSystemPrompt }] });
         // Add a model acknowledgment turn
         requestBody.contents.push({ role: 'model', parts: [{ text: "Understood. I will adhere to these instructions and utilize the provided contexts and chat history." }] });
 
@@ -528,36 +729,14 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                             const chunkData = JSON.parse(jsonString);
                             const textChunk = chunkData.candidates?.[0]?.content?.parts?.[0]?.text;
                             if (textChunk !== undefined && textChunk !== null) {
-                                if (thinkingElement && thinkingElement.parentNode) {
-                                    thinkingElement.remove();
-                                }
-                                if (!messageElement) {
-                                    // 创建流式消息元素，插入或追加
-                                    messageElement = uiCallbacks.addMessageToChat(null, 'bot', { isStreaming: true, insertAfterElement: insertResponse ? insertAfterElement : null }); // Use callback with options object
-                                    botMessageId = messageElement.dataset.messageId;
-                                    // --- 新增：立即添加占位符到历史记录 ---
-                                    const botResponsePlaceholder = {
-                                        role: 'model',
-                                        parts: [{ text: '' }], // Start with empty text
-                                        id: botMessageId
-                                    };
-                                    if (insertResponse && targetInsertionIndex !== null) {
-                                        stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
-                                        console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
-                                    } else {
-                                        stateRef.chatHistory.push(botResponsePlaceholder);
-                                        console.log(`Appended bot placeholder`);
-                                    }
-                                    // --- 结束：新增 ---
-                                }
-                                accumulatedText += textChunk;
-                                uiCallbacks.updateStreamingMessage(messageElement, accumulatedText); // Use callback
+                                streamHandler.handleChunk(textChunk);
                             }
                         } catch (e) { console.error('Failed to parse JSON chunk:', jsonString, e); }
                     }
                 }
             }
         }
+
         // 处理可能剩余的 buffer
         if (buffer.startsWith('data: ')) {
             const jsonString = buffer.substring(6).trim();
@@ -566,137 +745,36 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                     const chunkData = JSON.parse(jsonString);
                     const textChunk = chunkData.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (textChunk !== undefined && textChunk !== null) {
-                        if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
-                        if (!messageElement) {
-                            // 创建流式消息元素，插入或追加 (与上面逻辑相同)
-                            messageElement = uiCallbacks.addMessageToChat(null, 'bot', { isStreaming: true, insertAfterElement: insertResponse ? insertAfterElement : null }); // Use callback with options object
-                            botMessageId = messageElement.dataset.messageId;
-                            // --- 新增：立即添加占位符到历史记录 (与上面逻辑相同) ---
-                            const botResponsePlaceholder = {
-                                role: 'model',
-                                parts: [{ text: '' }], // Start with empty text
-                                id: botMessageId
-                            };
-                            if (insertResponse && targetInsertionIndex !== null) {
-                                stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
-                                console.log(`Inserted bot placeholder at index ${targetInsertionIndex}`);
-                            } else {
-                                stateRef.chatHistory.push(botResponsePlaceholder);
-                                console.log(`Appended bot placeholder`);
-                            }
-                            // --- 结束：新增 ---
-                        }
-                        accumulatedText += textChunk;
-                        uiCallbacks.updateStreamingMessage(messageElement, accumulatedText); // Use callback
+                        streamHandler.handleChunk(textChunk);
                     }
                 } catch (e) { console.error('Failed to parse final JSON chunk:', jsonString, e); }
             }
         }
 
         // 流结束
-        if (messageElement && botMessageId) { // Ensure we have the ID
-            uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
-            // --- 修改历史记录中的占位符 ---
-            const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
-            if (historyIndex !== -1) {
-                stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
-                console.log(`Updated bot message in history at index ${historyIndex}`);
-            } else {
-                console.error(`Could not find bot message with ID ${botMessageId} in history to finalize.`);
-                // Fallback: Add if not found (should not happen ideally)
-                const newAiResponseObject = { role: 'model', parts: [{ text: accumulatedText }], id: botMessageId };
-                if (insertResponse && targetInsertionIndex !== null) {
-                    stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
-                } else {
-                    stateRef.chatHistory.push(newAiResponseObject);
-                }
-            }
-            // --- 结束：修改 ---
-        } else if (thinkingElement && thinkingElement.parentNode) {
-            thinkingElement.remove();
-            uiCallbacks.addMessageToChat("未能生成回复。", 'bot', false, [], insertResponse ? insertAfterElement : null); // Use callback
-        }
+        streamHandler.finalize();
 
         // 清除图片和视频（仅在初始发送时）
-        if ((stateRef.images.length > 0 || stateRef.videos.length > 0) && thinkingElement && historyForApi === null) { // Use stateRef
+        if ((stateRef.images.length > 0 || stateRef.videos.length > 0) && thinkingElement && historyForApi === null) {
             if (stateRef.images.length > 0) {
-                uiCallbacks.clearImages(); // Use callback
+                uiCallbacks.clearImages();
             }
             if (stateRef.videos.length > 0) {
-                uiCallbacks.clearVideos(); // Use callback
+                uiCallbacks.clearVideos();
             }
         }
 
     } catch (error) {
-        if (error.name === 'AbortError') {
-            console.log('API call aborted by user.'); // Log abortion
-            // If aborted, ensure the partial message is finalized and history is updated
-            if (messageElement && botMessageId) {
-                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Finalize potentially partial message
-                // --- 新增：更新历史记录中的占位符 (即使中止) ---
-                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
-                if (historyIndex !== -1) {
-                    stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
-                    console.log(`Updated aborted bot message in history at index ${historyIndex}`);
-                } else {
-                    console.error(`Could not find bot message with ID ${botMessageId} in history to finalize after abort.`);
-                }
-                // --- 结束：新增 ---
-            } else if (thinkingElement && thinkingElement.parentNode) {
-                thinkingElement.remove(); // Remove thinking animation if no message started
-            }
-            // No error message needed for user-initiated abort
-        } else {
-            console.error('API 调用失败:', error);
-            if (thinkingElement && thinkingElement.parentNode) {
-                thinkingElement.remove();
-            }
-            // Restore UI state on API error
-            if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
-                uiCallbacks.restoreSendButtonAndInput();
-            }
-            if (messageElement) {
-                // Remove the prefix "获取响应时出错: "
-                const errorText = `\n\n--- ${error.message} ---`;
-                accumulatedText += errorText;
-                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText); // Use callback
-            } else { // If error happened before streaming started
-                // Create a proper error message object and add it to history and DOM
-                // Remove the prefix "获取响应时出错: "
-                const errorMessageText = `${error.message}`;
+        // 使用流式处理器处理错误
+        streamHandler.handleError(error);
 
-                // Add to DOM using addMessageToChat and capture the element
-                const errorElement = uiCallbacks.addMessageToChat(errorMessageText, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
-
-                if (errorElement && errorElement.dataset.messageId) {
-                    const errorMessageId = errorElement.dataset.messageId; // Get ID from the created element
-                    errorElement.classList.add('error-message'); // Optionally add a class for styling
-
-                    const errorMessageObject = {
-                        role: 'model', // Treat API errors as 'model' role for history consistency
-                        parts: [{ text: errorMessageText }],
-                        id: errorMessageId
-                    };
-
-                    // Add to history at the correct position
-                    if (insertResponse && targetInsertionIndex !== null) {
-                        stateRef.chatHistory.splice(targetInsertionIndex, 0, errorMessageObject);
-                        console.log(`Inserted error message object into history at index ${targetInsertionIndex}`);
-                    } else {
-                        stateRef.chatHistory.push(errorMessageObject);
-                        console.log(`Appended error message object to history`);
-                    }
-                } else {
-                    // Fallback if element creation or ID retrieval failed
-                    console.error("Failed to create or get ID for error message element. History might be inconsistent.");
-                    // Still show a basic error message
-                    uiCallbacks.addMessageToChat(errorMessageText, 'bot', { insertAfterElement: insertResponse ? insertAfterElement : null });
-                }
-            }
+        // 恢复UI状态
+        if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
+            uiCallbacks.restoreSendButtonAndInput();
         }
     } finally {
         // Ensure the controller is cleared regardless of success, error, or abort
-        if (window.GeminiAPI.currentAbortController === controller) { // Check if it's still the same controller
+        if (window.GeminiAPI.currentAbortController === controller) {
             window.GeminiAPI.currentAbortController = null;
             console.log('Cleared currentAbortController.');
         }
@@ -770,128 +848,68 @@ async function callApiAndInsertResponse(userMessage, images = [], videos = [], t
  * @param {HTMLElement|null} insertAfterElement - 插入位置元素
  */
 async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null, insertResponse = false, historyForApi = null, targetInsertionIndex = null, insertAfterElement = null) {
-    let accumulatedText = '';
-    let messageElement = null;
-    let botMessageId = null;
     const controller = new AbortController();
     window.PageTalkAPI.currentAbortController = controller;
 
-    function escapeXml(unsafe) {
-        if (typeof unsafe !== 'string') {
-            return '';
+    // 创建历史记录更新回调（与callGeminiAPIInternal相同的逻辑）
+    const onHistoryUpdate = (action, data) => {
+        switch (action) {
+            case 'add_placeholder':
+                const botResponsePlaceholder = {
+                    role: 'model',
+                    parts: [{ text: '' }],
+                    id: data.messageId
+                };
+                if (data.insertResponse && data.targetInsertionIndex !== null) {
+                    stateRef.chatHistory.splice(data.targetInsertionIndex, 0, botResponsePlaceholder);
+                } else {
+                    stateRef.chatHistory.push(botResponsePlaceholder);
+                }
+                break;
+
+            case 'finalize_message':
+                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === data.messageId);
+                if (historyIndex !== -1) {
+                    stateRef.chatHistory[historyIndex].parts = [{ text: data.content }];
+                }
+                break;
+
+            case 'add_error_message':
+                const errorMessageObject = {
+                    role: 'model',
+                    parts: [{ text: data.content }],
+                    id: data.messageId
+                };
+                if (data.insertResponse && data.targetInsertionIndex !== null) {
+                    stateRef.chatHistory.splice(data.targetInsertionIndex, 0, errorMessageObject);
+                } else {
+                    stateRef.chatHistory.push(errorMessageObject);
+                }
+                break;
         }
-        return unsafe.replace(/[<>&'"]/g, function (c) {
-            switch (c) {
-                case '<': return '&lt;';
-                case '>': return '&gt;';
-                case '&': return '&amp;';
-                case '\'': return '&apos;';
-                case '"': return '&quot;';
-                default: return c;
-            }
-        });
-    }
+    };
+
+    // 创建流式处理器
+    const streamHandler = createStreamHandler({
+        thinkingElement,
+        insertResponse,
+        insertAfterElement,
+        targetInsertionIndex,
+        uiCallbacks,
+        onHistoryUpdate
+    });
 
     try {
         // 构建标准化的消息数组
         const messages = [];
 
-        // --- 构建完整的上下文信息（与callGeminiAPIInternal保持一致） ---
-
-        // 获取更自然的页面标题
-        let pageTitle = '当前页面';
-
-        if (stateRef.pageContext) {
-            const titleMatch = stateRef.pageContext.match(/^(.{1,100})/);
-            if (titleMatch) {
-                const firstLine = titleMatch[1].trim();
-                if (firstLine.length > 5 && firstLine.length < 80 && !firstLine.includes('function') && !firstLine.includes('class')) {
-                    pageTitle = firstLine;
-                }
-            }
-        }
-
-        if (pageTitle === '当前页面' && typeof window !== 'undefined' && window.location) {
-            const url = window.location.href;
-            if (url.includes('github.com')) {
-                pageTitle = 'GitHub页面';
-            } else if (url.includes('stackoverflow.com')) {
-                pageTitle = 'Stack Overflow页面';
-            } else if (url.includes('youtube.com')) {
-                pageTitle = 'YouTube页面';
-            } else if (url.includes('reddit.com')) {
-                pageTitle = 'Reddit页面';
-            } else if (url.includes('wikipedia.org')) {
-                pageTitle = 'Wikipedia页面';
-            }
-        }
-
-        // 构建XML系统提示（包含完整的上下文信息）
-        let xmlSystemPrompt = `
-<instructions>
-  <role>You are a helpful and professional AI assistant. You are capable of understanding and processing text, as well as analyzing images provided in the user's messages. Your primary goal is to answer the user's questions accurately and informatively, drawing upon all provided context, including images and chat history. If an image is provided, please analyze it and use that information in your response.</role>
-  <output_format>
-    <language>Respond in the language used by the user in their most recent query.</language>
-    <markdown>Format your entire response using Markdown.</markdown>
-  </output_format>
-  <context_handling>
-    <general>You have access to the current page content, additional web pages (if selected), and ongoing chat history. Use this information naturally to provide comprehensive and relevant answers.</general>
-    <natural_response_style>
-      <guideline>Answer questions naturally and conversationally. When information comes from the provided page content, integrate it seamlessly without mechanical attribution phrases. You know where the information comes from - just use it naturally.</guideline>
-      <avoid_mechanical_phrases>Do not use rigid phrases like "根据Current Page Document" or "According to the provided document". Instead, when appropriate, use natural language like "这个页面提到", "从内容来看", "页面上显示", or simply present the information directly without attribution if it flows naturally.</avoid_mechanical_phrases>
-      <when_to_attribute>Only mention sources explicitly when:
-        1. There are multiple conflicting sources
-        2. The user specifically asks about source verification
-        3. It's crucial for understanding which specific document/page you're referencing
-        Otherwise, let the information speak for itself.</when_to_attribute>
-    </natural_response_style>
-    <information_usage>
-      <accuracy>Prioritize answering based on the provided context documents. If a question cannot be directly answered from these documents and pertains to general knowledge, you may use your broader knowledge base. Base your answers strictly on verifiable information.</accuracy>
-      <conciseness>Be concise yet comprehensive. When appropriate, synthesize information from multiple provided documents or different parts of a single document, rather than listing disparate facts. Aim to provide a cohesive understanding and avoid unnecessary verbosity or repetition.</conciseness>
-      <no_fabrication>If an answer cannot be found in the provided contexts or your general knowledge, clearly state this. Do not invent information.</no_fabrication>
-      <content_source_handling>
-        You have been given the full text content for the current page and any additional pages selected by the user. When answering questions about these specific documents, rely exclusively on the text provided. Do not attempt to access external URLs. Your knowledge for these provided documents is the embedded text content.
-      </content_source_handling>
-    </information_usage>
-    <ambiguity_handling>
-      <guideline>If the user's query is unclear or open to multiple interpretations, first try to identify the most probable intent and answer accordingly. If no single interpretation is significantly more probable, ask for clarification. Avoid making broad assumptions based on ambiguous queries.</guideline>
-    </ambiguity_handling>
-  </context_handling>
-  <multi_turn_dialogue>
-    <instruction>Carefully consider the entire chat history to understand conversational flow and maintain relevance. Refer to previous turns as needed for coherent, contextually appropriate responses.</instruction>
-  </multi_turn_dialogue>
-  <agent_specific_instructions>
-    ${stateRef.systemPrompt ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
-  </agent_specific_instructions>
-</instructions>
-
-<provided_contexts>
-  <current_page source_title="${escapeXml(pageTitle)}">
-    <content>
-      ${stateRef.pageContext ? escapeXml(stateRef.pageContext) : 'No page content was loaded or provided.'}
-    </content>
-  </current_page>
-`;
-
-        if (contextTabsForApi && contextTabsForApi.length > 0) {
-            xmlSystemPrompt += `  <additional_pages>
-`;
-            contextTabsForApi.forEach(tab => {
-                if (tab.content) {
-                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>\n${escapeXml(tab.content)}\n      </content>\n    </page>\n`;
-                } else {
-                    xmlSystemPrompt += `    <page source_title="${escapeXml(tab.title)}">\n      <content>Content for this tab was not loaded or is empty.</content>\n    </page>\n`;
-                }
-            });
-            xmlSystemPrompt += `  </additional_pages>
-`;
-        }
-        xmlSystemPrompt += `</provided_contexts>`;
+        // 使用通用的系统提示构建函数
+        const xmlSystemPrompt = buildSystemPrompt(stateRef, contextTabsForApi);
 
         // 添加完整的系统提示作为第一条消息
         messages.push({
             role: 'system',
-            content: xmlSystemPrompt.trim()
+            content: xmlSystemPrompt
         });
 
         // 添加历史消息
@@ -926,45 +944,12 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
             messages.push(userMessageObj);
         }
 
-        // 流式回调函数
+        // 流式回调函数 - 使用流式处理器
         const streamCallback = (chunk, isComplete) => {
-            if (thinkingElement && thinkingElement.parentNode) {
-                thinkingElement.remove();
-            }
-
-            if (!messageElement) {
-                // 创建流式消息元素
-                messageElement = uiCallbacks.addMessageToChat(null, 'bot', {
-                    isStreaming: true,
-                    insertAfterElement: insertResponse ? insertAfterElement : null
-                });
-                botMessageId = messageElement.dataset.messageId;
-
-                // 添加占位符到历史记录
-                const botResponsePlaceholder = {
-                    role: 'model',
-                    parts: [{ text: '' }],
-                    id: botMessageId
-                };
-                if (insertResponse && targetInsertionIndex !== null) {
-                    stateRef.chatHistory.splice(targetInsertionIndex, 0, botResponsePlaceholder);
-                } else {
-                    stateRef.chatHistory.push(botResponsePlaceholder);
-                }
-            }
-
-            accumulatedText += chunk;
-            uiCallbacks.updateStreamingMessage(messageElement, accumulatedText);
+            streamHandler.handleChunk(chunk);
 
             if (isComplete) {
-                // 完成流式输出
-                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
-
-                // 更新历史记录
-                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
-                if (historyIndex !== -1) {
-                    stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
-                }
+                streamHandler.finalize();
             }
         };
 
@@ -993,49 +978,12 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
         }
 
     } catch (error) {
-        if (error.name === 'AbortError') {
-            console.log('Unified API call aborted by user.');
-            if (messageElement && botMessageId) {
-                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
-                const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === botMessageId);
-                if (historyIndex !== -1) {
-                    stateRef.chatHistory[historyIndex].parts = [{ text: accumulatedText }];
-                }
-            } else if (thinkingElement && thinkingElement.parentNode) {
-                thinkingElement.remove();
-            }
-        } else {
-            console.error('Unified API call failed:', error);
-            if (thinkingElement && thinkingElement.parentNode) {
-                thinkingElement.remove();
-            }
-            if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
-                uiCallbacks.restoreSendButtonAndInput();
-            }
+        // 使用流式处理器处理错误
+        streamHandler.handleError(error);
 
-            const errorText = error.message;
-            if (messageElement) {
-                accumulatedText += `\n\n--- ${errorText} ---`;
-                uiCallbacks.finalizeBotMessage(messageElement, accumulatedText);
-            } else {
-                const errorElement = uiCallbacks.addMessageToChat(errorText, 'bot', {
-                    insertAfterElement: insertResponse ? insertAfterElement : null
-                });
-                if (errorElement && errorElement.dataset.messageId) {
-                    const errorMessageId = errorElement.dataset.messageId;
-                    errorElement.classList.add('error-message');
-                    const errorMessageObject = {
-                        role: 'model',
-                        parts: [{ text: errorText }],
-                        id: errorMessageId
-                    };
-                    if (insertResponse && targetInsertionIndex !== null) {
-                        stateRef.chatHistory.splice(targetInsertionIndex, 0, errorMessageObject);
-                    } else {
-                        stateRef.chatHistory.push(errorMessageObject);
-                    }
-                }
-            }
+        // 恢复UI状态
+        if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
+            uiCallbacks.restoreSendButtonAndInput();
         }
     } finally {
         if (window.PageTalkAPI.currentAbortController === controller) {
