@@ -1,5 +1,5 @@
 <h1 align="center">
-  <strong>PageTalk - Your Web Companion with Gemini ✨</strong>
+  <strong>PageTalk - Your Web Companion with AI ✨</strong>
 </h1>
 
 <p align="center">
