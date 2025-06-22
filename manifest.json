@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PageTalk - Your Gemini Browser Q&A Assistant",
-  "version": "3.5.1",
-  "description": "A browser extension that can read page content and use the Gemini API for Q&A",
+  "name": "PageTalk - Your Browser Q&A Assistant",
+  "version": "3.6.0",
+  "description": "A browser extension that can read page content and use AI for Q&A",
   "permissions": [
     "activeTab",
     "storage",
