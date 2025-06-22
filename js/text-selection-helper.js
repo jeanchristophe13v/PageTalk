@@ -2168,14 +2168,22 @@ async function sendChatMessage(windowElement) {
             // 读取全部上下文
             contextForChat = selectionContext;
         } else {
-            // 自定义上下文
+            // 自定义上下文：基于已保存的选择范围重新提取
             const contextBefore = chatSettings.contextBefore !== undefined ? chatSettings.contextBefore : 500;
             const contextAfter = chatSettings.contextAfter !== undefined ? chatSettings.contextAfter : 500;
 
             if (contextBefore > 0 || contextAfter > 0) {
-                const selection = window.getSelection();
-                if (selection.rangeCount > 0) {
-                    contextForChat = extractSelectionContext(selection, contextBefore, contextAfter);
+                // 使用保存的选择范围重新提取上下文，而不是当前可能已丢失的选择
+                if (currentSelectionRange) {
+                    // 创建一个临时的selection对象来重新提取上下文
+                    const tempSelection = window.getSelection();
+                    tempSelection.removeAllRanges();
+                    tempSelection.addRange(currentSelectionRange.cloneRange());
+                    contextForChat = extractSelectionContext(tempSelection, contextBefore, contextAfter);
+                    tempSelection.removeAllRanges(); // 清理临时选择
+                } else {
+                    // 如果没有保存的选择范围，使用默认上下文
+                    contextForChat = selectionContext;
                 }
             }
         }
@@ -2656,14 +2664,28 @@ async function regenerateChatMessage(windowElement, userMessage) {
             // 读取全部上下文
             contextForChat = selectionContext;
         } else {
-            // 自定义上下文
+            // 自定义上下文：基于已保存的选择范围重新提取
             const contextBefore = chatSettings.contextBefore !== undefined ? chatSettings.contextBefore : 500;
             const contextAfter = chatSettings.contextAfter !== undefined ? chatSettings.contextAfter : 500;
 
             if (contextBefore > 0 || contextAfter > 0) {
-                const selection = window.getSelection();
-                if (selection.rangeCount > 0) {
-                    contextForChat = extractSelectionContext(selection, contextBefore, contextAfter);
+                // 使用保存的选择范围重新提取上下文，而不是当前可能已丢失的选择
+                if (currentSelectionRange) {
+                    // 创建一个临时的selection对象来重新提取上下文
+                    const tempSelection = window.getSelection();
+                    tempSelection.removeAllRanges();
+                    tempSelection.addRange(currentSelectionRange.cloneRange());
+                    contextForChat = extractSelectionContext(tempSelection, contextBefore, contextAfter);
+                    tempSelection.removeAllRanges(); // 清理临时选择
+                    console.log('[TextSelectionHelper] Regenerate context extracted with custom settings:', {
+                        contextBefore,
+                        contextAfter,
+                        contextLength: contextForChat.length,
+                        contextPreview: contextForChat.substring(0, 100) + '...'
+                    });
+                } else {
+                    // 如果没有保存的选择范围，使用默认上下文
+                    contextForChat = selectionContext;
                 }
             }
         }
