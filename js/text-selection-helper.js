@@ -1855,16 +1855,22 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
             throw new Error(`Settings not found for option: ${optionId}`);
         }
 
-        // 根据自定义上下文窗口重新提取上下文
-        const contextBefore = optionSettings.contextBefore || 500;
-        const contextAfter = optionSettings.contextAfter || 500;
+        // 根据上下文设置重新提取上下文
         let contextForThisRequest = '';
+        if (optionSettings.contextMode === 'full') {
+            // 读取全部上下文
+            contextForThisRequest = selectionContext;
+        } else {
+            // 自定义上下文
+            const contextBefore = optionSettings.contextBefore !== undefined ? optionSettings.contextBefore : 500;
+            const contextAfter = optionSettings.contextAfter !== undefined ? optionSettings.contextAfter : 500;
 
-        if (contextBefore > 0 || contextAfter > 0) {
-            // 重新提取上下文，使用当前选项的上下文窗口设置
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                contextForThisRequest = extractSelectionContext(selection, contextBefore, contextAfter);
+            if (contextBefore > 0 || contextAfter > 0) {
+                // 重新提取上下文，使用当前选项的上下文窗口设置
+                const selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    contextForThisRequest = extractSelectionContext(selection, contextBefore, contextAfter);
+                }
             }
         }
 
@@ -2163,8 +2169,8 @@ async function sendChatMessage(windowElement) {
             contextForChat = selectionContext;
         } else {
             // 自定义上下文
-            const contextBefore = chatSettings.contextBefore || 500;
-            const contextAfter = chatSettings.contextAfter || 500;
+            const contextBefore = chatSettings.contextBefore !== undefined ? chatSettings.contextBefore : 500;
+            const contextAfter = chatSettings.contextAfter !== undefined ? chatSettings.contextAfter : 500;
 
             if (contextBefore > 0 || contextAfter > 0) {
                 const selection = window.getSelection();
@@ -2651,8 +2657,8 @@ async function regenerateChatMessage(windowElement, userMessage) {
             contextForChat = selectionContext;
         } else {
             // 自定义上下文
-            const contextBefore = chatSettings.contextBefore || 500;
-            const contextAfter = chatSettings.contextAfter || 500;
+            const contextBefore = chatSettings.contextBefore !== undefined ? chatSettings.contextBefore : 500;
+            const contextAfter = chatSettings.contextAfter !== undefined ? chatSettings.contextAfter : 500;
 
             if (contextBefore > 0 || contextAfter > 0) {
                 const selection = window.getSelection();
@@ -3039,12 +3045,18 @@ async function getTextSelectionHelperSettings() {
                     interpret: {
                         model: 'gemini-2.5-flash',
                         systemPrompt: interpretPrompt,
-                        temperature: 0.7
+                        temperature: 0.7,
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     translate: {
                         model: 'gemini-2.5-flash',
                         systemPrompt: translatePrompt,
-                        temperature: 0.2
+                        temperature: 0.2,
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     chat: {
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3063,6 +3075,19 @@ async function getTextSelectionHelperSettings() {
                         contextBefore: 500,
                         contextAfter: 500
                     };
+                }
+
+                // 确保解读和翻译配置包含contextMode
+                if (settings.interpret && !settings.interpret.contextMode) {
+                    settings.interpret.contextMode = 'custom';
+                    if (settings.interpret.contextBefore === undefined) settings.interpret.contextBefore = 500;
+                    if (settings.interpret.contextAfter === undefined) settings.interpret.contextAfter = 500;
+                }
+
+                if (settings.translate && !settings.translate.contextMode) {
+                    settings.translate.contextMode = 'custom';
+                    if (settings.translate.contextBefore === undefined) settings.translate.contextBefore = 500;
+                    if (settings.translate.contextAfter === undefined) settings.translate.contextAfter = 500;
                 }
 
                 // 智能更新默认提示词：只有当前提示词是默认提示词时才更新
@@ -3091,12 +3116,18 @@ async function getTextSelectionHelperSettings() {
                     interpret: {
                         model: 'gemini-2.5-flash',
                         systemPrompt: interpretPrompt,
-                        temperature: 0.7
+                        temperature: 0.7,
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     translate: {
                         model: 'gemini-2.5-flash',
                         systemPrompt: translatePrompt,
-                        temperature: 0.2
+                        temperature: 0.2,
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     chat: {
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3112,12 +3143,18 @@ async function getTextSelectionHelperSettings() {
                     interpret: {
                         model: 'gemini-2.5-flash',
                         systemPrompt: '解读一下',
-                        temperature: 0.7
+                        temperature: 0.7,
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     translate: {
                         model: 'gemini-2.5-flash',
                         systemPrompt: '翻译一下',
-                        temperature: 0.2
+                        temperature: 0.2,
+                        contextMode: 'custom', // 'full' 或 'custom'
+                        contextBefore: 500,
+                        contextAfter: 500
                     },
                     chat: {
                         contextMode: 'custom', // 'full' 或 'custom'

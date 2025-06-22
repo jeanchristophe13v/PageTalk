@@ -1947,7 +1947,11 @@
 
 /* 当选择全部上下文时隐藏自定义输入 */
 input[name="chat-context-mode"][value="full"]:checked ~ .context-inputs,
-input[name="chat-context-mode"][value="full"]:checked + label + .context-inputs {
+input[name="chat-context-mode"][value="full"]:checked + label + .context-inputs,
+input[name="interpret-context-mode"][value="full"]:checked ~ .context-inputs,
+input[name="interpret-context-mode"][value="full"]:checked + label + .context-inputs,
+input[name="translate-context-mode"][value="full"]:checked ~ .context-inputs,
+input[name="translate-context-mode"][value="full"]:checked + label + .context-inputs {
     display: none;
 }
 

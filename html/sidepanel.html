@@ -261,6 +261,29 @@
                                     <label for="interpret-max-output" data-i18n="maxOutputLength">最大输出长度：</label>
                                     <input type="number" id="interpret-max-output" min="1" max="200000" value="65536" placeholder="65536">
                                 </div>
+                                <div class="setting-group">
+                                    <label data-i18n="contextSettings">上下文设置：</label>
+                                    <div class="context-settings">
+                                        <div class="context-option">
+                                            <input type="radio" id="interpret-context-custom" name="interpret-context-mode" value="custom" checked>
+                                            <label for="interpret-context-custom" data-i18n="customContext">自定义上下文</label>
+                                        </div>
+                                        <div class="context-inputs" id="interpret-context-inputs">
+                                            <div class="context-input-group">
+                                                <label for="interpret-context-before" data-i18n="contextBefore">前置上下文token数：</label>
+                                                <input type="number" id="interpret-context-before" min="0" max="2000" value="500" placeholder="500">
+                                            </div>
+                                            <div class="context-input-group">
+                                                <label for="interpret-context-after" data-i18n="contextAfter">后置上下文token数：</label>
+                                                <input type="number" id="interpret-context-after" min="0" max="2000" value="500" placeholder="500">
+                                            </div>
+                                        </div>
+                                        <div class="context-option">
+                                            <input type="radio" id="interpret-context-full" name="interpret-context-mode" value="full">
+                                            <label for="interpret-context-full" data-i18n="fullContext">读取全部上下文</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -305,6 +328,29 @@
                                 <div class="setting-group">
                                     <label for="translate-max-output" data-i18n="maxOutputLength">最大输出长度：</label>
                                     <input type="number" id="translate-max-output" min="1" max="200000" value="65536" placeholder="65536">
+                                </div>
+                                <div class="setting-group">
+                                    <label data-i18n="contextSettings">上下文设置：</label>
+                                    <div class="context-settings">
+                                        <div class="context-option">
+                                            <input type="radio" id="translate-context-custom" name="translate-context-mode" value="custom" checked>
+                                            <label for="translate-context-custom" data-i18n="customContext">自定义上下文</label>
+                                        </div>
+                                        <div class="context-inputs" id="translate-context-inputs">
+                                            <div class="context-input-group">
+                                                <label for="translate-context-before" data-i18n="contextBefore">前置上下文token数：</label>
+                                                <input type="number" id="translate-context-before" min="0" max="2000" value="500" placeholder="500">
+                                            </div>
+                                            <div class="context-input-group">
+                                                <label for="translate-context-after" data-i18n="contextAfter">后置上下文token数：</label>
+                                                <input type="number" id="translate-context-after" min="0" max="2000" value="500" placeholder="500">
+                                            </div>
+                                        </div>
+                                        <div class="context-option">
+                                            <input type="radio" id="translate-context-full" name="translate-context-mode" value="full">
+                                            <label for="translate-context-full" data-i18n="fullContext">读取全部上下文</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

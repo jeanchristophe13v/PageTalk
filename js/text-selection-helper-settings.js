@@ -44,6 +44,7 @@ function getDefaultSettings(language = 'zh-CN') {
             model: 'gemini-2.5-flash',
             systemPrompt: interpretPrompt,
             temperature: 0.7,
+            contextMode: 'custom', // 'custom' 或 'full'
             contextBefore: 500,
             contextAfter: 500,
             maxOutputLength: 65536
@@ -52,6 +53,7 @@ function getDefaultSettings(language = 'zh-CN') {
             model: 'gemini-2.5-flash',
             systemPrompt: translatePrompt,
             temperature: 0.2,
+            contextMode: 'custom', // 'custom' 或 'full'
             contextBefore: 500,
             contextAfter: 500,
             maxOutputLength: 65536
@@ -595,6 +597,32 @@ function loadSettingsToUI(elements) {
     }
     if (interpretMaxOutput) interpretMaxOutput.value = currentSettings.interpret.maxOutputLength || 65536;
 
+    // 解读上下文设置
+    const interpretContextCustom = document.getElementById('interpret-context-custom');
+    const interpretContextFull = document.getElementById('interpret-context-full');
+    const interpretContextBefore = document.getElementById('interpret-context-before');
+    const interpretContextAfter = document.getElementById('interpret-context-after');
+
+    // 设置解读上下文模式
+    if (currentSettings.interpret.contextMode === 'full') {
+        if (interpretContextFull) interpretContextFull.checked = true;
+        // 隐藏自定义输入框
+        const contextInputs = document.getElementById('interpret-context-inputs');
+        if (contextInputs) {
+            contextInputs.style.display = 'none';
+        }
+    } else {
+        if (interpretContextCustom) interpretContextCustom.checked = true;
+        // 显示自定义输入框
+        const contextInputs = document.getElementById('interpret-context-inputs');
+        if (contextInputs) {
+            contextInputs.style.display = 'flex';
+        }
+    }
+
+    if (interpretContextBefore) interpretContextBefore.value = currentSettings.interpret.contextBefore !== undefined ? currentSettings.interpret.contextBefore : 500;
+    if (interpretContextAfter) interpretContextAfter.value = currentSettings.interpret.contextAfter !== undefined ? currentSettings.interpret.contextAfter : 500;
+
     // 翻译设置
     const translateModel = document.getElementById('translate-model');
     const translatePrompt = document.getElementById('translate-system-prompt');
@@ -609,6 +637,32 @@ function loadSettingsToUI(elements) {
         if (translateTempValue) translateTempValue.textContent = currentSettings.translate.temperature;
     }
     if (translateMaxOutput) translateMaxOutput.value = currentSettings.translate.maxOutputLength || 65536;
+
+    // 翻译上下文设置
+    const translateContextCustom = document.getElementById('translate-context-custom');
+    const translateContextFull = document.getElementById('translate-context-full');
+    const translateContextBefore = document.getElementById('translate-context-before');
+    const translateContextAfter = document.getElementById('translate-context-after');
+
+    // 设置翻译上下文模式
+    if (currentSettings.translate.contextMode === 'full') {
+        if (translateContextFull) translateContextFull.checked = true;
+        // 隐藏自定义输入框
+        const contextInputs = document.getElementById('translate-context-inputs');
+        if (contextInputs) {
+            contextInputs.style.display = 'none';
+        }
+    } else {
+        if (translateContextCustom) translateContextCustom.checked = true;
+        // 显示自定义输入框
+        const contextInputs = document.getElementById('translate-context-inputs');
+        if (contextInputs) {
+            contextInputs.style.display = 'flex';
+        }
+    }
+
+    if (translateContextBefore) translateContextBefore.value = currentSettings.translate.contextBefore !== undefined ? currentSettings.translate.contextBefore : 500;
+    if (translateContextAfter) translateContextAfter.value = currentSettings.translate.contextAfter !== undefined ? currentSettings.translate.contextAfter : 500;
 
     // 对话设置
     const chatContextCustom = document.getElementById('chat-context-custom');
@@ -688,7 +742,58 @@ function setupEventListeners(elements, translations) {
             saveSettings();
         });
     }
-    
+
+    // 解读上下文设置变化
+    const interpretContextCustom = document.getElementById('interpret-context-custom');
+    const interpretContextFull = document.getElementById('interpret-context-full');
+    const interpretContextBefore = document.getElementById('interpret-context-before');
+    const interpretContextAfter = document.getElementById('interpret-context-after');
+
+    // 解读上下文模式切换
+    if (interpretContextCustom) {
+        interpretContextCustom.addEventListener('change', () => {
+            if (interpretContextCustom.checked) {
+                currentSettings.interpret.contextMode = 'custom';
+                // 显示自定义输入框
+                const contextInputs = document.getElementById('interpret-context-inputs');
+                if (contextInputs) {
+                    contextInputs.style.display = 'flex';
+                }
+                saveSettings();
+            }
+        });
+    }
+
+    if (interpretContextFull) {
+        interpretContextFull.addEventListener('change', () => {
+            if (interpretContextFull.checked) {
+                currentSettings.interpret.contextMode = 'full';
+                // 隐藏自定义输入框
+                const contextInputs = document.getElementById('interpret-context-inputs');
+                if (contextInputs) {
+                    contextInputs.style.display = 'none';
+                }
+                saveSettings();
+            }
+        });
+    }
+
+    if (interpretContextBefore) {
+        interpretContextBefore.addEventListener('input', () => {
+            const value = interpretContextBefore.value !== '' ? parseInt(interpretContextBefore.value) : 0;
+            currentSettings.interpret.contextBefore = value;
+            saveSettings();
+        });
+    }
+
+    if (interpretContextAfter) {
+        interpretContextAfter.addEventListener('input', () => {
+            const value = interpretContextAfter.value !== '' ? parseInt(interpretContextAfter.value) : 0;
+            currentSettings.interpret.contextAfter = value;
+            saveSettings();
+        });
+    }
+
     // 翻译设置变化
     const translateModel = document.getElementById('translate-model');
     const translatePrompt = document.getElementById('translate-system-prompt');
@@ -723,6 +828,57 @@ function setupEventListeners(elements, translations) {
         translateMaxOutput.addEventListener('input', () => {
             const value = parseInt(translateMaxOutput.value) || 65536;
             currentSettings.translate.maxOutputLength = value;
+            saveSettings();
+        });
+    }
+
+    // 翻译上下文设置变化
+    const translateContextCustom = document.getElementById('translate-context-custom');
+    const translateContextFull = document.getElementById('translate-context-full');
+    const translateContextBefore = document.getElementById('translate-context-before');
+    const translateContextAfter = document.getElementById('translate-context-after');
+
+    // 翻译上下文模式切换
+    if (translateContextCustom) {
+        translateContextCustom.addEventListener('change', () => {
+            if (translateContextCustom.checked) {
+                currentSettings.translate.contextMode = 'custom';
+                // 显示自定义输入框
+                const contextInputs = document.getElementById('translate-context-inputs');
+                if (contextInputs) {
+                    contextInputs.style.display = 'flex';
+                }
+                saveSettings();
+            }
+        });
+    }
+
+    if (translateContextFull) {
+        translateContextFull.addEventListener('change', () => {
+            if (translateContextFull.checked) {
+                currentSettings.translate.contextMode = 'full';
+                // 隐藏自定义输入框
+                const contextInputs = document.getElementById('translate-context-inputs');
+                if (contextInputs) {
+                    contextInputs.style.display = 'none';
+                }
+                saveSettings();
+            }
+        });
+    }
+
+    if (translateContextBefore) {
+        translateContextBefore.addEventListener('input', () => {
+            const value = translateContextBefore.value !== '' ? parseInt(translateContextBefore.value) : 0;
+            currentSettings.translate.contextBefore = value;
+            saveSettings();
+        });
+    }
+
+    if (translateContextAfter) {
+        translateContextAfter.addEventListener('input', () => {
+            const value = translateContextAfter.value !== '' ? parseInt(translateContextAfter.value) : 0;
+            currentSettings.translate.contextAfter = value;
             saveSettings();
         });
     }
@@ -764,7 +920,7 @@ function setupEventListeners(elements, translations) {
 
     if (chatContextBefore) {
         chatContextBefore.addEventListener('input', () => {
-            const value = chatContextBefore.value !== '' ? parseInt(chatContextBefore.value) : 500;
+            const value = chatContextBefore.value !== '' ? parseInt(chatContextBefore.value) : 0;
             currentSettings.chat.contextBefore = value;
             saveSettings();
         });
@@ -772,7 +928,7 @@ function setupEventListeners(elements, translations) {
 
     if (chatContextAfter) {
         chatContextAfter.addEventListener('input', () => {
-            const value = chatContextAfter.value !== '' ? parseInt(chatContextAfter.value) : 500;
+            const value = chatContextAfter.value !== '' ? parseInt(chatContextAfter.value) : 0;
             currentSettings.chat.contextAfter = value;
             saveSettings();
         });
@@ -1433,8 +1589,8 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
         const model = modelSelect?.value;
         const systemPrompt = promptTextarea?.value.trim();
         const temperature = parseFloat(temperatureInput?.value || 0.7);
-        const contextBefore = contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 500;
-        const contextAfter = contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 500;
+        const contextBefore = contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 0;
+        const contextAfter = contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 0;
         const maxOutputLength = maxOutputInput?.value !== '' ? parseInt(maxOutputInput.value) : 65536;
 
         // 基本验证（静默失败，不显示错误）
