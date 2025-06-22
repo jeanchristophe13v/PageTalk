@@ -26,7 +26,8 @@ Simply select text → choose your action → get instant AI assistance. It's th
 - **Enhanced Proxy Support:** Updated HTTP and SOCKS5 proxy functionality for better connectivity
 - **Bug Fixes:** Resolved various minor issues for improved stability
 
-*Note: If you encounter any issues, please try deleting the former PageTalk extension, refreshing the webpage, reloading the new extension, or restarting the browser first. *
+
+*Note: If you encounter any issues, please try deleting the former PageTalk extension, refreshing the webpage, reloading the new extension, or restarting the browser first.*
 
 ---
 
