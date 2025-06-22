@@ -10,7 +10,7 @@
 
 #### [English/英文](README.md)
 
-## PageTalk 3.5 🎉
+## PageTalk 3.6.0 🎉
 
 **🌟 划词助手 - 革命性功能：**
 PageTalk不再仅仅是个侧栏AI插件！现在你可以选择网页上的任何文本，立即获得：
@@ -22,6 +22,7 @@ PageTalk不再仅仅是个侧栏AI插件！现在你可以选择网页上的任�
 只需选择文本 → 选择操作 → 获得即时AI助手。就是这么简单！
 
 **其他更新：**
+- **多提供商支持**: 新增了对多个AI提供商的支持，您现在可以自定义添加和管理来自不同平台的模型，包括 **OpenAI, Claude, Gemini, DeepSeek, OpenRouter, SiliconFlow, ChatGLM** 等。
 - **增强代理支持：** 更新了HTTP和SOCKS5代理功能，提供更好的连接性
 - **Bug修复：** 解决了各种小问题，提升稳定性
 

@@ -10,7 +10,7 @@
 
 #### [中文/Chinese](README-zh.md)
 
-## Introducing PageTalk 3.5 🎉
+## Introducing PageTalk 3.6.0 🎉
 
 **🌟 Selection Tool - The Game Changer:**
 PageTalk is no longer just a sidebar AI extension! Now you can select any text on any webpage and instantly:
@@ -22,6 +22,7 @@ PageTalk is no longer just a sidebar AI extension! Now you can select any text o
 Simply select text → choose your action → get instant AI assistance. It's that simple!
 
 **Other Updates:**
+- **Multi-Provider Support**: Added support for multiple AI providers. You can now add and manage custom models from various platforms, including **OpenAI, Claude, Gemini, DeepSeek, OpenRouter, SiliconFlow, ChatGLM**, and more.
 - **Enhanced Proxy Support:** Updated HTTP and SOCKS5 proxy functionality for better connectivity
 - **Bug Fixes:** Resolved various minor issues for improved stability
 

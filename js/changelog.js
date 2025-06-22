@@ -5,6 +5,20 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.6.0",
+        date: "2025-06-22",
+        changes: {
+            "zh-CN": [
+                "1. 支持了多个提供商，现在可以自定义添加提供商和模型",
+                "2. 与屎山搏斗失败，无法实现思考过程输出和渲染，请见谅"
+            ],
+            "en": [
+                "1. Added support for multiple providers. You can now add custom providers and models.",
+                "2. Lost the battle with legacy code and was unable to implement the thinking process output and rendering. Please forgive me."
+            ]
+        }
+    },
+    {
         version: "3.5.1",
         date: "2025-06-17",
         changes: {
