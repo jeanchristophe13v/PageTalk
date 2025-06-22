@@ -2184,7 +2184,7 @@ async function sendChatMessage(windowElement) {
         const messages = [];
 
         // 1. 获取助手和系统提示词
-        const currentAgent = await getCurrentWindowAgent(windowElement) || await getCurrentMainPanelAgent();
+        const currentAgent = await getCurrentWindowAgent(windowElement);
         let systemPrompt = (currentAgent && currentAgent.systemPrompt)
             ? currentAgent.systemPrompt
             : '你是一个有用的划词助手。';
@@ -2672,7 +2672,7 @@ async function regenerateChatMessage(windowElement, userMessage) {
         const messages = [];
 
         // 1. 获取助手和系统提示词
-        const currentAgent = await getCurrentWindowAgent(windowElement) || await getCurrentMainPanelAgent();
+        const currentAgent = await getCurrentWindowAgent(windowElement);
         let systemPrompt = (currentAgent && currentAgent.systemPrompt)
             ? currentAgent.systemPrompt
             : '你是一个有用的划词助手。';
@@ -3205,7 +3205,7 @@ function getCurrentWindowAgent(windowElement) {
         const selectedAgentId = agentSelect ? agentSelect.value : null;
 
         if (!selectedAgentId || selectedAgentId === 'default') {
-            // 如果没有选择助手或选择了默认，返回null
+            // 如果没有选择助手或选择了默认，返回null（使用默认系统提示词）
             resolve(null);
             return;
         }
