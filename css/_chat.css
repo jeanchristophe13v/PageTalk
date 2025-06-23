@@ -227,38 +227,61 @@
 .sent-tab-item {
     display: flex;
     align-items: center;
-    gap: var(--spacing-xs);
-    padding: calc(var(--spacing-xs) / 1.2) var(--spacing-sm); /* 调整内边距使标签更高 */
-    padding-left: calc(var(--spacing-sm) + 2px); /* 增加左侧内边距，让图标不靠近边缘 */
-    border-radius: var(--radius-md);
-    background-color: var(--card-background-rgb-opacity-low);
-    border: 1px solid var(--border-color);
+    gap: var(--spacing-sm); /* 增加间距 */
+    padding: var(--spacing-sm) var(--spacing-md); /* 增加内边距，让标签更宽敞 */
+    border-radius: 16px; /* 使用16px圆角 */
+    background-color: rgba(255, 255, 255, 0.85); /* 增加透明度 */
+    border: 1px solid rgba(233, 236, 239, 0.6); /* 边框也增加透明度 */
     max-width: 100%;
-    /* overflow: hidden; */ /* Removed to let flex children handle overflow */
-    box-shadow: var(--shadow-sm);
-    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06); /* 更精致的阴影 */
+    color: var(--text-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 32px; /* 确保最小高度 */
+    backdrop-filter: blur(8px); /* 添加毛玻璃效果 */
+    -webkit-backdrop-filter: blur(8px); /* Safari兼容性 */
+}
+
+.sent-tab-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+    border-color: rgba(70, 116, 255, 0.6); /* 悬停时边框颜色也带透明度 */
+    background-color: rgba(255, 255, 255, 0.95); /* 悬停时稍微减少透明度 */
+}
+
+/* 深色模式下的透明度调整 */
+body.dark-mode .sent-tab-item {
+    background-color: rgba(44, 46, 51, 0.85); /* 深色模式下的透明背景 */
+    border-color: rgba(52, 58, 64, 0.6); /* 深色模式下的透明边框 */
+}
+
+body.dark-mode .sent-tab-item:hover {
+    background-color: rgba(44, 46, 51, 0.95); /* 深色模式悬停时稍微减少透明度 */
+    border-color: rgba(116, 143, 252, 0.6); /* 深色模式悬停边框 */
 }
 
 .sent-tab-favicon {
-    width: 16px; /* 增加图标大小 */
-    height: 16px; /* 增加图标大小 */
+    width: 18px; /* 稍微增加图标大小 */
+    height: 18px; /* 稍微增加图标大小 */
     object-fit: contain;
     flex-shrink: 0;
-    border-radius: 2px;
+    border-radius: 3px;
+    background-color: var(--background-color);
+    padding: 1px;
 }
 
 .sent-tab-title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* color: rgba(255, 255, 255, 0.9); */ /* 改为继承或使用变量 */
-    /* max-width: calc(100% - 30px); */ /* Removed fixed max-width */
     flex-grow: 1; /* Allow title to take available space */
     flex-shrink: 1; /* Allow title to shrink */
     min-width: 0; /* Critical for ellipsis to work in flex item */
     position: relative;
+    line-height: 1.4;
+    color: var(--text-color);
+    padding: 2px 0; /* 增加垂直内边距，让文字区域更高 */
 }
 
 /* "Remove Sent Tab" button in user message bubble */
@@ -266,22 +289,39 @@
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 16px; /* Larger for easier clicking */
-    font-weight: bold;
-    padding: 0 4px;
+    padding: 4px;
     margin-left: var(--spacing-xs);
     cursor: pointer;
     line-height: 1;
     opacity: 0.6;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     align-self: center; /* Vertically center if tab item is taller */
     flex-shrink: 0; /* Ensure the button does not shrink */
+    border-radius: 8px; /* 使用8px圆角，与整体风格协调 */
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
 .remove-sent-tab-btn:hover {
     color: var(--error-color);
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.05);
+    background-color: rgba(201, 42, 42, 0.15); /* 稍微增加透明度 */
+}
+
+.remove-sent-tab-btn:active {
+    transform: scale(0.95);
+}
+
+/* SVG图标样式 */
+.remove-sent-tab-btn svg {
+    width: 12px;
+    height: 12px;
+    transition: inherit;
 }
 
 /* 可选：为 sent-tab-title 添加更平滑的渐变省略（如果纯 ellipsis 不够） */
