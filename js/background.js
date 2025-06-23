@@ -1088,9 +1088,36 @@ async function handleFetchWithProxyRequest(url, options = {}, sendResponse) {
 
         // 将响应转换为base64（用于传输二进制数据）
         const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        const binaryString = String.fromCharCode.apply(null, uint8Array);
-        const base64Data = btoa(binaryString);
+
+        // 使用更高效的方法处理大文件
+        let base64Data;
+        try {
+            // 尝试使用现代的 FileReader API（更高效）
+            const blob = new Blob([arrayBuffer]);
+            base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // FileReader 返回的是 data:mime/type;base64,data 格式，需要提取 base64 部分
+                    const result = reader.result;
+                    const base64Index = result.indexOf(',') + 1;
+                    resolve(result.substring(base64Index));
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (fileReaderError) {
+            console.warn('[Background] FileReader failed, falling back to chunked processing:', fileReaderError);
+
+            // 回退到分块处理方法
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binaryString = '';
+            const chunkSize = 8192; // 8KB chunks
+            for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                const chunk = uint8Array.subarray(i, i + chunkSize);
+                binaryString += String.fromCharCode.apply(null, chunk);
+            }
+            base64Data = btoa(binaryString);
+        }
 
         sendResponse({
             success: true,

@@ -11,12 +11,14 @@ const changelog = [
             "zh-CN": [
                 "1. 修复了划词助手“对话”功能的上下文获取逻辑。",
                 "2. 修复了划词助手“对话”功能对系统助手的继承逻辑。",
-                "3. 修复了当上下文token设置为0时，划词助手仍然提取上下文的bug。"
+                "3. 修复了当上下文token设置为0时，划词助手仍然提取上下文的bug。",
+                "4. 修复了在线PDF解析失败的bug。"
             ],
             "en": [
                 "1. Fixed context retrieval logic for the Selection Tool's 'Chat' function.",
                 "2. Fixed assistant inheritance logic for the Selection Tool's 'Chat' function.",
-                "3. Fixed a bug where the Selection Tool would still extract context when the token count was set to 0."
+                "3. Fixed a bug where the Selection Tool would still extract context when the token count was set to 0.",
+                "4. Fixed online PDF parsing failure bug ."
             ]
         }
     },
