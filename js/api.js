@@ -478,15 +478,24 @@ async function _testAndVerifyApiKey(apiKey, model) {
  * @param {object} stateRef - Reference to the main state object from sidepanel.js
  * @param {object} uiCallbacks - Object containing UI update functions { addMessageToChat, updateStreamingMessage, finalizeBotMessage, clearImages, clearVideos, showToast }
  * @param {Array<{title: string, content: string}>|null} [explicitContextTabs=null] - Explicit tab contents to use for context.
+ * @param {Object|null} [userMessageForHistory=null] - User message object to add to history
  * @returns {Promise<void>}
  */
-async function callGeminiAPIInternal(userMessage, images = [], videos = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks, explicitContextTabs = null) {
+async function callGeminiAPIInternal(userMessage, images = [], videos = [], thinkingElement, historyForApi, insertResponse = false, targetInsertionIndex = null, insertAfterElement = null, stateRef, uiCallbacks, explicitContextTabs = null, userMessageForHistory = null) {
     const controller = new AbortController();
     window.GeminiAPI.currentAbortController = controller;
 
     // 创建历史记录更新回调
     const onHistoryUpdate = (action, data) => {
         switch (action) {
+            case 'add_user_message':
+                // 添加用户消息到历史记录
+                if (data.userMessage) {
+                    stateRef.chatHistory.push(data.userMessage);
+                    console.log(`Added user message to history`);
+                }
+                break;
+
             case 'add_placeholder':
                 const botResponsePlaceholder = {
                     role: 'model',
@@ -547,6 +556,11 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
     });
 
     try {
+        // 如果提供了用户消息对象且不是插入响应模式，则添加到历史记录
+        if (userMessageForHistory && !insertResponse) {
+            onHistoryUpdate('add_user_message', { userMessage: userMessageForHistory });
+        }
+
         // --- Determine actual API model name and configuration using ModelManager ---
         let apiModelName = stateRef.model;
         let modelParams = null;
@@ -636,7 +650,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             }
         });
 
-        // Add current user message (text, images, videos) - 只有在有新内容时才添加
+        // Add current user message (text, images, videos)
         const currentParts = [];
         if (userMessage) currentParts.push({ text: userMessage });
         if (images.length > 0) {
@@ -656,15 +670,10 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                 }
             }
         }
-
-        // 只有在有实际的新用户内容时才添加到请求中
-        // 对于新消息（!insertResponse），总是添加当前用户消息
-        // 对于重新生成（insertResponse），不添加当前用户消息，因为它已经在历史记录中
-        if (currentParts.length > 0 && !insertResponse) {
+        if (currentParts.length > 0) {
             requestBody.contents.push({ role: 'user', parts: currentParts });
-        } else if (requestBody.contents.length === 2 && !requestBody.tools && !insertResponse) {
-            // 只有在非插入模式下才检查空消息
-            console.warn("Attempting to send an effectively empty message (only system prompt and ack) with no tools.");
+        } else if (requestBody.contents.length === 2 && !requestBody.tools) { // Check if only system prompt + ack and no tools
+             console.warn("Attempting to send an effectively empty message (only system prompt and ack) with no tools.");
             if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
             // uiCallbacks.addMessageToChat("无法发送空消息。", 'bot'); // Potentially re-enable if needed
             if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
@@ -789,8 +798,9 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
 /**
  * 用于发送新消息 (追加) - 新版本使用统一API接口
  * @param {Array<{title: string, content: string}>|null} [contextTabsForApi=null] - Explicit tab contents for API.
+ * @param {Object|null} [userMessageForHistory=null] - User message object to add to history
  */
-async function callGeminiAPIWithImages(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null) {
+async function callGeminiAPIWithImages(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null, userMessageForHistory = null) {
     // 检查是否应该使用新的统一API接口
     if (window.ModelManager?.instance && window.PageTalkAPI?.callApi) {
         try {
@@ -800,7 +810,7 @@ async function callGeminiAPIWithImages(userMessage, images = [], videos = [], th
             // 如果模型不是Google供应商，使用新的统一API接口
             if (modelConfig.providerId !== 'google') {
                 console.log('[API] Using unified API interface for non-Google model:', stateRef.model);
-                return await callUnifiedAPI(userMessage, images, videos, thinkingElement, stateRef, uiCallbacks, contextTabsForApi, false);
+                return await callUnifiedAPI(userMessage, images, videos, thinkingElement, stateRef, uiCallbacks, contextTabsForApi, false, null, null, null, userMessageForHistory);
             }
         } catch (error) {
             console.warn('[API] Failed to check model provider, falling back to legacy API:', error);
@@ -808,7 +818,7 @@ async function callGeminiAPIWithImages(userMessage, images = [], videos = [], th
     }
 
     // 对于Google模型或回退情况，使用原有逻辑
-    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, null, false, null, null, stateRef, uiCallbacks, contextTabsForApi); // insertResponse = false, historyForApi = null
+    await callGeminiAPIInternal(userMessage, images, videos, thinkingElement, null, false, null, null, stateRef, uiCallbacks, contextTabsForApi, userMessageForHistory); // insertResponse = false, historyForApi = null
 }
 
 /**
@@ -851,14 +861,23 @@ async function callApiAndInsertResponse(userMessage, images = [], videos = [], t
  * @param {Array|null} historyForApi - API历史记录
  * @param {number|null} targetInsertionIndex - 插入索引
  * @param {HTMLElement|null} insertAfterElement - 插入位置元素
+ * @param {Object|null} userMessageForHistory - 用户消息对象
  */
-async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null, insertResponse = false, historyForApi = null, targetInsertionIndex = null, insertAfterElement = null) {
+async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingElement, stateRef, uiCallbacks, contextTabsForApi = null, insertResponse = false, historyForApi = null, targetInsertionIndex = null, insertAfterElement = null, userMessageForHistory = null) {
     const controller = new AbortController();
     window.PageTalkAPI.currentAbortController = controller;
 
     // 创建历史记录更新回调（与callGeminiAPIInternal相同的逻辑）
     const onHistoryUpdate = (action, data) => {
         switch (action) {
+            case 'add_user_message':
+                // 添加用户消息到历史记录
+                if (data.userMessage) {
+                    stateRef.chatHistory.push(data.userMessage);
+                    console.log(`Added user message to history`);
+                }
+                break;
+
             case 'add_placeholder':
                 const botResponsePlaceholder = {
                     role: 'model',
@@ -905,6 +924,11 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
     });
 
     try {
+        // 如果提供了用户消息对象且不是插入响应模式，则添加到历史记录
+        if (userMessageForHistory && !insertResponse) {
+            onHistoryUpdate('add_user_message', { userMessage: userMessageForHistory });
+        }
+
         // 构建标准化的消息数组
         const messages = [];
 
@@ -932,9 +956,7 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
         });
 
         // 添加当前用户消息（包含图片支持）
-        // 对于新消息（!insertResponse），总是添加当前用户消息
-        // 对于重新生成（insertResponse），不添加当前用户消息，因为它已经在历史记录中
-        if ((userMessage || images.length > 0) && !insertResponse) {
+        if (userMessage || images.length > 0) {
             const userMessageObj = {
                 role: 'user',
                 content: userMessage || ''

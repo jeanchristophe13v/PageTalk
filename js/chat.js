@@ -132,18 +132,18 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // 移除本地视频文件处理，只支持 YouTube 视频
     });
 
-    // 准备用户消息数据，但不立即添加到历史记录中
-    // 将在API调用成功后通过回调添加到历史记录
-    let userMessageData = {
+    // 准备用户消息对象，但暂时不添加到历史记录中
+    // 将在API调用成功后通过onHistoryUpdate回调添加
+    const userMessageForHistory = currentParts.length > 0 ? {
         role: 'user',
         parts: currentParts,
         id: userMessageId,
         // 新增：存储随此用户消息发送的上下文标签页
         // contextTabsForApi 包含了 { id, title, content }
         sentContextTabsInfo: contextTabsForApi.length > 0 ? contextTabsForApi : null
-    };
+    } : null;
 
-    if (currentParts.length === 0) {
+    if (!userMessageForHistory) {
         // Should not happen due to initial check, but as a safeguard:
         // Check if thinkingElement exists before trying to remove it
         // This block is before thinkingElement is defined, so this check is not needed here.
@@ -169,16 +169,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // Prepare API callbacks object
         const apiUiCallbacks = {
             // addMessageToChatCallback is main.js#addMessageToChatUI, which correctly uses live isUserNearBottom
-            addMessageToChat: (content, sender, options) => {
-                // 在第一次调用addMessageToChat时（即添加用户消息时），将用户消息添加到历史记录
-                if (sender === 'user' && userMessageData) {
-                    state.chatHistory.push(userMessageData);
-                    console.log('Added user message to history during API call');
-                    // 清空userMessageData，避免重复添加
-                    userMessageData = null;
-                }
-                return addMessageToChatCallback(content, sender, options);
-            },
+            addMessageToChat: addMessageToChatCallback,
             // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
             finalizeBotMessage: (el, content) => {
@@ -189,7 +180,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
             restoreSendButtonAndInput: restoreSendButtonAndInputCallback // Add this callback
         };
 
-        // Call API
+        // Call API，传递用户消息对象以便API模块添加到历史记录
         await window.GeminiAPI.callGeminiAPIWithImages(
             userMessage,
             currentImages, // Use the copied currentImages
@@ -197,20 +188,24 @@ export async function sendUserMessage(state, elements, currentTranslations, show
             thinkingElement,
             state, // Pass full state reference
             apiUiCallbacks, // Pass callbacks object
-            contextTabsForApi // <--- Pass the prepared context tabs
+            contextTabsForApi, // <--- Pass the prepared context tabs
+            userMessageForHistory // <--- Pass user message object for history
         );
         // finalizeBotMessage (called by API module on success) will restore button state
 
     } catch (error) {
         console.error('Error during sendUserMessage API call:', error);
+        if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
 
-        // 如果API调用失败，确保用户消息仍然被添加到历史记录中
-        if (userMessageData) {
-            state.chatHistory.push(userMessageData);
-            console.log('Added user message to history after API error');
+        // 如果API调用失败，需要从历史记录中移除刚刚添加的用户消息
+        if (userMessageForHistory) {
+            const messageIndex = state.chatHistory.findIndex(msg => msg.id === userMessageForHistory.id);
+            if (messageIndex !== -1) {
+                state.chatHistory.splice(messageIndex, 1);
+                console.log(`Removed failed user message from history`);
+            }
         }
 
-        if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
         // Add error message to chat (don't force scroll)
         // addMessageToChatCallback already handles isUserNearBottom correctly
         // addMessageToChatCallback(_('apiCallFailed', { error: error.message }, currentTranslations), 'bot', {}); // Commented out as per task
