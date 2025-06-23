@@ -132,17 +132,18 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // 移除本地视频文件处理，只支持 YouTube 视频
     });
 
-    // Add user message to history *before* API call
-    if (currentParts.length > 0) {
-        state.chatHistory.push({
-            role: 'user',
-            parts: currentParts,
-            id: userMessageId,
-            // 新增：存储随此用户消息发送的上下文标签页
-            // contextTabsForApi 包含了 { id, title, content }
-            sentContextTabsInfo: contextTabsForApi.length > 0 ? contextTabsForApi : null
-        });
-    } else {
+    // 准备用户消息数据，但不立即添加到历史记录中
+    // 将在API调用成功后通过回调添加到历史记录
+    let userMessageData = {
+        role: 'user',
+        parts: currentParts,
+        id: userMessageId,
+        // 新增：存储随此用户消息发送的上下文标签页
+        // contextTabsForApi 包含了 { id, title, content }
+        sentContextTabsInfo: contextTabsForApi.length > 0 ? contextTabsForApi : null
+    };
+
+    if (currentParts.length === 0) {
         // Should not happen due to initial check, but as a safeguard:
         // Check if thinkingElement exists before trying to remove it
         // This block is before thinkingElement is defined, so this check is not needed here.
@@ -168,7 +169,16 @@ export async function sendUserMessage(state, elements, currentTranslations, show
         // Prepare API callbacks object
         const apiUiCallbacks = {
             // addMessageToChatCallback is main.js#addMessageToChatUI, which correctly uses live isUserNearBottom
-            addMessageToChat: addMessageToChatCallback,
+            addMessageToChat: (content, sender, options) => {
+                // 在第一次调用addMessageToChat时（即添加用户消息时），将用户消息添加到历史记录
+                if (sender === 'user' && userMessageData) {
+                    state.chatHistory.push(userMessageData);
+                    console.log('Added user message to history during API call');
+                    // 清空userMessageData，避免重复添加
+                    userMessageData = null;
+                }
+                return addMessageToChatCallback(content, sender, options);
+            },
             // These now call the wrappers on `window` (defined in main.js) which use live isUserNearBottom from main.js
             updateStreamingMessage: (el, content) => window.updateStreamingMessage(el, content),
             finalizeBotMessage: (el, content) => {
@@ -193,6 +203,13 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     } catch (error) {
         console.error('Error during sendUserMessage API call:', error);
+
+        // 如果API调用失败，确保用户消息仍然被添加到历史记录中
+        if (userMessageData) {
+            state.chatHistory.push(userMessageData);
+            console.log('Added user message to history after API error');
+        }
+
         if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
         // Add error message to chat (don't force scroll)
         // addMessageToChatCallback already handles isUserNearBottom correctly

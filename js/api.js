@@ -636,7 +636,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
             }
         });
 
-        // Add current user message (text, images, videos)
+        // Add current user message (text, images, videos) - 只有在有新内容时才添加
         const currentParts = [];
         if (userMessage) currentParts.push({ text: userMessage });
         if (images.length > 0) {
@@ -656,10 +656,15 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                 }
             }
         }
-        if (currentParts.length > 0) {
+
+        // 只有在有实际的新用户内容时才添加到请求中
+        // 对于新消息（!insertResponse），总是添加当前用户消息
+        // 对于重新生成（insertResponse），不添加当前用户消息，因为它已经在历史记录中
+        if (currentParts.length > 0 && !insertResponse) {
             requestBody.contents.push({ role: 'user', parts: currentParts });
-        } else if (requestBody.contents.length === 2 && !requestBody.tools) { // Check if only system prompt + ack and no tools
-             console.warn("Attempting to send an effectively empty message (only system prompt and ack) with no tools.");
+        } else if (requestBody.contents.length === 2 && !requestBody.tools && !insertResponse) {
+            // 只有在非插入模式下才检查空消息
+            console.warn("Attempting to send an effectively empty message (only system prompt and ack) with no tools.");
             if (thinkingElement && thinkingElement.parentNode) thinkingElement.remove();
             // uiCallbacks.addMessageToChat("无法发送空消息。", 'bot'); // Potentially re-enable if needed
             if (uiCallbacks && uiCallbacks.restoreSendButtonAndInput) {
@@ -927,7 +932,9 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
         });
 
         // 添加当前用户消息（包含图片支持）
-        if (userMessage || images.length > 0) {
+        // 对于新消息（!insertResponse），总是添加当前用户消息
+        // 对于重新生成（insertResponse），不添加当前用户消息，因为它已经在历史记录中
+        if ((userMessage || images.length > 0) && !insertResponse) {
             const userMessageObj = {
                 role: 'user',
                 content: userMessage || ''
