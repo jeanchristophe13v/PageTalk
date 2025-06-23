@@ -1096,7 +1096,7 @@
 #settings-text-selection-helper .setting-card {
     display: flex;
     flex-direction: column;
-    border-radius: var(--radius-md); /* 使用中等圆角，与 .agent-item 保持一致 */
+    border-radius: var(--radius-lg); /* 使用大圆角，与 .agent-item 保持一致 */
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1123,6 +1123,7 @@
     transition: background-color 0.2s ease;
     background-color: transparent; /* 初始背景透明，与 .agent-item-header 保持一致 */
     border-bottom: 1px solid transparent;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 /* 注意：header 不设置悬浮背景色变化，因为整个卡片已经有悬浮效果了 */
@@ -1972,7 +1973,7 @@ input[name="translate-context-mode"][value="full"]:checked + label + .context-in
     width: 32px;
     height: 32px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
     background: var(--input-background);
     color: var(--text-secondary);
     transition: all 0.2s ease;
@@ -1981,7 +1982,7 @@ input[name="translate-context-mode"][value="full"]:checked + label + .context-in
 .icon-select-btn {
     padding: 6px 12px;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-lg);
     background: var(--card-background);
     color: var(--text-color);
     cursor: pointer;
@@ -2199,7 +2200,7 @@ input[name="translate-context-mode"][value="full"]:checked + label + .context-in
     gap: var(--spacing-sm);
     padding: var(--spacing-xs) var(--spacing-sm);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     margin-bottom: 4px;
     background: var(--card-background);
     transition: all 0.2s ease;
@@ -2253,7 +2254,7 @@ input[name="translate-context-mode"][value="full"]:checked + label + .context-in
     color: var(--text-secondary);
     background: var(--button-hover-bg);
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: var(--radius-lg);
 }
 
 #settings-text-selection-helper .hint {

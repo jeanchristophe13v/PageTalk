@@ -590,7 +590,7 @@ if (typeof window.translations === 'undefined') {
     'contextAfter': 'Context After (chars)',
     'contextSettings': 'Context Settings',
     'customContext': 'Custom Context',
-    'fullContext': 'Read Full Context',
+    'fullContext': 'Full Context',
     'maxOutputLength': 'Max Output Length',
     'optionIcon': 'Option Icon',
     'selectIcon': 'Select Icon',

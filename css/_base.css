@@ -115,7 +115,7 @@ footer {
     transition: all 0.2s ease; /* Faster transition */
     font-weight: 500;
     font-size: 11px;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background-color: transparent; /* Default transparent */
     border: 1px solid transparent; /* Add transparent border for layout consistency */
 }

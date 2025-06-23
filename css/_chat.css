@@ -1017,7 +1017,7 @@ body.dark-mode .sent-tab-item:hover {
 .chat-model-selector select,
 .chat-agent-selector select {
     padding: clamp(2px, 1vw, var(--spacing-xs)) clamp(4px, 1.5vw, var(--spacing-sm));
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     font-size: clamp(11px, 3vw, 12px);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1378,7 +1378,7 @@ body.dark-mode .sent-tab-item:hover {
 
 .dialog-actions button {
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-sm) var(--spacing-lg);
     font-size: 14px;
     font-weight: 500;

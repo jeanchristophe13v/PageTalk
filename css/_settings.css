@@ -186,7 +186,7 @@
     background-color: var(--primary-color);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: clamp(11px, 2.5vw, 12px);
     cursor: pointer;
@@ -273,7 +273,7 @@
     background-color: var(--primary-color);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: clamp(11px, 2.5vw, 12px);
     cursor: pointer;
@@ -430,16 +430,17 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
     background: var(--primary-color);
     color: white;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
+    height: 36px;
 }
 
 .add-provider-btn:hover {
@@ -945,7 +946,7 @@
     padding: 6px 12px;
     background-color: #32a45cd4;
     border: 1px solid #16a34a;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     color: white;
     font-size: 12px;
     font-weight: 500;
@@ -1076,7 +1077,7 @@
     width: 100%;
     padding: var(--spacing-sm);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     font-size: 14px;
     background-color: var(--background-color);
     color: var(--text-color);
@@ -1105,7 +1106,7 @@
 .manual-add-model-dialog .cancel-btn,
 .manual-add-model-dialog .confirm-btn {
     padding: var(--spacing-sm) var(--spacing-lg);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -1289,8 +1290,9 @@
     background-color: var(--primary-color);
     color: white;
     padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     font-size: clamp(11px, 2.5vw, 12px);
+    font-weight: 500;
     transition: all 0.2s ease;
     min-width: 50px; /* 缩小最小宽度 */
     text-align: center;
@@ -1362,7 +1364,7 @@
 .agent-item {
     display: flex;
     flex-direction: column;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1385,6 +1387,7 @@
     padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
     cursor: pointer;
     transition: background-color 0.2s ease;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 .agent-item-header:hover {
     background-color: var(--button-hover-bg); /* Primary color transparent hover */
