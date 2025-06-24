@@ -733,7 +733,7 @@
     width: 100%;
     padding: var(--spacing-sm);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
+    border-radius: 16px;
     font-size: 14px;
     background: var(--input-background);
     color: var(--text-color);
@@ -779,7 +779,7 @@
 .btn-primary {
     padding: var(--spacing-sm) var(--spacing-lg);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: 16px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
