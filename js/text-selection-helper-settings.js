@@ -31,12 +31,12 @@ function getDefaultSettings(language = 'zh-CN') {
     // 使用translations.js中的默认提示词
     const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', language) :
         (window.translations?.[language]?.['defaultInterpretPrompt'] ||
-         window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解读一下');
+         window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解释一下');
     const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', language) :
         (window.translations?.[language]?.['defaultTranslatePrompt'] ||
          window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
     const chatPrompt = window.translations?.[language]?.['defaultChatPrompt'] ||
-        window.translations?.['zh-CN']?.['defaultChatPrompt'] || '你是一个有用的助手';
+        window.translations?.['zh-CN']?.['defaultChatPrompt'] || '你是一个有用的对话助手';
 
     return {
         enabled: true, // 默认启用划词助手

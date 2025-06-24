@@ -131,7 +131,7 @@ if (typeof window.translations === 'undefined') {
     'embeddedPdfTitle': '嵌入式PDF',
 
     // --- 默认提示词 ---
-    'defaultInterpretPrompt': '解读一下',
+    'defaultInterpretPrompt': '请解释这段文本的含义：',
     'defaultTranslatePrompt': '翻译一下',
     'defaultChatPrompt': '你是一个有用的助手',
 
@@ -326,7 +326,7 @@ if (typeof window.translations === 'undefined') {
     'customProviderUpdateSuccess': '提供商更新成功',
 
     // --- 划词助手默认提示词 ---
-    'defaultInterpretPrompt': '解读一下',
+    'defaultInterpretPrompt': '请解释这段文本的含义：',
     'defaultTranslatePrompt': `# 角色
 你是一个为中文用户服务的、强大的划词翻译与语言学习助手。
 
@@ -493,7 +493,7 @@ if (typeof window.translations === 'undefined') {
     'embeddedPdfTitle': 'Embedded PDF',
 
     // --- Default Prompts ---
-    'defaultInterpretPrompt': 'Interpret this',
+    'defaultInterpretPrompt': 'Please explain the meaning of this text:',
     'defaultTranslatePrompt': 'Translate this',
     'defaultChatPrompt': 'You are a helpful assistant',
 
@@ -687,7 +687,7 @@ if (typeof window.translations === 'undefined') {
     'customProviderUpdateSuccess': 'Provider updated successfully',
 
     // --- Text Selection Helper Default Prompts ---
-    'defaultInterpretPrompt': 'Interpret this',
+    'defaultInterpretPrompt': 'Please explain the meaning of this text:',
     'defaultTranslatePrompt': `# Role
 You are a powerful Polyglot Translator and Language Companion, designed to help an English-speaking user learn languages, with a special focus on Chinese.
 

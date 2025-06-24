@@ -1877,18 +1877,19 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
         // --- 核心修改：构建结构化消息数组 ---
         const messages = [];
 
-        // 1. 系统提示词
-        let systemPrompt = optionSettings.systemPrompt || '你是一个有用的助手。';
-
-        // 2. 将选中文本和页面上下文作为系统指令的一部分
-        systemPrompt += `\n\n# 任务背景\n用户选中了以下文本，请按照指令进行处理。`;
-        systemPrompt += `\n- **选中文本**: "${selectedText}"`;
-        if (contextForThisRequest && contextForThisRequest !== selectedText) {
-            systemPrompt += `\n- **相关上下文**: "${contextForThisRequest}"`;
-        }
+        // 1. 系统提示词 - 简化，避免混淆
+        let systemPrompt = '你是一个专业的文本分析助手。请根据用户的指令处理选中的文本内容。';
 
         messages.push({ role: 'system', content: systemPrompt });
-        messages.push({ role: 'user', content: '请按照系统指令处理上述文本。' });
+
+        // 2. 用户消息 - 将指令和内容清晰分离
+        let userMessage = `${optionSettings.systemPrompt || '请解释一下：'}选中的文本：\n\n"${selectedText}"`;
+
+        if (contextForThisRequest && contextForThisRequest !== selectedText) {
+            userMessage += `\n\n相关上下文：\n"${contextForThisRequest}"`;
+        }
+
+        messages.push({ role: 'user', content: userMessage });
 
         // --- 修改结束 ---
 
@@ -3058,7 +3059,7 @@ async function getTextSelectionHelperSettings() {
                 // 使用translations.js中的默认提示词
                 const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
                     (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
-                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解读一下');
+                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '请解释一下：');
                 const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) :
                     (window.translations?.[currentLanguage]?.['defaultTranslatePrompt'] ||
                      window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
@@ -3129,7 +3130,7 @@ async function getTextSelectionHelperSettings() {
                 const currentLanguage = await getCurrentLanguage();
                 const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
                     (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
-                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解读一下');
+                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '请解释一下：');
                 const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) :
                     (window.translations?.[currentLanguage]?.['defaultTranslatePrompt'] ||
                      window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
@@ -3164,7 +3165,7 @@ async function getTextSelectionHelperSettings() {
                 const defaultSettings = {
                     interpret: {
                         model: 'gemini-2.5-flash',
-                        systemPrompt: '解读一下',
+                        systemPrompt: '请解释一下：',
                         temperature: 0.7,
                         contextMode: 'custom', // 'full' 或 'custom'
                         contextBefore: 500,
@@ -3172,7 +3173,7 @@ async function getTextSelectionHelperSettings() {
                     },
                     translate: {
                         model: 'gemini-2.5-flash',
-                        systemPrompt: '翻译一下',
+                        systemPrompt: '翻译一下：',
                         temperature: 0.2,
                         contextMode: 'custom', // 'full' 或 'custom'
                         contextBefore: 500,
