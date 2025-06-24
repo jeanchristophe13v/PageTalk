@@ -898,6 +898,10 @@ function handleContentScriptMessages(event) {
             console.log(`[main.js] Received API call request from background:`, message.model);
             handleUnifiedAPICallFromBackground(message);
             break;
+        case 'modelsUpdated':
+            console.log(`[main.js] Models updated - refreshing model selectors`);
+            handleModelsUpdatedFromContent();
+            break;
     }
 }
 
@@ -1036,6 +1040,21 @@ async function handleUnifiedAPICallFromBackground(message) {
             success: false,
             error: error.message
         }, '*');
+    }
+}
+
+/**
+ * 处理来自content script的模型更新通知
+ */
+async function handleModelsUpdatedFromContent() {
+    console.log(`[main.js] Handling models updated from content`);
+
+    try {
+        // 重新初始化模型选择器
+        await initModelSelection(state, elements);
+        console.log(`[main.js] Model selectors refreshed successfully`);
+    } catch (error) {
+        console.error(`[main.js] Error refreshing model selectors:`, error);
     }
 }
 

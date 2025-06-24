@@ -428,6 +428,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleExtensionReload();
     return false;
   }
+  // 处理模型更新事件
+  else if (message.action === 'modelsUpdated') {
+    console.log('[Content] Models updated - forwarding to main panel');
+    // 转发模型更新事件到主面板
+    const iframe = document.getElementById('pagetalk-panel-iframe');
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.postMessage({
+        action: 'modelsUpdated'
+      }, '*');
+    }
+    return false;
+  }
 
   // 确保为其他可能的消息处理器也返回 true（如果它们是异步的）
   // 如果没有其他异步处理器，可以在这里返回 false 或 undefined

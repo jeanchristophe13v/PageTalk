@@ -196,7 +196,7 @@ export async function saveModelSettings(showToastNotification = true, state, ele
             state.model = model;
             state.isConnected = true;
 
-            chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, () => {
+            chrome.storage.sync.set({ apiKey: state.apiKey, model: state.model }, async () => {
                 if (chrome.runtime.lastError) {
                     console.error("Error saving model settings:", chrome.runtime.lastError);
                     showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
@@ -210,6 +210,9 @@ export async function saveModelSettings(showToastNotification = true, state, ele
                     if (elements.chatModelSelection) {
                         elements.chatModelSelection.value = state.model;
                     }
+
+                    // API测试成功后，自动发现并添加默认模型
+                    await autoDiscoverModelsAfterTest('google', showToastCallback);
                 }
                 updateConnectionIndicatorCallback(); // Update footer indicator
             });
@@ -1648,6 +1651,9 @@ async function handleTestApiKey(providerId, showToastCallback) {
 
         if (result.success) {
             showToastCallback(result.message, 'success');
+
+            // API测试成功后，自动发现并添加默认模型
+            await autoDiscoverModelsAfterTest(providerId, showToastCallback);
         } else {
             showToastCallback(result.message, 'error');
         }
@@ -1659,6 +1665,62 @@ async function handleTestApiKey(providerId, showToastCallback) {
             testButton.disabled = false;
             testButton.textContent = originalText;
         }
+    }
+}
+
+/**
+ * API测试成功后自动发现模型
+ */
+async function autoDiscoverModelsAfterTest(providerId, showToastCallback) {
+    const currentTranslations = getCurrentTranslations();
+
+    try {
+        console.log(`[Settings] Auto-discovering models for ${providerId} after successful API test`);
+
+        // 检查是否已有该供应商的模型
+        const modelManager = window.ModelManager.instance;
+        const existingModels = modelManager.getModelsByProvider(providerId);
+
+        if (existingModels && existingModels.length > 0) {
+            console.log(`[Settings] Provider ${providerId} already has models, skipping auto-discovery`);
+            return;
+        }
+
+        // 获取可用模型
+        const discoveredModels = await window.PageTalkAPI.fetchModels(providerId);
+
+        if (!discoveredModels || discoveredModels.length === 0) {
+            console.log(`[Settings] No models discovered for ${providerId}`);
+            return;
+        }
+
+        // 自动添加所有发现的模型（静默添加，不显示选择对话框）
+        const result = await modelManager.addDiscoveredModels(discoveredModels, discoveredModels.map(m => m.id));
+
+        if (result.added > 0 || result.activated > 0) {
+            console.log(`[Settings] Auto-added ${result.added} models and activated ${result.activated} models for ${providerId}`);
+
+            // 重新初始化模型选择器和卡片显示
+            const state = window.state || {};
+            const elements = {
+                modelSelection: document.getElementById('model-selection'),
+                chatModelSelection: document.getElementById('chat-model-selection')
+            };
+            await initModelSelection(state, elements);
+            await updateModelCardsDisplay();
+
+            // 广播模型更新事件
+            modelManager.broadcastModelsUpdated();
+
+            // 显示成功提示（可选，避免过多提示）
+            if (result.added > 0) {
+                console.log(`[Settings] Successfully auto-discovered and added ${result.added} models for ${providerId}`);
+            }
+        }
+
+    } catch (error) {
+        console.warn(`[Settings] Auto-discovery failed for ${providerId}:`, error);
+        // 静默失败，不显示错误提示，因为这是自动操作
     }
 }
 
