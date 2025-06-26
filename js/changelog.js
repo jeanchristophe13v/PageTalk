@@ -5,6 +5,24 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.6.3",
+        date: "2025-06-26",
+        changes: {
+            "zh-CN": [
+                "1. 修复划词助手自定义选项过多时无法显示的bug。",
+                "2. 增加划词助手导入导出功能。",
+                "3. 优化按钮样式。",
+                "4. 优化划词助手选项栏样式。"
+            ],
+            "en": [
+                "1. Fixed a bug where Selection Tool custom options couldn't be displayed when there were too many.",
+                "2. Added import/export functionality for Selection Tool.",
+                "3. Optimized button styles.",
+                "4. Optimized Selection Tool options bar styles."
+            ]
+        }
+    },
+    {
         version: "3.6.1",
         date: "2025-06-22",
         changes: {
