@@ -1301,6 +1301,7 @@
     align-items: center; /* 使文本居中 */
     height: 28px; /* 调整高度与导入导出按钮一致 */
     box-sizing: border-box; /* 确保padding和border包含在height内 */
+    cursor: pointer; /* 添加鼠标指针样式 */
 }
 
 .agent-action-button:hover {
@@ -1319,6 +1320,7 @@
     background-color: var(--success-color); /* 绿色 */
     min-width: 50px;
     height: 29px; /* 确保高度一致 */
+    border: none; /* 移除黑色边框 */
 }
 
 .add-agent-button:hover {

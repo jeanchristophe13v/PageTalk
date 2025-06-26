@@ -413,15 +413,27 @@
                                 </button>
                             </div>
                             <div class="setting-card-content">
+                                <!-- 自定义选项操作栏 -->
+                                <div class="custom-options-actions-bar">
+                                    <div class="custom-options-actions-left">
+                                        <button class="action-button agent-action-button" id="import-custom-options-btn">
+                                            <span data-i18n="importCustomOptions">导入</span>
+                                        </button>
+                                        <button class="action-button agent-action-button" id="export-custom-options-btn">
+                                            <span data-i18n="exportCustomOptions">导出</span>
+                                        </button>
+                                    </div>
+                                    <div class="custom-options-actions-right">
+                                        <button class="agent-action-button add-agent-button" id="add-custom-option-btn">
+                                            <span data-i18n="add">添加</span>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="custom-options-list" id="custom-options-list">
                                     <!-- 自定义选项将通过 JavaScript 动态添加 -->
                                 </div>
-                                <button class="add-custom-option-btn" id="add-custom-option-btn">
-                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                    </svg>
-                                    <span data-i18n="addCustomOption">添加自定义选项</span>
-                                </button>
+                                <!-- 隐藏的文件输入框 -->
+                                <input type="file" id="import-custom-options-input" accept=".json" style="display: none;">
                             </div>
                         </div>
 

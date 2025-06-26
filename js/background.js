@@ -195,6 +195,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         handleUnifiedAPICall(message, sendResponse, sender);
         return true; // 异步响应
     }
+    else if (message.action === "openSettings") {
+        // 处理打开设置页面的请求
+        chrome.runtime.openOptionsPage();
+        sendResponse({ success: true });
+        return false; // 同步响应
+    }
     // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
     // 但如果整个 onMessage 可能处理异步操作，最好总是返回 true
     return true;

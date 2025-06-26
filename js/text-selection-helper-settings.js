@@ -25,6 +25,15 @@ function generateUniqueId() {
 }
 
 /**
+ * HTML转义函数
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * 获取默认设置（根据语言动态生成）
  */
 function getDefaultSettings(language = 'zh-CN') {
@@ -77,11 +86,14 @@ let currentSettings = { ...DEFAULT_SETTINGS };
 /**
  * 初始化划词助手设置
  */
-export async function initTextSelectionHelperSettings(elements, translations) {
+export async function initTextSelectionHelperSettings(elements, translations, showToastCallback) {
     console.log('[TextSelectionHelperSettings] Initializing...');
 
     // 注释掉清理函数，保留自定义选项
     // cleanupStorageData();
+
+    // 存储showToastCallback供全局使用
+    window.textSelectionHelperShowToast = showToastCallback;
 
     // 加载设置（等待完成）
     await loadSettings();
@@ -1253,6 +1265,27 @@ function initCustomOptionsUI(elements, translations) {
             showCustomOptionDialog(null, translations);
         });
     }
+
+    // 设置导入按钮事件
+    const importBtn = document.getElementById('import-custom-options-btn');
+    const importInput = document.getElementById('import-custom-options-input');
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => {
+            importInput.click();
+        });
+
+        importInput.addEventListener('change', (event) => {
+            handleCustomOptionsImport(event, translations);
+        });
+    }
+
+    // 设置导出按钮事件
+    const exportBtn = document.getElementById('export-custom-options-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            handleCustomOptionsExport(translations);
+        });
+    }
 }
 
 /**
@@ -1351,15 +1384,6 @@ function createCustomOptionElement(option, translations) {
     }
 
     return element;
-}
-
-/**
- * HTML转义函数
- */
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 /**
@@ -1711,15 +1735,332 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
  * 显示删除确认对话框
  */
 function showDeleteConfirmDialog(option, translations) {
-    const confirmMessage = translations?.confirmDeleteOption || '确定要删除这个自定义选项吗？';
+    // 创建模态框
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.id = 'delete-custom-option-dialog';
 
-    if (confirm(confirmMessage)) {
+    overlay.innerHTML = `
+        <div class="dialog-content">
+            <h3>${translations?.deleteCustomOption || '删除自定义选项'}</h3>
+            <p>${translations?.confirmDeleteOption || '确定要删除这个自定义选项吗？'}</p>
+            <p><strong>${escapeHtml(option.name)}</strong></p>
+            <div class="dialog-actions">
+                <button class="dialog-cancel">${translations?.cancel || '取消'}</button>
+                <button class="dialog-confirm" style="background-color: var(--error-color); color: white;">${translations?.delete || '删除'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // 添加事件监听器
+    const cancelBtn = overlay.querySelector('.dialog-cancel');
+    const confirmBtn = overlay.querySelector('.dialog-confirm');
+
+    const closeDialog = () => {
+        overlay.remove();
+    };
+
+    cancelBtn.addEventListener('click', closeDialog);
+
+    confirmBtn.addEventListener('click', () => {
         if (deleteCustomOption(option.id)) {
             console.log('[TextSelectionHelperSettings] Custom option deleted:', option.id);
             renderCustomOptionsList(translations);
             updateOptionsOrderUI(document, translations);
         } else {
-            alert('删除失败');
+            const message = translations?.deleteFailed || '删除失败';
+            if (window.textSelectionHelperShowToast) {
+                window.textSelectionHelperShowToast(message, 'error');
+            }
+        }
+        closeDialog();
+    });
+
+    // 点击背景关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
+
+    // ESC键关闭
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // 显示动画
+    requestAnimationFrame(() => {
+        overlay.classList.add('show');
+    });
+}
+
+/**
+ * 处理自定义选项导出
+ */
+function handleCustomOptionsExport(translations) {
+    try {
+        if (!currentSettings.customOptions || currentSettings.customOptions.length === 0) {
+            const message = translations?.noCustomOptionsToExport || '没有自定义选项可以导出';
+            if (window.textSelectionHelperShowToast) {
+                window.textSelectionHelperShowToast(message, 'warning');
+            }
+            return;
+        }
+
+        // 创建导出数据
+        const exportData = {
+            version: '1.0',
+            exportTime: new Date().toISOString(),
+            customOptions: currentSettings.customOptions.map(option => ({
+                name: option.name,
+                model: option.model,
+                systemPrompt: option.systemPrompt,
+                temperature: option.temperature,
+                contextBefore: option.contextBefore,
+                contextAfter: option.contextAfter,
+                maxOutputLength: option.maxOutputLength,
+                icon: option.icon
+            }))
+        };
+
+        // 创建下载链接
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `pagetalk-custom-options-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        console.log('[TextSelectionHelperSettings] Custom options exported successfully');
+    } catch (error) {
+        console.error('[TextSelectionHelperSettings] Export failed:', error);
+        const message = translations?.exportFailed || '导出失败';
+        if (window.textSelectionHelperShowToast) {
+            window.textSelectionHelperShowToast(message, 'error');
+        }
+    }
+}
+
+/**
+ * 处理自定义选项导入
+ */
+function handleCustomOptionsImport(event, translations) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importData = JSON.parse(e.target.result);
+
+            // 验证导入数据格式
+            if (!importData.customOptions || !Array.isArray(importData.customOptions)) {
+                throw new Error('Invalid file format');
+            }
+
+            processCustomOptionsImport(importData.customOptions, translations);
+        } catch (error) {
+            console.error('[TextSelectionHelperSettings] Import failed:', error);
+            const message = translations?.importFailed || '导入失败：文件格式不正确';
+            if (window.textSelectionHelperShowToast) {
+                window.textSelectionHelperShowToast(message, 'error');
+            }
+        }
+    };
+
+    reader.readAsText(file);
+    // 清空文件输入，允许重复选择同一文件
+    event.target.value = '';
+}
+
+/**
+ * 处理自定义选项导入逻辑
+ */
+function processCustomOptionsImport(importOptions, translations) {
+    if (!importOptions || importOptions.length === 0) {
+        const message = translations?.noOptionsInFile || '文件中没有找到自定义选项';
+        if (window.textSelectionHelperShowToast) {
+            window.textSelectionHelperShowToast(message, 'warning');
+        }
+        return;
+    }
+
+    const existingOptions = currentSettings.customOptions || [];
+    const conflicts = [];
+    const newOptions = [];
+
+    // 检查冲突
+    importOptions.forEach(importOption => {
+        const existingOption = existingOptions.find(existing => existing.name === importOption.name);
+        if (existingOption) {
+            conflicts.push({
+                import: importOption,
+                existing: existingOption
+            });
+        } else {
+            newOptions.push(importOption);
+        }
+    });
+
+    if (conflicts.length > 0) {
+        // 有冲突，询问用户处理方式
+        showImportConflictDialog(conflicts, newOptions, translations);
+    } else {
+        // 没有冲突，直接导入
+        importNewOptions(newOptions, translations);
+    }
+}
+
+/**
+ * 显示导入冲突对话框
+ */
+function showImportConflictDialog(conflicts, newOptions, translations) {
+    const conflictNames = conflicts.map(c => c.import.name).join('、');
+
+    // 创建模态框
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.id = 'import-conflict-dialog';
+
+    overlay.innerHTML = `
+        <div class="dialog-content">
+            <h3>${translations?.importConflictTitle || '导入冲突'}</h3>
+            <p>${translations?.importConflictMessage || '发现重名选项'}：</p>
+            <p><strong>${escapeHtml(conflictNames)}</strong></p>
+            <p>${translations?.importConflictOptions || '请选择处理方式：'}</p>
+            <div class="dialog-actions">
+                <button class="dialog-cancel">${translations?.cancelImport || '取消'}</button>
+                <div class="dialog-actions-right">
+                    <button class="dialog-skip">${translations?.skipConflicts || '跳过重名'}</button>
+                    <button class="dialog-overwrite" style="background-color: var(--primary-color); color: white;">${translations?.overwriteExisting || '覆盖现有'}</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // 添加事件监听器
+    const cancelBtn = overlay.querySelector('.dialog-cancel');
+    const skipBtn = overlay.querySelector('.dialog-skip');
+    const overwriteBtn = overlay.querySelector('.dialog-overwrite');
+
+    const closeDialog = () => {
+        overlay.remove();
+    };
+
+    cancelBtn.addEventListener('click', () => {
+        console.log('[TextSelectionHelperSettings] Import cancelled by user');
+        closeDialog();
+    });
+
+    skipBtn.addEventListener('click', () => {
+        importNewOptions(newOptions, translations);
+        closeDialog();
+    });
+
+    overwriteBtn.addEventListener('click', () => {
+        importWithOverwrite(conflicts, newOptions, translations);
+        closeDialog();
+    });
+
+    // 点击背景关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
+
+    // ESC键关闭
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // 显示动画
+    requestAnimationFrame(() => {
+        overlay.classList.add('show');
+    });
+}
+
+/**
+ * 导入新选项（无冲突）
+ */
+function importNewOptions(newOptions, translations) {
+    if (newOptions.length === 0) {
+        const message = translations?.noNewOptionsToImport || '没有新选项可以导入';
+        if (window.textSelectionHelperShowToast) {
+            window.textSelectionHelperShowToast(message, 'warning');
+        }
+        return;
+    }
+
+    let successCount = 0;
+    newOptions.forEach(option => {
+        try {
+            addCustomOption(option);
+            successCount++;
+        } catch (error) {
+            console.error('[TextSelectionHelperSettings] Failed to import option:', option.name, error);
+        }
+    });
+
+    if (successCount > 0) {
+        renderCustomOptionsList(translations);
+        updateOptionsOrderUI(document, translations);
+        const message = translations?.importSuccess?.replace('{count}', successCount) || `成功导入 ${successCount} 个自定义选项`;
+        if (window.textSelectionHelperShowToast) {
+            window.textSelectionHelperShowToast(message, 'success');
+        }
+    }
+}
+
+/**
+ * 导入并覆盖现有选项
+ */
+function importWithOverwrite(conflicts, newOptions, translations) {
+    let successCount = 0;
+
+    // 处理冲突选项（覆盖）
+    conflicts.forEach(conflict => {
+        try {
+            updateCustomOption(conflict.existing.id, conflict.import);
+            successCount++;
+        } catch (error) {
+            console.error('[TextSelectionHelperSettings] Failed to overwrite option:', conflict.import.name, error);
+        }
+    });
+
+    // 处理新选项
+    newOptions.forEach(option => {
+        try {
+            addCustomOption(option);
+            successCount++;
+        } catch (error) {
+            console.error('[TextSelectionHelperSettings] Failed to import option:', option.name, error);
+        }
+    });
+
+    if (successCount > 0) {
+        renderCustomOptionsList(translations);
+        updateOptionsOrderUI(document, translations);
+        const message = translations?.importSuccess?.replace('{count}', successCount) || `成功导入 ${successCount} 个自定义选项`;
+        if (window.textSelectionHelperShowToast) {
+            window.textSelectionHelperShowToast(message, 'success');
         }
     }
 }
@@ -1887,7 +2228,10 @@ async function showIconPicker(onIconSelect, currentIcon = 'star', translations =
     // 尝试加载Lucide库
     const lucideLoaded = await loadLucideLibrary();
     if (!lucideLoaded) {
-        alert(translations.lucideLoadError || 'Lucide图标库加载失败，请刷新页面重试');
+        const message = translations.lucideLoadError || 'Lucide图标库加载失败，请刷新页面重试';
+        if (window.textSelectionHelperShowToast) {
+            window.textSelectionHelperShowToast(message, 'error');
+        }
         return;
     }
     // 创建遮罩层

@@ -50,11 +50,63 @@
     padding: 8px;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
     user-select: none;
+    width: auto;
+    max-width: calc(100vw - 40px); /* 避免超出屏幕，留20px边距 */
+}
+
+/* 选项栏图标 */
+.pagetalk-options-bar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* 选项网格容器 */
+.pagetalk-options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+/* 选项行 */
+.pagetalk-options-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+/* 添加选项按钮 */
+.pagetalk-add-option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background: rgba(76, 110, 245, 0.1);
+    border: 1px solid rgba(76, 110, 245, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+    font-weight: bold;
+    color: #4c6ef5;
+}
+
+.pagetalk-add-option-btn:hover {
+    background: rgba(76, 110, 245, 0.2);
+    border-color: rgba(76, 110, 245, 0.4);
+    transform: translateY(-1px);
 }
 
 .pagetalk-options-bar-icon {
@@ -75,14 +127,16 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 13px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #333;
+    flex: 0 0 auto;
+    min-width: 0;
 }
 
 .pagetalk-option:hover {
@@ -1211,7 +1265,7 @@
 }
 
 #settings-text-selection-helper .setting-card.expanded .setting-card-content {
-    max-height: 800px; /* 足够大的高度 */
+    max-height: none; /* 移除高度限制，允许无限制显示内容 */
     padding: var(--spacing-md) var(--spacing-lg);
     border-top-color: var(--border-color);
     opacity: 1;
@@ -1675,6 +1729,22 @@
     color: var(--text-color);
 }
 
+/* 自定义选项操作栏样式 */
+.custom-options-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) 0;
+    margin-bottom: var(--spacing-md);
+}
+
+.custom-options-actions-left,
+.custom-options-actions-right {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* 保留原有的添加按钮样式（如果需要） */
 #settings-text-selection-helper .add-custom-option-btn {
     display: flex;
     align-items: center;
@@ -2485,6 +2555,76 @@ body.dark-mode #settings-text-selection-helper .delete-custom-option-btn:hover {
     color: #dc3545;
     background-color: rgba(220, 53, 69, 0.15);
     transform: scale(1.1);
+}
+
+
+
+/* 删除自定义选项确认对话框样式 */
+#delete-custom-option-dialog .dialog-content {
+    max-width: 320px; /* 删除对话框稍微小一点 */
+}
+
+#delete-custom-option-dialog .dialog-content h3 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+}
+
+#delete-custom-option-dialog .dialog-content p {
+    margin-bottom: var(--spacing-md);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+#delete-custom-option-dialog .dialog-content p:last-of-type {
+    margin-bottom: var(--spacing-lg);
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* 删除对话框动作按钮的字体大小稍微调整 */
+#delete-custom-option-dialog .dialog-actions button {
+    font-size: 13px;
+}
+
+/* 导入冲突对话框样式 */
+#import-conflict-dialog .dialog-content {
+    max-width: 400px;
+}
+
+#import-conflict-dialog .dialog-content h3 {
+    font-size: 16px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-color);
+}
+
+#import-conflict-dialog .dialog-content p {
+    margin-bottom: var(--spacing-md);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+#import-conflict-dialog .dialog-content p:last-of-type {
+    margin-bottom: var(--spacing-lg);
+}
+
+#import-conflict-dialog .dialog-actions {
+    gap: var(--spacing-sm);
+    justify-content: space-between;
+}
+
+#import-conflict-dialog .dialog-actions-right {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+#import-conflict-dialog .dialog-actions button {
+    font-size: 12px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    min-width: 60px;
+    flex: none;
 }
 
 body.dark-mode #settings-text-selection-helper .add-custom-option-btn {

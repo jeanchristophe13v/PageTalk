@@ -1035,38 +1035,38 @@ async function showOptionsBar(triggerElement) {
         const optionsBar = document.createElement('div');
         optionsBar.className = 'pagetalk-selection-helper pagetalk-options-bar';
     
-        // 构建选项栏内容
+        // 构建选项栏内容 - icon在左侧，选项在右侧
         let optionsHTML = `
             <div class="pagetalk-options-bar-icon">
                 <img src="${chrome.runtime.getURL('magic.png')}" alt="PageTalk" width="16" height="16">
             </div>
+            <div class="pagetalk-options-grid">
         `;
 
-        options.forEach(option => {
-            optionsHTML += `
-                <div class="pagetalk-option" data-option="${option.id}">
-                    <span class="pagetalk-option-icon">${option.icon}</span>
-                    <span class="pagetalk-option-text">${option.name}</span>
-                </div>
-            `;
-        });
+        // 将选项按每行6个进行分组
+        const optionsPerRow = 6;
+        for (let i = 0; i < options.length; i += optionsPerRow) {
+            optionsHTML += '<div class="pagetalk-options-row">';
+            const rowOptions = options.slice(i, i + optionsPerRow);
+            rowOptions.forEach(option => {
+                optionsHTML += `
+                    <div class="pagetalk-option" data-option="${option.id}">
+                        <span class="pagetalk-option-icon">${option.icon}</span>
+                        <span class="pagetalk-option-text">${option.name}</span>
+                    </div>
+                `;
+            });
+            optionsHTML += '</div>';
+        }
+
+        optionsHTML += '</div>';
 
         optionsBar.innerHTML = optionsHTML;
 
-        // 设置样式
+        // 设置样式 - 使用CSS类，只设置位置相关的样式
         optionsBar.style.cssText = `
             position: absolute;
             z-index: 2147483647;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
             opacity: 0;
             transform: translateY(10px);
         `;
@@ -1133,32 +1133,32 @@ function showDefaultOptionsBar(triggerElement) {
         <div class="pagetalk-options-bar-icon">
             <img src="${chrome.runtime.getURL('magic.png')}" alt="PageTalk" width="16" height="16">
         </div>
+        <div class="pagetalk-options-grid">
     `;
 
-    defaultOptions.forEach(option => {
-        optionsHTML += `
-            <div class="pagetalk-option" data-option="${option.id}">
-                <span class="pagetalk-option-icon">${option.icon}</span>
-                <span class="pagetalk-option-text" data-i18n="${option.name}">${option.name}</span>
-            </div>
-        `;
-    });
+    // 将选项按每行6个进行分组
+    const optionsPerRow = 6;
+    for (let i = 0; i < defaultOptions.length; i += optionsPerRow) {
+        optionsHTML += '<div class="pagetalk-options-row">';
+        const rowOptions = defaultOptions.slice(i, i + optionsPerRow);
+        rowOptions.forEach(option => {
+            optionsHTML += `
+                <div class="pagetalk-option" data-option="${option.id}">
+                    <span class="pagetalk-option-icon">${option.icon}</span>
+                    <span class="pagetalk-option-text" data-i18n="${option.name}">${option.name}</span>
+                </div>
+            `;
+        });
+        optionsHTML += '</div>';
+    }
+
+    optionsHTML += '</div>';
 
     optionsBar.innerHTML = optionsHTML;
 
     optionsBar.style.cssText = `
         position: absolute;
         z-index: 2147483647;
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 8px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: all 0.3s ease;
         opacity: 0;
         transform: translateY(10px);
     `;
@@ -1211,14 +1211,14 @@ function hideOptionsBar() {
 function handleOptionClick(event) {
     const optionElement = event.target.closest('.pagetalk-option');
     if (!optionElement) return;
-    
+
     const optionId = optionElement.dataset.option;
     console.log('[TextSelectionHelper] Option clicked:', optionId);
-    
+
     // 隐藏选项栏
     hideOptionsBar();
     hideMiniIcon();
-    
+
     // 显示对应的功能窗口
     showFunctionWindow(optionId);
 }

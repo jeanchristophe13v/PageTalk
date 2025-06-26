@@ -229,7 +229,7 @@ async function init() {
     // 确保翻译已加载后再初始化划词助手设置
     setTimeout(async () => {
         console.log('[main.js] Initializing text selection helper with translations:', currentTranslations);
-        await initTextSelectionHelperSettings(elements, currentTranslations); // Initialize text selection helper settings
+        await initTextSelectionHelperSettings(elements, currentTranslations, showToastUI); // Initialize text selection helper settings
     }, 100); // 给翻译加载一些时间
     setupEventListeners(); // Setup all event listeners
     setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
@@ -1076,7 +1076,7 @@ function handleLanguageChangeFromContent(newLanguage) {
         if (settingsContainer && settingsContainer.style.display !== 'none') {
             console.log('[main.js] Reinitializing text selection helper settings for language change');
             const translations = window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {};
-            window.initTextSelectionHelperSettings(elements, translations);
+            window.initTextSelectionHelperSettings(elements, translations, showToastUI);
         }
     }
 }
@@ -1100,7 +1100,7 @@ function handleExtensionReloadFromContent() {
     if (window.initTextSelectionHelperSettings && elements.textSelectionHelperSettings) {
         console.log('[main.js] Reinitializing text selection helper settings after extension reload');
         const translations = window.translations && window.translations[state.language] ? window.translations[state.language] : {};
-        window.initTextSelectionHelperSettings(elements, translations);
+        window.initTextSelectionHelperSettings(elements, translations, showToastUI);
     }
 }
 
