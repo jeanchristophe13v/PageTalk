@@ -254,6 +254,11 @@ if (typeof window.translations === 'undefined') {
     'searchIcons': '搜索图标...',
     'lucideLoadError': 'Lucide图标库加载失败，请刷新页面重试',
     'autoSaveNotice': '更改将自动保存',
+    'unsavedChanges': '有未保存的更改',
+    'saveSuccess': '保存成功',
+    'saveFailed': '保存失败',
+    'nameRequired': '请输入选项名称',
+    'promptRequired': '请输入系统提示词',
 
     // --- 模型管理相关翻译 ---
     'selectedModelsTitle': '已选择的模型',
@@ -633,6 +638,11 @@ if (typeof window.translations === 'undefined') {
     'searchIcons': 'Search icons...',
     'lucideLoadError': 'Failed to load Lucide icon library, please refresh the page and try again',
     'autoSaveNotice': 'Changes will be saved automatically',
+    'unsavedChanges': 'Unsaved changes',
+    'saveSuccess': 'Saved successfully',
+    'saveFailed': 'Save failed',
+    'nameRequired': 'Please enter option name',
+    'promptRequired': 'Please enter system prompt',
 
     // --- Model Management Related Translations ---
     'selectedModelsTitle': 'Selected Models',

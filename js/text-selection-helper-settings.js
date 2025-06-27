@@ -1566,8 +1566,14 @@ async function showCustomOptionDialog(option, translations) {
                 </div>
             </div>
             <div class="custom-option-dialog-footer">
-                <div class="auto-save-notice">${currentTranslations?.autoSaveNotice || '更改将自动保存'}</div>
-                <button class="custom-option-dialog-cancel">${currentTranslations?.close || '关闭'}</button>
+                <div class="save-status-container">
+                    <div class="auto-save-notice">${currentTranslations?.autoSaveNotice || '更改将自动保存'}</div>
+                    <div class="save-status" id="custom-option-save-status"></div>
+                </div>
+                <div class="dialog-actions">
+                    <button class="custom-option-dialog-save" id="custom-option-manual-save">${currentTranslations?.save || '保存'}</button>
+                    <button class="custom-option-dialog-cancel">${currentTranslations?.close || '关闭'}</button>
+                </div>
             </div>
         </div>
     `;
@@ -1593,6 +1599,8 @@ async function showCustomOptionDialog(option, translations) {
 function setupCustomOptionDialogEvents(dialog, option, translations) {
     const closeBtn = dialog.querySelector('.custom-option-dialog-close');
     const cancelBtn = dialog.querySelector('.custom-option-dialog-cancel');
+    const saveBtn = dialog.querySelector('#custom-option-manual-save');
+    const saveStatus = dialog.querySelector('#custom-option-save-status');
     const temperatureSlider = dialog.querySelector('#custom-option-temperature');
     const temperatureValue = dialog.querySelector('.temperature-value');
 
@@ -1609,7 +1617,135 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
     // 使用对象来保存option引用，这样可以在函数内部修改
     const optionRef = { current: option };
 
-    // 实时保存函数
+    // 保存状态管理
+    let hasUnsavedChanges = false;
+    let lastSavedData = null;
+
+    // 更新保存状态显示
+    const updateSaveStatus = (status, message) => {
+        if (!saveStatus) return;
+
+        saveStatus.className = `save-status ${status}`;
+        saveStatus.textContent = message;
+
+        // 自动清除成功/错误状态
+        if (status === 'success' || status === 'error') {
+            setTimeout(() => {
+                if (saveStatus.className.includes(status)) {
+                    saveStatus.className = 'save-status';
+                    saveStatus.textContent = '';
+                }
+            }, 3000);
+        }
+    };
+
+    // 检查是否有未保存的更改
+    const checkForChanges = () => {
+        const currentData = {
+            name: nameInput?.value.trim() || '',
+            icon: iconInput?.value || 'star',
+            model: modelSelect?.value || '',
+            systemPrompt: promptTextarea?.value.trim() || '',
+            temperature: parseFloat(temperatureInput?.value || 0.7),
+            contextBefore: contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 0,
+            contextAfter: contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 0,
+            maxOutputLength: maxOutputInput?.value !== '' ? parseInt(maxOutputInput.value) : 65536
+        };
+
+        const hasChanges = !lastSavedData || JSON.stringify(currentData) !== JSON.stringify(lastSavedData);
+
+        if (hasChanges !== hasUnsavedChanges) {
+            hasUnsavedChanges = hasChanges;
+            if (hasChanges) {
+                updateSaveStatus('unsaved', translations?.unsavedChanges || '有未保存的更改');
+            } else {
+                updateSaveStatus('', '');
+            }
+        }
+
+        return hasChanges;
+    };
+
+    // 初始化最后保存的数据
+    if (option) {
+        lastSavedData = {
+            name: option.name || '',
+            icon: option.icon || 'star',
+            model: option.model || '',
+            systemPrompt: option.systemPrompt || '',
+            temperature: option.temperature || 0.7,
+            contextBefore: option.contextBefore !== undefined ? option.contextBefore : 0,
+            contextAfter: option.contextAfter !== undefined ? option.contextAfter : 0,
+            maxOutputLength: option.maxOutputLength !== undefined ? option.maxOutputLength : 65536
+        };
+    }
+
+    // 手动保存函数
+    const manualSave = async () => {
+        const name = nameInput?.value.trim();
+        const icon = iconInput?.value || 'star';
+        const model = modelSelect?.value;
+        const systemPrompt = promptTextarea?.value.trim();
+        const temperature = parseFloat(temperatureInput?.value || 0.7);
+        const contextBefore = contextBeforeInput?.value !== '' ? parseInt(contextBeforeInput.value) : 0;
+        const contextAfter = contextAfterInput?.value !== '' ? parseInt(contextAfterInput.value) : 0;
+        const maxOutputLength = maxOutputInput?.value !== '' ? parseInt(maxOutputInput.value) : 65536;
+
+        // 验证必填字段
+        if (!name) {
+            updateSaveStatus('error', translations?.nameRequired || '请输入选项名称');
+            nameInput?.focus();
+            return false;
+        }
+
+        if (!systemPrompt) {
+            updateSaveStatus('error', translations?.promptRequired || '请输入系统提示词');
+            promptTextarea?.focus();
+            return false;
+        }
+
+        updateSaveStatus('saving', translations?.saving || '保存中...');
+
+        // 保存选项
+        const optionData = { name, icon, model, systemPrompt, temperature, contextBefore, contextAfter, maxOutputLength };
+
+        try {
+            if (optionRef.current) {
+                // 编辑现有选项
+                if (updateCustomOption(optionRef.current.id, optionData)) {
+                    console.log('[TextSelectionHelperSettings] Custom option manually saved:', optionRef.current.id);
+                    renderCustomOptionsList(translations);
+                    await updateOptionsOrderUI(document, translations);
+
+                    // 更新最后保存的数据
+                    lastSavedData = { ...optionData };
+                    hasUnsavedChanges = false;
+                    updateSaveStatus('success', translations?.saveSuccess || '保存成功');
+                    return true;
+                }
+            } else {
+                // 添加新选项
+                const newOption = addCustomOption(optionData);
+                console.log('[TextSelectionHelperSettings] Custom option manually created:', newOption.id);
+                // 更新option引用，后续保存将变为编辑模式
+                optionRef.current = newOption;
+                renderCustomOptionsList(translations);
+                await updateOptionsOrderUI(document, translations);
+
+                // 更新最后保存的数据
+                lastSavedData = { ...optionData };
+                hasUnsavedChanges = false;
+                updateSaveStatus('success', translations?.saveSuccess || '保存成功');
+                return true;
+            }
+        } catch (error) {
+            console.warn('[TextSelectionHelperSettings] Manual save failed:', error);
+            updateSaveStatus('error', translations?.saveFailed || '保存失败');
+        }
+        return false;
+    };
+
+    // 实时保存函数（简化版，主要用于自动创建）
     const autoSave = async () => {
         const name = nameInput?.value.trim();
         const icon = iconInput?.value || 'star';
@@ -1622,6 +1758,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
 
         // 基本验证（静默失败，不显示错误）
         if (!name || !systemPrompt) {
+            checkForChanges(); // 检查更改状态
             return false;
         }
 
@@ -1635,6 +1772,11 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
                     console.log('[TextSelectionHelperSettings] Custom option auto-saved:', optionRef.current.id);
                     renderCustomOptionsList(translations);
                     await updateOptionsOrderUI(document, translations);
+
+                    // 更新最后保存的数据
+                    lastSavedData = { ...optionData };
+                    hasUnsavedChanges = false;
+                    updateSaveStatus('', '');
                     return true;
                 }
             } else {
@@ -1645,11 +1787,18 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
                 optionRef.current = newOption;
                 renderCustomOptionsList(translations);
                 await updateOptionsOrderUI(document, translations);
+
+                // 更新最后保存的数据
+                lastSavedData = { ...optionData };
+                hasUnsavedChanges = false;
+                updateSaveStatus('', '');
                 return true;
             }
         } catch (error) {
             console.warn('[TextSelectionHelperSettings] Auto-save failed:', error);
         }
+
+        checkForChanges(); // 检查更改状态
         return false;
     };
 
@@ -1660,11 +1809,26 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
         saveTimeout = setTimeout(autoSave, 500); // 500ms延迟保存
     };
 
+    // 防抖检查更改
+    let changeTimeout;
+    const debouncedCheckChanges = () => {
+        clearTimeout(changeTimeout);
+        changeTimeout = setTimeout(checkForChanges, 200); // 200ms延迟检查
+    };
+
     // 关闭对话框
     const closeDialog = () => {
         clearTimeout(saveTimeout); // 清理定时器
+        clearTimeout(changeTimeout); // 清理检查定时器
         dialog.remove();
     };
+
+    // 手动保存按钮事件
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            await manualSave();
+        });
+    }
 
     if (closeBtn) closeBtn.addEventListener('click', closeDialog);
     if (cancelBtn) cancelBtn.addEventListener('click', closeDialog);
@@ -1679,37 +1843,59 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
         temperatureSlider.addEventListener('input', () => {
             temperatureValue.textContent = temperatureSlider.value;
             debouncedAutoSave(); // 实时保存
+            debouncedCheckChanges(); // 检查更改
         });
     }
 
-    // 为所有输入元素添加实时保存事件
+    // 为所有输入元素添加事件监听器
     if (nameInput) {
         nameInput.addEventListener('blur', debouncedAutoSave);
-        nameInput.addEventListener('input', debouncedAutoSave);
+        nameInput.addEventListener('input', () => {
+            debouncedAutoSave();
+            debouncedCheckChanges();
+        });
     }
 
     if (modelSelect) {
-        modelSelect.addEventListener('change', debouncedAutoSave);
+        modelSelect.addEventListener('change', () => {
+            debouncedAutoSave();
+            debouncedCheckChanges();
+        });
     }
 
     if (promptTextarea) {
         promptTextarea.addEventListener('blur', debouncedAutoSave);
-        promptTextarea.addEventListener('input', debouncedAutoSave);
+        promptTextarea.addEventListener('input', () => {
+            debouncedAutoSave();
+            debouncedCheckChanges();
+        });
     }
 
     if (contextBeforeInput) {
         contextBeforeInput.addEventListener('blur', debouncedAutoSave);
-        contextBeforeInput.addEventListener('change', debouncedAutoSave);
+        contextBeforeInput.addEventListener('change', () => {
+            debouncedAutoSave();
+            debouncedCheckChanges();
+        });
+        contextBeforeInput.addEventListener('input', debouncedCheckChanges);
     }
 
     if (contextAfterInput) {
         contextAfterInput.addEventListener('blur', debouncedAutoSave);
-        contextAfterInput.addEventListener('change', debouncedAutoSave);
+        contextAfterInput.addEventListener('change', () => {
+            debouncedAutoSave();
+            debouncedCheckChanges();
+        });
+        contextAfterInput.addEventListener('input', debouncedCheckChanges);
     }
 
     if (maxOutputInput) {
         maxOutputInput.addEventListener('blur', debouncedAutoSave);
-        maxOutputInput.addEventListener('change', debouncedAutoSave);
+        maxOutputInput.addEventListener('change', () => {
+            debouncedAutoSave();
+            debouncedCheckChanges();
+        });
+        maxOutputInput.addEventListener('input', debouncedCheckChanges);
     }
 
     // 图标选择按钮事件
@@ -1725,11 +1911,15 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
                 loadLucideLibrary().then(() => {
                     iconPreview.innerHTML = renderLucideIconForSettings(selectedIcon, 20);
                 });
-                // 图标选择后立即保存
+                // 图标选择后立即保存并检查更改
                 debouncedAutoSave();
+                debouncedCheckChanges();
             }, currentIcon, translations);
         });
     }
+
+    // 初始化时检查一次更改状态
+    setTimeout(checkForChanges, 100);
 
 
 }
