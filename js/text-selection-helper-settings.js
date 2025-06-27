@@ -371,7 +371,7 @@ async function initSettingsUI(elements, translations) {
     setupEventListeners(elements, translations);
 
     // 初始化选项顺序列表
-    updateOptionsOrderUI(elements, translations);
+    await updateOptionsOrderUI(elements, translations);
 }
 
 /**
@@ -950,17 +950,20 @@ function setupEventListeners(elements, translations) {
 /**
  * 更新选项顺序UI
  */
-function updateOptionsOrderUI(elements, translations) {
+async function updateOptionsOrderUI(elements, translations) {
     console.log('[TextSelectionHelperSettings] updateOptionsOrderUI called');
     console.log('[TextSelectionHelperSettings] Received translations:', translations);
 
+    // 加载Lucide库以支持自定义图标渲染
+    await loadLucideLibrary();
+
     // 如果传入的翻译对象为空，尝试从全局获取当前语言的翻译
     if (!translations || Object.keys(translations).length === 0) {
-        getCurrentLanguageForSettings().then(currentLanguage => {
+        getCurrentLanguageForSettings().then(async currentLanguage => {
             console.log('[TextSelectionHelperSettings] Fallback: getting translations for language:', currentLanguage);
             const fallbackTranslations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
             console.log('[TextSelectionHelperSettings] Fallback translations:', fallbackTranslations);
-            updateOptionsOrderUI(elements, fallbackTranslations);
+            await updateOptionsOrderUI(elements, fallbackTranslations);
         });
         return;
     }
@@ -1018,9 +1021,9 @@ function updateOptionsOrderUI(elements, translations) {
             if (customOption) {
                 optionName = customOption.name;
                 optionType = translations && translations.customOptions ? translations.customOptions : '自定义';
-                optionIcon = `<svg class="order-option-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>`;
+                // 使用用户设置的图标，而不是硬编码的星星图标
+                const iconName = customOption.icon || 'star';
+                optionIcon = renderLucideIconForSettings(iconName, 14, 'order-option-icon');
             }
         }
 
@@ -1131,14 +1134,14 @@ function setupDragAndDrop(container) {
                 saveSettings();
 
                 // 重新渲染列表 - 获取当前语言的翻译对象
-                getCurrentLanguageForSettings().then(currentLanguage => {
+                getCurrentLanguageForSettings().then(async currentLanguage => {
                     console.log('[TextSelectionHelperSettings] Getting translations for language:', currentLanguage);
                     const translations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
                     console.log('[TextSelectionHelperSettings] Available translations:', translations);
-                    updateOptionsOrderUI(document, translations);
-                }).catch(err => {
+                    await updateOptionsOrderUI(document, translations);
+                }).catch(async err => {
                     console.warn('[TextSelectionHelperSettings] Failed to get current language for drag reorder, using fallback');
-                    updateOptionsOrderUI(document, {});
+                    await updateOptionsOrderUI(document, {});
                 });
             }
 
@@ -1607,7 +1610,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
     const optionRef = { current: option };
 
     // 实时保存函数
-    const autoSave = () => {
+    const autoSave = async () => {
         const name = nameInput?.value.trim();
         const icon = iconInput?.value || 'star';
         const model = modelSelect?.value;
@@ -1631,7 +1634,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
                 if (updateCustomOption(optionRef.current.id, optionData)) {
                     console.log('[TextSelectionHelperSettings] Custom option auto-saved:', optionRef.current.id);
                     renderCustomOptionsList(translations);
-                    updateOptionsOrderUI(document, translations);
+                    await updateOptionsOrderUI(document, translations);
                     return true;
                 }
             } else {
@@ -1641,7 +1644,7 @@ function setupCustomOptionDialogEvents(dialog, option, translations) {
                 // 更新option引用，后续保存将变为编辑模式
                 optionRef.current = newOption;
                 renderCustomOptionsList(translations);
-                updateOptionsOrderUI(document, translations);
+                await updateOptionsOrderUI(document, translations);
                 return true;
             }
         } catch (error) {
@@ -1764,11 +1767,11 @@ function showDeleteConfirmDialog(option, translations) {
 
     cancelBtn.addEventListener('click', closeDialog);
 
-    confirmBtn.addEventListener('click', () => {
+    confirmBtn.addEventListener('click', async () => {
         if (deleteCustomOption(option.id)) {
             console.log('[TextSelectionHelperSettings] Custom option deleted:', option.id);
             renderCustomOptionsList(translations);
-            updateOptionsOrderUI(document, translations);
+            await updateOptionsOrderUI(document, translations);
         } else {
             const message = translations?.deleteFailed || '删除失败';
             if (window.textSelectionHelperShowToast) {
@@ -1860,7 +1863,7 @@ function handleCustomOptionsImport(event, translations) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const importData = JSON.parse(e.target.result);
 
@@ -1869,7 +1872,7 @@ function handleCustomOptionsImport(event, translations) {
                 throw new Error('Invalid file format');
             }
 
-            processCustomOptionsImport(importData.customOptions, translations);
+            await processCustomOptionsImport(importData.customOptions, translations);
         } catch (error) {
             console.error('[TextSelectionHelperSettings] Import failed:', error);
             const message = translations?.importFailed || '导入失败：文件格式不正确';
@@ -1887,7 +1890,7 @@ function handleCustomOptionsImport(event, translations) {
 /**
  * 处理自定义选项导入逻辑
  */
-function processCustomOptionsImport(importOptions, translations) {
+async function processCustomOptionsImport(importOptions, translations) {
     if (!importOptions || importOptions.length === 0) {
         const message = translations?.noOptionsInFile || '文件中没有找到自定义选项';
         if (window.textSelectionHelperShowToast) {
@@ -1918,7 +1921,7 @@ function processCustomOptionsImport(importOptions, translations) {
         showImportConflictDialog(conflicts, newOptions, translations);
     } else {
         // 没有冲突，直接导入
-        importNewOptions(newOptions, translations);
+        await importNewOptions(newOptions, translations);
     }
 }
 
@@ -1965,13 +1968,13 @@ function showImportConflictDialog(conflicts, newOptions, translations) {
         closeDialog();
     });
 
-    skipBtn.addEventListener('click', () => {
-        importNewOptions(newOptions, translations);
+    skipBtn.addEventListener('click', async () => {
+        await importNewOptions(newOptions, translations);
         closeDialog();
     });
 
-    overwriteBtn.addEventListener('click', () => {
-        importWithOverwrite(conflicts, newOptions, translations);
+    overwriteBtn.addEventListener('click', async () => {
+        await importWithOverwrite(conflicts, newOptions, translations);
         closeDialog();
     });
 
@@ -2000,7 +2003,7 @@ function showImportConflictDialog(conflicts, newOptions, translations) {
 /**
  * 导入新选项（无冲突）
  */
-function importNewOptions(newOptions, translations) {
+async function importNewOptions(newOptions, translations) {
     if (newOptions.length === 0) {
         const message = translations?.noNewOptionsToImport || '没有新选项可以导入';
         if (window.textSelectionHelperShowToast) {
@@ -2021,7 +2024,7 @@ function importNewOptions(newOptions, translations) {
 
     if (successCount > 0) {
         renderCustomOptionsList(translations);
-        updateOptionsOrderUI(document, translations);
+        await updateOptionsOrderUI(document, translations);
         const message = translations?.importSuccess?.replace('{count}', successCount) || `成功导入 ${successCount} 个自定义选项`;
         if (window.textSelectionHelperShowToast) {
             window.textSelectionHelperShowToast(message, 'success');
@@ -2032,7 +2035,7 @@ function importNewOptions(newOptions, translations) {
 /**
  * 导入并覆盖现有选项
  */
-function importWithOverwrite(conflicts, newOptions, translations) {
+async function importWithOverwrite(conflicts, newOptions, translations) {
     let successCount = 0;
 
     // 处理冲突选项（覆盖）
@@ -2057,7 +2060,7 @@ function importWithOverwrite(conflicts, newOptions, translations) {
 
     if (successCount > 0) {
         renderCustomOptionsList(translations);
-        updateOptionsOrderUI(document, translations);
+        await updateOptionsOrderUI(document, translations);
         const message = translations?.importSuccess?.replace('{count}', successCount) || `成功导入 ${successCount} 个自定义选项`;
         if (window.textSelectionHelperShowToast) {
             window.textSelectionHelperShowToast(message, 'success');
@@ -2131,14 +2134,16 @@ function waitForLucide() {
  * 渲染Lucide图标
  * @param {string} iconName - 图标名称
  * @param {number} size - 图标大小
+ * @param {string} className - CSS类名
  * @returns {string} SVG HTML字符串
  */
-function renderLucideIconForSettings(iconName, size = 16) {
+function renderLucideIconForSettings(iconName, size = 16, className = '') {
     try {
         // 检查Lucide是否可用
         if (typeof lucide === 'undefined') {
             console.warn('[TextSelectionHelperSettings] Lucide library not available');
-            return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            const classAttr = className ? ` class="${className}"` : '';
+            return `<svg${classAttr} width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>`;
         }
@@ -2164,11 +2169,12 @@ function renderLucideIconForSettings(iconName, size = 16) {
                 console.log(`[TextSelectionHelperSettings] Using alias "${aliasName}" for "${iconName}"`);
                 const iconData = lucide[aliasName];
                 if (iconData && Array.isArray(iconData)) {
-                    return renderIconFromData(iconData, size);
+                    return renderIconFromData(iconData, size, className);
                 }
             }
 
-            return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            const classAttr = className ? ` class="${className}"` : '';
+            return `<svg${classAttr} width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>`;
         }
@@ -2176,16 +2182,18 @@ function renderLucideIconForSettings(iconName, size = 16) {
         // 直接使用Lucide图标数据创建SVG
         const iconData = lucide[pascalCaseName];
         if (iconData && Array.isArray(iconData)) {
-            return renderIconFromData(iconData, size);
+            return renderIconFromData(iconData, size, className);
         }
 
         // 如果以上方法都失败，返回默认图标
-        return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        const classAttr = className ? ` class="${className}"` : '';
+        return `<svg${classAttr} width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
         </svg>`;
     } catch (error) {
         console.error('[TextSelectionHelperSettings] Error rendering Lucide icon:', error);
-        return `<svg width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        const classAttr = className ? ` class="${className}"` : '';
+        return `<svg${classAttr} width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
         </svg>`;
     }
@@ -2195,9 +2203,10 @@ function renderLucideIconForSettings(iconName, size = 16) {
  * 从Lucide图标数据渲染SVG
  * @param {Array} iconData - Lucide图标数据数组
  * @param {number} size - 图标大小
+ * @param {string} className - CSS类名
  * @returns {string} SVG HTML字符串
  */
-function renderIconFromData(iconData, size = 16) {
+function renderIconFromData(iconData, size = 16, className = '') {
     let svgContent = '';
     iconData.forEach(([tag, attrs]) => {
         if (tag === 'path') {
@@ -2213,7 +2222,8 @@ function renderIconFromData(iconData, size = 16) {
         }
     });
 
-    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    const classAttr = className ? ` class="${className}"` : '';
+    return `<svg${classAttr} width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         ${svgContent}
     </svg>`;
 }
