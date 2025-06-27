@@ -5,6 +5,22 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.6.4",
+        date: "2025-06-27",
+        changes: {
+            "zh-CN": [
+                "1. 修复自定义选项在顺序栏的icon显示问题",
+                "2. 给自定义选项编辑界面加入手动保存按钮",
+                "3. 一些小优化"
+            ],
+            "en": [
+                "1. Fixed icon display issue for custom options in the order bar",
+                "2. Added manual save button to custom options edit interface",
+                "3. Some minor optimizations"
+            ]
+        }
+    },
+    {
         version: "3.6.3",
         date: "2025-06-26",
         changes: {
