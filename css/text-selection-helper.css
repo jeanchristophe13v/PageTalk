@@ -1620,6 +1620,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     transition: all 0.2s ease;
+    border-radius: 16px;
 }
 
 #settings-text-selection-helper .custom-option-item:hover {
