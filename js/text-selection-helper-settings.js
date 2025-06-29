@@ -2025,11 +2025,16 @@ function showDeleteConfirmDialog(option, translations) {
     overlay.className = 'dialog-overlay';
     overlay.id = 'delete-custom-option-dialog';
 
+    // 构建确认消息，支持国际化
+    const confirmMessage = translations?.confirmDeleteOption || '确定要删除这个自定义选项吗？';
+    const finalMessage = confirmMessage.includes('{name}')
+        ? confirmMessage.replace('{name}', `<strong>${escapeHtml(option.name)}</strong>`)
+        : `确定要删除「<strong>${escapeHtml(option.name)}</strong>」这个自定义选项吗？`;
+
     overlay.innerHTML = `
         <div class="dialog-content">
-            <h3>${translations?.deleteCustomOption || '删除自定义选项'}</h3>
-            <p>${translations?.confirmDeleteOption || '确定要删除这个自定义选项吗？'}</p>
-            <p><strong>${escapeHtml(option.name)}</strong></p>
+            <h3>${translations?.deleteCustomOption || '删除'}</h3>
+            <p>${finalMessage}</p>
             <div class="dialog-actions">
                 <button class="dialog-cancel">${translations?.cancel || '取消'}</button>
                 <button class="dialog-confirm" style="background-color: var(--error-color); color: white;">${translations?.delete || '删除'}</button>

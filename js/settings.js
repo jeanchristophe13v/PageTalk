@@ -2727,7 +2727,8 @@ export async function initQuickActionsSettings(elements, translations) {
     const addBtn = document.getElementById('add-quick-action-btn');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
-            showQuickActionDialog(null, translations);
+            // 点击时获取当前翻译，确保语言切换后使用最新翻译
+            showQuickActionDialog(null, getCurrentTranslations());
         });
     } else {
         console.error('[Settings] Add button not found');
@@ -2764,7 +2765,7 @@ export async function initQuickActionsSettings(elements, translations) {
 /**
  * 渲染快捷操作列表
  */
-async function renderQuickActionsList(translations) {
+export async function renderQuickActionsList(translations) {
     const container = document.getElementById('quick-actions-list');
     if (!container) {
         console.error('[Settings] Quick actions list container not found');
@@ -2837,13 +2838,15 @@ function createQuickActionElement(action, translations) {
 
     if (editBtn) {
         editBtn.addEventListener('click', () => {
-            showQuickActionDialog(action, translations);
+            // 点击时获取当前翻译，确保语言切换后使用最新翻译
+            showQuickActionDialog(action, getCurrentTranslations());
         });
     }
 
     if (deleteBtn) {
         deleteBtn.addEventListener('click', () => {
-            showDeleteQuickActionDialog(action, translations);
+            // 点击时获取当前翻译，确保语言切换后使用最新翻译
+            showDeleteQuickActionDialog(action, getCurrentTranslations());
         });
     }
 
@@ -2854,8 +2857,10 @@ function createQuickActionElement(action, translations) {
  * 显示快捷操作编辑对话框
  */
 function showQuickActionDialog(action, translations) {
+    // 实时获取当前翻译，确保语言切换后的翻译是最新的
+    const currentTranslations = getCurrentTranslations();
     const isEdit = !!action;
-    const title = isEdit ? (translations?.editQuickAction || '编辑快捷操作') : (translations?.addQuickAction || '添加快捷操作');
+    const title = isEdit ? (currentTranslations?.editQuickAction || '编辑快捷操作') : (currentTranslations?.addQuickAction || '添加快捷操作');
 
     // 创建对话框
     const dialog = document.createElement('div');
@@ -2868,26 +2873,26 @@ function showQuickActionDialog(action, translations) {
             </div>
             <div class="quick-action-dialog-content">
                 <div class="setting-group">
-                    <label>${translations?.actionName || '操作名称'} *</label>
-                    <input type="text" id="quick-action-name" value="${action ? escapeHtml(action.name) : ''}" placeholder="${translations?.actionNameRequired || '请输入操作名称'}">
+                    <label>${currentTranslations?.actionName || '操作名称'} *</label>
+                    <input type="text" id="quick-action-name" value="${action ? escapeHtml(action.name) : ''}" placeholder="${currentTranslations?.actionNameRequired || '请输入操作名称'}">
                 </div>
 
                 <div class="setting-group">
-                    <label>${translations?.actionPrompt || '提示词'} *</label>
-                    <textarea id="quick-action-prompt" placeholder="${translations?.actionPromptRequired || '请输入提示词'}" rows="4">${action ? escapeHtml(action.prompt) : ''}</textarea>
+                    <label>${currentTranslations?.actionPrompt || '提示词'} *</label>
+                    <textarea id="quick-action-prompt" placeholder="${currentTranslations?.actionPromptRequired || '请输入提示词'}" rows="4">${action ? escapeHtml(action.prompt) : ''}</textarea>
                 </div>
                 <div class="setting-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="quick-action-ignore-assistant" ${action && action.ignoreAssistant ? 'checked' : ''}>
                         <span class="checkmark"></span>
-                        ${translations?.ignoreAssistant || '忽略助手'}
+                        ${currentTranslations?.ignoreAssistant || '忽略助手'}
                     </label>
-                    <div class="setting-hint">${translations?.ignoreAssistantHint || '开启后，发送此快捷操作时不会附加助手的系统提示词'}</div>
+                    <div class="setting-hint">${currentTranslations?.ignoreAssistantHint || '开启后，发送此快捷操作时不会附加助手的系统提示词'}</div>
                 </div>
             </div>
             <div class="quick-action-dialog-footer">
-                <button class="quick-action-dialog-cancel">${translations?.cancel || '取消'}</button>
-                <button class="quick-action-dialog-save">${translations?.save || '保存'}</button>
+                <button class="quick-action-dialog-cancel">${currentTranslations?.cancel || '取消'}</button>
+                <button class="quick-action-dialog-save">${currentTranslations?.save || '保存'}</button>
             </div>
         </div>
     `;
@@ -2895,7 +2900,7 @@ function showQuickActionDialog(action, translations) {
     document.body.appendChild(dialog);
 
     // 设置事件监听器
-    setupQuickActionDialogEvents(dialog, action, translations);
+    setupQuickActionDialogEvents(dialog, action, currentTranslations);
 
     // 聚焦名称输入框
     setTimeout(() => {
@@ -2977,7 +2982,9 @@ function setupQuickActionDialogEvents(dialog, action, translations) {
         }
 
         if (success) {
-            await renderQuickActionsList(translations);
+            // 获取最新翻译
+            const latestTranslations = getCurrentTranslations();
+            await renderQuickActionsList(latestTranslations);
             closeDialog();
 
             // 刷新欢迎消息中的快捷操作
@@ -2986,13 +2993,15 @@ function setupQuickActionDialogEvents(dialog, action, translations) {
             }
 
             // 显示成功提示
-            const message = action ? (translations?.actionUpdated || '快捷操作已更新') : (translations?.actionAdded || '快捷操作已添加');
+            const message = action ? (latestTranslations?.actionUpdated || '快捷操作已更新') : (latestTranslations?.actionAdded || '快捷操作已添加');
             if (window.showToastUI) {
                 window.showToastUI(message, 'success');
             }
         } else {
+            // 获取最新翻译
+            const latestTranslations = getCurrentTranslations();
             // 显示错误提示
-            const message = action ? (translations?.actionUpdateFailed || '更新失败') : (translations?.actionAddFailed || '添加失败');
+            const message = action ? (latestTranslations?.actionUpdateFailed || '更新失败') : (latestTranslations?.actionAddFailed || '添加失败');
             if (window.showToastUI) {
                 window.showToastUI(message, 'error');
             }
@@ -3004,16 +3013,23 @@ function setupQuickActionDialogEvents(dialog, action, translations) {
  * 显示删除快捷操作确认对话框
  */
 function showDeleteQuickActionDialog(action, translations) {
+    // 实时获取当前翻译，确保语言切换后的翻译是最新的
+    const currentTranslations = getCurrentTranslations();
     const overlay = document.createElement('div');
     overlay.className = 'dialog-overlay';
+    // 构建确认消息，支持国际化
+    const confirmMessage = currentTranslations?.confirmDeleteAction || '确定要删除这个快捷操作吗？';
+    const finalMessage = confirmMessage.includes('{name}')
+        ? confirmMessage.replace('{name}', `<strong>${escapeHtml(action.name)}</strong>`)
+        : `确定要删除「<strong>${escapeHtml(action.name)}</strong>」这个快捷操作吗？`;
+
     overlay.innerHTML = `
         <div class="dialog-content">
-            <h3>${translations?.deleteQuickAction || '删除快捷操作'}</h3>
-            <p>${translations?.confirmDeleteAction || '确定要删除这个快捷操作吗？'}</p>
-            <p><strong>${escapeHtml(action.name)}</strong></p>
+            <h3>${currentTranslations?.deleteQuickAction || '删除'}</h3>
+            <p>${finalMessage}</p>
             <div class="dialog-actions">
-                <button class="dialog-cancel">${translations?.cancel || '取消'}</button>
-                <button class="dialog-confirm" style="background-color: var(--error-color); color: white;">${translations?.delete || '删除'}</button>
+                <button class="dialog-cancel">${currentTranslations?.cancel || '取消'}</button>
+                <button class="dialog-confirm" style="background-color: var(--error-color); color: white;">${currentTranslations?.delete || '删除'}</button>
             </div>
         </div>
     `;
@@ -3033,19 +3049,19 @@ function showDeleteQuickActionDialog(action, translations) {
         const success = await QuickActionsManager.deleteQuickAction(action.id);
 
         if (success) {
-            await renderQuickActionsList(translations);
+            await renderQuickActionsList(currentTranslations);
 
             // 刷新欢迎消息中的快捷操作
             if (window.refreshWelcomeMessageQuickActions) {
                 await window.refreshWelcomeMessageQuickActions();
             }
 
-            const message = translations?.actionDeleted || '快捷操作已删除';
+            const message = currentTranslations?.actionDeleted || '快捷操作已删除';
             if (window.showToastUI) {
                 window.showToastUI(message, 'success');
             }
         } else {
-            const message = translations?.actionDeleteFailed || '删除失败';
+            const message = currentTranslations?.actionDeleteFailed || '删除失败';
             if (window.showToastUI) {
                 window.showToastUI(message, 'error');
             }

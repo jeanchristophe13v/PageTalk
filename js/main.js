@@ -24,7 +24,7 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners, initQuickActionsSettings } from './settings.js';
+import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners, initQuickActionsSettings, renderQuickActionsList } from './settings.js';
 import * as QuickActionsManager from './quick-actions-manager.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
 import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction, createWelcomeMessage } from './chat.js';
@@ -1162,6 +1162,13 @@ async function loadAndApplyTranslations(language) {
     updateAgentsListUIAllArgs(); // Re-render agent list with translated labels/placeholders
     updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
     updateConnectionIndicator(state.isConnected, elements, currentTranslations); // Re-render connection status text
+
+    // 重新渲染快捷操作列表以更新翻译
+    try {
+        await renderQuickActionsList(currentTranslations);
+    } catch (error) {
+        console.warn('[main.js] Error updating quick actions list translations:', error);
+    }
 
     // 广播语言变化事件给动态创建的UI组件（如自定义选项对话框）
     try {

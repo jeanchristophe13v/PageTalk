@@ -192,18 +192,6 @@
                                 <!-- 助手项将通过 JavaScript 动态添加 -->
                             </div>
                         </div>
-                        
-                        <!-- 删除确认对话框 -->
-                        <div id="delete-confirm-dialog" class="dialog-overlay" style="display:none;">
-                            <div class="dialog-content">
-                                <h3>确认删除</h3>
-                                <p>您确定要删除助手 "<span id="delete-agent-name"></span>" 吗？此操作无法撤销。</p>
-                                <div class="dialog-actions">
-                                    <button id="cancel-delete" class="cancel-btn">取消</button>
-                                    <button id="confirm-delete" class="delete-btn">删除</button>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- 划词助手设置 -->
@@ -658,5 +646,17 @@
     <script src="../js/changelog.js"></script>
     <!-- Load the main coordinator script as a module -->
     <script type="module" src="../js/main.js"></script>
+
+    <!-- 删除确认对话框 - 移动到body直接子元素以确保全屏遮罩 -->
+    <div id="delete-confirm-dialog" class="dialog-overlay" style="display:none;">
+        <div class="dialog-content">
+            <h3>删除</h3>
+            <p>您确定要删除助手 "<span id="delete-agent-name"></span>" 吗？此操作无法撤销。</p>
+            <div class="dialog-actions">
+                <button id="cancel-delete" class="cancel-btn">取消</button>
+                <button id="confirm-delete" class="delete-btn" style="background-color: var(--error-color); color: white;">删除</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
