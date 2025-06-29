@@ -605,16 +605,17 @@ async function callAPIDirectlyWithStream(modelConfig, providerSettings, messages
  * 实时同步机制 - 监听存储变化并广播到所有标签页
  */
 chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'sync') {
-        console.log('[Background] Storage changed:', changes);
+    console.log('[Background] Storage changed:', changes, 'namespace:', namespace);
 
+    // 处理sync存储变化
+    if (namespace === 'sync') {
         // 特殊处理代理地址变化
         if (changes.proxyAddress) {
             console.log('[Background] Proxy address changed, updating proxy settings');
             updateProxySettings();
         }
 
-        // 获取所有标签页并广播变化
+        // 获取所有标签页并广播sync存储变化
         chrome.tabs.query({}, (tabs) => {
             tabs.forEach(tab => {
                 // 检查标签页是否支持content script
@@ -639,7 +640,18 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
                             // 忽略错误
                         });
                     }
+                }
+            });
+        });
+    }
 
+    // 处理local存储变化（主要是划词助手设置）
+    if (namespace === 'local') {
+        // 获取所有标签页并广播local存储变化
+        chrome.tabs.query({}, (tabs) => {
+            tabs.forEach(tab => {
+                // 检查标签页是否支持content script
+                if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
                     // 特殊处理划词助手设置变化
                     if (changes.textSelectionHelperSettings) {
                         console.log('[Background] Broadcasting text selection helper settings change to tab:', tab.id);

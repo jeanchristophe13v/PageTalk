@@ -84,13 +84,92 @@ const DEFAULT_SETTINGS = getDefaultSettings('zh-CN');
 let currentSettings = { ...DEFAULT_SETTINGS };
 
 /**
+ * 迁移数据从sync存储到local存储
+ */
+async function migrateDataFromSyncToLocal() {
+    return new Promise((resolve) => {
+        if (!chrome || !chrome.storage || !chrome.storage.sync || !chrome.storage.local) {
+            console.warn('[TextSelectionHelperSettings] Chrome storage API not available for migration');
+            resolve();
+            return;
+        }
+
+        // 检查是否已经完成迁移（使用版本标记）
+        chrome.storage.local.get(['textSelectionHelperSettingsVersion'], (versionResult) => {
+            if (chrome.runtime.lastError) {
+                console.error('[TextSelectionHelperSettings] Error checking migration version:', chrome.runtime.lastError);
+                resolve();
+                return;
+            }
+
+            // 如果版本标记已存在，说明迁移已完成，跳过迁移
+            if (versionResult.textSelectionHelperSettingsVersion) {
+                console.log('[TextSelectionHelperSettings] Migration already completed (version:', versionResult.textSelectionHelperSettingsVersion, '), skipping migration');
+                resolve();
+                return;
+            }
+
+            console.log('[TextSelectionHelperSettings] No migration version found, checking for data to migrate...');
+
+            // 从sync存储中获取数据
+            chrome.storage.sync.get(['textSelectionHelperSettings'], (syncResult) => {
+                if (chrome.runtime.lastError) {
+                    console.error('[TextSelectionHelperSettings] Error reading from sync storage:', chrome.runtime.lastError);
+                    // 即使读取失败，也要设置版本标记，避免重复尝试
+                    chrome.storage.local.set({ textSelectionHelperSettingsVersion: '1.0' }, () => {
+                        resolve();
+                    });
+                    return;
+                }
+
+                // 如果sync存储中有数据，迁移到local存储
+                if (syncResult.textSelectionHelperSettings) {
+                    console.log('[TextSelectionHelperSettings] Found data in sync storage, migrating to local storage...');
+                    chrome.storage.local.set({
+                        textSelectionHelperSettings: syncResult.textSelectionHelperSettings,
+                        textSelectionHelperSettingsVersion: '1.0'
+                    }, () => {
+                        if (chrome.runtime.lastError) {
+                            console.error('[TextSelectionHelperSettings] Error migrating to local storage:', chrome.runtime.lastError);
+                            resolve();
+                        } else {
+                            console.log('[TextSelectionHelperSettings] Data successfully migrated to local storage');
+                            // 清除sync存储中的数据，避免未来的潜在冲突
+                            chrome.storage.sync.remove(['textSelectionHelperSettings'], () => {
+                                if (chrome.runtime.lastError) {
+                                    console.warn('[TextSelectionHelperSettings] Warning: Could not remove data from sync storage:', chrome.runtime.lastError);
+                                } else {
+                                    console.log('[TextSelectionHelperSettings] Data removed from sync storage');
+                                }
+                                resolve();
+                            });
+                        }
+                    });
+                } else {
+                    console.log('[TextSelectionHelperSettings] No data found in sync storage to migrate');
+                    // 即使没有数据需要迁移，也要设置版本标记，避免重复检查
+                    chrome.storage.local.set({ textSelectionHelperSettingsVersion: '1.0' }, () => {
+                        if (chrome.runtime.lastError) {
+                            console.error('[TextSelectionHelperSettings] Error setting migration version:', chrome.runtime.lastError);
+                        } else {
+                            console.log('[TextSelectionHelperSettings] Migration version set, no data to migrate');
+                        }
+                        resolve();
+                    });
+                }
+            });
+        });
+    });
+}
+
+/**
  * 初始化划词助手设置
  */
 export async function initTextSelectionHelperSettings(elements, translations, showToastCallback) {
     console.log('[TextSelectionHelperSettings] Initializing...');
 
-    // 注释掉清理函数，保留自定义选项
-    // cleanupStorageData();
+    // 首先执行数据迁移
+    await migrateDataFromSyncToLocal();
 
     // 存储showToastCallback供全局使用
     window.textSelectionHelperShowToast = showToastCallback;
@@ -118,7 +197,7 @@ export async function initTextSelectionHelperSettings(elements, translations, sh
 function loadSettings() {
     return new Promise((resolve) => {
         // 检查Chrome存储API是否可用
-        if (!chrome || !chrome.storage || !chrome.storage.sync) {
+        if (!chrome || !chrome.storage || !chrome.storage.local) {
             console.warn('[TextSelectionHelperSettings] Chrome storage API not available, using default settings');
             currentSettings = { ...DEFAULT_SETTINGS };
             resolve();
@@ -126,79 +205,86 @@ function loadSettings() {
         }
 
         try {
-            // 首先获取当前语言设置
-            chrome.storage.sync.get(['language', 'textSelectionHelperSettings'], (result) => {
+            // 获取语言设置（仍从sync获取）和划词助手设置（从local获取）
+            chrome.storage.sync.get(['language'], (syncResult) => {
                 if (chrome.runtime.lastError) {
-                    console.error('[TextSelectionHelperSettings] Error loading settings:', chrome.runtime.lastError);
-                    currentSettings = { ...DEFAULT_SETTINGS };
-                } else {
-                    const currentLanguage = result.language || 'zh-CN';
-                    const dynamicDefaults = getDefaultSettings(currentLanguage);
-
-                    if (result.textSelectionHelperSettings) {
-                        currentSettings = { ...dynamicDefaults, ...result.textSelectionHelperSettings };
-
-                        // 智能更新默认提示词：只有当前提示词是默认提示词时才更新
-                        if (currentSettings.interpret && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.interpret.systemPrompt, 'interpret')) {
-                            currentSettings.interpret.systemPrompt = window.getDefaultPrompt('interpret', currentLanguage);
-                        }
-                        if (currentSettings.translate && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.translate.systemPrompt, 'translate')) {
-                            currentSettings.translate.systemPrompt = window.getDefaultPrompt('translate', currentLanguage);
-                        }
-
-                        // 确保maxOutputLength字段存在（向后兼容）
-                        if (currentSettings.interpret && currentSettings.interpret.maxOutputLength === undefined) {
-                            currentSettings.interpret.maxOutputLength = 65536;
-                        }
-                        if (currentSettings.translate && currentSettings.translate.maxOutputLength === undefined) {
-                            currentSettings.translate.maxOutputLength = 65536;
-                        }
-
-                        // 确保对话设置存在（向后兼容）
-                        if (!currentSettings.chat) {
-                            currentSettings.chat = {
-                                contextMode: 'custom',
-                                contextBefore: 500,
-                                contextAfter: 500
-                            };
-                        }
-                        if (currentSettings.chat && currentSettings.chat.contextMode === undefined) {
-                            currentSettings.chat.contextMode = 'custom';
-                        }
-                        if (currentSettings.chat && currentSettings.chat.contextBefore === undefined) {
-                            currentSettings.chat.contextBefore = 500;
-                        }
-                        if (currentSettings.chat && currentSettings.chat.contextAfter === undefined) {
-                            currentSettings.chat.contextAfter = 500;
-                        }
-
-                        // 确保自定义选项数组存在
-                        if (!currentSettings.customOptions) {
-                            currentSettings.customOptions = [];
-                        }
-
-                        // 为现有自定义选项添加maxOutputLength和icon字段（向后兼容）
-                        if (currentSettings.customOptions) {
-                            currentSettings.customOptions.forEach(option => {
-                                if (option.maxOutputLength === undefined) {
-                                    option.maxOutputLength = 65536;
-                                }
-                                if (option.icon === undefined) {
-                                    option.icon = 'star'; // 默认图标
-                                }
-                            });
-                        }
-
-                        // 确保选项顺序数组存在
-                        if (!currentSettings.optionsOrder) {
-                            currentSettings.optionsOrder = ['interpret', 'translate', 'chat'];
-                        }
-                    } else {
-                        currentSettings = { ...dynamicDefaults };
-                    }
+                    console.error('[TextSelectionHelperSettings] Error loading language from sync:', chrome.runtime.lastError);
                 }
-                console.log('[TextSelectionHelperSettings] Settings loaded:', currentSettings);
-                resolve();
+
+                const currentLanguage = syncResult.language || 'zh-CN';
+                const dynamicDefaults = getDefaultSettings(currentLanguage);
+
+                // 从本地存储获取划词助手设置
+                chrome.storage.local.get(['textSelectionHelperSettings'], (localResult) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('[TextSelectionHelperSettings] Error loading settings from local:', chrome.runtime.lastError);
+                        currentSettings = { ...dynamicDefaults };
+                    } else {
+                        if (localResult.textSelectionHelperSettings) {
+                            currentSettings = { ...dynamicDefaults, ...localResult.textSelectionHelperSettings };
+
+                            // 智能更新默认提示词：只有当前提示词是默认提示词时才更新
+                            if (currentSettings.interpret && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.interpret.systemPrompt, 'interpret')) {
+                                currentSettings.interpret.systemPrompt = window.getDefaultPrompt('interpret', currentLanguage);
+                            }
+                            if (currentSettings.translate && window.isDefaultPrompt && window.isDefaultPrompt(currentSettings.translate.systemPrompt, 'translate')) {
+                                currentSettings.translate.systemPrompt = window.getDefaultPrompt('translate', currentLanguage);
+                            }
+
+                            // 确保maxOutputLength字段存在（向后兼容）
+                            if (currentSettings.interpret && currentSettings.interpret.maxOutputLength === undefined) {
+                                currentSettings.interpret.maxOutputLength = 65536;
+                            }
+                            if (currentSettings.translate && currentSettings.translate.maxOutputLength === undefined) {
+                                currentSettings.translate.maxOutputLength = 65536;
+                            }
+
+                            // 确保对话设置存在（向后兼容）
+                            if (!currentSettings.chat) {
+                                currentSettings.chat = {
+                                    contextMode: 'custom',
+                                    contextBefore: 500,
+                                    contextAfter: 500
+                                };
+                            }
+                            if (currentSettings.chat && currentSettings.chat.contextMode === undefined) {
+                                currentSettings.chat.contextMode = 'custom';
+                            }
+                            if (currentSettings.chat && currentSettings.chat.contextBefore === undefined) {
+                                currentSettings.chat.contextBefore = 500;
+                            }
+                            if (currentSettings.chat && currentSettings.chat.contextAfter === undefined) {
+                                currentSettings.chat.contextAfter = 500;
+                            }
+
+                            // 确保自定义选项数组存在
+                            if (!currentSettings.customOptions) {
+                                currentSettings.customOptions = [];
+                            }
+
+                            // 为现有自定义选项添加maxOutputLength和icon字段（向后兼容）
+                            if (currentSettings.customOptions) {
+                                currentSettings.customOptions.forEach(option => {
+                                    if (option.maxOutputLength === undefined) {
+                                        option.maxOutputLength = 65536;
+                                    }
+                                    if (option.icon === undefined) {
+                                        option.icon = 'star'; // 默认图标
+                                    }
+                                });
+                            }
+
+                            // 确保选项顺序数组存在
+                            if (!currentSettings.optionsOrder) {
+                                currentSettings.optionsOrder = ['interpret', 'translate', 'chat'];
+                            }
+                        } else {
+                            currentSettings = { ...dynamicDefaults };
+                        }
+                    }
+                    console.log('[TextSelectionHelperSettings] Settings loaded:', currentSettings);
+                    resolve();
+                });
             });
         } catch (error) {
             console.error('[TextSelectionHelperSettings] Exception loading settings:', error);
@@ -230,6 +316,7 @@ function setupLanguageChangeListener() {
     // 监听Chrome存储变化
     if (chrome && chrome.storage && chrome.storage.onChanged) {
         chrome.storage.onChanged.addListener((changes, namespace) => {
+            // 监听语言变化（仍在sync存储中）
             if (namespace === 'sync' && changes.language) {
                 const newLanguage = changes.language.newValue;
                 const oldLanguage = changes.language.oldValue;
@@ -238,6 +325,11 @@ function setupLanguageChangeListener() {
                     console.log('[TextSelectionHelperSettings] Language changed from', oldLanguage, 'to', newLanguage);
                     handleLanguageChange(newLanguage);
                 }
+            }
+            // 监听划词助手设置变化（现在在local存储中）
+            if (namespace === 'local' && changes.textSelectionHelperSettings) {
+                console.log('[TextSelectionHelperSettings] Text selection helper settings changed in local storage');
+                // 可以在这里添加其他需要响应设置变化的逻辑
             }
         });
     }
@@ -333,20 +425,20 @@ function updateDefaultPromptsForLanguage(language) {
  */
 function saveSettings() {
     // 检查Chrome存储API是否可用
-    if (!chrome || !chrome.storage || !chrome.storage.sync) {
+    if (!chrome || !chrome.storage || !chrome.storage.local) {
         console.warn('[TextSelectionHelperSettings] Chrome storage API not available, cannot save settings');
         return;
     }
 
-    // 保存包含自定义选项的完整设置
+    // 保存包含自定义选项的完整设置到本地存储
     const settingsToSave = { ...currentSettings };
 
     try {
-        chrome.storage.sync.set({ textSelectionHelperSettings: settingsToSave }, () => {
+        chrome.storage.local.set({ textSelectionHelperSettings: settingsToSave }, () => {
             if (chrome.runtime.lastError) {
                 console.error('[TextSelectionHelperSettings] Error saving settings:', chrome.runtime.lastError);
             } else {
-                console.log('[TextSelectionHelperSettings] Settings saved');
+                console.log('[TextSelectionHelperSettings] Settings saved to local storage');
             }
         });
     } catch (error) {

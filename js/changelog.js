@@ -5,6 +5,24 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.6.5",
+        date: "2025-06-29",
+        changes: {
+            "zh-CN": [
+                "1. 修复了划词助手自定义选项在某些情况下刷新后会消失的Bug",
+                "2. 为了提高设置的稳定性，划词助手的配置将不再跨设备同步",
+                "3. 其他核心设置（如助手、API Key）的同步不受影响",
+                "4. 现有用户的设置将自动迁移，无需手动操作"
+            ],
+            "en": [
+                "1. Fixed a bug where Selection Tool custom options would disappear after refresh in certain situations",
+                "2. To improve settings stability, Selection Tool configurations will no longer sync across devices",
+                "3. Other core settings (such as agents, API keys) sync functionality remains unaffected",
+                "4. Existing user settings will be automatically migrated without manual intervention"
+            ]
+        }
+    },
+    {
         version: "3.6.4",
         date: "2025-06-27",
         changes: {

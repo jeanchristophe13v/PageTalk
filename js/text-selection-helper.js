@@ -387,8 +387,8 @@ let cachedEnabledState = true; // 默认启用
  * 初始化启用状态缓存
  */
 function initEnabledStateCache() {
-    if (chrome && chrome.storage && chrome.storage.sync) {
-        chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
+    if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['textSelectionHelperSettings'], (result) => {
             if (result.textSelectionHelperSettings && typeof result.textSelectionHelperSettings.enabled !== 'undefined') {
                 cachedEnabledState = result.textSelectionHelperSettings.enabled;
                 console.log('[TextSelectionHelper] Enabled state cache initialized:', cachedEnabledState);
@@ -421,7 +421,8 @@ function isHelperEnabled() {
 function setupSettingsChangeListener() {
     if (chrome && chrome.storage && chrome.storage.onChanged) {
         chrome.storage.onChanged.addListener((changes, namespace) => {
-            if (namespace === 'sync' && changes.textSelectionHelperSettings) {
+            // 监听本地存储中的划词助手设置变化
+            if (namespace === 'local' && changes.textSelectionHelperSettings) {
                 const newSettings = changes.textSelectionHelperSettings.newValue;
                 if (newSettings && typeof newSettings.enabled !== 'undefined') {
                     const wasEnabled = cachedEnabledState;
@@ -3055,7 +3056,7 @@ async function getTextSelectionHelperSettings() {
             // 获取当前语言设置
             const currentLanguage = await getCurrentLanguage();
 
-            chrome.storage.sync.get(['textSelectionHelperSettings'], (result) => {
+            chrome.storage.local.get(['textSelectionHelperSettings'], (result) => {
                 // 使用translations.js中的默认提示词
                 const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
                     (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
