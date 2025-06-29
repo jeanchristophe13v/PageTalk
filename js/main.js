@@ -1163,6 +1163,13 @@ async function loadAndApplyTranslations(language) {
     updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
     updateConnectionIndicator(state.isConnected, elements, currentTranslations); // Re-render connection status text
 
+    // 更新默认快捷操作的翻译
+    try {
+        await QuickActionsManager.updateDefaultActionsTranslations();
+    } catch (error) {
+        console.warn('[main.js] Error updating default quick actions translations:', error);
+    }
+
     // 重新渲染快捷操作列表以更新翻译
     try {
         await renderQuickActionsList(currentTranslations);

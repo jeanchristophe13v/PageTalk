@@ -28,7 +28,7 @@
     border-radius: var(--radius-lg);
     padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md)); /* 缩小内边距 */
     margin: var(--spacing-md) auto; /* 缩小外边距 */
-    width: clamp(180px, 90%, 35%); /* 缩小宽度 */
+    width: clamp(200px, 90%, 45%); /* 稍微增加宽度 */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     text-align: center;
     border: 1px solid var(--border-color);

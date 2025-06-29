@@ -387,6 +387,60 @@ if (typeof window.translations === 'undefined') {
     'importProcessFailed': '导入处理失败',
     'quickActionError': '快捷操作执行失败',
 
+    // --- 默认快捷操作 ---
+    'defaultQuickActionSummarize': '总结',
+    'defaultQuickActionSummarizePrompt': '总结一下',
+    'defaultQuickActionMermaid': 'mermaid',
+    'defaultQuickActionMermaidPrompt': `Role：你是最擅长内容和数据视觉化、信息图展示的大师。
+
+Task：
+1. 请分析文章内容，用Mermaid语法创建适当的图表来可视化其中的关键信息，选择最合适3-5种图表类型展示
+        1. 如果内容包含步骤或流程，请创建流程图(flowchart)
+        2. 如果内容描述时间线或事件序列，请创建时序图(timeline)或甘特图(gantt)
+        3. 如果内容展示组织结构或层次关系，请创建组织结构图
+        4. 如果内容包含实体间的关系，请创建实体关系图(ER diagram)
+        5. 如果内容包含类或对象间的关系，请创建类图(class diagram)
+        6. 如果内容包含状态转换，请创建状态图(state diagram)
+        7. 如果内容包含顺序交互，请创建序列图(sequence diagram)
+2. 整理网站核心内容和观点，生成文本格式的思维导图。
+
+
+Notice：
+
+1. 请确保图表:
+        - 图表要显示在移动版，所以宽度有限，如横向生成太宽，改成纵向图表，如flowchart TD/TB。
+        - 清晰展示文章中的主要概念和关系
+        - 不要使用配色，最普通的style即可
+        - 包含简洁的标签和描述
+        - 遵循Mermaid语法规范
+        - 根据文本中的数据或关键点，用文本符号绘制合适的Mermaid图表。
+    - 如果绘制不出Mermaid图，用文本图代替，不能留空。
+2. 直接输出内容，不解读图表选择逻辑，也不需要任何引导语，比如"好的，我来..."
+3. 生成的图表，用户看完有恍然大悟感觉，甚至认知升级，影响他的思想和行动。
+4. 你每次都会CoT思考，梳理清楚内容/结构后，才开始绘图。
+5. 记得用双引号包裹文本，避免生成中文内容时出现syntax error in graph
+
+
+
+
+Format：
+
+### 一、<Title 1>
+<图表1>
+
+### 二、<Title 2>
+<图表2>
+
+### 三、<Title 3>
+<图表3>
+
+...
+
+### 内容结构
+
+待处理文章内容:
+{{ context }}`,
+
     // --- 划词助手默认提示词 ---
     'defaultInterpretPrompt': '请解释这段文本的含义：',
     'defaultTranslatePrompt': `# 角色
@@ -809,6 +863,59 @@ if (typeof window.translations === 'undefined') {
     'importNoActions': 'No actions imported',
     'importProcessFailed': 'Import processing failed',
     'quickActionError': 'Quick action execution failed',
+
+    // --- Default Quick Actions ---
+    'defaultQuickActionSummarize': 'Summarize',
+    'defaultQuickActionSummarizePrompt': 'Please summarize this content',
+    'defaultQuickActionMermaid': 'mermaid',
+    'defaultQuickActionMermaidPrompt': `Role: You are a master of content and data visualization, and information graphics display.
+
+Task:
+1. Please analyze the article content and use Mermaid syntax to create appropriate charts to visualize the key information, selecting the most suitable 3-5 chart types for display
+        1. If the content contains steps or processes, create flowcharts
+        2. If the content describes timelines or event sequences, create timeline or Gantt charts
+        3. If the content shows organizational structure or hierarchical relationships, create organizational charts
+        4. If the content contains relationships between entities, create entity relationship diagrams (ER diagrams)
+        5. If the content contains relationships between classes or objects, create class diagrams
+        6. If the content contains state transitions, create state diagrams
+        7. If the content contains sequential interactions, create sequence diagrams
+2. Organize the core content and viewpoints of the website to generate text-format mind maps.
+
+
+Notice:
+
+1. Please ensure the charts:
+        - Charts should be displayed on mobile, so width is limited. If horizontal generation is too wide, change to vertical charts, such as flowchart TD/TB.
+        - Clearly show the main concepts and relationships in the article
+        - Do not use coloring, use the most common style
+        - Include concise labels and descriptions
+        - Follow Mermaid syntax specifications
+        - Draw appropriate Mermaid charts with text symbols based on data or key points in the text.
+    - If Mermaid charts cannot be drawn, use text charts instead, cannot be left empty.
+2. Output content directly, do not interpret chart selection logic, and do not need any introductory language, such as "Okay, let me..."
+3. The generated charts should give users a sudden realization feeling, even cognitive upgrade, affecting their thoughts and actions.
+4. You will think through CoT each time, sort out the content/structure clearly, and then start drawing.
+
+
+
+
+Format:
+
+### I. <Title 1>
+<Chart 1>
+
+### II. <Title 2>
+<Chart 2>
+
+### III. <Title 3>
+<Chart 3>
+
+...
+
+### Content Structure
+
+Content to be processed:
+{{ context }}`,
 
     // --- Text Selection Helper Default Prompts ---
     'defaultInterpretPrompt': 'Please explain the meaning of this text:',

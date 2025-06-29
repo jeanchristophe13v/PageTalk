@@ -84,7 +84,7 @@
     }
     .welcome-message {
         padding: var(--spacing-md);
-        width: clamp(150px, 90%, 40%); /* Adjust width for this range */
+        width: clamp(170px, 90%, 50%); /* 稍微增加窄屏时的宽度 */
     }
     /* Settings container padding was removed, sub-content has padding */
     #settings { /* Main settings tab content area */

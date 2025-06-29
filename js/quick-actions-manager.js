@@ -14,16 +14,55 @@ let currentQuickActions = {
 // 初始化状态标记
 let isInitialized = false;
 
-// 默认快捷操作
-const DEFAULT_QUICK_ACTIONS = [
-    {
-        id: 'default-summarize',
-        name: '总结一下',
-        prompt: '请总结这个页面的主要内容',
-        ignoreAssistant: false,
-        order: 0
+/**
+ * 获取当前语言设置
+ */
+function getCurrentLanguage() {
+    // 尝试从全局状态获取语言设置
+    if (typeof window !== 'undefined' && window.state && window.state.language) {
+        return window.state.language;
     }
-];
+    // 从localStorage获取语言设置
+    if (typeof localStorage !== 'undefined') {
+        return localStorage.getItem('language') || 'zh-CN';
+    }
+    return 'zh-CN';
+}
+
+/**
+ * 获取翻译文本
+ */
+function getTranslation(key) {
+    const currentLanguage = getCurrentLanguage();
+    if (typeof window !== 'undefined' && window.translations) {
+        return window.translations[currentLanguage]?.[key] ||
+               window.translations['zh-CN']?.[key] ||
+               key;
+    }
+    return key;
+}
+
+/**
+ * 获取当前语言的默认快捷操作
+ */
+function getDefaultQuickActions() {
+    return [
+        {
+            id: 'default-summarize',
+            name: getTranslation('defaultQuickActionSummarize'),
+            prompt: getTranslation('defaultQuickActionSummarizePrompt'),
+            ignoreAssistant: false,
+            order: 0
+        },
+        {
+            id: 'default-mermaid',
+            name: getTranslation('defaultQuickActionMermaid'),
+            prompt: getTranslation('defaultQuickActionMermaidPrompt'),
+            ignoreAssistant: true,
+            order: 1
+        }
+    ];
+}
 
 /**
  * 初始化快捷操作管理器
@@ -122,8 +161,8 @@ async function saveQuickActions() {
  */
 async function initializeDefaultActions() {
     console.log('[QuickActionsManager] Initializing default actions');
-    
-    currentQuickActions.actions = [...DEFAULT_QUICK_ACTIONS];
+
+    currentQuickActions.actions = getDefaultQuickActions();
     await saveQuickActions();
 }
 
@@ -357,12 +396,49 @@ export async function importQuickActions(importData, mode = 'merge') {
  * 重置为默认快捷操作
  */
 export async function resetToDefaultActions() {
-    currentQuickActions.actions = [...DEFAULT_QUICK_ACTIONS];
+    currentQuickActions.actions = getDefaultQuickActions();
     const success = await saveQuickActions();
-    
+
     if (success) {
         console.log('[QuickActionsManager] Reset to default actions');
     }
-    
+
     return success;
+}
+
+/**
+ * 更新默认快捷操作的翻译
+ * 当语言切换时调用此函数来更新默认快捷操作的名称和提示词
+ */
+export async function updateDefaultActionsTranslations() {
+    if (!isInitialized) {
+        console.warn('[QuickActionsManager] updateDefaultActionsTranslations called before initialization');
+        return false;
+    }
+
+    const defaultActions = getDefaultQuickActions();
+    let hasUpdates = false;
+
+    // 更新现有的默认快捷操作
+    currentQuickActions.actions.forEach(action => {
+        const defaultAction = defaultActions.find(def => def.id === action.id);
+        if (defaultAction) {
+            // 只更新名称和提示词，保留用户可能修改的其他设置
+            if (action.name !== defaultAction.name || action.prompt !== defaultAction.prompt) {
+                action.name = defaultAction.name;
+                action.prompt = defaultAction.prompt;
+                hasUpdates = true;
+            }
+        }
+    });
+
+    if (hasUpdates) {
+        const success = await saveQuickActions();
+        if (success) {
+            console.log('[QuickActionsManager] Default actions translations updated');
+        }
+        return success;
+    }
+
+    return true;
 }
