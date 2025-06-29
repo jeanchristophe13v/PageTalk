@@ -1148,36 +1148,38 @@
 
 /* 设置面板样式 - 主面板中的划词助手设置界面 */
 #settings-text-selection-helper .setting-card {
-    display: flex;
-    flex-direction: column;
-    border-radius: var(--radius-lg); /* 使用大圆角，与 .agent-item 保持一致 */
-    background-color: var(--card-background);
-    border: 1px solid var(--border-color);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    width: calc(100% - 4px); /* 为阴影预留 2px 左右空间，与 .agent-item 保持一致 */
-    margin: 2px 2px var(--spacing-md) 2px; /* 减少底部间距，使卡片更紧凑 */
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: var(--radius-lg) !important; /* 使用大圆角，与 .agent-item 保持一致 */
+    background-color: var(--card-background) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    width: 100% !important; /* 移除阴影预留空间，让卡片占满宽度 */
+    margin: 0 0 var(--spacing-sm) 0 !important; /* 完全覆盖通用样式的左右边距 */
+    padding: 0 !important; /* 覆盖通用样式的内边距 */
     transform: scale(1);
     opacity: 1;
     overflow: hidden;
 }
 
 #settings-text-selection-helper .setting-card:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 4px 12px rgba(76, 110, 245, 0.15);
-    transform: translateY(-1px) scale(1.005);
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.12) !important;
+    transform: translateY(-1px) !important;
     z-index: 1;
 }
 
 #settings-text-selection-helper .setting-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    background-color: transparent; /* 初始背景透明，与 .agent-item-header 保持一致 */
-    border-bottom: 1px solid transparent;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md)) !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+    background-color: transparent !important; /* 初始背景透明，与 .agent-item-header 保持一致 */
+    border-bottom: 1px solid transparent !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    margin: 0 !important; /* 确保没有额外的边距 */
 }
 
 /* 注意：header 不设置悬浮背景色变化，因为整个卡片已经有悬浮效果了 */
@@ -1255,27 +1257,28 @@
 }
 
 #settings-text-selection-helper .setting-card-content {
-    max-height: 0;
-    overflow: hidden;
-    padding: 0 var(--spacing-lg);
-    border-top: 1px solid transparent;
-    background-color: var(--card-background); /* 使用主题变量，支持深色模式 */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 var(--spacing-md) !important;
+    border-top: 1px solid transparent !important;
+    background-color: var(--card-background) !important; /* 使用主题变量，支持深色模式 */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    opacity: 0 !important;
+    margin: 0 !important; /* 确保没有额外的边距 */
 }
 
 #settings-text-selection-helper .setting-card.expanded .setting-card-content {
-    max-height: none; /* 移除高度限制，允许无限制显示内容 */
-    padding: var(--spacing-md) var(--spacing-lg);
-    border-top-color: var(--border-color);
-    opacity: 1;
+    max-height: none !important; /* 移除高度限制，允许无限制显示内容 */
+    padding: var(--spacing-md) !important;
+    border-top-color: var(--border-color) !important;
+    opacity: 1 !important;
 }
 
 #settings-text-selection-helper .setting-card.collapsed .setting-card-content {
-    max-height: 0;
-    padding: 0 var(--spacing-lg);
-    border-top-color: transparent;
-    opacity: 0;
+    max-height: 0 !important;
+    padding: 0 var(--spacing-md) !important;
+    border-top-color: transparent !important;
+    opacity: 0 !important;
 }
 
 /* 不可折叠的卡片样式（如选项顺序） */

@@ -577,11 +577,27 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     setTitle('#close-panel-settings', 'closePanelTitle');
 
     setText('#settings-general h2', 'generalSettingsHeading');
-    setText('label[for="language-select"]', 'languageLabel');
-    setText('label[for="export-format"]', 'exportChatLabel');
+
+    // Language setting card
+    setText('.setting-card-title[data-i18n="languageLabel"]', 'languageLabel');
+    setText('.setting-card-description[data-i18n="languageDescription"]', 'languageDescription');
+
+    // Chat export setting card
+    setText('.setting-card-title[data-i18n="exportChatLabel"]', 'exportChatLabel');
+    setText('.setting-card-description[data-i18n="exportChatDescription"]', 'exportChatDescription');
     setText('#export-format option[value="markdown"]', 'exportFormatMarkdown');
     setText('#export-format option[value="text"]', 'exportFormatText');
-    setText('#export-chat-history', 'exportButton');
+    setText('#export-chat-history span[data-i18n="exportButton"]', 'exportButton');
+
+    // Proxy setting card
+    setText('.setting-card-title[data-i18n="proxyAddressLabel"]', 'proxyAddressLabel');
+    setText('.setting-card-description[data-i18n="proxyAddressHint"]', 'proxyAddressHint');
+
+    // Unified Import/Export
+    setText('.unified-data-title[data-i18n="unifiedImportExportLabel"]', 'unifiedImportExportLabel');
+    setText('.unified-data-description[data-i18n="unifiedImportExportHint"]', 'unifiedImportExportHint');
+    setText('#export-all-settings span', 'exportAllButton');
+    setText('#import-all-settings span', 'importAllButton');
 
     setText('#settings-agent h2', 'agentSettingsHeading');
     setText('.agents-list-header h3', 'agentsListHeading');

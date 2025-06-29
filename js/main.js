@@ -145,6 +145,10 @@ const elements = {
     sunIconSettings: document.getElementById('sun-icon'),
     exportFormatSelect: document.getElementById('export-format'),
     exportChatHistoryBtn: document.getElementById('export-chat-history'),
+    // Unified Import/Export
+    exportAllSettingsBtn: document.getElementById('export-all-settings'),
+    importAllSettingsBtn: document.getElementById('import-all-settings'),
+    unifiedImportInput: document.getElementById('unified-import-input'),
     // Settings - Agent
     agentsList: document.getElementById('agents-list'),
     addNewAgent: document.getElementById('add-new-agent'),
@@ -434,6 +438,19 @@ function setupEventListeners() {
     // Proxy Test Button
     if (elements.testProxyBtn) {
         elements.testProxyBtn.addEventListener('click', () => handleProxyTest(state, elements, showToastUI, currentTranslations));
+    }
+
+    // Unified Import/Export
+    if (elements.exportAllSettingsBtn) {
+        elements.exportAllSettingsBtn.addEventListener('click', () => handleUnifiedExport(showToastUI, currentTranslations));
+    }
+    if (elements.importAllSettingsBtn) {
+        elements.importAllSettingsBtn.addEventListener('click', () => {
+            elements.unifiedImportInput.click();
+        });
+    }
+    if (elements.unifiedImportInput) {
+        elements.unifiedImportInput.addEventListener('change', (e) => handleUnifiedImport(e, showToastUI, currentTranslations));
     }
 
     // Agent Actions
@@ -1394,5 +1411,223 @@ async function refreshWelcomeMessageQuickActions() {
 // 导出刷新函数供设置界面使用
 window.refreshWelcomeMessageQuickActions = refreshWelcomeMessageQuickActions;
 
+// --- 统一导入导出功能 ---
 
+/**
+ * 处理统一导出功能
+ * @param {function} showToastUI - Toast显示函数
+ * @param {object} currentTranslations - 当前翻译对象
+ */
+async function handleUnifiedExport(showToastUI, currentTranslations) {
+    try {
+        console.log('[main.js] Starting unified export...');
 
+        // 收集所有需要导出的数据
+        const exportData = await collectAllSettingsData();
+
+        // 生成文件名
+        const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const filename = `pagetalk_all_settings_${timestamp}.json`;
+
+        // 创建并下载文件
+        const jsonString = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const message = currentTranslations?.unifiedExportSuccess || '所有设置已导出';
+        showToastUI(message, 'success');
+        console.log('[main.js] Unified export completed successfully');
+
+    } catch (error) {
+        console.error('[main.js] Unified export failed:', error);
+        const message = currentTranslations?.unifiedExportError || '导出设置时出错: {error}';
+        showToastUI(message.replace('{error}', error.message), 'error');
+    }
+}
+
+/**
+ * 处理统一导入功能
+ * @param {Event} event - 文件选择事件
+ * @param {function} showToastUI - Toast显示函数
+ * @param {object} currentTranslations - 当前翻译对象
+ */
+async function handleUnifiedImport(event, showToastUI, currentTranslations) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            console.log('[main.js] Starting unified import...');
+
+            // 解析JSON数据
+            const importData = JSON.parse(e.target.result);
+
+            // 验证数据格式
+            if (!validateImportData(importData)) {
+                throw new Error('Invalid file format');
+            }
+
+            // 用户确认
+            const confirmMessage = currentTranslations?.unifiedImportConfirm ||
+                '这将覆盖您所有的当前设置，操作无法撤销。是否继续？';
+
+            if (!window.confirm(confirmMessage)) {
+                return;
+            }
+
+            // 执行导入
+            await importAllSettingsData(importData);
+
+            // 显示成功消息
+            const successMessage = currentTranslations?.unifiedImportSuccess ||
+                '设置导入成功！界面将自动刷新以应用新设置。';
+            showToastUI(successMessage, 'success');
+
+            // 延迟刷新界面
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
+            console.log('[main.js] Unified import completed successfully');
+
+        } catch (error) {
+            console.error('[main.js] Unified import failed:', error);
+            const message = currentTranslations?.unifiedImportError || '导入失败：{error}';
+            showToastUI(message.replace('{error}', error.message), 'error');
+        }
+    };
+
+    reader.readAsText(file);
+
+    // 清空文件输入，允许重复选择同一文件
+    event.target.value = '';
+}
+
+/**
+ * 收集所有设置数据
+ * @returns {Promise<Object>} 包含所有设置的对象
+ */
+async function collectAllSettingsData() {
+    return new Promise((resolve) => {
+        // 从sync存储获取数据
+        chrome.storage.sync.get(null, (syncResult) => {
+            if (chrome.runtime.lastError) {
+                console.error('[main.js] Error reading from sync storage:', chrome.runtime.lastError);
+                syncResult = {};
+            }
+
+            // 从local存储获取数据
+            chrome.storage.local.get(null, (localResult) => {
+                if (chrome.runtime.lastError) {
+                    console.error('[main.js] Error reading from local storage:', chrome.runtime.lastError);
+                    localResult = {};
+                }
+
+                // 构建导出数据结构
+                const exportData = {
+                    app: 'PageTalk',
+                    version: '1.0',
+                    exportDate: new Date().toISOString(),
+                    settings: {
+                        sync: {
+                            // 助手配置
+                            agents: syncResult.agents || [],
+                            currentAgentId: syncResult.currentAgentId || null,
+                            // 供应商设置（API Keys等）
+                            providerSettings: syncResult.providerSettings || {},
+                            // 模型管理器相关
+                            managedModels: syncResult.managedModels || [],
+                            userActiveModels: syncResult.userActiveModels || [],
+                            modelManagerVersion: syncResult.modelManagerVersion || null,
+                            // 通用设置
+                            language: syncResult.language || 'zh-CN',
+                            proxyAddress: syncResult.proxyAddress || '',
+                            model: syncResult.model || null,
+                            // 自定义供应商
+                            customProviders: syncResult.customProviders || []
+                        },
+                        local: {
+                            // 划词助手设置
+                            textSelectionHelperSettings: localResult.textSelectionHelperSettings || {},
+                            textSelectionHelperSettingsVersion: localResult.textSelectionHelperSettingsVersion || null,
+                            // 快捷操作
+                            quickActions: localResult.quickActions || { actions: [] }
+                        }
+                    }
+                };
+
+                console.log('[main.js] Collected settings data:', exportData);
+                resolve(exportData);
+            });
+        });
+    });
+}
+
+/**
+ * 验证导入数据格式
+ * @param {Object} importData - 导入的数据
+ * @returns {boolean} 是否有效
+ */
+function validateImportData(importData) {
+    // 检查基本结构
+    if (!importData || typeof importData !== 'object') {
+        return false;
+    }
+
+    // 检查必要字段
+    if (!importData.settings || typeof importData.settings !== 'object') {
+        return false;
+    }
+
+    // 检查sync和local字段
+    if (!importData.settings.sync || typeof importData.settings.sync !== 'object') {
+        return false;
+    }
+
+    if (!importData.settings.local || typeof importData.settings.local !== 'object') {
+        return false;
+    }
+
+    console.log('[main.js] Import data validation passed');
+    return true;
+}
+
+/**
+ * 导入所有设置数据
+ * @param {Object} importData - 导入的数据
+ * @returns {Promise<void>}
+ */
+async function importAllSettingsData(importData) {
+    return new Promise((resolve, reject) => {
+        // 导入sync数据
+        chrome.storage.sync.set(importData.settings.sync, () => {
+            if (chrome.runtime.lastError) {
+                console.error('[main.js] Error saving to sync storage:', chrome.runtime.lastError);
+                reject(new Error('Failed to save sync settings'));
+                return;
+            }
+
+            // 导入local数据
+            chrome.storage.local.set(importData.settings.local, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('[main.js] Error saving to local storage:', chrome.runtime.lastError);
+                    reject(new Error('Failed to save local settings'));
+                    return;
+                }
+
+                console.log('[main.js] All settings imported successfully');
+                resolve();
+            });
+        });
+    });
+}

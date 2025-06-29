@@ -50,8 +50,10 @@ if (typeof window.translations === 'undefined') {
     'agentSettingsNav': '助手',
     'modelSettingsNav': '模型',
     'generalSettingsHeading': '通用设置',
-    'languageLabel': '语言：',
-    'exportChatLabel': '导出聊天记录：',
+    'languageLabel': '语言',
+    'languageDescription': '选择界面显示语言',
+    'exportChatLabel': '导出聊天记录',
+    'exportChatDescription': '将当前聊天记录导出为文件',
     'exportFormatMarkdown': 'Markdown',
     'exportFormatText': 'Text',
     'exportButton': '导出',
@@ -137,6 +139,18 @@ if (typeof window.translations === 'undefined') {
 
     // --- 代理相关错误消息 ---
     'proxyConnectionFailed': '代理服务器 {proxy} 连接失败，已自动清除代理设置以恢复网络连接。',
+
+    // --- 统一导入导出相关翻译 ---
+    'unifiedImportExportLabel': '统一数据管理',
+    'unifiedImportExportHint': '导出或导入所有助手、划词助手、快捷操作及API Key配置。',
+    'exportAllButton': '导出全部',
+    'importAllButton': '导入全部',
+    'unifiedExportSuccess': '所有设置已导出',
+    'unifiedExportError': '导出设置时出错: {error}',
+    'unifiedImportSuccess': '设置导入成功！界面将自动刷新以应用新设置。',
+    'unifiedImportError': '导入失败：{error}',
+    'unifiedImportInvalidFormat': '导入失败：文件格式不正确',
+    'unifiedImportConfirm': '这将覆盖您所有的当前设置，操作无法撤销。是否继续？',
 
     // --- 通用错误消息 ---
     'unknownErrorLoadingTab': '加载标签页时发生未知错误',
@@ -304,7 +318,7 @@ if (typeof window.translations === 'undefined') {
     'fetchModelsError': '添加模型失败: {error}',
 
     // --- 代理设置相关翻译 ---
-    'proxyAddressLabel': '代理地址：',
+    'proxyAddressLabel': '代理设置',
     'proxyAddressPlaceholder': 'http://127.0.0.1:7890 或 socks5://127.0.0.1:1080',
     'proxyAddressHint': '支持 HTTP 和 SOCKS5 代理，适用于所有AI供应商，留空则禁用代理。',
     'proxySetSuccess': '代理设置已应用',
@@ -528,8 +542,10 @@ Format：
     'agentSettingsNav': 'Agent',
     'modelSettingsNav': 'Model',
     'generalSettingsHeading': 'General Settings',
-    'languageLabel': 'Language:',
-    'exportChatLabel': 'Export Chat History:',
+    'languageLabel': 'Language',
+    'languageDescription': 'Select interface display language',
+    'exportChatLabel': 'Export Chat History',
+    'exportChatDescription': 'Export current chat history as a file',
     'exportFormatMarkdown': 'Markdown',
     'exportFormatText': 'Text',
     'exportButton': 'Export',
@@ -615,6 +631,18 @@ Format：
 
     // --- Proxy Related Error Messages ---
     'proxyConnectionFailed': 'Proxy server {proxy} connection failed, proxy settings have been automatically cleared to restore network connection.',
+
+    // --- Unified Import/Export Related Translations ---
+    'unifiedImportExportLabel': 'Unified Data Management',
+    'unifiedImportExportHint': 'Export or import all agent, text selection helper, quick actions, and API key configurations.',
+    'exportAllButton': 'Export All',
+    'importAllButton': 'Import All',
+    'unifiedExportSuccess': 'All settings exported',
+    'unifiedExportError': 'Error exporting settings: {error}',
+    'unifiedImportSuccess': 'Settings imported successfully! The interface will refresh automatically to apply new settings.',
+    'unifiedImportError': 'Import failed: {error}',
+    'unifiedImportInvalidFormat': 'Import failed: Invalid file format',
+    'unifiedImportConfirm': 'This will overwrite all your current settings and cannot be undone. Continue?',
 
     // --- Generic Error Messages ---
     'unknownErrorLoadingTab': 'Unknown error loading tab',
@@ -781,7 +809,7 @@ Format：
     'fetchModelsError': 'Failed to add models: {error}',
 
     // --- Proxy Settings Related Translations ---
-    'proxyAddressLabel': 'Proxy Url:',
+    'proxyAddressLabel': 'Proxy Settings',
     'proxyAddressPlaceholder': 'http://127.0.0.1:7890 or socks5://127.0.0.1:1080',
     'proxyAddressHint': 'Supports HTTP and SOCKS5 proxies for all AI providers, leave empty to disable.',
     'proxySetSuccess': 'Proxy settings applied',

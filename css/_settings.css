@@ -203,6 +203,306 @@
     color: white;
 }
 
+/* 统一数据管理卡片样式 */
+.unified-data-card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin: 0 var(--spacing-lg);
+    transition: all 0.2s ease;
+}
+
+.unified-data-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.08);
+}
+
+.unified-data-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.unified-data-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.unified-data-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.unified-data-description {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.unified-data-actions {
+    display: flex;
+    gap: var(--spacing-lg);
+    justify-content: center;
+}
+
+.unified-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--primary-color);
+    border-radius: 16px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    justify-content: center;
+    min-height: 32px;
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.unified-action-btn:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.unified-action-btn:active {
+    transform: translateY(1px);
+}
+
+.unified-action-btn svg {
+    flex-shrink: 0;
+}
+
+/* 深色模式下的统一数据管理样式 */
+body.dark-mode .unified-data-card {
+    background-color: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .unified-data-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.12);
+}
+
+body.dark-mode .unified-data-icon {
+    color: var(--primary-color);
+}
+
+body.dark-mode .unified-action-btn {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode .unified-action-btn:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+/* 通用设置卡片样式 */
+.setting-card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    margin: 0 var(--spacing-lg);
+    transition: all 0.2s ease;
+}
+
+.setting-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.08);
+}
+
+.setting-card-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.setting-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.setting-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.setting-card-description {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.setting-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.setting-card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.setting-select {
+    flex: 1;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 13px;
+    min-height: 32px;
+    transition: all 0.2s ease;
+}
+
+.setting-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(70, 116, 255, 0.1);
+}
+
+.setting-input {
+    flex: 1;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 13px;
+    min-height: 32px;
+    transition: all 0.2s ease;
+}
+
+.setting-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(70, 116, 255, 0.1);
+}
+
+.setting-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.setting-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border: 1px solid var(--primary-color);
+    border-radius: 16px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 32px;
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.setting-action-btn:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.setting-action-btn:active {
+    transform: translateY(1px);
+}
+
+.setting-action-btn svg {
+    flex-shrink: 0;
+}
+
+/* 深色模式下的通用设置卡片样式 */
+body.dark-mode .setting-card {
+    background-color: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .setting-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.12);
+}
+
+body.dark-mode .setting-card-icon {
+    color: var(--primary-color);
+}
+
+body.dark-mode .setting-card-title {
+    color: var(--text-color);
+}
+
+body.dark-mode .setting-card-description {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .setting-select {
+    background-color: var(--input-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .setting-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(116, 143, 252, 0.15);
+}
+
+body.dark-mode .setting-input {
+    background-color: var(--input-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .setting-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(116, 143, 252, 0.15);
+}
+
+body.dark-mode .setting-input::placeholder {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .setting-action-btn {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode .setting-action-btn:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
 
 /* 设置组 (通用表单元素容器) */
 .setting-group {
