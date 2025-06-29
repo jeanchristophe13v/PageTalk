@@ -1072,38 +1072,46 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm, onCanc
             opacity: 0;
             width: 0;
             height: 0;
+            margin: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+            pointer-events: none;
         }
 
         .model-discovery-dialog .checkbox-label {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             border: 2px solid #dee2e6;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s ease;
-            background: white;
+            background: transparent;
+            position: relative;
+            flex-shrink: 0;
         }
 
         .model-discovery-dialog .checkbox-label:hover {
             border-color: #007bff;
-            background: #f8f9ff;
         }
 
         .model-discovery-dialog .checkmark {
-            width: 14px;
-            height: 14px;
-            fill: white;
+            width: 16px;
+            height: 16px;
+            fill: #007bff;
             opacity: 0;
-            transform: scale(0.5);
-            transition: all 0.2s ease;
+            transform: scale(0);
+            transition: all 0.15s ease;
+            stroke: #007bff;
+            stroke-width: 2;
         }
 
         .model-discovery-dialog input[type="checkbox"]:checked + .checkbox-label {
-            background: #007bff;
             border-color: #007bff;
+            background: transparent;
         }
 
         .model-discovery-dialog input[type="checkbox"]:checked + .checkbox-label .checkmark {
@@ -1247,18 +1255,22 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm, onCanc
         }
 
         body.dark-mode .model-discovery-dialog .checkbox-label {
-            background: var(--input-background);
+            background: transparent;
             border-color: var(--border-color);
         }
 
         body.dark-mode .model-discovery-dialog .checkbox-label:hover {
             border-color: var(--primary-color);
-            background: rgba(116, 143, 252, 0.1);
         }
 
         body.dark-mode .model-discovery-dialog input[type="checkbox"]:checked + .checkbox-label {
-            background: var(--primary-color);
+            background: transparent;
             border-color: var(--primary-color);
+        }
+
+        body.dark-mode .model-discovery-dialog .checkmark {
+            fill: var(--primary-color);
+            stroke: var(--primary-color);
         }
 
         body.dark-mode .model-discovery-dialog .dialog-footer {
