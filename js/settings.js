@@ -1796,6 +1796,7 @@ async function handleDiscoverModelsForProvider(providerId, state, elements, show
 
         if (!discoveredModels || discoveredModels.length === 0) {
             showToastCallback(_('noNewModelsFound', {}, currentTranslations), 'info');
+            restoreButtonState();
             return;
         }
 
@@ -1804,6 +1805,7 @@ async function handleDiscoverModelsForProvider(providerId, state, elements, show
 
         if (newModels.length === 0) {
             showToastCallback(_('noNewModelsFound', {}, currentTranslations), 'info');
+            restoreButtonState();
             return;
         }
 

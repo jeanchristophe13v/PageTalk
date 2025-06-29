@@ -227,7 +227,9 @@ async function handleGetAvailableModelsRequest(sendResponse) {
                 siliconflow: 'SiliconFlow',
                 openrouter: 'OpenRouter',
                 deepseek: 'DeepSeek',
-                chatglm: 'ChatGLM' // Fixed: Add ChatGLM to the provider map.
+                chatglm: 'ChatGLM',
+                ollama: 'Ollama',
+                lmstudio: 'LM Studio'
             };
 
             // 添加自定义提供商到映射
@@ -540,6 +542,14 @@ async function getProviderConfig(providerId) {
         chatglm: {
             type: 'openai_compatible',
             apiHost: 'https://open.bigmodel.cn/api/paas/v4'
+        },
+        ollama: {
+            type: 'openai_compatible',
+            apiHost: 'http://localhost:11434'
+        },
+        lmstudio: {
+            type: 'openai_compatible',
+            apiHost: 'http://localhost:1234'
         }
     };
 
@@ -789,7 +799,9 @@ function getAllApiDomains() {
         siliconflow: 'https://api.siliconflow.cn',
         openrouter: 'https://openrouter.ai/api/v1',
         deepseek: 'https://api.deepseek.com',
-        chatglm: 'https://open.bigmodel.cn/api/paas/v4' // Fixed: Add ChatGLM domain.
+        chatglm: 'https://open.bigmodel.cn/api/paas/v4',
+        ollama: 'http://localhost:11434',
+        lmstudio: 'http://localhost:1234'
     };
 
     // 添加内置供应商域名
@@ -833,7 +845,9 @@ async function getAllApiDomainsAsync() {
         siliconflow: 'https://api.siliconflow.cn',
         openrouter: 'https://openrouter.ai/api/v1',
         deepseek: 'https://api.deepseek.com',
-        chatglm: 'https://open.bigmodel.cn/api/paas/v4' // Fixed: Add ChatGLM domain.
+        chatglm: 'https://open.bigmodel.cn/api/paas/v4',
+        ollama: 'http://localhost:11434',
+        lmstudio: 'http://localhost:1234'
     };
 
     // 添加内置供应商域名

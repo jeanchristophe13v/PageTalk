@@ -102,6 +102,30 @@ export const providers = {
         apiKeyNeeded: true,
         icon: 'ChatGLM.svg',
         description: '智谱AI ChatGLM 系列模型，支持中文对话和代码生成'
+    },
+
+    ollama: {
+        id: 'ollama',
+        name: 'Ollama',
+        type: 'openai_compatible',
+        apiHost: 'http://localhost:11434',
+        apiKeyUrl: 'https://ollama.com/download',
+        modelsUrl: 'https://ollama.com/library',
+        apiKeyNeeded: true,
+        icon: 'ollama.svg',
+        description: 'Ollama 本地大语言模型运行平台，支持多种开源模型'
+    },
+
+    lmstudio: {
+        id: 'lmstudio',
+        name: 'LM Studio',
+        type: 'openai_compatible',
+        apiHost: 'http://localhost:1234',
+        apiKeyUrl: 'https://lmstudio.ai/docs/local-server',
+        modelsUrl: 'https://lmstudio.ai/docs/app/basics/download-model',
+        apiKeyNeeded: true,
+        icon: 'lmstudio.svg',
+        description: 'LM Studio 本地大语言模型运行平台，提供图形化界面和 API 服务'
     }
 };
 
