@@ -24,9 +24,10 @@ import {
     loadCurrentAgentSettingsIntoState,
     autoSaveAgentSettings as autoSaveAgentSettingsFromAgent // Alias the import
 } from './agent.js';
-import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners } from './settings.js';
+import { loadSettings as loadAppSettings, handleLanguageChange, handleExportChat, initModelSelection, updateModelCardsDisplay, handleProxyAddressChange, handleProxyTest, setupProviderEventListeners, initQuickActionsSettings } from './settings.js';
+import * as QuickActionsManager from './quick-actions-manager.js';
 import { initTextSelectionHelperSettings, isTextSelectionHelperEnabled } from './text-selection-helper-settings.js';
-import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction } from './chat.js';
+import { sendUserMessage as sendUserMessageAction, clearContext as clearContextAction, deleteMessage as deleteMessageAction, regenerateMessage as regenerateMessageAction, abortStreaming as abortStreamingAction, handleRemoveSentTabContext as handleRemoveSentTabContextAction, createWelcomeMessage } from './chat.js';
 import {
     switchTab,
     switchSettingsSubTab,
@@ -81,6 +82,7 @@ const state = {
     availableTabsForSelection: [], // 新增：存储查询到的供用户选择的标签页
     isTabSelectionPopupOpen: false, // 新增：跟踪标签页选择弹窗的状态
     locallyIgnoredTabs: {}, // 新增: 跟踪用户从特定消息上下文中移除的标签页 { messageId: [tabId1, tabId2] }
+    quickActionIgnoreAssistant: false, // 新增：快捷操作忽略助手标记
 };
 
 // Default settings (used by agent module)
@@ -226,10 +228,28 @@ async function init() {
     // Setup core features
     await initModelSelection(state, elements); // Populate model dropdowns (now async)
 
-    // 确保翻译已加载后再初始化划词助手设置
+    // 确保翻译已加载后再初始化划词助手设置和快捷操作设置
     setTimeout(async () => {
         console.log('[main.js] Initializing text selection helper with translations:', currentTranslations);
         await initTextSelectionHelperSettings(elements, currentTranslations, showToastUI); // Initialize text selection helper settings
+
+        console.log('[main.js] Initializing quick actions manager...');
+        // 先初始化快捷操作管理器
+        await QuickActionsManager.initQuickActionsManager();
+
+        // 设置全局快捷操作相关函数
+        setupQuickActionsGlobals();
+
+        console.log('[main.js] Initializing quick actions settings with translations:', currentTranslations);
+        await initQuickActionsSettings(elements, currentTranslations); // Initialize quick actions settings
+
+        // 初始化欢迎消息（如果聊天区域为空）
+        if (elements.chatMessages && elements.chatMessages.children.length === 0) {
+            // 确保快捷操作管理器已经初始化后再创建欢迎消息
+            const welcomeMessage = await createWelcomeMessage(currentTranslations);
+            elements.chatMessages.appendChild(welcomeMessage);
+            console.log('[main.js] Initial welcome message created with quick actions');
+        }
     }, 100); // 给翻译加载一些时间
     setupEventListeners(); // Setup all event listeners
     setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
@@ -344,8 +364,8 @@ function setupEventListeners() {
     elements.userInput.addEventListener('keydown', handleUserInputKeydown);
     // 新增：监听用户输入框的 input 事件，用于检测 "@"
     elements.userInput.addEventListener('input', handleUserInputForTabSelection);
-    elements.clearContextBtn.addEventListener('click', () => {
-        clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations);
+    elements.clearContextBtn.addEventListener('click', async () => {
+        await clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations);
         // Also clear the UI for selected tabs
         state.selectedContextTabs = [];
         updateSelectedTabsBarFromMain();
@@ -1061,14 +1081,14 @@ async function handleModelsUpdatedFromContent() {
 /**
  * 处理来自content script的语言变化通知
  */
-function handleLanguageChangeFromContent(newLanguage) {
+async function handleLanguageChangeFromContent(newLanguage) {
     console.log(`[main.js] Handling language change from content: ${newLanguage}`);
 
     // 更新状态
     state.language = newLanguage;
 
     // 重新加载并应用翻译
-    loadAndApplyTranslations(newLanguage);
+    await loadAndApplyTranslations(newLanguage);
 
     // 重新初始化划词助手设置（如果设置页面打开）
     if (window.initTextSelectionHelperSettings && elements.textSelectionHelperSettings) {
@@ -1084,7 +1104,7 @@ function handleLanguageChangeFromContent(newLanguage) {
 /**
  * 处理来自content script的扩展重载通知
  */
-function handleExtensionReloadFromContent() {
+async function handleExtensionReloadFromContent() {
     console.log(`[main.js] Handling extension reload from content`);
 
     // 扩展重载后，content script会自动重新检测主题，所以这里不需要主动请求
@@ -1093,7 +1113,7 @@ function handleExtensionReloadFromContent() {
 
     // 重新加载当前语言的翻译
     if (state.language) {
-        loadAndApplyTranslations(state.language);
+        await loadAndApplyTranslations(state.language);
     }
 
     // 重新初始化所有设置
@@ -1128,7 +1148,7 @@ function handleProxyAutoClearedFromContent(failedProxy) {
 }
 
 // --- Translation Loading ---
-function loadAndApplyTranslations(language) {
+async function loadAndApplyTranslations(language) {
     if (typeof window.translations === 'undefined') {
         console.error(_('translationsNotFound', {}, currentTranslations));
         return;
@@ -1166,13 +1186,18 @@ function loadAndApplyTranslations(language) {
 
     // Re-render welcome message if chat is empty
     if (elements.chatMessages && elements.chatMessages.children.length === 1 && elements.chatMessages.firstElementChild.classList.contains('welcome-message')) {
-        clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations, false); // Re-adds welcome message, no toast
+        // 只有在快捷操作管理器已经初始化的情况下才刷新欢迎消息
+        if (window.QuickActionsManager && window.QuickActionsManager.isQuickActionsManagerInitialized && window.QuickActionsManager.isQuickActionsManagerInitialized()) {
+            await refreshWelcomeMessageQuickActions();
+        } else {
+            console.log('[main.js] Skipping welcome message refresh - QuickActionsManager not yet initialized');
+        }
     } else {
         // Update existing welcome message if present
         const welcomeHeading = elements.chatMessages.querySelector('.welcome-message h2');
         if (welcomeHeading) welcomeHeading.textContent = _('welcomeHeading');
-        const summarizeBtn = elements.chatMessages.querySelector('.quick-action-btn'); // More robust selector
-        if (summarizeBtn) summarizeBtn.textContent = _('summarizeAction');
+        // 注意：不再更新快捷操作按钮的文本，因为它们现在是动态的
+        // 如果需要更新快捷操作，应该使用 refreshWelcomeMessageQuickActions()
         // Also update existing message action button titles
         document.querySelectorAll('.message-action-btn, .copy-button').forEach(btn => {
             if (btn.classList.contains('copy-button')) btn.title = _('copyAll');
@@ -1243,6 +1268,117 @@ function removeSelectedTabFromMain(tabId) {
 function updateSelectedTabsBarFromMain() {
     updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
 }
+
+// === 快捷操作相关函数 ===
+
+/**
+ * 设置快捷操作相关的全局函数
+ */
+function setupQuickActionsGlobals() {
+    // 设置全局快捷操作管理器引用
+    window.QuickActionsManager = QuickActionsManager;
+
+    // 设置快捷操作触发函数
+    window.triggerQuickAction = triggerQuickAction;
+
+    console.log('[main.js] Quick actions globals set up');
+}
+
+/**
+ * 触发快捷操作
+ * @param {string} actionId - 快捷操作ID
+ * @param {string} prompt - 快捷操作的提示词
+ * @param {boolean} ignoreAssistant - 是否忽略助手设置
+ */
+async function triggerQuickAction(actionId, prompt, ignoreAssistant) {
+    console.log(`[main.js] Triggering quick action: ${actionId}, ignoreAssistant: ${ignoreAssistant}`);
+
+    if (!prompt || !prompt.trim()) {
+        console.warn('[main.js] Quick action prompt is empty');
+        return;
+    }
+
+    // 检查是否正在流式传输
+    if (state.isStreaming) {
+        console.warn('[main.js] Cannot trigger quick action while streaming');
+        if (showToastUI) {
+            showToastUI(_('streamingInProgress', {}, currentTranslations), 'warning');
+        }
+        return;
+    }
+
+    // 检查API连接
+    let hasValidApiKey = false;
+    if (window.ModelManager?.instance) {
+        try {
+            await window.ModelManager.instance.initialize();
+            const modelConfig = window.ModelManager.instance.getModelApiConfig(state.model);
+            const providerId = modelConfig.providerId;
+            hasValidApiKey = window.ModelManager.instance.isProviderConfigured(providerId);
+        } catch (error) {
+            console.warn('[main.js] Failed to check provider configuration:', error);
+        }
+    }
+
+    if (!hasValidApiKey) {
+        if (showToastUI) {
+            showToastUI(_('apiKeyMissingError', {}, currentTranslations), 'error');
+        }
+        return;
+    }
+
+    // 设置输入框内容
+    elements.userInput.value = prompt.trim();
+    elements.userInput.focus();
+
+    // 如果需要忽略助手，设置全局标记
+    if (ignoreAssistant) {
+        state.quickActionIgnoreAssistant = true;
+        console.log('[main.js] Set quick action ignore assistant flag');
+    }
+
+    try {
+        // 触发发送消息
+        sendUserMessageTrigger();
+
+        console.log(`[main.js] Quick action "${actionId}" executed successfully`);
+    } catch (error) {
+        console.error('[main.js] Error executing quick action:', error);
+        if (showToastUI) {
+            showToastUI(_('quickActionError', { error: error.message }, currentTranslations) || '快捷操作执行失败', 'error');
+        }
+    } finally {
+        // 清除标记
+        if (ignoreAssistant) {
+            // 延迟清除标记，确保API调用已经完成
+            setTimeout(() => {
+                state.quickActionIgnoreAssistant = false;
+                console.log('[main.js] Cleared quick action ignore assistant flag');
+            }, 2000);
+        }
+    }
+}
+
+/**
+ * 刷新欢迎消息中的快捷操作
+ */
+async function refreshWelcomeMessageQuickActions() {
+    const welcomeMessage = elements.chatMessages.querySelector('.welcome-message');
+    if (welcomeMessage) {
+        // 确保快捷操作管理器可用
+        if (!window.QuickActionsManager) {
+            console.warn('[main.js] QuickActionsManager not available, skipping welcome message refresh');
+            return;
+        }
+
+        const newWelcomeMessage = await createWelcomeMessage(currentTranslations);
+        welcomeMessage.replaceWith(newWelcomeMessage);
+        console.log('[main.js] Welcome message quick actions refreshed');
+    }
+}
+
+// 导出刷新函数供设置界面使用
+window.refreshWelcomeMessageQuickActions = refreshWelcomeMessageQuickActions;
 
 
 

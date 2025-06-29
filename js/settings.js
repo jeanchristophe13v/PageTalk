@@ -2,6 +2,7 @@
  * Pagetalk - Settings Management Functions (Model, General)
  */
 import { generateUniqueId } from './utils.js'; // Might need utils later
+import * as QuickActionsManager from './quick-actions-manager.js';
 
 /** Helper function to get translation string */
 function _(key, replacements = {}, translations) {
@@ -127,6 +128,9 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
 
         // 初始化自定义提供商功能
         initCustomProviderModal();
+
+        // 初始化快捷操作管理器
+        await QuickActionsManager.initQuickActionsManager();
 
         // 设置模型选择器
         if (elements.modelSelection) elements.modelSelection.value = state.model;
@@ -2700,4 +2704,568 @@ async function removeCustomProvider(providerId) {
             window.showToastUI(currentTranslations.customProviderDeleteError || '删除提供商失败', 'error');
         }
     }
+}
+
+// === 快捷操作设置相关函数 ===
+
+/**
+ * 初始化快捷操作设置界面
+ */
+export async function initQuickActionsSettings(elements, translations) {
+    console.log('[Settings] Initializing quick actions settings...');
+
+    // 快捷操作管理器应该已经在main.js中初始化了
+    if (!window.QuickActionsManager) {
+        console.error('[Settings] QuickActionsManager not available in global scope');
+        return;
+    }
+
+    // 渲染快捷操作列表
+    await renderQuickActionsList(translations);
+
+    // 设置添加按钮事件
+    const addBtn = document.getElementById('add-quick-action-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            showQuickActionDialog(null, translations);
+        });
+    } else {
+        console.error('[Settings] Add button not found');
+    }
+
+    // 设置导入按钮事件
+    const importBtn = document.getElementById('import-quick-actions-btn');
+    const importInput = document.getElementById('import-quick-actions-input');
+    if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => {
+            importInput.click();
+        });
+
+        importInput.addEventListener('change', (event) => {
+            handleQuickActionsImport(event, translations);
+        });
+    } else {
+        console.error('[Settings] Import button or input not found', { importBtn: !!importBtn, importInput: !!importInput });
+    }
+
+    // 设置导出按钮事件
+    const exportBtn = document.getElementById('export-quick-actions-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            handleQuickActionsExport(translations);
+        });
+    } else {
+        console.error('[Settings] Export button not found');
+    }
+
+    console.log('[Settings] Quick actions settings initialized');
+}
+
+/**
+ * 渲染快捷操作列表
+ */
+async function renderQuickActionsList(translations) {
+    const container = document.getElementById('quick-actions-list');
+    if (!container) {
+        console.error('[Settings] Quick actions list container not found');
+        return;
+    }
+
+    const actions = QuickActionsManager.getAllQuickActions();
+    container.innerHTML = '';
+
+    if (actions.length === 0) {
+        container.innerHTML = `
+            <div class="no-quick-actions">
+                <p>${translations?.noQuickActions || '暂无快捷操作'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    actions.forEach(action => {
+        const actionElement = createQuickActionElement(action, translations);
+        container.appendChild(actionElement);
+    });
+}
+
+/**
+ * 创建快捷操作元素
+ */
+function createQuickActionElement(action, translations) {
+    const element = document.createElement('div');
+    element.className = 'quick-action-item';
+    element.dataset.actionId = action.id;
+
+    element.innerHTML = `
+        <div class="quick-action-header">
+            <div class="quick-action-info">
+                <div class="quick-action-name">${escapeHtml(action.name)}</div>
+            </div>
+            <div class="quick-action-actions">
+                <button class="edit-quick-action-btn" title="${translations?.editAction || '编辑'}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>
+                <button class="delete-quick-action-btn" title="${translations?.deleteAction || '删除'}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3,6 5,6 21,6"/>
+                        <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="quick-action-details">
+            <div class="quick-action-detail">
+                <div class="quick-action-detail-label">${translations?.prompt || '提示词'}</div>
+                <div class="quick-action-detail-value">${escapeHtml(action.prompt.substring(0, 100))}${action.prompt.length > 100 ? '...' : ''}</div>
+            </div>
+            <div class="quick-action-detail">
+                <div class="quick-action-detail-label">${translations?.ignoreAssistant || '忽略助手'}</div>
+                <div class="quick-action-detail-value">${action.ignoreAssistant ? (translations?.yes || '是') : (translations?.no || '否')}</div>
+            </div>
+        </div>
+    `;
+
+    // 添加事件监听器
+    const editBtn = element.querySelector('.edit-quick-action-btn');
+    const deleteBtn = element.querySelector('.delete-quick-action-btn');
+
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            showQuickActionDialog(action, translations);
+        });
+    }
+
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            showDeleteQuickActionDialog(action, translations);
+        });
+    }
+
+    return element;
+}
+
+/**
+ * 显示快捷操作编辑对话框
+ */
+function showQuickActionDialog(action, translations) {
+    const isEdit = !!action;
+    const title = isEdit ? (translations?.editQuickAction || '编辑快捷操作') : (translations?.addQuickAction || '添加快捷操作');
+
+    // 创建对话框
+    const dialog = document.createElement('div');
+    dialog.className = 'quick-action-dialog-overlay';
+    dialog.innerHTML = `
+        <div class="quick-action-dialog">
+            <div class="quick-action-dialog-header">
+                <h3>${title}</h3>
+                <button class="quick-action-dialog-close">×</button>
+            </div>
+            <div class="quick-action-dialog-content">
+                <div class="setting-group">
+                    <label>${translations?.actionName || '操作名称'} *</label>
+                    <input type="text" id="quick-action-name" value="${action ? escapeHtml(action.name) : ''}" placeholder="${translations?.actionNameRequired || '请输入操作名称'}">
+                </div>
+
+                <div class="setting-group">
+                    <label>${translations?.actionPrompt || '提示词'} *</label>
+                    <textarea id="quick-action-prompt" placeholder="${translations?.actionPromptRequired || '请输入提示词'}" rows="4">${action ? escapeHtml(action.prompt) : ''}</textarea>
+                </div>
+                <div class="setting-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="quick-action-ignore-assistant" ${action && action.ignoreAssistant ? 'checked' : ''}>
+                        <span class="checkmark"></span>
+                        ${translations?.ignoreAssistant || '忽略助手'}
+                    </label>
+                    <div class="setting-hint">${translations?.ignoreAssistantHint || '开启后，发送此快捷操作时不会附加助手的系统提示词'}</div>
+                </div>
+            </div>
+            <div class="quick-action-dialog-footer">
+                <button class="quick-action-dialog-cancel">${translations?.cancel || '取消'}</button>
+                <button class="quick-action-dialog-save">${translations?.save || '保存'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    // 设置事件监听器
+    setupQuickActionDialogEvents(dialog, action, translations);
+
+    // 聚焦名称输入框
+    setTimeout(() => {
+        const nameInput = dialog.querySelector('#quick-action-name');
+        if (nameInput) nameInput.focus();
+    }, 100);
+}
+
+/**
+ * 设置快捷操作对话框事件
+ */
+function setupQuickActionDialogEvents(dialog, action, translations) {
+    const cancelBtn = dialog.querySelector('.quick-action-dialog-cancel');
+    const saveBtn = dialog.querySelector('.quick-action-dialog-save');
+    const closeBtn = dialog.querySelector('.quick-action-dialog-close');
+
+    const closeDialog = () => {
+        dialog.remove();
+    };
+
+    // 关闭事件
+    cancelBtn.addEventListener('click', closeDialog);
+    closeBtn.addEventListener('click', closeDialog);
+
+    // 点击遮罩关闭
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+            closeDialog();
+        }
+    });
+
+    // ESC键关闭
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+
+
+
+    // 保存事件
+    saveBtn.addEventListener('click', async () => {
+        const nameInput = dialog.querySelector('#quick-action-name');
+        const promptInput = dialog.querySelector('#quick-action-prompt');
+        const ignoreAssistantInput = dialog.querySelector('#quick-action-ignore-assistant');
+
+        const name = nameInput.value.trim();
+        const prompt = promptInput.value.trim();
+        const ignoreAssistant = ignoreAssistantInput.checked;
+
+        // 验证输入
+        if (!name) {
+            nameInput.focus();
+            return;
+        }
+
+        if (!prompt) {
+            promptInput.focus();
+            return;
+        }
+
+        // 保存数据
+        const actionData = {
+            name,
+            prompt,
+            ignoreAssistant
+        };
+
+        let success = false;
+        if (action) {
+            // 编辑模式
+            success = await QuickActionsManager.updateQuickAction(action.id, actionData);
+        } else {
+            // 添加模式
+            const newAction = await QuickActionsManager.addQuickAction(actionData);
+            success = !!newAction;
+        }
+
+        if (success) {
+            await renderQuickActionsList(translations);
+            closeDialog();
+
+            // 刷新欢迎消息中的快捷操作
+            if (window.refreshWelcomeMessageQuickActions) {
+                await window.refreshWelcomeMessageQuickActions();
+            }
+
+            // 显示成功提示
+            const message = action ? (translations?.actionUpdated || '快捷操作已更新') : (translations?.actionAdded || '快捷操作已添加');
+            if (window.showToastUI) {
+                window.showToastUI(message, 'success');
+            }
+        } else {
+            // 显示错误提示
+            const message = action ? (translations?.actionUpdateFailed || '更新失败') : (translations?.actionAddFailed || '添加失败');
+            if (window.showToastUI) {
+                window.showToastUI(message, 'error');
+            }
+        }
+    });
+}
+
+/**
+ * 显示删除快捷操作确认对话框
+ */
+function showDeleteQuickActionDialog(action, translations) {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML = `
+        <div class="dialog-content">
+            <h3>${translations?.deleteQuickAction || '删除快捷操作'}</h3>
+            <p>${translations?.confirmDeleteAction || '确定要删除这个快捷操作吗？'}</p>
+            <p><strong>${escapeHtml(action.name)}</strong></p>
+            <div class="dialog-actions">
+                <button class="dialog-cancel">${translations?.cancel || '取消'}</button>
+                <button class="dialog-confirm" style="background-color: var(--error-color); color: white;">${translations?.delete || '删除'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const cancelBtn = overlay.querySelector('.dialog-cancel');
+    const confirmBtn = overlay.querySelector('.dialog-confirm');
+
+    const closeDialog = () => {
+        overlay.remove();
+    };
+
+    cancelBtn.addEventListener('click', closeDialog);
+
+    confirmBtn.addEventListener('click', async () => {
+        const success = await QuickActionsManager.deleteQuickAction(action.id);
+
+        if (success) {
+            await renderQuickActionsList(translations);
+
+            // 刷新欢迎消息中的快捷操作
+            if (window.refreshWelcomeMessageQuickActions) {
+                await window.refreshWelcomeMessageQuickActions();
+            }
+
+            const message = translations?.actionDeleted || '快捷操作已删除';
+            if (window.showToastUI) {
+                window.showToastUI(message, 'success');
+            }
+        } else {
+            const message = translations?.actionDeleteFailed || '删除失败';
+            if (window.showToastUI) {
+                window.showToastUI(message, 'error');
+            }
+        }
+
+        closeDialog();
+    });
+
+    // 点击遮罩关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
+}
+
+/**
+ * 处理快捷操作导出
+ */
+function handleQuickActionsExport(translations) {
+    try {
+        const actions = QuickActionsManager.getAllQuickActions();
+        if (actions.length === 0) {
+            const message = translations?.noQuickActionsToExport || '没有快捷操作可以导出';
+            if (window.showToastUI) {
+                window.showToastUI(message, 'warning');
+            }
+            return;
+        }
+
+        const exportData = QuickActionsManager.exportQuickActions();
+
+        // 创建下载链接
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `pagetalk-quick-actions-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        const message = translations?.exportSuccess || '导出成功';
+        if (window.showToastUI) {
+            window.showToastUI(message, 'success');
+        }
+
+        console.log('[Settings] Quick actions exported successfully');
+    } catch (error) {
+        console.error('[Settings] Export failed:', error);
+        const message = translations?.exportFailed || '导出失败';
+        if (window.showToastUI) {
+            window.showToastUI(message, 'error');
+        }
+    }
+}
+
+/**
+ * 处理快捷操作导入
+ */
+function handleQuickActionsImport(event, translations) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const importData = JSON.parse(e.target.result);
+
+            // 验证导入数据格式
+            if (!importData.actions || !Array.isArray(importData.actions)) {
+                throw new Error('Invalid file format');
+            }
+
+            // 检测重复并显示导入选项对话框
+            showImportOptionsDialog(importData, translations);
+        } catch (error) {
+            console.error('[Settings] Import failed:', error);
+            const message = translations?.importFailed || '导入失败：文件格式不正确';
+            if (window.showToastUI) {
+                window.showToastUI(message, 'error');
+            }
+        }
+    };
+
+    reader.readAsText(file);
+
+    // 清空文件输入，允许重复选择同一文件
+    event.target.value = '';
+}
+
+/**
+ * 显示导入选项对话框
+ */
+function showImportOptionsDialog(importData, translations) {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+
+    // 获取当前快捷操作
+    const currentActions = QuickActionsManager.getAllQuickActions();
+    const hasCurrentActions = currentActions.length > 0;
+
+    // 检测重复的操作（按名称）
+    const currentActionNames = new Set(currentActions.map(action => action.name));
+    const duplicateActions = importData.actions.filter(action => currentActionNames.has(action.name));
+    const newActions = importData.actions.filter(action => !currentActionNames.has(action.name));
+
+    const hasDuplicates = duplicateActions.length > 0;
+    const hasNewActions = newActions.length > 0;
+
+    let messageText = '';
+    if (hasDuplicates && hasNewActions) {
+        messageText = `发现 ${duplicateActions.length} 个重复操作，${newActions.length} 个新操作`;
+    } else if (hasDuplicates && !hasNewActions) {
+        messageText = `发现 ${duplicateActions.length} 个重复操作`;
+    } else {
+        messageText = `发现 ${importData.actions.length} 个快捷操作`;
+    }
+
+    overlay.innerHTML = `
+        <div class="dialog-content">
+            <h3>${translations?.importQuickActions || '导入'}</h3>
+            <p>${messageText}</p>
+            ${hasDuplicates ? `
+                <div class="duplicate-info">
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: var(--spacing-sm);">
+                        重复操作：${duplicateActions.map(action => action.name).join('、')}
+                    </p>
+                </div>
+            ` : ''}
+            ${hasCurrentActions ? `
+                <div class="import-options">
+                    <label class="radio-label">
+                        <input type="radio" name="import-mode" value="merge" checked>
+                        <span class="radio-mark"></span>
+                        ${hasDuplicates ? '合并（跳过重复操作）' : '合并（保留现有操作）'}
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="import-mode" value="replace">
+                        <span class="radio-mark"></span>
+                        ${hasDuplicates ? '替换（覆盖重复操作）' : '替换（删除现有操作）'}
+                    </label>
+                </div>
+            ` : ''}
+            <div class="dialog-actions">
+                <button class="dialog-cancel cancel-btn">${translations?.cancel || '取消'}</button>
+                <button class="dialog-confirm confirm-btn">${translations?.import || '导入'}</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const cancelBtn = overlay.querySelector('.dialog-cancel');
+    const confirmBtn = overlay.querySelector('.dialog-confirm');
+
+    const closeDialog = () => {
+        overlay.remove();
+    };
+
+    cancelBtn.addEventListener('click', closeDialog);
+
+    confirmBtn.addEventListener('click', async () => {
+        // 如果没有现有操作，默认使用合并模式
+        const selectedMode = hasCurrentActions ?
+            (overlay.querySelector('input[name="import-mode"]:checked')?.value || 'merge') :
+            'merge';
+
+        try {
+            const importedCount = await QuickActionsManager.importQuickActions(importData, selectedMode);
+
+            if (importedCount > 0) {
+                await renderQuickActionsList(translations);
+
+                // 刷新欢迎消息中的快捷操作
+                if (window.refreshWelcomeMessageQuickActions) {
+                    await window.refreshWelcomeMessageQuickActions();
+                }
+
+                let message;
+                if (selectedMode === 'replace' && hasDuplicates) {
+                    message = `成功处理 ${importedCount} 个快捷操作`;
+                } else {
+                    message = translations?.importSuccess || '成功导入 {count} 个快捷操作'.replace('{count}', importedCount);
+                }
+
+                if (window.showToastUI) {
+                    window.showToastUI(message, 'success');
+                }
+            } else {
+                const message = hasDuplicates ? '所有操作都已存在，未导入新操作' : (translations?.importNoActions || '没有导入任何操作');
+                if (window.showToastUI) {
+                    window.showToastUI(message, 'warning');
+                }
+            }
+        } catch (error) {
+            console.error('[Settings] Import processing failed:', error);
+            const message = translations?.importProcessFailed || '导入处理失败';
+            if (window.showToastUI) {
+                window.showToastUI(message, 'error');
+            }
+        }
+
+        closeDialog();
+    });
+
+    // 点击遮罩关闭
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
+}
+
+// 辅助函数：HTML转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

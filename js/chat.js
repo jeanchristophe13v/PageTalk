@@ -224,34 +224,13 @@ export async function sendUserMessage(state, elements, currentTranslations, show
  * @param {object} currentTranslations - Translations object
  * @param {boolean} [showToast=true] - Whether to show the "Cleared" toast
  */
-export function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
+export async function clearContext(state, elements, clearImagesCallback, clearVideosCallback, showToastCallback, currentTranslations, showToast = true) {
     state.chatHistory = [];
     state.locallyIgnoredTabs = {}; // 清空已忽略标签页的状态
     elements.chatMessages.innerHTML = ''; // Clear UI
 
-    // Re-add welcome message
-    const welcomeMessage = document.createElement('div');
-    welcomeMessage.className = 'welcome-message';
-    welcomeMessage.innerHTML = `
-        <h2>${_('welcomeHeading', {}, currentTranslations)}</h2>
-        <div class="quick-actions">
-            <button id="summarize-page-dynamic" class="quick-action-btn">${_('summarizeAction', {}, currentTranslations)}</button>
-        </div>
-    `;
-    // Re-attach listener for the dynamically added button
-    const summarizeBtn = welcomeMessage.querySelector('#summarize-page-dynamic');
-    if (summarizeBtn) {
-        summarizeBtn.addEventListener('click', () => {
-            elements.userInput.value = _('summarizeAction', {}, currentTranslations);
-            elements.userInput.focus();
-            // Assuming sendUserMessageTrigger is a global function or passed in main.js
-            if (window.sendUserMessageTrigger) {
-                window.sendUserMessageTrigger();
-            } else {
-                console.warn("Cannot trigger sendUserMessage from dynamic button.");
-            }
-        });
-    }
+    // Re-add welcome message with dynamic quick actions
+    const welcomeMessage = await createWelcomeMessage(currentTranslations);
     elements.chatMessages.appendChild(welcomeMessage);
 
     clearImagesCallback(); // Clear images using callback
@@ -561,4 +540,75 @@ export function handleRemoveSentTabContext(messageId, tabId, state) {
     } else {
         console.log(`Tab ${tabId} was already marked as ignored for message ${messageId}.`);
     }
+}
+
+/**
+ * 创建欢迎消息，包含动态快捷操作
+ * @param {object} currentTranslations - 当前翻译对象
+ * @returns {Promise<HTMLElement>} 欢迎消息元素
+ */
+export async function createWelcomeMessage(currentTranslations) {
+    const welcomeMessage = document.createElement('div');
+    welcomeMessage.className = 'welcome-message';
+
+    // 获取快捷操作
+    let quickActions = [];
+    if (window.QuickActionsManager) {
+        try {
+            // 检查快捷操作管理器是否已初始化
+            if (window.QuickActionsManager.isQuickActionsManagerInitialized &&
+                window.QuickActionsManager.isQuickActionsManagerInitialized()) {
+                quickActions = window.QuickActionsManager.getAllQuickActions();
+                console.log('[createWelcomeMessage] Found', quickActions.length, 'quick actions:', quickActions);
+            } else {
+                console.warn('[createWelcomeMessage] QuickActionsManager not yet initialized, using empty actions');
+                quickActions = [];
+            }
+        } catch (error) {
+            console.warn('[createWelcomeMessage] Error getting quick actions:', error);
+            quickActions = [];
+        }
+    } else {
+        console.warn('[createWelcomeMessage] QuickActionsManager not available in global scope');
+    }
+
+    // 生成快捷操作按钮HTML
+    const quickActionsHtml = quickActions.map(action => {
+        return `
+            <button class="quick-action-btn" data-action-id="${action.id}" data-prompt="${escapeHtml(action.prompt)}" data-ignore-assistant="${action.ignoreAssistant}">
+                ${escapeHtml(action.name)}
+            </button>
+        `;
+    }).join('');
+
+    welcomeMessage.innerHTML = `
+        <h2>${_('welcomeHeading', {}, currentTranslations)}</h2>
+        ${quickActionsHtml ? `<div class="quick-actions">${quickActionsHtml}</div>` : ''}
+    `;
+
+    // 为所有快捷操作按钮添加事件监听器
+    const actionButtons = welcomeMessage.querySelectorAll('.quick-action-btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const actionId = button.dataset.actionId;
+            const prompt = button.dataset.prompt;
+            const ignoreAssistant = button.dataset.ignoreAssistant === 'true';
+
+            // 触发快捷操作
+            if (window.triggerQuickAction) {
+                window.triggerQuickAction(actionId, prompt, ignoreAssistant);
+            } else {
+                console.warn('Quick action trigger function not available');
+            }
+        });
+    });
+
+    return welcomeMessage;
+}
+
+// 辅助函数：HTML转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

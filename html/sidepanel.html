@@ -57,12 +57,7 @@
                         </button>
                     </div>
                     <div class="chat-messages" id="chat-messages">
-                        <div class="welcome-message">
-                            <h2>欢迎使用 PageTalk :) </h2>
-                            <div class="quick-actions">
-                                <button id="summarize-page" class="quick-action-btn">总结一下</button>
-                            </div>
-                        </div>
+                        <!-- 欢迎消息将通过JavaScript动态创建 -->
                     </div>
                     <!-- 修改图片预览区域为多图片网格布局 -->
                     <div class="image-preview-container" id="image-preview-container" style="display: none;">
@@ -129,6 +124,7 @@
                         <button class="settings-nav-btn" data-subtab="agent" data-i18n="agentSettingsNav">助手</button>
                         <button class="settings-nav-btn" data-subtab="model" data-i18n="modelSettingsNav">模型</button>
                         <button class="settings-nav-btn" data-subtab="text-selection-helper" data-i18n="textSelectionHelper">划词助手</button>
+                        <button class="settings-nav-btn" data-subtab="quick-actions" data-i18n="quickActionsNav">快捷操作</button>
                         <button class="settings-nav-btn active" data-subtab="general" data-i18n="generalSettingsNav">通用</button>
                         <!-- 添加关闭按钮 -->
                          <button id="close-panel-settings" title="关闭面板" class="action-button close-panel-btn">
@@ -454,6 +450,51 @@
                                     <!-- 选项顺序将通过 JavaScript 动态添加 -->
                                 </div>
                                 <p class="hint" data-i18n="dragToReorder">拖拽调整选项在选项栏中的显示顺序</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快捷操作设置 -->
+                    <div id="settings-quick-actions" class="settings-sub-content">
+                        <h2 data-i18n="quickActionsSettings">快捷操作设置</h2>
+
+                        <!-- 快捷操作说明 -->
+                        <div class="setting-description">
+                            <p data-i18n="quickActionsDescription">快捷操作允许您在主面板中快速执行预设的AI指令。您可以自定义操作名称、图标和提示词。</p>
+                        </div>
+
+                        <!-- 快捷操作管理卡片 -->
+                        <div class="setting-card expanded">
+                            <div class="setting-card-header">
+                                <h3>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                    </svg>
+                                    <span data-i18n="quickActionsManagement">快捷操作管理</span>
+                                </h3>
+                            </div>
+                            <div class="setting-card-content">
+                                <!-- 快捷操作操作栏 -->
+                                <div class="custom-options-actions-bar">
+                                    <div class="custom-options-actions-left">
+                                        <button class="action-button agent-action-button" id="import-quick-actions-btn">
+                                            <span data-i18n="importQuickActions">导入</span>
+                                        </button>
+                                        <button class="action-button agent-action-button" id="export-quick-actions-btn">
+                                            <span data-i18n="exportQuickActions">导出</span>
+                                        </button>
+                                    </div>
+                                    <div class="custom-options-actions-right">
+                                        <button class="agent-action-button add-agent-button" id="add-quick-action-btn">
+                                            <span data-i18n="addQuickAction">添加</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="quick-actions-list" id="quick-actions-list">
+                                    <!-- 快捷操作将通过 JavaScript 动态添加 -->
+                                </div>
+                                <!-- 隐藏的文件输入框 -->
+                                <input type="file" id="import-quick-actions-input" accept=".json" style="display: none;">
                             </div>
                         </div>
                     </div>

@@ -1659,3 +1659,475 @@ input[type=number] { /* For Firefox */
 #chat.active ~ main #settings #theme-toggle-btn {
     display: none !important;
 }
+
+/* ===== 快捷操作设置样式 ===== */
+
+/* 隐藏快捷操作管理标题栏 */
+#settings-quick-actions .setting-card-header {
+    display: none;
+}
+
+/* 快捷操作设置说明 */
+#settings-quick-actions .setting-description {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* 快捷操作列表样式 */
+.quick-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.quick-action-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: 0 var(--spacing-lg);
+    max-width: calc(100% - var(--spacing-xl) * 2);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    transition: all 0.2s ease;
+}
+
+.quick-action-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.1);
+}
+
+
+
+.quick-action-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+.quick-action-info {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+}
+
+.quick-action-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color);
+    flex: 1;
+}
+
+
+
+.quick-action-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.edit-quick-action-btn,
+.delete-quick-action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--text-secondary);
+}
+
+.edit-quick-action-btn:hover {
+    color: var(--primary-color);
+    background-color: rgba(70, 116, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.delete-quick-action-btn:hover {
+    color: var(--error-color);
+    background-color: rgba(220, 53, 69, 0.1);
+    transform: scale(1.1);
+}
+
+.edit-quick-action-btn svg,
+.delete-quick-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.quick-action-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-color);
+}
+
+.quick-action-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-action-detail-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.quick-action-detail-value {
+    font-size: 14px;
+    color: var(--text-color);
+    line-height: 1.4;
+}
+
+/* 无快捷操作提示 */
+.no-quick-actions {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-secondary);
+}
+
+.no-quick-actions p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* 快捷操作对话框样式 */
+.quick-action-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.quick-action-dialog {
+    background: var(--card-background);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+}
+
+.quick-action-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.quick-action-dialog-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.quick-action-dialog-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.quick-action-dialog-close:hover {
+    background: var(--button-hover-bg);
+    color: var(--text-color);
+}
+
+.quick-action-dialog-content {
+    padding: var(--spacing-lg);
+}
+
+.quick-action-dialog-content .setting-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.quick-action-dialog-content .setting-group:last-child {
+    margin-bottom: 0;
+}
+
+.quick-action-dialog-content label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.quick-action-dialog-content input[type="text"],
+.quick-action-dialog-content textarea {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.quick-action-dialog-content input[type="text"]:focus,
+.quick-action-dialog-content textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+}
+
+.quick-action-dialog-content textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+
+
+/* 复选框样式 */
+.checkbox-label {
+    display: flex !important;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    margin-bottom: var(--spacing-xs) !important;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto !important;
+    margin: 0 !important;
+    opacity: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.setting-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    line-height: 1.4;
+}
+
+.quick-action-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.quick-action-dialog-cancel,
+.quick-action-dialog-save {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.quick-action-dialog-cancel {
+    background-color: var(--button-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.quick-action-dialog-cancel:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.quick-action-dialog-save {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.quick-action-dialog-save:hover {
+    background-color: var(--secondary-color);
+}
+
+/* 深色模式下的快捷操作样式 */
+body.dark-mode .quick-action-item {
+    background: var(--card-background);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .quick-action-item:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(116, 143, 252, 0.15);
+}
+
+
+
+body.dark-mode .quick-action-name {
+    color: var(--text-color);
+}
+
+body.dark-mode .quick-action-detail-label {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .quick-action-detail-value {
+    color: var(--text-color);
+}
+
+body.dark-mode .edit-quick-action-btn:hover {
+    color: var(--primary-color);
+    background-color: rgba(116, 143, 252, 0.2);
+    transform: scale(1.1);
+}
+
+body.dark-mode .delete-quick-action-btn:hover {
+    color: var(--error-color);
+    background-color: rgba(220, 53, 69, 0.2);
+    transform: scale(1.1);
+}
+
+body.dark-mode .quick-action-dialog {
+    background: var(--card-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .quick-action-dialog-header {
+    border-bottom-color: var(--border-color);
+}
+
+body.dark-mode .quick-action-dialog-header h3 {
+    color: var(--text-color);
+}
+
+body.dark-mode .quick-action-dialog-close {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .quick-action-dialog-close:hover {
+    background: var(--button-hover-bg);
+    color: var(--text-color);
+}
+
+body.dark-mode .quick-action-dialog-content input[type="text"],
+body.dark-mode .quick-action-dialog-content textarea {
+    background-color: var(--input-background);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.dark-mode .quick-action-dialog-content input[type="text"]:focus,
+body.dark-mode .quick-action-dialog-content textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(116, 143, 252, 0.2);
+}
+
+
+
+body.dark-mode .checkmark {
+    border-color: var(--border-color);
+}
+
+body.dark-mode .checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+body.dark-mode .setting-hint {
+    color: var(--text-secondary);
+}
+
+body.dark-mode .quick-action-dialog-footer {
+    border-top-color: var(--border-color);
+}
+
+body.dark-mode .quick-action-dialog-cancel {
+    background-color: var(--button-background);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+body.dark-mode .quick-action-dialog-cancel:hover {
+    background-color: var(--button-hover-bg);
+}
+
+body.dark-mode .quick-action-dialog-save {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+body.dark-mode .quick-action-dialog-save:hover {
+    background-color: var(--secondary-color);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .quick-action-dialog {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .quick-action-details {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+
+    .quick-action-dialog-header,
+    .quick-action-dialog-content,
+    .quick-action-dialog-footer {
+        padding: var(--spacing-md);
+    }
+}

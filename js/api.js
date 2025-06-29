@@ -133,7 +133,7 @@ function buildSystemPrompt(stateRef, explicitContextTabs = null) {
     <instruction>Carefully consider the entire chat history to understand conversational flow and maintain relevance. Refer to previous turns as needed for coherent, contextually appropriate responses.</instruction>
   </multi_turn_dialogue>
   <agent_specific_instructions>
-    ${stateRef.systemPrompt ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
+    ${(stateRef.systemPrompt && !stateRef.quickActionIgnoreAssistant) ? `<content>\n${escapeXml(stateRef.systemPrompt)}\n</content>` : '<content>No specific agent instructions provided.</content>'}
   </agent_specific_instructions>
 </instructions>
 

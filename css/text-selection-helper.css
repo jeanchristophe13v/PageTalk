@@ -1737,6 +1737,7 @@
     align-items: center;
     padding: var(--spacing-sm) 0;
     margin-bottom: var(--spacing-md);
+    margin-top: var(--spacing-sm);
 }
 
 .custom-options-actions-left,
