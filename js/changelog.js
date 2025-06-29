@@ -5,6 +5,26 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.6.8",
+        date: "2025-06-29",
+        changes: {
+            "zh-CN": [
+                "1. 增加快捷操作，现在可以自定义快捷操作按钮并在首页使用",
+                "2. 增加Ollama和LM Studio供应商支持",
+                "3. 增加数据统一管理模块，一键导出助手、划词助手、快捷操作配置，API KEY配置、已选模型配置",
+                "4. 重构通用设置UI",
+                "5. 修复一些bug"
+            ],
+            "en": [
+                "1. Added 'Quick Actions' feature - you can now customize quick action buttons and use them on the homepage",
+                "2. Added Ollama and LM Studio provider support",
+                "3. Added unified data management module - one-click export of agents, Selection Tool, quick actions configurations, API KEY configurations, and selected model configurations",
+                "4. Refactored general settings UI",
+                "5. Fixed some bugs"
+            ]
+        }
+    },
+    {
         version: "3.6.5",
         date: "2025-06-29",
         changes: {
