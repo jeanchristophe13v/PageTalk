@@ -143,8 +143,8 @@ if (typeof window.translations === 'undefined') {
     // --- 统一导入导出相关翻译 ---
     'unifiedImportExportLabel': '统一数据管理',
     'unifiedImportExportHint': '导出或导入所有助手、划词助手、快捷操作及API Key配置。',
-    'exportAllButton': '导出全部',
-    'importAllButton': '导入全部',
+    'exportAllButton': '导出',
+    'importAllButton': '导入',
     'unifiedExportSuccess': '所有设置已导出',
     'unifiedExportError': '导出设置时出错: {error}',
     'unifiedImportSuccess': '设置导入成功！界面将自动刷新以应用新设置。',
@@ -635,8 +635,8 @@ Format：
     // --- Unified Import/Export Related Translations ---
     'unifiedImportExportLabel': 'Unified Data Management',
     'unifiedImportExportHint': 'Export or import all agent, text selection helper, quick actions, and API key configurations.',
-    'exportAllButton': 'Export All',
-    'importAllButton': 'Import All',
+    'exportAllButton': 'Export',
+    'importAllButton': 'Import',
     'unifiedExportSuccess': 'All settings exported',
     'unifiedExportError': 'Error exporting settings: {error}',
     'unifiedImportSuccess': 'Settings imported successfully! The interface will refresh automatically to apply new settings.',

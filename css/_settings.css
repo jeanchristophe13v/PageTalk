@@ -221,8 +221,9 @@
 .unified-data-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: var(--spacing-md);
 }
 
 .unified-data-icon {
@@ -242,36 +243,43 @@
     margin: 0;
 }
 
+.unified-data-title-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
 .unified-data-description {
     color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.4;
-    margin: 0 0 var(--spacing-md) 0;
+    margin: var(--spacing-sm) 0 0 0;
 }
 
 .unified-data-actions {
     display: flex;
-    gap: var(--spacing-lg);
-    justify-content: center;
+    gap: var(--spacing-sm);
+    align-items: center;
 }
 
 .unified-action-btn {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
     border: 1px solid var(--primary-color);
     border-radius: 16px;
     background-color: var(--primary-color);
     color: white;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     justify-content: center;
-    min-height: 32px;
-    min-width: 100px;
-    max-width: 120px;
+    min-height: 28px;
+    min-width: 70px;
+    max-width: 90px;
+    white-space: nowrap;
 }
 
 .unified-action-btn:hover {

@@ -214,29 +214,31 @@
                         <div class="setting-group">
                             <div class="unified-data-card">
                                 <div class="unified-data-header">
-                                    <div class="unified-data-icon">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                            <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375"/>
-                                        </svg>
+                                    <div class="unified-data-title-section">
+                                        <div class="unified-data-icon">
+                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375"/>
+                                            </svg>
+                                        </div>
+                                        <h3 class="unified-data-title" data-i18n="unifiedImportExportLabel">统一数据管理</h3>
                                     </div>
-                                    <h3 class="unified-data-title" data-i18n="unifiedImportExportLabel">统一数据管理</h3>
+                                    <div class="unified-data-actions">
+                                        <button id="export-all-settings" class="unified-action-btn export-btn" data-i18n="exportAllButton">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                                            </svg>
+                                            <span>导出</span>
+                                        </button>
+                                        <button id="import-all-settings" class="unified-action-btn import-btn" data-i18n="importAllButton">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-10.5-4.5L12 7.5m0 0 1.5 1.5M12 7.5v9"/>
+                                            </svg>
+                                            <span>导入</span>
+                                        </button>
+                                        <input type="file" id="unified-import-input" accept=".json" style="display: none;">
+                                    </div>
                                 </div>
                                 <p class="unified-data-description" data-i18n="unifiedImportExportHint">导出或导入所有助手、划词助手、快捷操作及API Key配置。</p>
-                                <div class="unified-data-actions">
-                                    <button id="export-all-settings" class="unified-action-btn export-btn" data-i18n="exportAllButton">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                            <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-                                        </svg>
-                                        <span>导出全部</span>
-                                    </button>
-                                    <button id="import-all-settings" class="unified-action-btn import-btn" data-i18n="importAllButton">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                            <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-10.5-4.5L12 7.5m0 0 1.5 1.5M12 7.5v9"/>
-                                        </svg>
-                                        <span>导入全部</span>
-                                    </button>
-                                    <input type="file" id="unified-import-input" accept=".json" style="display: none;">
-                                </div>
                             </div>
                         </div>
                     </div>
