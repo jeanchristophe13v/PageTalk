@@ -487,7 +487,13 @@ function setupEventListeners() {
 // --- Event Handlers & Triggers ---
 
 function handleUserInputKeydown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Check if the IME is composing text. If so, don't send the message.
+    // The `isComposing` property is true during the composition session.
+    // Pressing Enter to confirm an IME candidate will not trigger the send action.
+    // 检查输入法是否正在输入（拼字）。如果是，则不发送消息。
+    // `isComposing` 属性在输入法拼字期间为 true。
+    // 按下回车键确认候选词时，不会触发发送操作。
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
         e.preventDefault();
         if (!state.isStreaming) {
             sendUserMessageTrigger();

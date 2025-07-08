@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.6.9",
+        date: "2025-07-08",
+        changes: {
+            "zh-CN": [
+                "1. 修复mac系统输入bug"
+            ],
+            "en": [
+                "1. Fixed Mac system input bug"
+            ]
+        }
+    },
+    {
         version: "3.6.8",
         date: "2025-06-29",
         changes: {
