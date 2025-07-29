@@ -249,11 +249,12 @@ export function deleteMessage(messageId, state) {
     const messageElement = document.querySelector(`.message[data-message-id="${messageId}"]`);
     let domRemoved = false;
     if (messageElement) {
-        // Check if there's a preceding sent-tabs-container to remove
-        const prevSibling = messageElement.previousElementSibling;
-        if (prevSibling && prevSibling.classList.contains('sent-tabs-container') &&
-            prevSibling.dataset.messageIdRef === messageId) {
-            prevSibling.remove();
+        // 循环删除所有与此消息关联的前置容器（图片、标签页等）
+        let prevSibling = messageElement.previousElementSibling;
+        while (prevSibling && prevSibling.dataset.messageIdRef === messageId) {
+            const siblingToRemove = prevSibling;
+            prevSibling = siblingToRemove.previousElementSibling; // 先移动指针
+            siblingToRemove.remove(); // 再删除
         }
         messageElement.remove();
         domRemoved = true;

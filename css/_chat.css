@@ -208,22 +208,34 @@
     box-shadow: 0 2px 8px rgba(49, 123, 245, 0.15);
 }
 
+/* 隐藏没有内容的用户消息气泡 */
+.user-message.empty-bubble {
+    display: none;
+}
+
 /* 用户消息气泡内已发送标签页的容器 - 现在是外部容器的样式 */
-.sent-tabs-container {
+.sent-tabs-container,
+.sent-images-container {
     display: flex;
     flex-direction: column;
     align-self: flex-end; /* 与用户消息气泡对齐 */
     gap: calc(var(--spacing-xs) / 2);
     margin-bottom: calc(var(--spacing-xs) / 2); /* 与下方用户消息气泡的间距 */
-    /* padding-bottom: calc(var(--spacing-xs) / 2); */ /* 不再需要，因为不再是内部容器 */
-    /* border-bottom: 1px solid rgba(255, 255, 255, 0.2); */ /* 不再需要，因为不再是内部容器 */
     width: fit-content; /* 根据内容调整宽度 */
     max-width: 90%; /* 与用户消息气泡最大宽度相似或略小 */
     margin-right: 0; /* 确保与 flex-end 对齐 */
-    /* 为了美观，可以给这个容器也加上一点圆角和背景，使其看起来像一组独立的标签 */
-    /* background-color: rgba(0,0,0,0.03); /* 非常淡的背景 */
-    /* padding: var(--spacing-xs); */
-    /* border-radius: var(--radius-md); */
+}
+
+/* 为图片容器添加特定的内边距和背景，使其看起来更像一个整体 */
+.sent-images-container {
+    background-color: rgba(0,0,0,0.03); /* 非常淡的背景 */
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-md);
+    box-sizing: border-box;
+}
+
+body.dark-mode .sent-images-container {
+    background-color: rgba(255,255,255,0.03);
 }
 
 .sent-tab-item {
@@ -911,18 +923,20 @@ body.dark-mode .sent-tab-item:hover {
 }
 
 /* 用户消息中的图片网格 */
-.user-message .message-images {
+/* 修改选择器，不再局限于 .user-message 内部 */
+.message-images {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: var(--spacing-xs);
-    margin-bottom: var(--spacing-xs);
+    /* margin-bottom is now controlled by the container's gap */
 }
-.user-message .message-image {
+.message-image {
     width: 100%;
     height: 80px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     object-fit: cover;
+    display: block; /* 确保图片是块级元素 */
 }
 
 

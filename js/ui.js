@@ -137,6 +137,30 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
     }
     // --- 结束：处理已发送的上下文标签页 ---
 
+    // --- 新增：处理已发送的图片 (在用户消息之前显示) ---
+    let sentImagesContainer = null;
+    if (sender === 'user' && images.length > 0) {
+        sentImagesContainer = document.createElement('div');
+        sentImagesContainer.className = 'sent-images-container'; // 新样式类
+        sentImagesContainer.dataset.messageIdRef = messageId;
+
+        let imagesHTML = '<div class="message-images">'; // 复用网格布局样式
+        images.forEach((image, index) => {
+            const altText = escapeHtml(_('imageAlt', { index: index + 1 }, currentTranslations));
+            imagesHTML += `<img class="message-image" src="${escapeHtml(image.dataUrl)}" alt="${altText}" data-index="${index}" data-url="${escapeHtml(image.dataUrl)}">`;
+        });
+        imagesHTML += '</div>';
+        sentImagesContainer.innerHTML = imagesHTML;
+
+        // 为新容器内的图片添加点击事件
+        sentImagesContainer.querySelectorAll('.message-image').forEach(img => {
+            img.addEventListener('click', () => {
+                showFullSizeImage(img.dataset.url, elements);
+            });
+        });
+    }
+    // --- 结束：处理已发送的图片 ---
+
     // 决定插入点
     const parentNode = elements.chatMessages;
     let actualInsertBeforeElement = null;
@@ -144,13 +168,12 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
         actualInsertBeforeElement = insertAfterElement.nextSibling;
     }
 
-    // 如果有 sentTabsContainer，先插入它
+    // 依次插入外部容器
     if (sentTabsContainer) {
-        if (actualInsertBeforeElement) {
-            parentNode.insertBefore(sentTabsContainer, actualInsertBeforeElement);
-        } else {
-            parentNode.appendChild(sentTabsContainer);
-        }
+        parentNode.insertBefore(sentTabsContainer, actualInsertBeforeElement);
+    }
+    if (sentImagesContainer) {
+        parentNode.insertBefore(sentImagesContainer, actualInsertBeforeElement);
     }
     
     // 然后插入消息气泡
@@ -166,18 +189,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     // --- Non-streaming or final render ---
     let messageHTML = '';
-    // 原本在这里渲染 sentContextTabs 的逻辑已移到前面创建 sentTabsContainer
-
-    if (sender === 'user' && images.length > 0) {
-        messageHTML += '<div class="message-images">';
-        images.forEach((image, index) => {
-            // Use escapeHtml for alt text just in case
-            const altText = escapeHtml(_('imageAlt', { index: index + 1 }, currentTranslations));
-            // Add data-url for click handler
-            messageHTML += `<img class="message-image" src="${escapeHtml(image.dataUrl)}" alt="${altText}" data-index="${index}" data-url="${escapeHtml(image.dataUrl)}">`;
-        });
-        messageHTML += '</div>';
-    }
+    // 图片渲染逻辑已移到前面创建 sentImagesContainer
 
     if (sender === 'user' && videos.length > 0) {
         messageHTML += '<div class="message-videos">';
@@ -233,14 +245,12 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     messageDiv.innerHTML = messageHTML;
 
-    // Add click listeners for user images AFTER setting innerHTML
-    if (sender === 'user' && images.length > 0) {
-        messageDiv.querySelectorAll('.message-image').forEach(img => {
-            img.addEventListener('click', () => {
-                showFullSizeImage(img.dataset.url, elements); // Use data-url
-            });
-        });
+    // 如果用户消息气泡中既没有文本也没有视频，则将其标记为空
+    if (sender === 'user' && !content && videos.length === 0) {
+        messageDiv.classList.add('empty-bubble');
     }
+
+    // 图片的点击事件监听器已移到 sentImagesContainer 的创建逻辑中
 
     // Add click listeners for user videos AFTER setting innerHTML
     if (sender === 'user' && videos.length > 0) {
