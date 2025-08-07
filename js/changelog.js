@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.7.0",
+        date: "2025-07-29",
+        changes: {
+            "zh-CN": [
+                "1. 优化图片发送样式"
+            ],
+            "en": [
+                "1. Optimized image sending style"
+            ]
+        }
+    },
+    {
         version: "3.6.9",
         date: "2025-07-08",
         changes: {

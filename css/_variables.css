@@ -37,7 +37,7 @@
     /* 圆角变量 */
     --radius-sm: 4px;
     --radius-md: 8px;
-    --radius-lg: 16px;
+    --radius-lg: 14px;
     --radius-xl: 20px; /* 新增大圆角变量 */
     --radius-full: 9999px;
 }

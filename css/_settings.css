@@ -430,12 +430,12 @@ body.dark-mode .unified-action-btn:hover {
     background-color: var(--primary-color);
     color: white;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-height: 32px;
+    min-height: 30px;
     white-space: nowrap;
-    min-width: 80px;
+    min-width: 50px;
 }
 
 .setting-action-btn:hover {
@@ -748,7 +748,7 @@ body.dark-mode .setting-action-btn:hover {
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
-    height: 36px;
+    height: 30px;
 }
 
 .add-provider-btn:hover {
