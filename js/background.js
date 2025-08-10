@@ -5,6 +5,9 @@
  * 处理浏览器扩展的后台逻辑
  */
 
+import { makeApiRequest } from './utils/proxyRequest.js';
+import { providers } from './providerManager.js';
+
 // 当安装或更新扩展时初始化
 chrome.runtime.onInstalled.addListener(() => {
     // onInstalled 事件触发
@@ -488,70 +491,15 @@ async function handleUnifiedAPICall(message, sendResponse, sender) {
  * 智能格式化 API URL
  * 自动添加 /v1/ 到基础 URL，除非它们已经包含版本路径
  */
-function formatApiUrl(apiHost, providerId, endpoint) {
-    // OpenRouter 的 apiHost 已包含 /api/v1
-    if (providerId === 'openrouter') {
-        return `${apiHost}${endpoint}`;
-    }
-
-    // ChatGLM 的 apiHost 已包含完整路径 /api/paas/v4
-    if (providerId === 'chatglm') {
-        return `${apiHost}${endpoint}`;
-    }
-
-    // 检查 URL 是否已经包含版本路径
-    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\/|\/paas\/v\d+/.test(apiHost);
-
-    if (hasVersionPath) {
-        return `${apiHost}${endpoint}`;
-    } else {
-        return `${apiHost}/v1${endpoint}`;
-    }
-}
+// Centralized in utils/apiUrl.js
+import { formatApiUrl } from './utils/apiUrl.js';
 
 /**
  * 获取提供商配置（包括自定义提供商）
  */
 async function getProviderConfig(providerId) {
-    // 内置提供商配置
-    const builtinProviders = {
-        google: {
-            type: 'gemini',
-            apiHost: 'https://generativelanguage.googleapis.com'
-        },
-        openai: {
-            type: 'openai_compatible',
-            apiHost: 'https://api.openai.com'
-        },
-        anthropic: {
-            type: 'anthropic',
-            apiHost: 'https://api.anthropic.com'
-        },
-        siliconflow: {
-            type: 'openai_compatible',
-            apiHost: 'https://api.siliconflow.cn'
-        },
-        openrouter: {
-            type: 'openai_compatible',
-            apiHost: 'https://openrouter.ai/api/v1'
-        },
-        deepseek: {
-            type: 'openai_compatible',
-            apiHost: 'https://api.deepseek.com'
-        },
-        chatglm: {
-            type: 'openai_compatible',
-            apiHost: 'https://open.bigmodel.cn/api/paas/v4'
-        },
-        ollama: {
-            type: 'openai_compatible',
-            apiHost: 'http://localhost:11434'
-        },
-        lmstudio: {
-            type: 'openai_compatible',
-            apiHost: 'http://localhost:1234'
-        }
-    };
+    // 内置提供商配置来源于 providerManager
+    const builtinProviders = Object.fromEntries(Object.values(providers).map(p => [p.id, { type: p.type, apiHost: p.apiHost }]));
 
     // 首先检查是否是内置提供商
     if (builtinProviders[providerId]) {
@@ -792,20 +740,10 @@ function getAllApiDomains() {
     const domains = new Set();
 
     // 从内置供应商配置中提取域名
-    const builtinProviders = {
-        google: 'https://generativelanguage.googleapis.com',
-        openai: 'https://api.openai.com',
-        anthropic: 'https://api.anthropic.com',
-        siliconflow: 'https://api.siliconflow.cn',
-        openrouter: 'https://openrouter.ai/api/v1',
-        deepseek: 'https://api.deepseek.com',
-        chatglm: 'https://open.bigmodel.cn/api/paas/v4',
-        ollama: 'http://localhost:11434',
-        lmstudio: 'http://localhost:1234'
-    };
+    const builtinApiHosts = Object.values(providers).map(p => p.apiHost);
 
     // 添加内置供应商域名
-    Object.values(builtinProviders).forEach(apiHost => {
+    builtinApiHosts.forEach(apiHost => {
         try {
             const url = new URL(apiHost);
             domains.add(url.hostname);
@@ -838,20 +776,10 @@ async function getAllApiDomainsAsync() {
     const domains = new Set();
 
     // 从内置供应商配置中提取域名
-    const builtinProviders = {
-        google: 'https://generativelanguage.googleapis.com',
-        openai: 'https://api.openai.com',
-        anthropic: 'https://api.anthropic.com',
-        siliconflow: 'https://api.siliconflow.cn',
-        openrouter: 'https://openrouter.ai/api/v1',
-        deepseek: 'https://api.deepseek.com',
-        chatglm: 'https://open.bigmodel.cn/api/paas/v4',
-        ollama: 'http://localhost:11434',
-        lmstudio: 'http://localhost:1234'
-    };
+    const builtinApiHosts = Object.values(providers).map(p => p.apiHost);
 
     // 添加内置供应商域名
-    Object.values(builtinProviders).forEach(apiHost => {
+    builtinApiHosts.forEach(apiHost => {
         try {
             const url = new URL(apiHost);
             domains.add(url.hostname);
@@ -1036,83 +964,20 @@ async function clearNetworkCache() {
  * @param {string} url - 请求URL
  * @returns {boolean} 是否为AI API请求
  */
-function isAIApiRequest(url) {
-    try {
-        const urlObj = new URL(url);
-        const hostname = urlObj.hostname;
-
-        // 检查是否匹配已知的AI API域名
-        const aiApiDomains = [
-            'generativelanguage.googleapis.com',  // Google Gemini
-            'api.openai.com',                     // OpenAI
-            'api.anthropic.com',                  // Anthropic Claude
-            'api.siliconflow.cn',                 // SiliconFlow
-            'openrouter.ai',                      // OpenRouter
-            'api.deepseek.com',                   // DeepSeek
-            'open.bigmodel.cn'                    // ChatGLM
-        ];
-
-        return aiApiDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
-    } catch (error) {
-        console.warn('[Background] Error parsing URL for AI API check:', url, error);
-        return false;
-    }
-}
-
-/**
- * 代理请求函数 - 简化版本，依赖 PAC 脚本进行选择性代理
+/*
+ * NOTE: HTTP request helpers are centralized in utils/proxyRequest.js.
+ * background.js now imports and uses makeApiRequest directly.
  */
-async function makeProxyRequest(url, options = {}, proxyAddress = '') {
-    // 如果没有配置代理，直接使用fetch
-    if (!proxyAddress || proxyAddress.trim() === '') {
-        console.log('[Background] No proxy configured, using direct fetch');
-        return fetch(url, options);
-    }
-
-    // 检查是否为 AI API 请求
-    const isAIAPI = isAIApiRequest(url);
-
-    if (isAIAPI) {
-        console.log('[Background] AI API request detected, using configured proxy via PAC script:', url);
-    } else {
-        console.log('[Background] Non-AI API request, will use direct connection via PAC script:', url);
-    }
-
-    // 直接使用 fetch，让 PAC 脚本决定是否使用代理
-    return fetch(url, options);
-}
-
-
-
-/**
- * 通用的API请求函数，支持代理
- */
-async function makeApiRequest(url, options = {}) {
-    try {
-        // 获取代理设置
-        const result = await chrome.storage.sync.get(['proxyAddress']);
-        const proxyAddress = result.proxyAddress;
-
-        return await makeProxyRequest(url, options, proxyAddress);
-    } catch (error) {
-        console.error('[Background] Error in makeApiRequest:', error);
-        throw error;
-    }
-}
 
 /**
  * 处理来自content script的代理请求
  */
 async function handleFetchWithProxyRequest(url, options = {}, sendResponse) {
     try {
-        // 获取代理设置
-        const result = await chrome.storage.sync.get(['proxyAddress']);
-        const proxyAddress = result.proxyAddress;
-
         console.log('[Background] Handling fetch with proxy request for:', url);
 
-        // 使用代理请求
-        const response = await makeProxyRequest(url, options, proxyAddress);
+        // 使用统一的代理感知请求
+        const response = await makeApiRequest(url, options);
 
         if (!response.ok) {
             throw new Error(`HTTP error ${response.status}: ${response.statusText}`);

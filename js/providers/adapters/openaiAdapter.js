@@ -41,26 +41,8 @@ function getCurrentTranslations() {
  * @param {string} endpoint - 端点路径
  * @returns {string} 格式化后的完整 URL
  */
-function formatApiUrl(apiHost, providerId, endpoint) {
-    // OpenRouter 的 apiHost 已包含 /api/v1
-    if (providerId === 'openrouter') {
-        return `${apiHost}${endpoint}`;
-    }
-
-    // ChatGLM 的 apiHost 已包含完整路径 /api/paas/v4
-    if (providerId === 'chatglm') {
-        return `${apiHost}${endpoint}`;
-    }
-
-    // 检查 URL 是否已经包含版本路径
-    const hasVersionPath = /\/v\d+|\/api\/v\d+|\/v\d+\/|\/api\/v\d+\/|\/paas\/v\d+/.test(apiHost);
-
-    if (hasVersionPath) {
-        return `${apiHost}${endpoint}`;
-    } else {
-        return `${apiHost}/v1${endpoint}`;
-    }
-}
+// Moved to centralized util
+import { formatApiUrl } from '../../utils/apiUrl.js';
 
 /**
  * OpenAI 兼容 API 适配器

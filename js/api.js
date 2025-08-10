@@ -15,6 +15,8 @@ import { getProvider, API_TYPES } from './providerManager.js';
 import { geminiAdapter, fetchGeminiModels, testGeminiApiKey } from './providers/adapters/geminiAdapter.js';
 import { openaiAdapter, fetchOpenAIModels, testOpenAIApiKey } from './providers/adapters/openaiAdapter.js';
 import { anthropicAdapter, fetchAnthropicModels, testAnthropicApiKey } from './providers/adapters/anthropicAdapter.js';
+// Add shared HTTP helper for proxy-aware requests
+import { makeApiRequest } from './utils/proxyRequest.js';
 
 /**
  * 获取当前翻译对象
@@ -298,85 +300,10 @@ function createStreamHandler(config) {
  * @param {string} url - 请求URL
  * @returns {boolean} 是否为AI API请求
  */
-function isAIApiRequest(url) {
-    try {
-        const urlObj = new URL(url);
-        const hostname = urlObj.hostname;
-
-        // 检查是否匹配已知的AI API域名
-        const aiApiDomains = [
-            'generativelanguage.googleapis.com',  // Google Gemini
-            'api.openai.com',                     // OpenAI
-            'api.anthropic.com',                  // Anthropic Claude
-            'api.siliconflow.cn',                 // SiliconFlow
-            'openrouter.ai',                      // OpenRouter
-            'api.deepseek.com',                   // DeepSeek
-            'open.bigmodel.cn'                    // ChatGLM
-        ];
-
-        return aiApiDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
-    } catch (error) {
-        console.warn('[API] Error parsing URL for AI API check:', url, error);
-        return false;
-    }
-}
-
-/**
- * 代理请求函数 - 选择性代理实现，支持所有AI API
- * 注意：在 content script 环境中，我们通过 background.js 来处理代理请求
+/*
+ * NOTE: HTTP request helpers moved to utils/proxyRequest.js.
+ * Use makeApiRequest from that module instead of local duplicates.
  */
-async function makeProxyRequest(url, options = {}, proxyAddress = '') {
-    // 检查是否为 AI API 请求
-    const isAIAPI = isAIApiRequest(url);
-
-    // 如果没有配置代理或不是 AI API 请求，直接使用fetch
-    if (!proxyAddress || proxyAddress.trim() === '' || !isAIAPI) {
-        if (!isAIAPI) {
-            console.log('[API] Non-AI API request, using direct fetch:', url);
-        } else {
-            console.log('[API] No proxy configured for AI API, using direct fetch');
-        }
-        return fetch(url, options);
-    }
-
-    // 对于 AI API 请求，如果配置了代理，通过 background.js 处理
-    console.log('[API] AI API request with proxy, delegating to background.js:', url);
-
-    // 在 content script 环境中，我们需要通过 background.js 来处理代理请求
-    // 这里保持原有逻辑，实际的代理处理在 background.js 中完成
-    try {
-        // 解析代理地址以验证格式
-        const proxyUrl = new URL(proxyAddress.trim());
-        const proxyScheme = proxyUrl.protocol.slice(0, -1); // 移除末尾的冒号
-
-        console.log('[API] Using proxy for AI API:', proxyAddress, 'scheme:', proxyScheme);
-
-        // 直接使用 fetch，让 background.js 的代理逻辑处理
-        return fetch(url, options);
-
-    } catch (error) {
-        console.error('[API] Error parsing proxy URL:', error);
-        // 如果代理配置有问题，回退到直接请求
-        console.log('[API] Falling back to direct fetch due to proxy error');
-        return fetch(url, options);
-    }
-}
-
-/**
- * 获取代理设置并发起请求
- */
-async function makeApiRequest(url, options = {}) {
-    try {
-        // 获取代理设置
-        const result = await chrome.storage.sync.get(['proxyAddress']);
-        const proxyAddress = result.proxyAddress;
-
-        return await makeProxyRequest(url, options, proxyAddress);
-    } catch (error) {
-        console.error('[API] Error in makeApiRequest:', error);
-        throw error;
-    }
-}
 
 /**
  * Internal helper to test API key and model validity.
@@ -438,7 +365,7 @@ async function _testAndVerifyApiKey(apiKey, model) {
         if (response.ok) {
             // 获取当前翻译
             const currentTranslations = getCurrentTranslations();
-            const message = currentTranslations['connectionTestSuccess'] || 'Connection established ! API Key verified.';
+            const message = currentTranslations['connectionTestSuccess'] || 'Connection established! API Key verified.';
             return { success: true, message };
         } else {
             // Try to parse error, provide fallback message
