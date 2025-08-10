@@ -4,26 +4,14 @@
 import { generateUniqueId, escapeHtml } from './utils.js';
 import { renderDynamicContent } from './render.js';
 import { showFullSizeImage } from './image.js'; // Assuming image modal logic is in image.js
+import { tr as _ } from './utils/i18n.js';
 
 // --- Global Variables (Accessed via parameters) ---
 // let state; // Reference passed in
 // let elements; // Reference passed in
 // let currentTranslations = {}; // Reference passed in
 
-/**
- * Helper function to get translation string
- * @param {string} key
- * @param {object} [replacements={}]
- * @param {object} translations - The current translations object
- * @returns {string}
- */
-function _(key, replacements = {}, translations) {
-  let translation = translations[key] || key;
-  for (const placeholder in replacements) {
-    translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-  }
-  return translation;
-}
+// 使用 utils/i18n.js 提供的 tr 作为翻译函数
 
 /**
  * 切换标签页
@@ -567,8 +555,12 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     // Welcome message updated dynamically
     setAttr('#modal-image', 'alt', 'imagePreviewAltTranslated');
     setTitle('#upload-image', 'uploadImageTitle');
-    setPlaceholder('#user-input', 'userInputContextPlaceholder');
+    setPlaceholder('#user-input', 'userInputPlaceholder');
     setTitle('#send-message', 'sendMessageTitle'); // Default title
+    // New: ensure settings close button has translated title
+    setTitle('#close-panel-settings', 'closePanelTitle');
+    // New: ensure add-provider has title
+    setTitle('#add-provider-btn', 'addProvider');
 
     // YouTube URL Dialog
     setTitle('#add-youtube-url', 'addYoutubeLinkTitle');
@@ -578,13 +570,44 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     setText('#cancel-youtube', 'cancelButton');
     setText('#confirm-youtube', 'addButton');
 
-    setText('.footer-tab[data-tab="chat"]', 'chatTab');
-    setText('.footer-tab[data-tab="settings"]', 'settingsTab');
+    // Unified Data Management
+    setText('.unified-data-title[data-i18n="unifiedImportExportLabel"]', 'unifiedImportExportLabel');
+    setText('.unified-data-description[data-i18n="unifiedImportExportHint"]', 'unifiedImportExportHint');
+    setText('#export-all-settings span[data-i18n="exportAllButton"]', 'exportAllButton');
+    setText('#import-all-settings span[data-i18n="importAllButton"]', 'importAllButton');
 
-    setText('.settings-nav-btn[data-subtab="general"]', 'generalSettingsNav');
-    setText('.settings-nav-btn[data-subtab="agent"]', 'agentSettingsNav');
-    setText('.settings-nav-btn[data-subtab="model"]', 'modelSettingsNav');
-    setTitle('#close-panel-settings', 'closePanelTitle');
+    setText('#settings-agent h2', 'agentSettingsHeading');
+    setText('#agents-list .agents-list-header h3[data-i18n="agentsListHeading"]', 'agentsListHeading');
+
+    // Footer tabs
+    setText('.footer-tab[data-tab="chat"][data-i18n="chatTab"]', 'chatTab');
+    setText('.footer-tab[data-tab="settings"][data-i18n="settingsTab"]', 'settingsTab');
+
+    // Status bar
+    const contextPrefixEl = document.querySelector('#context-status[data-i18n="contextStatusPrefix"]');
+    if (contextPrefixEl) contextPrefixEl.textContent = _tr('contextStatusPrefix');
+    setText('#connection-indicator.disconnected[data-i18n="connectionIndicatorDisconnected"]', 'connectionIndicatorDisconnected');
+
+    // Language options text
+    const zhOpt = document.querySelector('#language-select option[value="zh-CN"][data-i18n="langZh"]');
+    const enOpt = document.querySelector('#language-select option[value="en"][data-i18n="langEn"]');
+    if (zhOpt) zhOpt.textContent = _tr('langZh');
+    if (enOpt) enOpt.textContent = _tr('langEn');
+
+    // Changelog modal texts
+    setText('#changelog-title[data-i18n="changelogTitle"]', 'changelogTitle');
+    setText('#never-show-label[data-i18n="changelogNeverShow"]', 'changelogNeverShow');
+    setText('#changelog-ok-btn[data-i18n="changelogOK"]', 'changelogOK');
+
+    // Generic: apply data-i18n-title and data-i18n-placeholder
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        if (key) el.setAttribute('title', _tr(key));
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (key) el.setAttribute('placeholder', _tr(key));
+    });
 
     setText('#settings-general h2', 'generalSettingsHeading');
 
@@ -602,22 +625,6 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     // Proxy setting card
     setText('.setting-card-title[data-i18n="proxyAddressLabel"]', 'proxyAddressLabel');
     setText('.setting-card-description[data-i18n="proxyAddressHint"]', 'proxyAddressHint');
-
-    // Unified Import/Export
-    setText('.unified-data-title[data-i18n="unifiedImportExportLabel"]', 'unifiedImportExportLabel');
-    setText('.unified-data-description[data-i18n="unifiedImportExportHint"]', 'unifiedImportExportHint');
-    setText('#export-all-settings span', 'exportAllButton');
-    setText('#import-all-settings span', 'importAllButton');
-
-    setText('#settings-agent h2', 'agentSettingsHeading');
-    setText('.agents-list-header h3', 'agentsListHeading');
-    setTitle('#add-new-agent', 'addNewAgentTitle');
-    setTitle('#import-agents', 'importAgentConfigTitle');
-    setTitle('#export-agents', 'exportAgentConfigTitle');
-    // Agent list items updated dynamically
-    setText('#delete-confirm-dialog h3', 'deleteConfirmHeading');
-    setText('#cancel-delete', 'cancel');
-    setText('#confirm-delete', 'delete');
 
     setText('#settings-model h2', 'modelSettingsHeading');
     setText('label[for="api-key"]', 'apiKeyLabel');

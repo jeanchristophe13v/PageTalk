@@ -7,6 +7,7 @@
 
 import { makeApiRequest } from './utils/proxyRequest.js';
 import { providers } from './providerManager.js';
+import { getHealthCheckEndpoints, getHealthCheckEndpointsAsync } from './utils/proxyHealth.js';
 
 // 当安装或更新扩展时初始化
 chrome.runtime.onInstalled.addListener(() => {
@@ -222,23 +223,15 @@ async function handleGetAvailableModelsRequest(sendResponse) {
             const managedModels = result.managedModels;
             const userActiveModels = result.userActiveModels;
 
-            // 构建提供商映射（包括自定义提供商）
-            const providerMap = {
-                google: 'Google',
-                openai: 'OpenAI',
-                anthropic: 'Claude',
-                siliconflow: 'SiliconFlow',
-                openrouter: 'OpenRouter',
-                deepseek: 'DeepSeek',
-                chatglm: 'ChatGLM',
-                ollama: 'Ollama',
-                lmstudio: 'LM Studio'
-            };
+            // 构建提供商映射（包括内置与自定义）
+            const providerMap = Object.fromEntries(
+                Object.values(providers).map(p => [p.id, p.name || p.id])
+            );
 
-            // 添加自定义提供商到映射
+            // 合并自定义提供商到映射
             if (result.customProviders && Array.isArray(result.customProviders)) {
                 result.customProviders.forEach(provider => {
-                    providerMap[provider.id] = provider.id;
+                    providerMap[provider.id] = provider.name || provider.id;
                 });
             }
 
@@ -1076,11 +1069,7 @@ async function handleProxyTestRequest(proxyAddress, sendResponse) {
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // 测试多个AI API端点以验证代理连接
-            const testEndpoints = [
-                'https://generativelanguage.googleapis.com/',  // Google Gemini
-                'https://api.openai.com/',                     // OpenAI
-                'https://api.anthropic.com/'                   // Anthropic
-            ];
+            const testEndpoints = await getHealthCheckEndpointsAsync(providers);
 
             let successCount = 0;
             let lastError = null;
@@ -1198,11 +1187,7 @@ async function checkProxyHealth() {
         console.log('[Background] Checking proxy health for:', proxyAddress);
 
         // 使用多个AI API端点进行健康检查，提高可靠性
-        const healthCheckEndpoints = [
-            'https://generativelanguage.googleapis.com/',  // Google Gemini
-            'https://api.openai.com/',                     // OpenAI
-            'https://api.anthropic.com/'                   // Anthropic
-        ];
+        const healthCheckEndpoints = getHealthCheckEndpoints(providers);
 
         let healthCheckPassed = false;
 

@@ -70,6 +70,7 @@ const state = {
     pageContext: null, // Use null initially to indicate not yet extracted
     chatHistory: [],
     isConnected: false,
+    hasDeterminedConnection: false, // 新增：是否已判定连接状态，避免初始闪烁
     images: [],
     videos: [],
     darkMode: false,
@@ -175,6 +176,11 @@ const elements = {
 // --- Translation ---
 let currentTranslations = {}; // Loaded from translations.js
 function _(key, replacements = {}) {
+    // 优先使用统一 i18n 工具（若可用），并传入当前翻译对象
+    if (window.I18n && typeof window.I18n.tr === 'function') {
+        return window.I18n.tr(key, replacements, currentTranslations);
+    }
+    // 回退：使用 main.js 维护的当前翻译对象
     let translation = currentTranslations[key] || key;
     for (const placeholder in replacements) {
         translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
@@ -260,7 +266,10 @@ async function init() {
     setupAutoresizeTextarea(elements); // Setup textarea resize
 
     // Initial UI updates
-    updateConnectionIndicator(state.isConnected, elements, currentTranslations); // Update footer connection status
+    // 避免尚未判定连接状态时显示“未连接”造成闪烁
+    if (state.hasDeterminedConnection) {
+        updateConnectionIndicator(state.isConnected, elements, currentTranslations);
+    }
     updateContextStatus('contextStatusNone', {}, elements, currentTranslations); // Initial context status
 
     // Request page content after setup
@@ -890,7 +899,8 @@ function handleContentScriptMessages(event) {
             state.pageContext = message.content;
             updateContextStatus('contextStatusChars', { charCount: message.content.length }, elements, currentTranslations);
             if (message.showSuccessMessage) {
-                showChatStatusMessage(_('pageContentExtractedSuccess', {}, currentTranslations), 'success', elements);
+                const msgText = _('pageContentExtractedSuccess', {}, currentTranslations);
+                showChatStatusMessage(msgText, 'success', elements);
             }
             break;
         case 'pageContentLoaded':
@@ -1184,7 +1194,10 @@ async function loadAndApplyTranslations(language) {
     // Update dynamic parts that depend on translations
     updateAgentsListUIAllArgs(); // Re-render agent list with translated labels/placeholders
     updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
-    updateConnectionIndicator(state.isConnected, elements, currentTranslations); // Re-render connection status text
+    // 仅当已判定连接状态后才渲染连接状态文案
+    if (state.hasDeterminedConnection) {
+        updateConnectionIndicator(state.isConnected, elements, currentTranslations);
+    }
 
     // 更新默认快捷操作的翻译
     try {

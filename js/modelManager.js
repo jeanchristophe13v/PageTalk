@@ -714,15 +714,24 @@ class ModelManager {
         }
 
         try {
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+            // 使用 providerManager 的 Google apiHost
+            const googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+            if (!googleApiHost) {
+                throw new Error('Google provider apiHost not configured');
+            }
+            const endpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models?key=${apiKey}`;
+            // 统一代理感知请求
+            const response = await (window.ProxyRequest?.makeApiRequest ? window.ProxyRequest.makeApiRequest(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            );
+            }) : fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }));
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

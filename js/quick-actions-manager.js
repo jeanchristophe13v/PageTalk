@@ -4,6 +4,7 @@
  */
 
 import { generateUniqueId } from './utils.js';
+import { getCurrentTranslations, tr as _ } from './utils/i18n.js';
 
 // 当前快捷操作设置
 let currentQuickActions = {
@@ -33,13 +34,8 @@ function getCurrentLanguage() {
  * 获取翻译文本
  */
 function getTranslation(key) {
-    const currentLanguage = getCurrentLanguage();
-    if (typeof window !== 'undefined' && window.translations) {
-        return window.translations[currentLanguage]?.[key] ||
-               window.translations['zh-CN']?.[key] ||
-               key;
-    }
-    return key;
+    const translations = getCurrentTranslations();
+    return _(key, {}, translations);
 }
 
 /**

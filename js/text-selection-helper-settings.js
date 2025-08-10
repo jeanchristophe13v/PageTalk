@@ -37,15 +37,12 @@ function escapeHtml(text) {
  * 获取默认设置（根据语言动态生成）
  */
 function getDefaultSettings(language = 'zh-CN') {
-    // 使用translations.js中的默认提示词
+    // 使用统一翻译辅助
     const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', language) :
-        (window.translations?.[language]?.['defaultInterpretPrompt'] ||
-         window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '解释一下');
+        (trSettings('defaultInterpretPrompt') || '解释一下');
     const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', language) :
-        (window.translations?.[language]?.['defaultTranslatePrompt'] ||
-         window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
-    const chatPrompt = window.translations?.[language]?.['defaultChatPrompt'] ||
-        window.translations?.['zh-CN']?.['defaultChatPrompt'] || '你是一个有用的对话助手';
+        (trSettings('defaultTranslatePrompt') || '翻译一下');
+    const chatPrompt = trSettings('defaultChatPrompt') || '你是一个有用的对话助手';
 
     return {
         enabled: true, // 默认启用划词助手
@@ -350,7 +347,9 @@ function handleLanguageChange(newLanguage) {
         console.log('[TextSelectionHelperSettings] Updating UI for language change');
 
         // 获取当前语言的翻译对象
-        const translations = window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {};
+        const translations = (window.I18n && typeof window.I18n.getCurrentTranslations === 'function')
+            ? window.I18n.getCurrentTranslations()
+            : (window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {});
         console.log('[TextSelectionHelperSettings] Using translations:', translations);
 
         // 重新加载设置到UI
@@ -1053,7 +1052,9 @@ async function updateOptionsOrderUI(elements, translations) {
     if (!translations || Object.keys(translations).length === 0) {
         getCurrentLanguageForSettings().then(async currentLanguage => {
             console.log('[TextSelectionHelperSettings] Fallback: getting translations for language:', currentLanguage);
-            const fallbackTranslations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
+            const fallbackTranslations = (window.I18n && typeof window.I18n.getCurrentTranslations === 'function')
+                ? window.I18n.getCurrentTranslations()
+                : (window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {});
             console.log('[TextSelectionHelperSettings] Fallback translations:', fallbackTranslations);
             await updateOptionsOrderUI(elements, fallbackTranslations);
         });
@@ -1228,7 +1229,9 @@ function setupDragAndDrop(container) {
                 // 重新渲染列表 - 获取当前语言的翻译对象
                 getCurrentLanguageForSettings().then(async currentLanguage => {
                     console.log('[TextSelectionHelperSettings] Getting translations for language:', currentLanguage);
-                    const translations = window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {};
+                    const translations = (window.I18n && typeof window.I18n.getCurrentTranslations === 'function')
+                        ? window.I18n.getCurrentTranslations()
+                        : (window.translations && window.translations[currentLanguage] ? window.translations[currentLanguage] : {});
                     console.log('[TextSelectionHelperSettings] Available translations:', translations);
                     await updateOptionsOrderUI(document, translations);
                 }).catch(async err => {
@@ -1494,7 +1497,9 @@ function setupDialogLanguageChangeListener(dialog, option) {
         try {
             const newLanguage = event.detail.newLanguage;
             if (window.translations && window.translations[newLanguage]) {
-                const newTranslations = window.translations[newLanguage];
+                const newTranslations = (window.I18n && typeof window.I18n.getCurrentTranslations === 'function')
+                    ? window.I18n.getCurrentTranslations()
+                    : window.translations[newLanguage];
                 updateDialogTranslations(dialog, option, newTranslations);
                 console.log('[TextSelectionHelperSettings] Dialog translations updated for language:', newLanguage);
             }
@@ -1589,7 +1594,9 @@ async function showCustomOptionDialog(option, translations) {
     try {
         const currentLanguage = await getCurrentLanguageForSettings();
         if (window.translations && window.translations[currentLanguage]) {
-            currentTranslations = window.translations[currentLanguage];
+            currentTranslations = (window.I18n && typeof window.I18n.getCurrentTranslations === 'function')
+                ? window.I18n.getCurrentTranslations()
+                : window.translations[currentLanguage];
             console.log('[TextSelectionHelperSettings] Using latest translations for language:', currentLanguage);
         }
     } catch (error) {
@@ -2846,4 +2853,20 @@ async function refreshModelSelectors() {
     } catch (error) {
         console.warn('[TextSelectionHelperSettings] Failed to refresh model selectors:', error);
     }
+}
+
+// 统一翻译辅助：优先 I18n，再回退 translations
+function trSettings(key, replacements = {}) {
+    try {
+        if (window.I18n && typeof window.I18n.tr === 'function') {
+            return window.I18n.tr(key, replacements);
+        }
+    } catch (_) { /* ignore */ }
+    const language = (typeof localStorage !== 'undefined' && localStorage.getItem('language')) || 'zh-CN';
+    let text = window.translations?.[language]?.[key] || window.translations?.['zh-CN']?.[key] || '';
+    if (!text) return '';
+    for (const ph in replacements) {
+        text = text.replace(`{${ph}}`, replacements[ph]);
+    }
+    return text;
 }

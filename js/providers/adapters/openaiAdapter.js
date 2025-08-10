@@ -7,31 +7,9 @@
 
 // 导入统一代理请求工具
 import { makeProxyRequest } from '../../utils/proxyRequest.js';
+import { getCurrentTranslations } from '../../utils/i18n.js';
 
-/**
- * 获取当前翻译对象
- * @returns {Object} 当前翻译对象
- */
-function getCurrentTranslations() {
-    // 尝试从全局获取当前语言
-    let currentLanguage = 'zh-CN';
-
-    // 尝试从全局状态获取语言设置
-    if (typeof window !== 'undefined' && window.state && window.state.language) {
-        currentLanguage = window.state.language;
-    }
-    // 从localStorage获取语言设置
-    else if (typeof localStorage !== 'undefined') {
-        currentLanguage = localStorage.getItem('language') || 'zh-CN';
-    }
-
-    // 从window.translations获取翻译
-    if (typeof window !== 'undefined' && window.translations) {
-        const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
-        return translations;
-    }
-    return {};
-}
+// 从统一 i18n 工具获取翻译对象
 
 /**
  * 智能格式化 API URL

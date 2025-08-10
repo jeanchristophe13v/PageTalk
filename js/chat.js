@@ -2,15 +2,9 @@
  * Pagetalk - Chat Core Logic
  */
 import { generateUniqueId } from './utils.js';
+import { tr as _ } from './utils/i18n.js';
 
-/** Helper function to get translation string */
-function _(key, replacements = {}, translations) {
-    let translation = translations[key] || key;
-    for (const placeholder in replacements) {
-        translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-    }
-    return translation;
-}
+// 使用 utils/i18n.js 提供的 tr 作为翻译函数
 
 /**
  * Sends a user message and initiates the AI response process.

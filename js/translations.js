@@ -86,6 +86,8 @@ if (typeof window.translations === 'undefined') {
     'agentTopPLabel': 'Top P:',
     'agentMaxOutputLabel': 'Max Output Length:',
     'defaultAgentName': '默认', // Added for default agent
+    'langZh': '简体中文',
+    'langEn': '英语',
     'imageAlt': '图片 {index}', // Placeholder for image index
     'viewImageTitle': '查看原图',
     'deleteImageTitle': '删除图片',
@@ -578,6 +580,8 @@ Format：
     'agentTopPLabel': 'Top P:',
     'agentMaxOutputLabel': 'Max Output Length:',
     'defaultAgentName': 'Default', // Added for default agent
+    'langZh': 'Chinese (Simplified)',
+    'langEn': 'English',
     'imageAlt': 'Image {index}',
     'viewImageTitle': 'View Original',
     'deleteImageTitle': 'Delete Image',

@@ -43,14 +43,14 @@
                                 <!-- 这里的选项会通过 JavaScript 动态填充 -->
                             </select>
                         </div>
-                        <button id="clear-context" title="清除上下文和聊天记录" class="action-button">
+                        <button id="clear-context" data-i18n-title="clearContextTitle" title="清除上下文和聊天记录" class="action-button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                                 <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
                             </svg>
                         </button>
                         <!-- 添加关闭面板按钮 -->
-                        <button id="close-panel" title="关闭面板" class="action-button close-panel-btn">
+                        <button id="close-panel" data-i18n-title="closePanelTitle" title="关闭面板" class="action-button close-panel-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                             </svg>
@@ -92,7 +92,7 @@
                     <div id="chat-status-message" class="chat-status"></div>
                     <div class="chat-input">
                         <!-- 添加图片上传按钮 -->
-                        <button id="upload-image" title="上传图片" class="upload-image-button">
+                        <button id="upload-image" data-i18n-title="uploadImageTitle" title="上传图片" class="upload-image-button">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
                                 <path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v6l-3.775-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12v.54A.505.505 0 0 1 1 12.5v-9a.5.5 0 0 1 .5-.5h13z"/>
@@ -106,8 +106,8 @@
                         </button>
                         <!-- 隐藏的文件输入框 -->
                         <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
-                        <textarea id="user-input" placeholder="..."></textarea>
-                        <button id="send-message" title="发送消息">
+                        <textarea id="user-input" data-i18n-placeholder="userInputPlaceholder" placeholder="..."></textarea>
+                        <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
                             </svg>
@@ -127,7 +127,7 @@
                         <button class="settings-nav-btn" data-subtab="quick-actions" data-i18n="quickActionsNav">快捷操作</button>
                         <button class="settings-nav-btn active" data-subtab="general" data-i18n="generalSettingsNav">通用</button>
                         <!-- 添加关闭按钮 -->
-                         <button id="close-panel-settings" title="关闭面板" class="action-button close-panel-btn">
+                         <button id="close-panel-settings" data-i18n-title="closePanelTitle" title="关闭面板" class="action-button close-panel-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
                             </svg>
@@ -136,7 +136,7 @@
 
                     <!-- 通用设置 -->
                     <div id="settings-general" class="settings-sub-content active">
-                        <h2>通用设置</h2>
+                        <h2 data-i18n="generalSettingsHeading">通用设置</h2>
 
                         <!-- 语言设置卡片 -->
                         <div class="setting-group">
@@ -152,8 +152,8 @@
                                 <p class="setting-card-description" data-i18n="languageDescription">选择界面显示语言</p>
                                 <div class="setting-card-content">
                                     <select id="language-select" class="setting-select">
-                                        <option value="zh-CN">简体中文</option>
-                                        <option value="en">English</option>
+                                        <option value="zh-CN" data-i18n="langZh">简体中文</option>
+                                        <option value="en" data-i18n="langEn">English</option>
                                     </select>
                                 </div>
                             </div>
@@ -204,7 +204,7 @@
                                             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                                 <path d="M9.75 9.75 4.5 15m0-5.25h5.25m0 0V4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
                                             </svg>
-                                            <span>测试代理</span>
+                                            <span data-i18n="testProxy">测试</span>
                                         </button>
                                     </div>
                                 </div>
@@ -227,13 +227,13 @@
                                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                                 <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
                                             </svg>
-                                            <span>导出</span>
+                                            <span data-i18n="exportAllButton">导出</span>
                                         </button>
                                         <button id="import-all-settings" class="unified-action-btn import-btn" data-i18n="importAllButton">
                                             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                                 <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-10.5-4.5L12 7.5m0 0 1.5 1.5M12 7.5v9"/>
                                             </svg>
-                                            <span>导入</span>
+                                            <span data-i18n="importAllButton">导入</span>
                                         </button>
                                         <input type="file" id="unified-import-input" accept=".json" style="display: none;">
                                     </div>
@@ -245,11 +245,11 @@
 
                     <!-- Agent 设置 -->
                     <div id="settings-agent" class="settings-sub-content">
-                        <h2>助手设置</h2>
+                        <h2 data-i18n="agentSettingsHeading">助手设置</h2>
                         <!-- 助手列表区域 -->
                         <div class="agents-list-container">
                             <div class="agents-list-header">
-                                <h3>助手</h3>
+                                <h3 data-i18n="agentsListHeading">助手</h3>
                                 <!-- 隐藏的文件输入框 (保留) -->
                                 <input type="file" id="import-agent-input" accept=".json" style="display: none;">
                             </div>
@@ -576,7 +576,7 @@
                                     <select id="provider-select">
                                         <!-- 供应商选项将通过 JavaScript 动态填充 -->
                                     </select>
-                                    <button id="add-provider-btn" class="add-provider-btn" data-i18n="addProvider" title="添加自定义提供商">
+                                    <button id="add-provider-btn" class="add-provider-btn" data-i18n="addProvider" data-i18n-title="addProvider" title="添加自定义提供商">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                             <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
                                         </svg>
@@ -615,7 +615,7 @@
                     </div>
                 </div>
                 <!-- Moved Theme Toggle Button -->
-                <button id="theme-toggle-btn" class="icon-btn theme-toggle-btn" title="切换深色/浅色模式">
+                <button id="theme-toggle-btn" class="icon-btn theme-toggle-btn" data-i18n-title="themeToggleTitle" title="切换深色/浅色模式">
                     <!-- Moon Icon (Default) -->
                     <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162h1.212a.217.217 0 0 1 .154.371l-.98.752.387 1.162a.217.217 0 0 1-.316.228l-.98-.752-.98.752a.217.217 0 0 1-.316-.228l.387-1.162-.98-.752a.217.217 0 0 1 .154-.371h1.212l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
@@ -630,13 +630,13 @@
 
         <footer>
             <div class="status-bar">
-                <span id="context-status">Context: 无</span>
-                <span id="connection-indicator" class="disconnected">未连接</span>
+                <span id="context-status" data-i18n="contextStatusPrefix">上下文：</span>
+                <span id="connection-indicator" class="disconnected" data-i18n="connectionIndicatorDisconnected">未连接</span>
             </div>
             <!-- 更新后的底部导航栏 -->
             <ul class="footer-tabs">
-                <li class="footer-tab active" data-tab="chat">聊天</li>
-                <li class="footer-tab" data-tab="settings">设置</li>
+                <li class="footer-tab active" data-tab="chat" data-i18n="chatTab">聊天</li>
+                <li class="footer-tab" data-tab="settings" data-i18n="settingsTab">设置</li>
             </ul>
         </footer>
     </div>
@@ -645,7 +645,7 @@
     <div id="changelog-modal" class="changelog-modal">
         <div class="changelog-content">
             <div class="changelog-header">
-                <h2 id="changelog-title">更新</h2>
+                <h2 id="changelog-title" data-i18n="changelogTitle">更新</h2>
                 <p id="changelog-subtitle"></p>
             </div>
             <div class="changelog-list" id="changelog-list">
@@ -654,9 +654,9 @@
             <div class="changelog-footer">
                 <div class="changelog-checkbox">
                     <input type="checkbox" id="never-show-checkbox">
-                    <label for="never-show-checkbox" id="never-show-label">不再显示本版本更新</label>
+                    <label for="never-show-checkbox" id="never-show-label" data-i18n="changelogNeverShow">不再显示本版本更新</label>
                 </div>
-                <button id="changelog-ok-btn" class="changelog-ok-btn">OK</button>
+                <button id="changelog-ok-btn" class="changelog-ok-btn" data-i18n="changelogOK">OK</button>
             </div>
         </div>
     </div>

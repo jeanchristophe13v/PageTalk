@@ -4,6 +4,54 @@
  * 提供统一的代理请求功能，支持所有AI API供应商
  */
 
+import { providers } from '../providerManager.js';
+
+// 维护一个可动态扩展的域名集合
+const aiApiDomainSet = new Set([
+    // 兜底静态域名（防止 providers 未加载或存储读取失败时遗漏）
+    'generativelanguage.googleapis.com',  // Google Gemini
+    'api.openai.com',                     // OpenAI
+    'api.anthropic.com',                  // Anthropic Claude
+    'api.siliconflow.cn',                 // SiliconFlow
+    'openrouter.ai',                      // OpenRouter
+    'api.deepseek.com',                   // DeepSeek
+    'open.bigmodel.cn'                    // ChatGLM
+]);
+
+// 从内置 providers 补充域名
+try {
+    if (providers) {
+        Object.values(providers).forEach(p => {
+            if (p && p.apiHost) {
+                try {
+                    const url = new URL(p.apiHost);
+                    aiApiDomainSet.add(url.hostname);
+                } catch (_) {
+                    // 忽略非法 URL
+                }
+            }
+        });
+    }
+} catch (_) { /* 忽略 */ }
+
+// 异步合并自定义提供商域名（不阻塞首次调用）
+try {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.get(['customProviders'], (result) => {
+            if (result && Array.isArray(result.customProviders)) {
+                result.customProviders.forEach(p => {
+                    if (p && p.apiHost) {
+                        try {
+                            const url = new URL(p.apiHost);
+                            aiApiDomainSet.add(url.hostname);
+                        } catch (_) { /* 忽略 */ }
+                    }
+                });
+            }
+        });
+    }
+} catch (_) { /* 忽略 */ }
+
 /**
  * 检查URL是否为AI API请求
  * @param {string} url - 请求URL
@@ -13,19 +61,11 @@ function isAIApiRequest(url) {
     try {
         const urlObj = new URL(url);
         const hostname = urlObj.hostname;
-        
-        // 检查是否匹配已知的AI API域名
-        const aiApiDomains = [
-            'generativelanguage.googleapis.com',  // Google Gemini
-            'api.openai.com',                     // OpenAI
-            'api.anthropic.com',                  // Anthropic Claude
-            'api.siliconflow.cn',                 // SiliconFlow
-            'openrouter.ai',                      // OpenRouter
-            'api.deepseek.com',                   // DeepSeek
-            'open.bigmodel.cn'                    // ChatGLM
-        ];
-        
-        return aiApiDomains.some(domain => hostname === domain || hostname.endsWith('.' + domain));
+        // 检查是否匹配已知/派生的 AI API 域名
+        for (const domain of aiApiDomainSet) {
+            if (hostname === domain || hostname.endsWith('.' + domain)) return true;
+        }
+        return false;
     } catch (error) {
         console.warn('[ProxyRequest] Error parsing URL for AI API check:', url, error);
         return false;

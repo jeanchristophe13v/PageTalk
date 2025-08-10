@@ -17,31 +17,7 @@ import { openaiAdapter, fetchOpenAIModels, testOpenAIApiKey } from './providers/
 import { anthropicAdapter, fetchAnthropicModels, testAnthropicApiKey } from './providers/adapters/anthropicAdapter.js';
 // Add shared HTTP helper for proxy-aware requests
 import { makeApiRequest } from './utils/proxyRequest.js';
-
-/**
- * 获取当前翻译对象
- * @returns {Object} 当前翻译对象
- */
-function getCurrentTranslations() {
-    // 尝试从全局获取当前语言
-    let currentLanguage = 'zh-CN';
-
-    // 尝试从全局状态获取语言设置
-    if (typeof window !== 'undefined' && window.state && window.state.language) {
-        currentLanguage = window.state.language;
-    }
-    // 从localStorage获取语言设置
-    else if (typeof localStorage !== 'undefined') {
-        currentLanguage = localStorage.getItem('language') || 'zh-CN';
-    }
-
-    // 从window.translations获取翻译
-    if (typeof window !== 'undefined' && window.translations) {
-        const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
-        return translations;
-    }
-    return {};
-}
+import { getCurrentTranslations } from './utils/i18n.js';
 
 /**
  * XML转义函数
@@ -356,7 +332,12 @@ async function _testAndVerifyApiKey(apiKey, model) {
         const requestBody = {
             contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
         };
-        const response = await makeApiRequest(`https://generativelanguage.googleapis.com/v1beta/models/${apiTestModel}:generateContent?key=${actualApiKey}`, {
+        const googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+        if (!googleApiHost) {
+            throw new Error('Google provider apiHost not configured');
+        }
+        const testEndpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models/${apiTestModel}:generateContent?key=${actualApiKey}`;
+        const response = await makeApiRequest(testEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBody)
@@ -633,7 +614,11 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         }
 
         // 使用 Google Gemini API 端点
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`; // Use actual apiModelName
+        const googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+        if (!googleApiHost) {
+            throw new Error('Google provider apiHost not configured');
+        }
+        const endpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
         const response = await makeApiRequest(endpoint, {
             method: 'POST',

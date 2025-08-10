@@ -430,15 +430,18 @@ function closeChangelogModal(neverShowAgain) {
  * @returns {string} 翻译结果
  */
 function _(key) {
+    // 优先使用统一 i18n 工具（若可用）
+    if (window.I18n && typeof window.I18n.tr === 'function') {
+        return window.I18n.tr(key);
+    }
+
     const currentLang = localStorage.getItem('language') || 'zh-CN';
-    
-    // 确保 translations 对象存在，这个对象应该是在 translations.js 中定义的
+    // 退回到 translations.js 提供的全局对象
     if (typeof window.translations !== 'undefined') {
         return window.translations[currentLang]?.[key] ||
                window.translations['zh-CN']?.[key] ||
                key;
     }
-    
     return key;
 }
 

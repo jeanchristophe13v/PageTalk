@@ -3,45 +3,8 @@
  */
 import { generateUniqueId } from './utils.js'; // Might need utils later
 import * as QuickActionsManager from './quick-actions-manager.js';
+import { tr as _, getCurrentTranslations } from './utils/i18n.js';
 
-/** Helper function to get translation string */
-function _(key, replacements = {}, translations) {
-    let translation = translations[key] || key;
-    for (const placeholder in replacements) {
-        translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-    }
-    return translation;
-}
-
-
-
-/**
- * 获取当前翻译对象
- * @returns {Object} 当前翻译对象
- */
-function getCurrentTranslations() {
-    // 尝试从全局获取当前语言
-    let currentLanguage = 'zh-CN';
-
-    // 优先从全局状态获取语言设置
-    if (typeof window !== 'undefined' && window.state && window.state.language) {
-        currentLanguage = window.state.language;
-    }
-    // 从localStorage获取语言设置
-    else if (typeof localStorage !== 'undefined') {
-        currentLanguage = localStorage.getItem('language') || 'zh-CN';
-    }
-
-    // 从window.translations获取翻译
-    if (typeof window !== 'undefined' && window.translations) {
-        const translations = window.translations[currentLanguage] || window.translations['zh-CN'] || {};
-        console.debug('[Settings] getCurrentTranslations:', currentLanguage, Object.keys(translations).length, 'keys');
-        return translations;
-    }
-
-    console.warn('[Settings] No translations available, returning empty object');
-    return {};
-}
 
 /**
  * 获取浏览器语言设置
@@ -205,10 +168,11 @@ export async function saveModelSettings(showToastNotification = true, state, ele
                     console.error("Error saving model settings:", chrome.runtime.lastError);
                     showToastCallback(_('saveFailedToast', { error: chrome.runtime.lastError.message }, currentTranslations), 'error'); // Changed to showToastCallback
                     state.isConnected = false; // Revert status
+                    state.hasDeterminedConnection = true;
                 } else {
                     if (showToastNotification) {
                         showToastCallback(testResult.message, 'success'); // 仅在需要时弹出API验证成功提示
-                        // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // 可选：额外的“已保存”提示
+                        // showToastCallback(_('settingsSaved', {}, currentTranslations), 'success'); // 可选：额外的"已保存"提示
                     }
                     // Sync chat model selector
                     if (elements.chatModelSelection) {
@@ -217,18 +181,21 @@ export async function saveModelSettings(showToastNotification = true, state, ele
 
                     // API测试成功后，自动发现并添加默认模型
                     await autoDiscoverModelsAfterTest('google', showToastCallback);
+                    state.hasDeterminedConnection = true;
                 }
                 updateConnectionIndicatorCallback(); // Update footer indicator
             });
         } else {
             // Test failed
             state.isConnected = false;
+            state.hasDeterminedConnection = true;
             showToastCallback(_('connectionTestFailed', { error: testResult.message }, currentTranslations), 'error'); // Changed to showToastCallback
             updateConnectionIndicatorCallback();
         }
     } catch (error) {
         console.error("Error during API key test:", error);
         state.isConnected = false;
+        state.hasDeterminedConnection = true;
         showToastCallback(_('connectionTestFailed', { error: error.message }, currentTranslations), 'error');
         updateConnectionIndicatorCallback();
     } finally {

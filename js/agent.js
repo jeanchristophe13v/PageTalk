@@ -2,6 +2,7 @@
  * Pagetalk - Agent Management Functions
  */
 import { generateUniqueId } from './utils.js';
+import { tr as _ } from './utils/i18n.js';
 
 // Default settings for new agents
 const defaultAgentSettings = {
@@ -11,14 +12,7 @@ const defaultAgentSettings = {
     topP: 0.95,
 };
 
-/** Helper function to get translation string */
-function _(key, replacements = {}, translations) {
-    let translation = translations[key] || key;
-    for (const placeholder in replacements) {
-        translation = translation.replace(`{${placeholder}}`, replacements[placeholder]);
-    }
-    return translation;
-}
+// 使用 utils/i18n.js 提供的 tr 作为翻译函数
 
 /**
  * 加载助手列表并初始化

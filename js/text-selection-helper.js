@@ -72,26 +72,6 @@ function clearChatHistory(windowId) {
     console.log(`[TextSelectionHelper] Cleared chat history for window ${windowId}`);
 }
 
-/**
- * 构建包含历史记录的完整消息
- * @deprecated This function is no longer recommended. Build a message array instead.
- * 此函数已不推荐使用。请直接构建消息数组。
- */
-function buildMessageWithHistory(windowId, currentMessage) {
-    // 此函数的逻辑将被新的构建消息数组的方式取代
-    // 为了安全起见，我们保留它，但新的代码将不再调用它
-    const history = getChatHistory(windowId);
-    if (history.length === 0) {
-        return currentMessage;
-    }
-    let historyText = '\n\n{{history}}\n以下是此前的对话历史（最近10条消息）：\n';
-    history.forEach(msg => {
-        const roleLabel = msg.role === 'user' ? '用户' : '助手';
-        historyText += `${roleLabel}：${msg.content}\n`;
-    });
-    historyText += '{{/history}}\n\n';
-    return currentMessage + historyText;
-}
 
 // 配置
 const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移
@@ -236,24 +216,27 @@ function getOptionIcon(optionId, customIcon = null) {
  * 获取翻译函数
  */
 function getTranslationFunction() {
-    // 尝试从主面板获取翻译函数
+    // 优先使用统一 i18n 工具（父窗口或当前窗口）
+    if (window.parent && window.parent.I18n && typeof window.parent.I18n.tr === 'function') {
+        return (key, replacements = {}) => window.parent.I18n.tr(key, replacements);
+    }
+    if (window.I18n && typeof window.I18n.tr === 'function') {
+        return (key, replacements = {}) => window.I18n.tr(key, replacements);
+    }
+
+    // 兼容旧的 _tr 注入
     if (window.parent && window.parent._tr) {
         return window.parent._tr;
     }
-
-    // 尝试从当前窗口获取翻译函数
     if (window._tr) {
         return window._tr;
     }
 
-    // 如果translations对象可用，创建翻译函数
+    // 如果 translations 对象可用，创建简易翻译函数
     if (typeof window.translations !== 'undefined') {
         return function(key, replacements = {}) {
-            // 使用缓存的语言设置或默认中文
             const currentLanguage = window.currentLanguageCache || 'zh-CN';
             const translation = window.translations[currentLanguage]?.[key] || window.translations['zh-CN']?.[key] || key;
-
-            // 处理占位符替换
             let result = translation;
             for (const placeholder in replacements) {
                 result = result.replace(`{${placeholder}}`, replacements[placeholder]);
@@ -262,18 +245,8 @@ function getTranslationFunction() {
         };
     }
 
-    // 如果都没有，创建一个简单的回退函数
-    return function(key) {
-        // 简单的回退翻译映射
-        const fallbackTranslations = {
-            'interpret': '解读',
-            'translate': '翻译',
-            'chat': '对话',
-            'copy': '复制',
-            'regenerateResponse': '重新生成'
-        };
-        return fallbackTranslations[key] || key;
-    };
+    // 最后回退：返回 key 本身
+    return function(key) { return key; };
 }
 
 /**
@@ -1900,7 +1873,7 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
             responseArea.innerHTML = `
                 <div class="pagetalk-response-content markdown-rendered"></div>
                 <div class="pagetalk-response-actions">
-                    <button class="pagetalk-copy-btn" title="复制">
+                    <button class="pagetalk-copy-btn" data-i18n-title="copyAll" title="复制">
                         <svg class="copy-icon" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -1909,7 +1882,7 @@ async function sendInterpretOrTranslateRequest(windowElement, optionId) {
                             <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                         </svg>
                     </button>
-                    <button class="pagetalk-regenerate-btn" title="重新生成">
+                    <button class="pagetalk-regenerate-btn" data-i18n-title="regenerate" title="重新生成">
                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                             <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
@@ -2252,7 +2225,7 @@ async function sendChatMessage(windowElement) {
         aiMessageElement.innerHTML = `
             <div class="pagetalk-message-content markdown-rendered">
                 <div class="pagetalk-message-actions">
-                    <button class="pagetalk-copy-btn" title="复制">
+                    <button class="pagetalk-copy-btn" data-i18n-title="copyAll" title="复制">
                         <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -2261,13 +2234,13 @@ async function sendChatMessage(windowElement) {
                             <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                         </svg>
                     </button>
-                    <button class="pagetalk-regenerate-btn" title="重新生成">
+                    <button class="pagetalk-regenerate-btn" data-i18n-title="regenerate" title="重新生成">
                         <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                             <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                         </svg>
                     </button>
-                    <button class="pagetalk-delete-btn" title="删除">
+                    <button class="pagetalk-delete-btn" data-i18n-title="deleteMessage" title="删除">
                         <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -2456,7 +2429,7 @@ function addChatMessage(windowElement, message, role) {
         <div class="pagetalk-message-content">
             ${message}
             <div class="pagetalk-message-actions">
-            <button class="pagetalk-copy-btn" title="复制">
+            <button class="pagetalk-copy-btn" data-i18n-title="copyAll" title="复制">
                 <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                     <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -2465,13 +2438,13 @@ function addChatMessage(windowElement, message, role) {
                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                 </svg>
             </button>
-            <button class="pagetalk-regenerate-btn" title="重新生成">
+            <button class="pagetalk-regenerate-btn" data-i18n-title="regenerate" title="重新生成">
                 <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                     <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                 </svg>
             </button>
-            <button class="pagetalk-delete-btn" title="删除">
+            <button class="pagetalk-delete-btn" data-i18n-title="deleteMessage" title="删除">
                 <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                     <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -2759,7 +2732,7 @@ async function regenerateChatMessage(windowElement, userMessage) {
         aiMessageElement.innerHTML = `
             <div class="pagetalk-message-content markdown-rendered">
                 <div class="pagetalk-message-actions">
-                    <button class="pagetalk-copy-btn" title="复制">
+                    <button class="pagetalk-copy-btn" data-i18n-title="copyAll" title="复制">
                         <svg class="copy-icon" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
                             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -2768,13 +2741,13 @@ async function regenerateChatMessage(windowElement, userMessage) {
                             <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                         </svg>
                     </button>
-                    <button class="pagetalk-regenerate-btn" title="重新生成">
+                    <button class="pagetalk-regenerate-btn" data-i18n-title="regenerate" title="重新生成">
                         <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                             <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
                         </svg>
                     </button>
-                    <button class="pagetalk-delete-btn" title="删除">
+                    <button class="pagetalk-delete-btn" data-i18n-title="deleteMessage" title="删除">
                         <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
                             <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
@@ -3059,11 +3032,9 @@ async function getTextSelectionHelperSettings() {
             chrome.storage.local.get(['textSelectionHelperSettings'], (result) => {
                 // 使用translations.js中的默认提示词
                 const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
-                    (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
-                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '请解释一下：');
+                    (trTSH('defaultInterpretPrompt') || '请解释一下：');
                 const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) :
-                    (window.translations?.[currentLanguage]?.['defaultTranslatePrompt'] ||
-                     window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
+                    (trTSH('defaultTranslatePrompt') || '翻译一下');
 
                 const defaultSettings = {
                     interpret: {
@@ -3130,11 +3101,9 @@ async function getTextSelectionHelperSettings() {
             try {
                 const currentLanguage = await getCurrentLanguage();
                 const interpretPrompt = window.getDefaultPrompt ? window.getDefaultPrompt('interpret', currentLanguage) :
-                    (window.translations?.[currentLanguage]?.['defaultInterpretPrompt'] ||
-                     window.translations?.['zh-CN']?.['defaultInterpretPrompt'] || '请解释一下：');
+                    (trTSH('defaultInterpretPrompt') || '请解释一下：');
                 const translatePrompt = window.getDefaultPrompt ? window.getDefaultPrompt('translate', currentLanguage) :
-                    (window.translations?.[currentLanguage]?.['defaultTranslatePrompt'] ||
-                     window.translations?.['zh-CN']?.['defaultTranslatePrompt'] || '翻译一下');
+                    (trTSH('defaultTranslatePrompt') || '翻译一下');
 
                 const defaultSettings = {
                     interpret: {
@@ -4192,3 +4161,19 @@ async function refreshAllModelSelectors() {
 initTextSelectionHelper();
 
 } // 结束防重复初始化检查
+
+// 统一翻译辅助（TSH内部使用）：优先 I18n，再回退 translations
+function trTSH(key, replacements = {}) {
+    try {
+        if (window.I18n && typeof window.I18n.tr === 'function') {
+            return window.I18n.tr(key, replacements);
+        }
+    } catch (_) { /* ignore */ }
+    const language = window.currentLanguageCache || 'zh-CN';
+    let text = window.translations?.[language]?.[key] || window.translations?.['zh-CN']?.[key] || '';
+    if (!text) return '';
+    for (const ph in replacements) {
+        text = text.replace(`{${ph}}`, replacements[ph]);
+    }
+    return text;
+}
