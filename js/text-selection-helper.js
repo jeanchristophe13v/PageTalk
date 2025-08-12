@@ -1740,7 +1740,8 @@ function setupFunctionWindowEvents(windowElement, optionId) {
                 sendChatMessage(windowElement);
             });
             textarea.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // 修复：在输入法组合期间，不处理Enter键
+                if (e.key === 'Enter' && !e.isComposing && !e.shiftKey) {
                     e.preventDefault();
                     sendChatMessage(windowElement);
                 }
