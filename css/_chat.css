@@ -1873,10 +1873,13 @@ body.dark-mode .tab-selection-popup {
     color: var(--primary-color);
 }
 
-/* .tab-selection-item.selected {
-    background-color: var(--button-hover-bg);
-    color: var(--primary-color);
-} */
+/* 列表项的键盘聚焦样式 */
+/* 取消聚焦高亮的背景，保持极简；若需可改为细边框或阴影 */
+.tab-selection-item.focused {
+    background-color: transparent;
+}
+
+/* 多选勾选后的样式：不改变背景，仅通过右侧勾选指示器体现 */
 
 .tab-item-favicon {
     width: 16px;
@@ -1917,7 +1920,134 @@ body.dark-mode .tab-selection-popup {
     padding: var(--spacing-md);
 }
 
+/* 勾选指示器（列表项右侧的小对勾），默认淡显，选中时高亮为绿色 */
+.check-indicator {
+    margin-left: auto;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent; /* 让 svg 使用 currentColor，但未选中时透明 */
+    background: transparent;
+    opacity: 0.5;
+    transition: all 0.15s ease;
+}
 
+.check-indicator svg {
+    width: 12px;
+    height: 12px;
+}
 
+.tab-selection-item.checked .check-indicator {
+    border-color: rgba(16, 185, 129, 0.6);
+    background: rgba(16, 185, 129, 0.12);
+    color: rgba(16, 185, 129, 1);
+    opacity: 1;
+}
 
+body.dark-mode .tab-selection-item.checked .check-indicator {
+    border-color: rgba(16, 185, 129, 0.8);
+    background: rgba(16, 185, 129, 0.25);
+    color: rgba(140, 255, 215, 1);
+}
 
+/* 弹窗底部操作按钮区域 */
+.tab-selection-actions {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: inherit;
+    backdrop-filter: inherit;
+    -webkit-backdrop-filter: inherit;
+    border-top: 1px solid var(--border-color);
+}
+
+.tab-selection-actions .left-actions,
+.tab-selection-actions .right-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.tab-selection-actions .tab-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border-color);
+    background: var(--button-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tab-selection-actions .tab-action:hover {
+    background: var(--button-hover-bg);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.tab-selection-actions .tab-action.neutral:hover {
+    background: rgba(76, 110, 245, 0.16);
+    border-color: rgba(76, 110, 245, 0.5);
+    color: var(--primary-color);
+}
+
+.tab-selection-actions .tab-action.confirm:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.6);
+    color: rgb(16, 185, 129);
+}
+
+.tab-selection-actions .tab-action.cancel:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.6);
+    color: rgb(239, 68, 68);
+}
+
+.tab-selection-actions .tab-action.neutral {
+    border-color: rgba(99, 123, 255, 0.35);
+    background: rgba(99, 123, 255, 0.12);
+    color: rgba(76, 110, 245, 1);
+}
+
+.tab-selection-actions .tab-action.confirm {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.12);
+    color: rgb(16, 185, 129);
+}
+
+.tab-selection-actions .tab-action.cancel {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.12);
+    color: rgb(239, 68, 68);
+}
+
+/* 深色模式下的按钮配色调整，确保可读性和对比度 */
+body.dark-mode .tab-selection-actions .tab-action.neutral {
+    border-color: rgba(99, 123, 255, 0.5);
+    background: rgba(99, 123, 255, 0.22);
+    color: rgba(180, 195, 255, 1);
+}
+
+body.dark-mode .tab-selection-actions .tab-action.confirm {
+    border-color: rgba(16, 185, 129, 0.5);
+    background: rgba(16, 185, 129, 0.22);
+    color: rgba(140, 255, 215, 1);
+}
+
+body.dark-mode .tab-selection-actions .tab-action.cancel {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.22);
+    color: rgba(255, 180, 180, 1);
+}

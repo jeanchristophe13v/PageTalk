@@ -563,6 +563,8 @@ async function fetchAndShowTabsForSelection() {
 
     try {
         const tabs = await chrome.tabs.query({});
+        const activeTabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        const activeTabId = activeTabs && activeTabs.length > 0 ? activeTabs[0].id : null;
         if (tabs && tabs.length > 0) {
             const currentExtensionId = chrome.runtime.id;
             state.availableTabsForSelection = tabs.filter(tab => 
@@ -571,7 +573,8 @@ async function fetchAndShowTabsForSelection() {
                 !tab.url.startsWith(`chrome-extension://${currentExtensionId}`) &&
                 !tab.url.startsWith('chrome://') &&
                 !tab.url.startsWith('about:') &&
-                !tab.url.startsWith('edge://')
+                !tab.url.startsWith('edge://') &&
+                tab.id !== activeTabId // 忽略当前页面，避免冗余
             ).map(tab => ({
                 id: tab.id,
                 title: tab.title || 'Untitled Tab',
@@ -580,8 +583,8 @@ async function fetchAndShowTabsForSelection() {
             }));
 
             if (state.availableTabsForSelection.length > 0) {
-                // 调用UI函数显示弹窗 
-                showTabSelectionPopupUI(state.availableTabsForSelection, handleTabSelectedFromPopup, elements, currentTranslations);
+                // 调用UI函数显示弹窗（多选） 
+                showTabSelectionPopupUI(state.availableTabsForSelection, handleTabsSelectedFromPopup, elements, currentTranslations);
                 state.isTabSelectionPopupOpen = true;
             } else {
                 state.availableTabsForSelection = [];
@@ -659,6 +662,76 @@ function handleTabSelectedFromPopup(selectedTab) {
             updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // 更新UI以反映加载/错误状态
         }
     });
+}
+
+// 新增：处理从弹窗中多选标签页的回调
+function handleTabsSelectedFromPopup(selectedTabs) {
+    if (!Array.isArray(selectedTabs) || selectedTabs.length === 0) {
+        closeTabSelectionPopupUIFromMain();
+        return;
+    }
+
+    // 关闭弹窗并同步状态
+    closeTabSelectionPopupUIFromMain();
+
+    // 移除输入框中最后一个 '@' 及其后内容
+    const currentText = elements.userInput.value;
+    const cursorPos = elements.userInput.selectionStart;
+    const atCharIndex = currentText.lastIndexOf('@', cursorPos - 1);
+    if (atCharIndex !== -1) {
+        elements.userInput.value = currentText.substring(0, atCharIndex);
+    }
+    elements.userInput.focus();
+
+    // 逐个加入到选中列表
+    const suppressPerTabSuccessToast = selectedTabs.length > 1; // 多选时仅显示汇总提示，抑制单条成功提示
+    let addedCount = 0;
+    selectedTabs.forEach((tab) => {
+        const isAlreadySelected = state.selectedContextTabs.some(t => t.id === tab.id);
+        if (isAlreadySelected) return;
+
+        const newSelectedTabEntry = {
+            id: tab.id,
+            title: tab.title,
+            url: tab.url,
+            favIconUrl: tab.favIconUrl,
+            content: null,
+            isLoading: true,
+            isContextSent: false
+        };
+        state.selectedContextTabs.push(newSelectedTabEntry);
+        addedCount++;
+
+        chrome.runtime.sendMessage({ action: 'extractTabContent', tabId: tab.id }, (response) => {
+            const tabData = state.selectedContextTabs.find(t => t.id === tab.id);
+            if (tabData) {
+                if (response && response.content && !response.error) {
+                    tabData.content = response.content;
+                    tabData.isLoading = false;
+                    tabData.error = false;
+                    if (!suppressPerTabSuccessToast) {
+                        showToastUI(_('tabContentLoadedSuccess', { title: tabData.title.substring(0, 20) }), 'success', 'toast-tab-loaded');
+                    }
+                } else {
+                    tabData.content = null;
+                    tabData.isLoading = false;
+                    tabData.error = true;
+                    const errorMessage = response?.error || _('unknownErrorLoadingTab', {}, currentTranslations);
+                    console.error(`Failed to load content for tab ${tab.id}: ${errorMessage}`);
+                    showToastUI(_('tabContentLoadFailed', { title: tabData.title.substring(0, 20), error: errorMessage }), 'error', 'toast-tab-loaded');
+                }
+                updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
+            }
+        });
+    });
+
+    // 更新一次选中栏，显示 loading 状态
+    if (addedCount > 0) {
+        updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations);
+        if (showToastUI && addedCount > 1) {
+            showToastUI(_('tabsAddedSuccess', { count: addedCount }), 'info', 'toast-tabs-added');
+        }
+    }
 }
 
 // 后续步骤将定义:

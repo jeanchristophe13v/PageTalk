@@ -503,7 +503,7 @@ async function getModelOptions() {
         return [
             { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
             { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
-            { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17' }
+            { value: 'gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite' }
         ];
     }
 }

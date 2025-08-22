@@ -1003,12 +1003,14 @@ function hideVideoModal() {
 }
 
 // 新增：显示标签页选择弹窗
-export function showTabSelectionPopupUI(tabs, onSelectCallback, elements, currentTranslations) {
+export function showTabSelectionPopupUI(tabs, onConfirmCallback, elements, currentTranslations) {
+    // 多选版本：点击项切换选中状态，使用底部按钮取消/确认
     closeTabSelectionPopupUI(); //确保同一时间只有一个弹窗
 
     const popup = document.createElement('div');
     popup.id = 'tab-selection-popup';
     popup.className = 'tab-selection-popup'; // 用于CSS样式
+    popup.dataset.mode = 'multi';
 
     const inputRect = elements.userInput.getBoundingClientRect();
     popup.style.bottom = `${window.innerHeight - inputRect.top + 8}px`; // 向上微调 8px
@@ -1043,33 +1045,148 @@ export function showTabSelectionPopupUI(tabs, onSelectCallback, elements, curren
             urlSpan.className = 'tab-item-url';
             urlSpan.textContent = tab.url;
 
+            // 右侧勾选指示器
+            const check = document.createElement('span');
+            check.className = 'check-indicator';
+            check.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            `;
+
             item.appendChild(favIcon);
             item.appendChild(titleSpan);
             item.appendChild(urlSpan);
+            item.appendChild(check);
 
-            item.addEventListener('click', () => {
-                onSelectCallback(tab);
-                closeTabSelectionPopupUI();
+            // 点击切换选中状态
+            item.addEventListener('click', (e) => {
+                // 忽略从按钮点击冒泡
+                const target = e.target;
+                if (target.closest && target.closest('.tab-selection-actions')) return;
+                item.classList.toggle('checked');
+                // 不再添加聚焦高亮，保持视觉简洁（仅右侧对勾指示）
             });
             list.appendChild(item);
         });
     }
 
+    // 操作按钮区域（取消/确认）
+    const actions = document.createElement('div');
+    actions.className = 'tab-selection-actions';
+
+    // 左侧容器：全选/取消全选（单一按钮，点击在全选与全不选间切换）
+    const leftActions = document.createElement('div');
+    leftActions.className = 'left-actions';
+
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.className = 'tab-action neutral select-all';
+    const selectIcon = () => `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <polyline points="9 12 11 14 15 10"/>
+        </svg>`;
+    const clearIcon = () => `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="8" y1="8" x2="16" y2="16"/>
+            <line x1="16" y1="8" x2="8" y2="16"/>
+        </svg>`;
+    const updateSelectAllBtnVisual = () => {
+        const itemsEls = Array.from(list.querySelectorAll('.tab-selection-item:not(.no-results)'));
+        const allChecked = itemsEls.length > 0 && itemsEls.every(li => li.classList.contains('checked'));
+        if (allChecked) {
+            selectAllBtn.title = currentTranslations['clearAll'] || 'Clear all';
+            selectAllBtn.innerHTML = clearIcon();
+        } else {
+            selectAllBtn.title = currentTranslations['selectAll'] || 'Select all';
+            selectAllBtn.innerHTML = selectIcon();
+        }
+    };
+    updateSelectAllBtnVisual();
+    selectAllBtn.addEventListener('click', () => {
+        const itemsEls = Array.from(list.querySelectorAll('.tab-selection-item:not(.no-results)'));
+        const allChecked = itemsEls.length > 0 && itemsEls.every(li => li.classList.contains('checked'));
+        if (allChecked) itemsEls.forEach(li => li.classList.remove('checked'));
+        else itemsEls.forEach(li => li.classList.add('checked'));
+        // 统一移除聚焦类，避免残留高亮
+        itemsEls.forEach(li => li.classList.remove('focused'));
+        updateSelectAllBtnVisual();
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'tab-action cancel';
+    cancelBtn.title = currentTranslations['cancel'] || 'Cancel';
+    cancelBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    `;
+    cancelBtn.addEventListener('click', () => {
+        closeTabSelectionPopupUI();
+        const evt = new CustomEvent('tabPopupManuallyClosed');
+        document.dispatchEvent(evt);
+    });
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'tab-action confirm';
+    confirmBtn.title = currentTranslations['confirm'] || 'Confirm';
+    confirmBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+    `;
+    confirmBtn.addEventListener('click', () => {
+        const selectedItems = Array.from(list.querySelectorAll('.tab-selection-item.checked'));
+        if (selectedItems.length === 0) {
+            closeTabSelectionPopupUI();
+            const evt = new CustomEvent('tabPopupManuallyClosed');
+            document.dispatchEvent(evt);
+            return;
+        }
+        const selectedTabs = selectedItems.map(li => tabs[Number(li.dataset.index)]).filter(Boolean);
+        try { onConfirmCallback(selectedTabs); } catch (err) { console.warn('onConfirmCallback error:', err); }
+        closeTabSelectionPopupUI();
+        const evt = new CustomEvent('tabPopupManuallyClosed');
+        document.dispatchEvent(evt);
+    });
+
+    // 右侧容器：取消与确认
+    const rightActions = document.createElement('div');
+    rightActions.className = 'right-actions';
+
+    leftActions.appendChild(selectAllBtn);
+    rightActions.appendChild(cancelBtn);
+    rightActions.appendChild(confirmBtn);
+
+    actions.appendChild(leftActions);
+    actions.appendChild(rightActions);
+
     popup.appendChild(list);
+    popup.appendChild(actions);
     document.body.appendChild(popup);
 
-    // 初始选中第一个（如果存在）
-    if (tabs.length > 0) {
-        list.children[0].classList.add('selected');
-    }
+    // 不设置默认聚焦，避免用户未操作就出现高亮
 
-    // 添加全局点击监听器以关闭弹窗，如果点击发生在弹窗外部
-    // 使用setTimeout确保它在当前事件处理完成后添加
+    // 添加全局监听用于关闭弹窗：外部点击、窗口失焦、可见性变化
     setTimeout(() => {
-        document.addEventListener('click', handleClickOutsideTabPopup, { capture: true, once: true });
+        // 使用 pointerdown 且不设置 once，避免首次点击在弹窗内导致监听被移除
+        document.addEventListener('pointerdown', handleClickOutsideTabPopup, { capture: true });
+        // 兼容性：保留 click 监听（非必须）
+        document.addEventListener('click', handleClickOutsideTabPopup, { capture: true });
+        window.addEventListener('blur', handlePopupWindowBlur);
+        document.addEventListener('visibilitychange', handlePopupVisibilityChange);
     }, 0);
-     // 添加键盘事件监听，用于弹窗内的导航
+    // 键盘事件监听，用于弹窗内的导航
     document.addEventListener('keydown', handlePopupKeyDown);
+
+    // 当列表项被点击勾选/取消勾选时，更新左侧切换按钮的图标状态
+    list.addEventListener('click', (e) => {
+        if ((e.target && e.target.closest && e.target.closest('.tab-selection-item')) || e.currentTarget === list) {
+            updateSelectAllBtnVisual();
+        }
+    });
 }
 
 // 新增：关闭标签页选择弹窗
@@ -1080,24 +1197,38 @@ export function closeTabSelectionPopupUI() {
     }
     // 在main.js中更新 state.isTabSelectionPopupOpen = false;
     // 这个函数主要负责DOM操作
+    document.removeEventListener('pointerdown', handleClickOutsideTabPopup, { capture: true });
     document.removeEventListener('click', handleClickOutsideTabPopup, { capture: true });
     document.removeEventListener('keydown', handlePopupKeyDown);
+    window.removeEventListener('blur', handlePopupWindowBlur);
+    document.removeEventListener('visibilitychange', handlePopupVisibilityChange);
 }
 
 // 新增：处理弹窗外部点击事件
 function handleClickOutsideTabPopup(event) {
     const popup = document.getElementById('tab-selection-popup');
-    const userInput = document.getElementById('user-input');
-
-    // 如果点击目标既不在弹窗内，也不在输入框内，则关闭弹窗
-    if (popup && !popup.contains(event.target) && event.target !== userInput) {
+    if (popup && !popup.contains(event.target)) {
         closeTabSelectionPopupUI();
         // 通知 main.js 更新状态
         const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
         document.dispatchEvent(mainJSNotifier);
     }
-    // 注意：由于监听器是 { once: true }，它会在第一次触发后自动移除。
-    // 如果需要更复杂的管理，可能需要调整 showTabSelectionPopupUI 和 closeTabSelectionPopupUI 中的监听器添加/移除逻辑。
+}
+
+// 窗口失焦时关闭弹窗（用户点击面板以外，如网页处）
+function handlePopupWindowBlur() {
+    closeTabSelectionPopupUI();
+    const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
+    document.dispatchEvent(mainJSNotifier);
+}
+
+// 标签页可见性变化（侧边面板可能被隐藏/切换）时关闭弹窗
+function handlePopupVisibilityChange() {
+    if (document.hidden) {
+        closeTabSelectionPopupUI();
+        const mainJSNotifier = new CustomEvent('tabPopupManuallyClosed');
+        document.dispatchEvent(mainJSNotifier);
+    }
 }
 
 // 新增：处理弹窗内的键盘导航
@@ -1110,7 +1241,7 @@ function handlePopupKeyDown(event) {
 
     let currentIndex = -1;
     items.forEach((item, index) => {
-        if (item.classList.contains('selected')) {
+        if (item.classList.contains('focused')) {
             currentIndex = index;
         }
     });
@@ -1118,21 +1249,46 @@ function handlePopupKeyDown(event) {
     if (event.key === 'ArrowDown') {
         event.preventDefault();
         if (currentIndex < items.length - 1) {
-            if (currentIndex !== -1) items[currentIndex].classList.remove('selected');
-            items[++currentIndex].classList.add('selected');
+            if (currentIndex !== -1) items[currentIndex].classList.remove('focused');
+            items[++currentIndex].classList.add('focused');
             items[currentIndex].scrollIntoView({ block: 'nearest' });
         }
     } else if (event.key === 'ArrowUp') {
         event.preventDefault();
         if (currentIndex > 0) {
-            if (currentIndex !== -1) items[currentIndex].classList.remove('selected');
-            items[--currentIndex].classList.add('selected');
+            if (currentIndex !== -1) items[currentIndex].classList.remove('focused');
+            items[--currentIndex].classList.add('focused');
             items[currentIndex].scrollIntoView({ block: 'nearest' });
         }
     } else if (event.key === 'Enter') {
         event.preventDefault();
+        // 多选模式下，Enter 切换勾选状态
         if (currentIndex !== -1) {
-            items[currentIndex].click(); // 触发选中项的点击事件
+            items[currentIndex].classList.toggle('checked');
+            // 同步左侧“全选/取消全选”按钮的视觉状态
+            const selectAllBtn = document.querySelector('#tab-selection-popup .left-actions .select-all');
+            if (selectAllBtn) {
+                const itemsEls = Array.from(document.querySelectorAll('#tab-selection-popup .tab-selection-item:not(.no-results)'));
+                const allChecked = itemsEls.length > 0 && itemsEls.every(li => li.classList.contains('checked'));
+                const selectIcon = () => `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"/>
+                        <polyline points=\"9 12 11 14 15 10\"/>
+                    </svg>`;
+                const clearIcon = () => `
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"/>
+                        <line x1=\"8\" y1=\"8\" x2=\"16\" y2=\"16\"/>
+                        <line x1=\"16\" y1=\"8\" x2=\"8\" y2=\"16\"/>
+                    </svg>`;
+                if (allChecked) {
+                    selectAllBtn.title = (window.I18n?.tr && window.I18n.tr('clearAll', {}, {})) || 'Clear all';
+                    selectAllBtn.innerHTML = clearIcon();
+                } else {
+                    selectAllBtn.title = (window.I18n?.tr && window.I18n.tr('selectAll', {}, {})) || 'Select all';
+                    selectAllBtn.innerHTML = selectIcon();
+                }
+            }
         }
     } else if (event.key === 'Escape') {
         event.preventDefault();

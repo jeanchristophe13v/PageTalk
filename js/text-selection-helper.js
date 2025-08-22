@@ -1563,7 +1563,7 @@ async function createFunctionWindowContent(windowElement, optionId) {
         } catch (error) {
             console.warn('[TextSelectionHelper] Failed to get models from background, using fallback:', error);
             // 回退到基本模型列表
-            modelOptions = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite-preview-06-17'];
+            modelOptions = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite'];
         }
 
         let modelOptionsHTML = '';

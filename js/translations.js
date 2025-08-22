@@ -202,6 +202,7 @@ if (typeof window.translations === 'undefined') {
     'containsNImages': '[包含 {count} 张图片]', // For text export
     'tabContentLoadedSuccess': '页面已加载',
     'tabContentLoadFailed': '无法加载页面 \'{title}...\' 内容: {error}',
+    'tabsAddedSuccess': '已添加 {count} 个页面到上下文',
 
     // --- 划词助手相关翻译 ---
     'textSelectionHelper': '划词助手',
@@ -695,6 +696,7 @@ Format：
     'containsNImages': '[Contains {count} image(s)]', // For text export
     'tabContentLoadedSuccess': 'Page content loaded',
     'tabContentLoadFailed': 'Failed to load content for tab \'{title}...\': {error}',
+    'tabsAddedSuccess': 'Added {count} tabs to context',
 
     // --- Text Selection Helper Related Translations ---
     'textSelectionHelper': 'Selection Tool',

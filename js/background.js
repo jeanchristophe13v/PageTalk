@@ -259,7 +259,7 @@ async function handleGetAvailableModelsRequest(sendResponse) {
                 const defaultModelOptions = [
                     { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
                     { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
-                    { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
+                    { value: 'gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
                 ];
                 console.log('[Background] No stored models but Google API key configured, returning Gemini defaults:', defaultModelOptions);
                 sendResponse({ success: true, models: defaultModelOptions });
@@ -279,7 +279,7 @@ async function handleGetAvailableModelsRequest(sendResponse) {
             const fallbackModelOptions = [
                 { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
                 { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
-                { value: 'gemini-2.5-flash-lite-preview-06-17', text: 'gemini-2.5-flash-lite-preview-06-17', providerId: 'google', providerName: 'Google' }
+                { value: 'gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
             ];
             sendResponse({ success: true, models: fallbackModelOptions });
         } else {
@@ -383,7 +383,7 @@ function getDefaultModelParams(modelId) {
         return null; // 使用默认思考模式
     } else if (modelId === 'gemini-2.5-pro') {
         return null;
-    } else if (modelId === 'gemini-2.5-flash-lite-preview-06-17') {
+    } else if (modelId === 'gemini-2.5-flash-lite') {
         return null;
     }
 

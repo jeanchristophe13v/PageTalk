@@ -55,9 +55,9 @@ const DEFAULT_MODELS = [
         canDelete: true // 可以删除
     },
     {
-        id: 'gemini-2.5-flash-lite-preview-06-17',
-        displayName: 'gemini-2.5-flash-lite-preview-06-17',
-        apiModelName: 'gemini-2.5-flash-lite-preview-06-17',
+        id: 'gemini-2.5-flash-lite',
+        displayName: 'gemini-2.5-flash-lite',
+        apiModelName: 'gemini-2.5-flash-lite',
         providerId: 'google',
         params: null,
         isAlias: false,
