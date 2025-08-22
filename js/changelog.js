@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.7.1",
+        date: "2025-08-12",
+        changes: {
+            "zh-CN": [
+                "1. 修复了在macOS上使用输入法时，划词助手对话框中按回车键会直接发送消息的bug。"
+            ],
+            "en": [
+                "1. Fixed a bug on macOS where pressing Enter in the text selection helper's chat box would send the message directly while using an IME."
+            ]
+        }
+    },
+    {
         version: "3.7.0",
         date: "2025-07-29",
         changes: {
