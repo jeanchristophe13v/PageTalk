@@ -5,6 +5,20 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.7.2",
+        date: "2025-08-22",
+        changes: {
+            "zh-CN": [
+                "1. 多 tab 列表 UI 更新，现在可以一次选择多个页面",
+                "2. 修改了 Gemini 的默认加载模型"
+            ],
+            "en": [
+                "1. Multi-tab list UI updated: you can now select multiple pages at once",
+                "2. Updated Gemini default model"
+            ]
+        }
+    },
+    {
         version: "3.7.1",
         date: "2025-08-12",
         changes: {
