@@ -1261,8 +1261,13 @@ function handlePopupKeyDown(event) {
             items[currentIndex].scrollIntoView({ block: 'nearest' });
         }
     } else if (event.key === 'Enter') {
+        // Enter 作为快捷键：等同于点击“确认”按钮
         event.preventDefault();
-        // 多选模式下，Enter 切换勾选状态
+        const confirmBtnEl = document.querySelector('#tab-selection-popup .tab-action.confirm');
+        if (confirmBtnEl) confirmBtnEl.click();
+    } else if (event.key === ' ') {
+        // Space 用于切换当前聚焦项的勾选状态（保留键盘可达性）
+        event.preventDefault();
         if (currentIndex !== -1) {
             items[currentIndex].classList.toggle('checked');
             // 同步左侧“全选/取消全选”按钮的视觉状态

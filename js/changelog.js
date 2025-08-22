@@ -5,7 +5,7 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
-        version: "3.7.2",
+        version: "3.7.3",
         date: "2025-08-22",
         changes: {
             "zh-CN": [
