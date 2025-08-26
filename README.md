@@ -140,6 +140,19 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
     *   **Agents:** Manage agents, Import/Export configurations.
     *   **Model:** Set API Key, select default model.
  
-## 💗 Thanks support from DartNode 
+## ☕️ Support PageTalk
 
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
+### Buy me a coffee if you enjoy PageTalk ~ ☕️ 🩵❤️🧡🩷💛💚
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/cb4fc3c9-ef68-4acb-8c32-232876364a62" alt="WeChat" width="300" />
+      <br><sub>WeChat</sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/e9111d96-3fa4-4b79-bcf0-0dfa6a67705f" alt="Alipay" width="300" />
+      <br><sub>Alipay</sub>
+    </td>
+  </tr>
+</table>
