@@ -133,5 +133,19 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
     *   **助手:** 管理助手，导入/导出配置。
     *   **模型:** 设置 API 密钥，选择默认模型。
 
-## 💗感谢DartNode的支持 ~
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
+## ☕️ 支持一下 PageTalk
+
+### 如果你喜欢PageTalk，可以请我喝杯咖啡~☕️ 🩵❤️🧡🩷💛💚
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/cb4fc3c9-ef68-4acb-8c32-232876364a62" alt="微信" width="300" />
+      <br><sub>WeChat</sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/e9111d96-3fa4-4b79-bcf0-0dfa6a67705f" alt=" 支付宝" width="300" />
+      <br><sub>Alipay</sub>
+    </td>
+  </tr>
+</table>
