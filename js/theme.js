@@ -42,6 +42,25 @@ export async function updateMermaidTheme(isDarkMode, rerenderAllMermaidChartsCal
         } catch (error) {
             console.error('Failed to update Mermaid theme:', error);
         }
+    } else {
+        // 尝试动态加载Mermaid库
+        if (window.LibraryLoader) {
+            try {
+                await window.LibraryLoader.loadFeatureLibraries('diagram');
+                // 重试主题更新
+                if (typeof mermaid !== 'undefined') {
+                    mermaid.initialize({
+                        startOnLoad: false,
+                        theme: isDarkMode ? 'dark' : 'default',
+                        logLevel: 'error'
+                    });
+                    console.log(`Mermaid theme updated to: ${isDarkMode ? 'dark' : 'default'} (after dynamic load)`);
+                    await rerenderAllMermaidChartsCallback();
+                }
+            } catch (error) {
+                console.error('Failed to load Mermaid for theme update:', error);
+            }
+        }
     }
 }
 

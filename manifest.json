@@ -30,18 +30,8 @@
         "matches": ["<all_urls>"],
         "js": [
           "js/lib/Readability.js",
-          "js/lib/markdown-it.min.js",
-          "js/lib/highlight.min.js",
-          "js/lib/python.min.js",
-          "js/lib/r.min.js",
-          "js/lib/sql.min.js",
-          "js/lib/json.min.js",
-          "js/lib/katex.min.js",
-          "js/lib/auto-render.min.js",
-          "js/lib/mhchem.min.js",
-          "js/lib/mermaid.min.js",
-          "js/lib/panzoom.min.js",
           "js/lib/lucide.js",
+          "js/lib/library-loader.js",
           "js/translations.js",
           "js/markdown-renderer.js",
           "js/text-selection-helper.js",
@@ -49,10 +39,7 @@
         ],
         "css": [
           "css/content-panel.css",
-          "css/text-selection-helper.css",
-          "css/github.min.css",
-          "css/github-dark-dimmed.min.css",
-          "css/katex.min.css"
+          "css/text-selection-helper.css"
         ],
         "run_at": "document_start"
       }

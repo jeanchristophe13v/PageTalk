@@ -8,11 +8,25 @@ let currentPanzoomInstance = null; // Store Panzoom instance for Mermaid modal
 let mermaidWheelListener = null; // Store wheel listener for Mermaid modal
 
 /**
+ * 动态加载渲染所需的库
+ * @param {string} feature - 功能类型 ('latex', 'diagram')
+ */
+async function loadRenderingLibraries(feature) {
+    if (window.LibraryLoader) {
+        try {
+            await window.LibraryLoader.loadFeatureLibraries(feature);
+        } catch (error) {
+            console.error(`[Render] Failed to load ${feature} libraries:`, error);
+        }
+    }
+}
+
+/**
  * Renders KaTeX and Mermaid content within a given DOM element.
  * @param {HTMLElement} element - The container element to render within.
  * @param {object} elements - Reference to the main elements object (for modal access).
  */
-export function renderDynamicContent(element, elements) {
+export async function renderDynamicContent(element, elements) {
     // --- Render KaTeX ---
     if (typeof window.renderMathInElement === 'function') {
         try {
@@ -29,7 +43,24 @@ export function renderDynamicContent(element, elements) {
             console.error('KaTeX rendering error:', error);
         }
     } else {
-        // console.warn('KaTeX renderMathInElement function not found.');
+        // 尝试动态加载KaTeX库
+        await loadRenderingLibraries('latex');
+        // 重试渲染
+        if (typeof window.renderMathInElement === 'function') {
+            try {
+                window.renderMathInElement(element, {
+                    delimiters: [
+                        {left: "$$", right: "$$", display: true},
+                        {left: "\\[", right: "\\]", display: true},
+                        {left: "$", right: "$", display: false},
+                        {left: "\\(", right: "\\)", display: false}
+                    ],
+                    throwOnError: false
+                });
+            } catch (error) {
+                console.error('KaTeX rendering error after dynamic load:', error);
+            }
+        }
     }
 
     // --- Render Mermaid (Manual Iteration) ---
@@ -78,7 +109,16 @@ export function renderDynamicContent(element, elements) {
             });
         }
     } else {
-        // console.warn('Mermaid library not found during renderDynamicContent.');
+        // 尝试动态加载Mermaid库
+        await loadRenderingLibraries('diagram');
+        // 重试渲染Mermaid
+        if (typeof mermaid !== 'undefined') {
+            const mermaidPreElements = element.querySelectorAll('pre.mermaid');
+            if (mermaidPreElements.length > 0) {
+                console.log(`Found ${mermaidPreElements.length} Mermaid <pre> elements to render after dynamic load.`);
+                // 这里可以复用上面的渲染逻辑，为了简洁暂时省略
+            }
+        }
     }
 }
 

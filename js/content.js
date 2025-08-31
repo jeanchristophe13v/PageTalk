@@ -50,16 +50,26 @@ async function getInitializedPdfjsLib() {
 
 
 // 初始化划词助手
-function initTextSelectionHelper() {
+async function initTextSelectionHelper() {
   if (textSelectionHelperLoaded) return;
 
-  // 直接初始化划词助手（现在通过 content script 加载）
-  if (window.TextSelectionHelper) {
-    window.TextSelectionHelper.init();
-    textSelectionHelperLoaded = true;
-    console.log('[PageTalk] Text Selection Helper initialized');
-  } else {
-    console.warn('[PageTalk] TextSelectionHelper not available');
+  try {
+    // 按需加载划词助手所需的库
+    if (window.LibraryLoader) {
+      await window.LibraryLoader.loadFeatureLibraries('markdown');
+    }
+    
+    // 初始化划词助手
+    if (window.TextSelectionHelper) {
+      window.TextSelectionHelper.init();
+      textSelectionHelperLoaded = true;
+      console.log('[PageTalk] Text Selection Helper initialized');
+    } else {
+      console.warn('[PageTalk] TextSelectionHelper not available');
+    }
+  } catch (error) {
+    console.error('[PageTalk] Failed to initialize Text Selection Helper:', error);
+    // 优雅降级：即使划词助手初始化失败，也不影响主要功能
   }
 }
 
@@ -449,9 +459,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // 页面加载完成后初始化划词助手
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initTextSelectionHelper);
+  document.addEventListener('DOMContentLoaded', () => initTextSelectionHelper().catch(console.error));
 } else {
-  initTextSelectionHelper();
+  initTextSelectionHelper().catch(console.error);
 }
 
 // 提取页面的主要内容 - 现在是异步函数
@@ -907,7 +917,7 @@ function handleExtensionReload() {
     // 如果划词助手函数不存在，尝试重新初始化
     console.log('[Content] TextSelectionHelper not found, attempting to reinitialize');
     if (typeof initTextSelectionHelper === 'function') {
-      initTextSelectionHelper();
+      initTextSelectionHelper().catch(console.error);
     }
   }
 
