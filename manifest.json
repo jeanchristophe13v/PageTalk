@@ -39,7 +39,10 @@
         ],
         "css": [
           "css/content-panel.css",
-          "css/text-selection-helper.css"
+          "css/text-selection-helper.css",
+          "css/github.min.css",
+          "css/github-dark-dimmed.min.css",
+          "css/katex.min.css"
         ],
         "run_at": "document_start"
       }
