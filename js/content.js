@@ -54,10 +54,6 @@ async function initTextSelectionHelper() {
   if (textSelectionHelperLoaded) return;
 
   try {
-    // 按需加载划词助手所需的库
-    if (window.LibraryLoader) {
-      await window.LibraryLoader.loadFeatureLibraries('markdown');
-    }
     
     // 初始化划词助手
     if (window.TextSelectionHelper) {

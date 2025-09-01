@@ -13,18 +13,12 @@ let markdownRenderer = window.markdownRenderer || null;
 let isRendererInitialized = false;
 
 // 初始化渲染器
-async function initMarkdownRenderer() {
+function initMarkdownRenderer() {
     if (isRendererInitialized) return true;
     
     try {
-        // 按需加载markdown库
-        if (window.LibraryLoader) {
-            await window.LibraryLoader.loadFeatureLibraries('markdown');
-        }
-        
         // 确保markdown-it已加载
         if (typeof window.markdownit === 'undefined') {
-            console.error('markdown-it 库未加载');
             return false;
         }
 
@@ -134,9 +128,9 @@ function customizeRenderer() {
 }
 
 // 渲染Markdown为HTML
-async function renderMarkdown(content) {
+function renderMarkdown(content) {
     // 确保渲染器已初始化
-    if (!markdownRenderer && !await initMarkdownRenderer()) {
+    if (!markdownRenderer && !initMarkdownRenderer()) {
         // 如果无法初始化渲染器，使用简单的HTML转义
         return `<p>${escapeHtml(content)}</p>`;
     }
@@ -177,9 +171,9 @@ function postprocessHtml(html) {
 }
 
 // 仅渲染行内Markdown（不包含段落标签）
-async function renderMarkdownInline(content) {
+function renderMarkdownInline(content) {
     // 确保渲染器已初始化
-    if (!markdownRenderer && !await initMarkdownRenderer()) {
+    if (!markdownRenderer && !initMarkdownRenderer()) {
         return escapeHtml(content);
     }
 

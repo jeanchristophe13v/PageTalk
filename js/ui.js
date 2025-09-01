@@ -58,7 +58,7 @@ export function switchSettingsSubTab(subTabId, elements) {
  * @param {boolean} isUserNearBottom - Whether user is scrolled near bottom
  * @returns {HTMLElement} 创建的消息元素
  */
-export async function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
+export function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
     const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false, sentContextTabs = [] } = options;
     
     const messageDiv = document.createElement('div');
@@ -262,7 +262,7 @@ export async function addMessageToChat(content, sender, options = {}, state, ele
 
     addMessageActionButtons(messageDiv, content || ''); // Use callback
 
-    await renderDynamicContent(messageDiv, elements); // Render KaTeX/Mermaid
+    renderDynamicContent(messageDiv, elements); // Render KaTeX/Mermaid
 
     // Scroll only if forced or user is near bottom
     if (forceScroll || isUserNearBottom) {
@@ -322,7 +322,7 @@ export function updateStreamingMessage(messageElement, content, shouldScroll, el
  * @param {boolean} shouldScroll - Whether to scroll to bottom
  * @param {object} elements - DOM elements reference
  */
-export async function finalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlock, addMessageActionButtons, restoreSendButtonAndInput, shouldScroll, elements) {
+export function finalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlock, addMessageActionButtons, restoreSendButtonAndInput, shouldScroll, elements) {
     const streamingCursor = messageElement.querySelector('.streaming-cursor');
     if (streamingCursor) {
         streamingCursor.remove();
@@ -335,7 +335,7 @@ export async function finalizeBotMessage(messageElement, finalContent, addCopyBu
 
     addMessageActionButtons(messageElement, finalContent);
 
-    await renderDynamicContent(messageElement, elements); // Final render
+    renderDynamicContent(messageElement, elements); // Final render
 
     if (shouldScroll) { // 使用 shouldScroll 决策
         setTimeout(() => {
