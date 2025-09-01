@@ -462,7 +462,11 @@ window.handleTextSelectionHelperLanguageChange = handleTextSelectionHelperLangua
 /**
  * 处理文本选择事件
  */
-function handleTextSelection() {
+function handleTextSelection(event) {
+    // 如果是点击了我们自己的 UI（mini icon/选项栏/功能窗口），忽略本次选择检查，避免瞬间消失
+    if (event && event.target && event.target.closest && event.target.closest('.pagetalk-selection-helper')) {
+        return;
+    }
     // 检查划词助手是否启用
     if (!isHelperEnabled()) {
         console.log('[TextSelectionHelper] Helper is disabled, skipping text selection');
@@ -940,10 +944,22 @@ function showMiniIcon() {
         miniIcon.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.15)';
     });
     
-    // 添加点击事件
-    miniIcon.addEventListener('click', (e) => {
+    // 重要：在按下时就阻止默认和冒泡，避免页面（如 Notion）清空选择或触发 document 的 mouseup，从而导致 UI 被立即隐藏
+    miniIcon.addEventListener('mousedown', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        showOptionsBar(e.target);
+        // 在按下时直接打开选项栏，减少 selection 丢失的时机
+        showOptionsBar(miniIcon);
+    });
+    // 防御：mouseup 也停止冒泡，避免冒泡到 document 的 mouseup 触发重新检测选择
+    miniIcon.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    // 防御：click 默认也停止冒泡（理论上 mousedown 已经打开选项栏）
+    miniIcon.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
     });
     
     document.body.appendChild(miniIcon);
@@ -1073,6 +1089,15 @@ async function showOptionsBar(triggerElement) {
 
         // 添加选项点击事件
         optionsBar.addEventListener('click', handleOptionClick);
+        // 重要：阻止选项栏交互导致的 document mouseup 冒泡，从而触发选择清空后的隐藏逻辑
+        optionsBar.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        optionsBar.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
     
         // 添加淡入动画
         requestAnimationFrame(() => {
@@ -1162,6 +1187,15 @@ function showDefaultOptionsBar(triggerElement) {
     currentOptionsBar = optionsBar;
 
     optionsBar.addEventListener('click', handleOptionClick);
+    // 同步增强：阻止冒泡，避免触发 document 的 mouseup -> 重新检测选择 -> 立即隐藏
+    optionsBar.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    optionsBar.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    });
 
     requestAnimationFrame(() => {
         optionsBar.style.opacity = '1';
