@@ -22,6 +22,9 @@ let selectionContext = '';
 let currentSelectionRange = null; // 新增：存储当前选择的Range对象，作为滚动时的锚点
 let isScrolling = false; // 新增：用于滚动事件的节流
 
+// 最近一次指针位置（用于将 mini icon 放在更接近鼠标处，减少鼠标移动距离）
+let lastPointer = null; // { x, y, ts }
+
 // 滚动状态管理
 let functionWindowScrolledUp = false; // 用于跟踪用户是否主动向上滚动
 let shouldAdjustHeight = true; // 用于控制是否继续调整窗口高度（主要影响滚动行为）
@@ -74,7 +77,9 @@ function clearChatHistory(windowId) {
 
 
 // 配置
-const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移
+const MINI_ICON_OFFSET = { x: -20, y: 5 }; // 相对于选中框右下角的偏移（备用）
+const MINI_ICON_SIZE = 32; // 与 CSS 中的 mini icon 尺寸保持一致
+const SAFE_MARGIN = 8; // 视口边缘安全间距
 const FUNCTION_WINDOW_DEFAULT_SIZE = {
     width: () => window.innerWidth * 0.35, // 动态计算：屏幕宽度的35%
     height: 300, // 解读/翻译窗口默认高度
@@ -475,6 +480,11 @@ function handleTextSelection(event) {
         return;
     }
 
+    // 记录最近一次鼠标位置（仅在鼠标交互时）
+    if (event && event.type === 'mouseup') {
+        lastPointer = { x: event.clientX, y: event.clientY, ts: Date.now() };
+    }
+
     // 延迟处理，确保选择状态稳定
     setTimeout(() => {
         const selection = window.getSelection();
@@ -801,7 +811,47 @@ function detectBestPositioningStrategy(rect) {
  * 获取元素相对于页面的绝对位置（兼容各种定位上下文）
  */
 function getAbsolutePosition(rect) {
-    return detectBestPositioningStrategy(rect);
+    // 基于现有策略计算基础位置
+    const base = detectBestPositioningStrategy(rect);
+
+    // 采用更靠近鼠标的位置作为优先锚点（1.5 秒内的有效点击）
+    const now = Date.now();
+    const pointerValid = lastPointer && (now - lastPointer.ts < 1500);
+    let x = base.x;
+    let y = base.y;
+
+    if (pointerValid) {
+        const scroll = getPageScrollOffset();
+        const offsetX = 10; // 稍微右下偏移，避免遮挡指针
+        const offsetY = 8;
+        if (base.useFixed) {
+            x = lastPointer.x + offsetX;
+            y = lastPointer.y + offsetY;
+        } else {
+            x = scroll.x + lastPointer.x + offsetX;
+            y = scroll.y + lastPointer.y + offsetY;
+        }
+    }
+
+    // 视口边界收敛，确保 mini icon 不会出屏
+    if (base.useFixed) {
+        const minX = SAFE_MARGIN;
+        const minY = SAFE_MARGIN;
+        const maxX = window.innerWidth - MINI_ICON_SIZE - SAFE_MARGIN;
+        const maxY = window.innerHeight - MINI_ICON_SIZE - SAFE_MARGIN;
+        x = Math.min(Math.max(x, minX), Math.max(minX, maxX));
+        y = Math.min(Math.max(y, minY), Math.max(minY, maxY));
+    } else {
+        const scroll = getPageScrollOffset();
+        const minX = scroll.x + SAFE_MARGIN;
+        const minY = scroll.y + SAFE_MARGIN;
+        const maxX = scroll.x + window.innerWidth - MINI_ICON_SIZE - SAFE_MARGIN;
+        const maxY = scroll.y + window.innerHeight - MINI_ICON_SIZE - SAFE_MARGIN;
+        x = Math.min(Math.max(x, minX), Math.max(minX, maxX));
+        y = Math.min(Math.max(y, minY), Math.max(minY, maxY));
+    }
+
+    return { ...base, x, y };
 }
 
 /**
@@ -810,13 +860,14 @@ function getAbsolutePosition(rect) {
 function getOptionsBarPosition(iconRect, optionsBarRect) {
     const scroll = getPageScrollOffset();
 
-    // 计算选项栏应该出现的位置（图标下方居中）
-    const targetX = iconRect.left + (iconRect.width / 2) - (optionsBarRect.width / 2);
-    const targetY = iconRect.bottom + 8;
+    // 初始方案：图标下方、水平居中
+    let targetX = iconRect.left + (iconRect.width / 2) - (optionsBarRect.width / 2);
+    let targetY = iconRect.bottom + 8;
 
-    // 使用与mini icon相同的策略检测逻辑
+    // 使用与 mini icon 相同的策略检测逻辑
     const blogIssues = detectBlogSiteIssues();
 
+    let useFixed = false;
     try {
         const bodyStyle = window.getComputedStyle(document.body);
         const htmlStyle = window.getComputedStyle(document.documentElement);
@@ -826,57 +877,65 @@ function getOptionsBarPosition(iconRect, optionsBarRect) {
         const hasViewportScaling = window.visualViewport && window.visualViewport.scale !== 1;
         const isBlogSiteWithIssues = blogIssues.includes('blog-platform') && blogIssues.length > 1;
 
-        // 与mini icon使用相同的优先级逻辑
         if (hasViewportScaling) {
+            // 仍然采用 fixed 坐标系（更稳定）
             const vv = window.visualViewport;
-            return {
-                name: 'visualViewport',
-                x: (targetX - vv.offsetLeft) / vv.scale,
-                y: (targetY - vv.offsetTop) / vv.scale,
-                useFixed: true
-            };
+            targetX = (targetX - vv.offsetLeft) / vv.scale;
+            targetY = (targetY - vv.offsetTop) / vv.scale;
+            useFixed = true;
         } else if (hasTransforms || hasComplexPositioning) {
-            return {
-                name: 'fixed',
-                x: targetX,
-                y: targetY,
-                useFixed: true
-            };
+            useFixed = true;
         } else if (isBlogSiteWithIssues) {
-            let adjustedX = targetX + scroll.x;
-            let adjustedY = targetY + scroll.y;
-
-            // 补偿body和html的margin
-            adjustedX -= parseFloat(bodyStyle.marginLeft) || 0;
-            adjustedY -= parseFloat(bodyStyle.marginTop) || 0;
-            adjustedX -= parseFloat(htmlStyle.marginLeft) || 0;
-            adjustedY -= parseFloat(htmlStyle.marginTop) || 0;
-
-            return {
-                name: 'blog-optimized',
-                x: adjustedX,
-                y: adjustedY,
-                useFixed: false
-            };
+            targetX = targetX + scroll.x
+                - (parseFloat(bodyStyle.marginLeft) || 0)
+                - (parseFloat(htmlStyle.marginLeft) || 0);
+            targetY = targetY + scroll.y
+                - (parseFloat(bodyStyle.marginTop) || 0)
+                - (parseFloat(htmlStyle.marginTop) || 0);
+            useFixed = false;
         }
-
+        // 其他情况维持默认（absolute 坐标系）
     } catch (error) {
         console.warn('[TextSelectionHelper] Error detecting options bar positioning strategy:', error);
-        // 出错时使用fixed定位
-        return {
-            name: 'fixed-fallback',
-            x: targetX,
-            y: targetY,
-            useFixed: true
-        };
+        useFixed = true;
     }
 
-    // 默认使用absolute定位
+    // 垂直方向智能翻转：下方放不下则放到上方
+    const barW = optionsBarRect.width;
+    const barH = optionsBarRect.height;
+    const viewportLeft = useFixed ? 0 : scroll.x;
+    const viewportTop = useFixed ? 0 : scroll.y;
+    const viewportRight = viewportLeft + window.innerWidth;
+    const viewportBottom = viewportTop + window.innerHeight;
+
+    const belowFits = (targetY + barH + SAFE_MARGIN) <= viewportBottom;
+    if (!belowFits) {
+        // 放到图标上方
+        targetY = iconRect.top - barH - 8;
+        if (!useFixed) targetY += scroll.y; // absolute 下补偿 scroll
+    }
+
+    // 水平方向边界约束：尽量靠近图标，但完整可见
+    let minX = viewportLeft + SAFE_MARGIN;
+    let maxX = viewportRight - barW - SAFE_MARGIN;
+    if (maxX < minX) {
+        maxX = minX;
+    }
+    targetX = Math.min(Math.max(targetX, minX), maxX);
+
+    // 垂直方向同样做边界约束
+    let minY = viewportTop + SAFE_MARGIN;
+    let maxY = viewportBottom - barH - SAFE_MARGIN;
+    if (maxY < minY) {
+        maxY = minY;
+    }
+    targetY = Math.min(Math.max(targetY, minY), maxY);
+
     return {
-        name: 'absolute',
-        x: targetX + scroll.x,
-        y: targetY + scroll.y,
-        useFixed: false
+        name: useFixed ? 'fixed' : 'absolute',
+        x: targetX,
+        y: targetY,
+        useFixed
     };
 }
 

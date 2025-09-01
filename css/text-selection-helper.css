@@ -57,6 +57,8 @@
     user-select: none;
     width: auto;
     max-width: calc(100vw - 40px); /* 避免超出屏幕，留20px边距 */
+    max-height: 50vh; /* 高度上限，防止过高 */
+    overflow: auto; /* 内容过多时，内部滚动而不是让页面横向滚动 */
 }
 
 /* 选项栏图标 */
@@ -82,8 +84,8 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    flex-wrap: wrap; /* 允许在窄屏时换行，避免溢出 */
+    white-space: normal; /* 允许换行 */
 }
 
 /* 添加选项按钮 */
@@ -3111,4 +3113,3 @@ body.dark-mode .pagetalk-function-window .katex-error {
     border-color: rgba(255, 135, 135, 0.3);
     color: var(--error-color);
 }
-
