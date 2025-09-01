@@ -21,62 +21,87 @@ class SimpleRetryHandler {
     
     async withRetry(fn, options = {}) {
         const config = { ...this.config, ...options };
+        const { signal } = options;
         let lastError = null;
         
         for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
+            if (signal?.aborted) {
+                throw new DOMException('Aborted', 'AbortError');
+            }
             try {
                 return await fn();
             } catch (error) {
                 lastError = error;
                 
-                // 检查是否应该重试
                 if (!this.shouldRetry(error, attempt, config)) {
                     throw error;
                 }
-                
-                // 计算延迟时间
+                if (signal?.aborted) {
+                    throw new DOMException('Aborted', 'AbortError');
+                }
                 const delay = this.calculateDelay(attempt, config);
-                
-                console.log(`API重试 ${attempt}/${config.maxRetries}，${delay}ms后重试...`);
-                await this.sleep(delay);
+                console.log(`API重试 ${attempt}/${config.maxRetries}，${delay}ms后重试...`, {
+                    status: error.status,
+                    name: error.name,
+                    message: error.message
+                });
+                await this.sleep(delay, signal);
             }
         }
-        
         throw lastError;
     }
     
     shouldRetry(error, attempt, config) {
-        // 达到最大重试次数
-        if (attempt >= config.maxRetries) {
-            return false;
-        }
-        
-        // 认证错误不重试
-        if (error.status === 401 || error.message?.includes('API key')) {
-            return false;
-        }
-        
-        // 客户端错误不重试（4xx，除了429）
-        if (error.status >= 400 && error.status < 500 && error.status !== 429) {
-            return false;
-        }
-        
-        // 网络错误重试
-        if (error.message?.includes('network') || error.message?.includes('timeout')) {
-            return true;
-        }
-        
-        return true;
+        if (attempt >= config.maxRetries) return false; // 已到最大次数
+        if (!error) return false;
+        // 用户主动中止
+        if (error.name === 'AbortError') return false;
+        // 认证 / 权限 / key 相关
+        if (error.status === 401 || error.message?.toLowerCase().includes('api key')) return false;
+        // 明确的 4xx（除 429）直接不重试
+        if (typeof error.status === 'number' && error.status >= 400 && error.status < 500 && error.status !== 429) return false;
+        // 网络层 / 超时关键词
+        if (error.message?.toLowerCase().includes('network') || error.message?.toLowerCase().includes('timeout')) return true;
+        // 429 限流
+        if (error.status === 429) return true;
+        // 5xx 服务器错误
+        if (typeof error.status === 'number' && error.status >= 500) return true;
+        // 其它情况默认不重试（避免盲目重复请求）
+        return false;
     }
     
     calculateDelay(attempt, config) {
         let delay = config.baseDelay * Math.pow(config.backoffFactor, attempt - 1);
         delay = Math.min(delay, config.maxDelay);
-        return Math.floor(delay);
+        // 加入 ±10% 抖动，避免惊群
+        const jitterFactor = 1 + (Math.random() * 0.2 - 0.1);
+        delay = Math.floor(delay * jitterFactor);
+        return delay;
     }
     
-    sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+    sleep(ms, signal) {
+        if (!ms) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                cleanup();
+                resolve();
+            }, ms);
+            const onAbort = () => {
+                cleanup();
+                reject(new DOMException('Aborted', 'AbortError'));
+            };
+            const cleanup = () => {
+                if (signal) signal.removeEventListener('abort', onAbort);
+                clearTimeout(timer);
+            };
+            if (signal) {
+                if (signal.aborted) {
+                    cleanup();
+                    return reject(new DOMException('Aborted', 'AbortError'));
+                }
+                signal.addEventListener('abort', onAbort);
+            }
+        });
     }
 }
 
@@ -503,8 +528,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                     stateRef.chatHistory[historyIndex].parts = [{ text: data.content }];
                     console.log(`Updated bot message in history at index ${historyIndex}`);
                 } else {
-                    console.error(`Could not find bot message with ID ${data.messageId} in history to finalize.`);
-                    // Fallback: Add if not found
+                    console.warn(`[ChatHistory Sync] 占位符缺失，使用回退创建。ID=${data.messageId}`);
                     const newAiResponseObject = { role: 'model', parts: [{ text: data.content }], id: data.messageId };
                     if (insertResponse && targetInsertionIndex !== null) {
                         stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
@@ -887,6 +911,14 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
                 const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === data.messageId);
                 if (historyIndex !== -1) {
                     stateRef.chatHistory[historyIndex].parts = [{ text: data.content }];
+                } else {
+                    console.warn(`[ChatHistory Sync] 占位符缺失，使用回退创建。ID=${data.messageId}`);
+                    const newAiResponseObject = { role: 'model', parts: [{ text: data.content }], id: data.messageId };
+                    if (insertResponse && targetInsertionIndex !== null) {
+                        stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
+                    } else {
+                        stateRef.chatHistory.push(newAiResponseObject);
+                    }
                 }
                 break;
 
