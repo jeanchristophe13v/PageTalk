@@ -8,6 +8,106 @@
  * - Anthropic (Claude)
  */
 
+// --- 简单重试机制 ---
+class SimpleRetryHandler {
+    constructor() {
+        this.config = {
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 10000,
+            backoffFactor: 2
+        };
+    }
+    
+    async withRetry(fn, options = {}) {
+        const config = { ...this.config, ...options };
+        const { signal } = options;
+        let lastError = null;
+        
+        for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
+            if (signal?.aborted) {
+                throw new DOMException('Aborted', 'AbortError');
+            }
+            try {
+                return await fn();
+            } catch (error) {
+                lastError = error;
+                
+                if (!this.shouldRetry(error, attempt, config)) {
+                    throw error;
+                }
+                if (signal?.aborted) {
+                    throw new DOMException('Aborted', 'AbortError');
+                }
+                const delay = this.calculateDelay(attempt, config);
+                console.log(`API重试 ${attempt}/${config.maxRetries}，${delay}ms后重试...`, {
+                    status: error.status,
+                    name: error.name,
+                    message: error.message
+                });
+                await this.sleep(delay, signal);
+            }
+        }
+        throw lastError;
+    }
+    
+    shouldRetry(error, attempt, config) {
+        if (attempt >= config.maxRetries) return false; // 已到最大次数
+        if (!error) return false;
+        // 用户主动中止
+        if (error.name === 'AbortError') return false;
+        // 认证 / 权限 / key 相关
+        if (error.status === 401 || error.message?.toLowerCase().includes('api key')) return false;
+        // 明确的 4xx（除 429）直接不重试
+        if (typeof error.status === 'number' && error.status >= 400 && error.status < 500 && error.status !== 429) return false;
+        // 网络层 / 超时关键词
+        if (error.message?.toLowerCase().includes('network') || error.message?.toLowerCase().includes('timeout')) return true;
+        // 429 限流
+        if (error.status === 429) return true;
+        // 5xx 服务器错误
+        if (typeof error.status === 'number' && error.status >= 500) return true;
+        // 其它情况默认不重试（避免盲目重复请求）
+        return false;
+    }
+    
+    calculateDelay(attempt, config) {
+        let delay = config.baseDelay * Math.pow(config.backoffFactor, attempt - 1);
+        delay = Math.min(delay, config.maxDelay);
+        // 加入 ±10% 抖动，避免惊群
+        const jitterFactor = 1 + (Math.random() * 0.2 - 0.1);
+        delay = Math.floor(delay * jitterFactor);
+        return delay;
+    }
+    
+    sleep(ms, signal) {
+        if (!ms) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                cleanup();
+                resolve();
+            }, ms);
+            const onAbort = () => {
+                cleanup();
+                reject(new DOMException('Aborted', 'AbortError'));
+            };
+            const cleanup = () => {
+                if (signal) signal.removeEventListener('abort', onAbort);
+                clearTimeout(timer);
+            };
+            if (signal) {
+                if (signal.aborted) {
+                    cleanup();
+                    return reject(new DOMException('Aborted', 'AbortError'));
+                }
+                signal.addEventListener('abort', onAbort);
+            }
+        });
+    }
+}
+
+// 创建全局实例
+window.retryHandler = new SimpleRetryHandler();
+
 // 导入供应商管理器
 import { getProvider, API_TYPES } from './providerManager.js';
 
@@ -337,10 +437,12 @@ async function _testAndVerifyApiKey(apiKey, model) {
             throw new Error('Google provider apiHost not configured');
         }
         const testEndpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models/${apiTestModel}:generateContent?key=${actualApiKey}`;
-        const response = await makeApiRequest(testEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+        const response = await window.retryHandler.withRetry(async () => {
+            return await makeApiRequest(testEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
         });
 
         if (response.ok) {
@@ -426,8 +528,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                     stateRef.chatHistory[historyIndex].parts = [{ text: data.content }];
                     console.log(`Updated bot message in history at index ${historyIndex}`);
                 } else {
-                    console.error(`Could not find bot message with ID ${data.messageId} in history to finalize.`);
-                    // Fallback: Add if not found
+                    console.warn(`[ChatHistory Sync] 占位符缺失，使用回退创建。ID=${data.messageId}`);
                     const newAiResponseObject = { role: 'model', parts: [{ text: data.content }], id: data.messageId };
                     if (insertResponse && targetInsertionIndex !== null) {
                         stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
@@ -620,11 +721,13 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         }
         const endpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
-        const response = await makeApiRequest(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody),
-            signal: controller.signal // Pass signal to fetch
+        const response = await window.retryHandler.withRetry(async () => {
+            return await makeApiRequest(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
+                signal: controller.signal // Pass signal to fetch
+            });
         });
 
         if (!response.ok) {
@@ -808,6 +911,14 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
                 const historyIndex = stateRef.chatHistory.findIndex(msg => msg.id === data.messageId);
                 if (historyIndex !== -1) {
                     stateRef.chatHistory[historyIndex].parts = [{ text: data.content }];
+                } else {
+                    console.warn(`[ChatHistory Sync] 占位符缺失，使用回退创建。ID=${data.messageId}`);
+                    const newAiResponseObject = { role: 'model', parts: [{ text: data.content }], id: data.messageId };
+                    if (insertResponse && targetInsertionIndex !== null) {
+                        stateRef.chatHistory.splice(targetInsertionIndex, 0, newAiResponseObject);
+                    } else {
+                        stateRef.chatHistory.push(newAiResponseObject);
+                    }
                 }
                 break;
 
@@ -1084,3 +1195,10 @@ window.PageTalkAPI = {
     testApiKey,
     currentAbortController: null
 };
+
+// 重试机制使用说明：
+// 1. 自动重试：所有通过 makeApiRequest 的调用会自动重试
+// 2. 重试配置：最多3次，初始延迟1秒，最大延迟10秒，指数退避
+// 3. 不重试的错误：认证错误(401)、客户端错误(4xx，除了429)
+// 4. 重试的错误：网络错误、超时、服务器错误(5xx)、限流(429)
+// 5. 使用方式：window.retryHandler.withRetry(async () => { /* API调用 */ })
