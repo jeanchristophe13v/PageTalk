@@ -25,6 +25,10 @@ let isScrolling = false; // 新增：用于滚动事件的节流
 // 最近一次指针位置（用于将 mini icon 放在更接近鼠标处，减少鼠标移动距离）
 let lastPointer = null; // { x, y, ts }
 
+// 当前 UI 定位模式（确保 mini icon 与菜单使用一致坐标系）
+// 取值：'fixed' | 'absolute' | null（未确定）
+let currentPositioningMode = null;
+
 // 滚动状态管理
 let functionWindowScrolledUp = false; // 用于跟踪用户是否主动向上滚动
 let shouldAdjustHeight = true; // 用于控制是否继续调整窗口高度（主要影响滚动行为）
@@ -864,40 +868,42 @@ function getOptionsBarPosition(iconRect, optionsBarRect) {
     let targetX = iconRect.left + (iconRect.width / 2) - (optionsBarRect.width / 2);
     let targetY = iconRect.bottom + 8;
 
-    // 使用与 mini icon 相同的策略检测逻辑
-    const blogIssues = detectBlogSiteIssues();
-
-    let useFixed = false;
-    try {
-        const bodyStyle = window.getComputedStyle(document.body);
-        const htmlStyle = window.getComputedStyle(document.documentElement);
-
-        const hasTransforms = bodyStyle.transform !== 'none' || htmlStyle.transform !== 'none';
-        const hasComplexPositioning = bodyStyle.position !== 'static' || htmlStyle.position !== 'static';
-        const hasViewportScaling = window.visualViewport && window.visualViewport.scale !== 1;
-        const isBlogSiteWithIssues = blogIssues.includes('blog-platform') && blogIssues.length > 1;
-
-        if (hasViewportScaling) {
-            // 仍然采用 fixed 坐标系（更稳定）
-            const vv = window.visualViewport;
-            targetX = (targetX - vv.offsetLeft) / vv.scale;
-            targetY = (targetY - vv.offsetTop) / vv.scale;
-            useFixed = true;
-        } else if (hasTransforms || hasComplexPositioning) {
-            useFixed = true;
-        } else if (isBlogSiteWithIssues) {
-            targetX = targetX + scroll.x
-                - (parseFloat(bodyStyle.marginLeft) || 0)
-                - (parseFloat(htmlStyle.marginLeft) || 0);
-            targetY = targetY + scroll.y
-                - (parseFloat(bodyStyle.marginTop) || 0)
-                - (parseFloat(htmlStyle.marginTop) || 0);
-            useFixed = false;
-        }
-        // 其他情况维持默认（absolute 坐标系）
-    } catch (error) {
-        console.warn('[TextSelectionHelper] Error detecting options bar positioning strategy:', error);
+    // 采用与 mini icon 一致的定位模式，防止二者分离
+    let useFixed;
+    if (currentPositioningMode === 'fixed') {
         useFixed = true;
+    } else if (currentPositioningMode === 'absolute') {
+        useFixed = false;
+        targetX = targetX + scroll.x;
+        targetY = targetY + scroll.y;
+    } else {
+        // 回退：按页面环境推断
+        const blogIssues = detectBlogSiteIssues();
+        try {
+            const bodyStyle = window.getComputedStyle(document.body);
+            const htmlStyle = window.getComputedStyle(document.documentElement);
+            const hasTransforms = bodyStyle.transform !== 'none' || htmlStyle.transform !== 'none';
+            const hasViewportScaling = window.visualViewport && window.visualViewport.scale !== 1;
+            const isBlogSiteWithIssues = blogIssues.includes('blog-platform') && blogIssues.length > 1;
+            if (hasViewportScaling || hasTransforms) {
+                useFixed = true;
+            } else if (isBlogSiteWithIssues) {
+                useFixed = false;
+                targetX = targetX + scroll.x
+                    - (parseFloat(bodyStyle.marginLeft) || 0)
+                    - (parseFloat(htmlStyle.marginLeft) || 0);
+                targetY = targetY + scroll.y
+                    - (parseFloat(bodyStyle.marginTop) || 0)
+                    - (parseFloat(htmlStyle.marginTop) || 0);
+            } else {
+                useFixed = false;
+                targetX = targetX + scroll.x;
+                targetY = targetY + scroll.y;
+            }
+        } catch (error) {
+            console.warn('[TextSelectionHelper] Error detecting options bar positioning strategy:', error);
+            useFixed = true;
+        }
     }
 
     // 垂直方向智能翻转：下方放不下则放到上方
@@ -977,6 +983,9 @@ function showMiniIcon() {
         console.error('[TextSelectionHelper] Invalid position object:', position);
         return;
     }
+
+    // 记录当前定位模式，供选项栏复用，防止滚动时二者坐标系不一致
+    currentPositioningMode = position.useFixed ? 'fixed' : 'absolute';
 
     if (position.useFixed) {
         // 如果检测到复杂变换，使用fixed定位
@@ -1490,6 +1499,8 @@ function handleScroll() {
                 currentMiniIcon.style.display = 'flex';
                 // 更新位置，使用改进的定位算法
                 const position = getAbsolutePosition(rect);
+                // 同步定位模式，确保选项栏与 mini icon 一致
+                currentPositioningMode = position.useFixed ? 'fixed' : 'absolute';
                 if (position && typeof position.x === 'number' && typeof position.y === 'number') {
                     if (position.useFixed) {
                         currentMiniIcon.style.position = 'fixed';
@@ -1549,6 +1560,8 @@ function hideAllInterfaces() {
     hideOptionsBar();
     hideFunctionWindow();
     currentSelectionRange = null; // 关键：清除锚点
+    currentPositioningMode = null; // 重置定位模式
+    lastPointer = null; // 清空指针记录，避免遗留偏移
 }
 
 /**
