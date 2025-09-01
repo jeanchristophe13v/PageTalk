@@ -8,6 +8,81 @@
  * - Anthropic (Claude)
  */
 
+// --- 简单重试机制 ---
+class SimpleRetryHandler {
+    constructor() {
+        this.config = {
+            maxRetries: 3,
+            baseDelay: 1000,
+            maxDelay: 10000,
+            backoffFactor: 2
+        };
+    }
+    
+    async withRetry(fn, options = {}) {
+        const config = { ...this.config, ...options };
+        let lastError = null;
+        
+        for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
+            try {
+                return await fn();
+            } catch (error) {
+                lastError = error;
+                
+                // 检查是否应该重试
+                if (!this.shouldRetry(error, attempt, config)) {
+                    throw error;
+                }
+                
+                // 计算延迟时间
+                const delay = this.calculateDelay(attempt, config);
+                
+                console.log(`API重试 ${attempt}/${config.maxRetries}，${delay}ms后重试...`);
+                await this.sleep(delay);
+            }
+        }
+        
+        throw lastError;
+    }
+    
+    shouldRetry(error, attempt, config) {
+        // 达到最大重试次数
+        if (attempt >= config.maxRetries) {
+            return false;
+        }
+        
+        // 认证错误不重试
+        if (error.status === 401 || error.message?.includes('API key')) {
+            return false;
+        }
+        
+        // 客户端错误不重试（4xx，除了429）
+        if (error.status >= 400 && error.status < 500 && error.status !== 429) {
+            return false;
+        }
+        
+        // 网络错误重试
+        if (error.message?.includes('network') || error.message?.includes('timeout')) {
+            return true;
+        }
+        
+        return true;
+    }
+    
+    calculateDelay(attempt, config) {
+        let delay = config.baseDelay * Math.pow(config.backoffFactor, attempt - 1);
+        delay = Math.min(delay, config.maxDelay);
+        return Math.floor(delay);
+    }
+    
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// 创建全局实例
+window.retryHandler = new SimpleRetryHandler();
+
 // 导入供应商管理器
 import { getProvider, API_TYPES } from './providerManager.js';
 
@@ -337,10 +412,12 @@ async function _testAndVerifyApiKey(apiKey, model) {
             throw new Error('Google provider apiHost not configured');
         }
         const testEndpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models/${apiTestModel}:generateContent?key=${actualApiKey}`;
-        const response = await makeApiRequest(testEndpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
+        const response = await window.retryHandler.withRetry(async () => {
+            return await makeApiRequest(testEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
         });
 
         if (response.ok) {
@@ -620,11 +697,13 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         }
         const endpoint = `${googleApiHost.replace(/\/$/, '')}/v1beta/models/${apiModelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
 
-        const response = await makeApiRequest(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody),
-            signal: controller.signal // Pass signal to fetch
+        const response = await window.retryHandler.withRetry(async () => {
+            return await makeApiRequest(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody),
+                signal: controller.signal // Pass signal to fetch
+            });
         });
 
         if (!response.ok) {
@@ -1084,3 +1163,10 @@ window.PageTalkAPI = {
     testApiKey,
     currentAbortController: null
 };
+
+// 重试机制使用说明：
+// 1. 自动重试：所有通过 makeApiRequest 的调用会自动重试
+// 2. 重试配置：最多3次，初始延迟1秒，最大延迟10秒，指数退避
+// 3. 不重试的错误：认证错误(401)、客户端错误(4xx，除了429)
+// 4. 重试的错误：网络错误、超时、服务器错误(5xx)、限流(429)
+// 5. 使用方式：window.retryHandler.withRetry(async () => { /* API调用 */ })
