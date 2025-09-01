@@ -5,6 +5,22 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.7.5",
+        date: "2025-09-01",
+        changes: {
+            "zh-CN": [
+                "1. 优化了划词助手菜单与 mini icon 的相对定位与判断逻辑，避免越界与漂移",
+                "2. 修复在 Notion 中无法使用划词助手的 bug",
+                "3. 引入 API 重试机制（by @luojiyin1987）"
+            ],
+            "en": [
+                "1. Optimized Selection Tool menu and mini icon positioning and heuristics to avoid overflow and drift",
+                "2. Fixed an issue where the Selection Tool could not be used in Notion",
+                "3. Introduced API retry mechanism (by @luojiyin1987)"
+            ]
+        }
+    },
+    {
         version: "3.7.3",
         date: "2025-08-22",
         changes: {
