@@ -212,6 +212,9 @@ async function init() {
         console.error('[main.js] ModelManager not available');
     }
 
+    // Ensure delete-confirm dialog exists before wiring events
+    ensureDeleteConfirmDialogStructure();
+
     // Load settings (app, agents) - this also loads language and applies initial theme/translations
     loadAppSettings(
         state, elements,
@@ -467,14 +470,32 @@ function setupEventListeners() {
     elements.importAgentsBtn.addEventListener('click', () => elements.importAgentInput.click());
     elements.importAgentInput.addEventListener('change', (e) => handleAgentImport(e, state, saveAgentsListState, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveCurrentAgentIdState, showToastUI, currentTranslations));
     elements.exportAgentsBtn.addEventListener('click', () => handleAgentExport(state, showToastUI, currentTranslations));
-    elements.cancelDelete.addEventListener('click', () => { if (elements.deleteConfirmDialog) elements.deleteConfirmDialog.style.display = 'none'; });
-    elements.confirmDelete.addEventListener('click', () => confirmDeleteAgent(state, elements, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveAgentsListState, showToastUI, currentTranslations));
+    // Re-resolve elements in case dialog was reconstructed
+    elements.deleteConfirmDialog = document.getElementById('delete-confirm-dialog');
+    elements.confirmDelete = document.getElementById('confirm-delete');
+    elements.cancelDelete = document.getElementById('cancel-delete');
+    if (elements.cancelDelete) {
+        elements.cancelDelete.addEventListener('click', () => { if (elements.deleteConfirmDialog) elements.deleteConfirmDialog.style.display = 'none'; });
+    }
+    if (elements.confirmDelete) {
+        elements.confirmDelete.addEventListener('click', () => confirmDeleteAgent(state, elements, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveAgentsListState, showToastUI, currentTranslations));
+    }
     window.addEventListener('click', (e) => { if (e.target === elements.deleteConfirmDialog) elements.deleteConfirmDialog.style.display = 'none'; }); // Close delete confirm on overlay click
 
-    // Panel Closing
+    // Panel Closing with smarter Escape handling
     elements.closePanelBtnChat.addEventListener('click', closePanel);
     elements.closePanelBtnSettings.addEventListener('click', closePanel);
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        // If any modal/popup is open, close that first and do not close the panel
+        if (handleGlobalEscapeForModals()) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        // No modals open – allow Escape to close the panel
+        closePanel();
+    });
 
     // Window Messages (from content script)
     window.addEventListener('message', handleContentScriptMessages);
@@ -1377,6 +1398,116 @@ function closeTabSelectionPopupUIFromMain() {
         state.isTabSelectionPopupOpen = false;
         console.log("Tab selection popup closed from main.js, state updated.");
     }
+}
+
+// New: Handle Escape priority for modals/popups before closing the panel
+function handleGlobalEscapeForModals() {
+    try {
+        // 0) Agent delete confirm dialog (sidepanel built-in)
+        const deleteConfirmOverlay = document.getElementById('delete-confirm-dialog');
+        if (deleteConfirmOverlay && getComputedStyle(deleteConfirmOverlay).display !== 'none') {
+            deleteConfirmOverlay.style.display = 'none';
+            return true;
+        }
+        // 1) Tab selection popup inside chat
+        const tabPopup = document.getElementById('tab-selection-popup');
+        if (tabPopup) {
+            closeTabSelectionPopupUIFromMain();
+            return true;
+        }
+
+        // 2) Custom provider modal
+        const customProviderModal = document.getElementById('custom-provider-modal');
+        if (customProviderModal && customProviderModal.classList.contains('show')) {
+            customProviderModal.classList.remove('show');
+            return true;
+        }
+
+        // 3) Model discovery dialog
+        const modelDialog = document.querySelector('.model-discovery-dialog');
+        if (modelDialog) {
+            const closeBtn = modelDialog.querySelector('.close-btn');
+            if (closeBtn) closeBtn.click(); else modelDialog.remove();
+            return true;
+        }
+
+        // 4) Custom option edit dialog (Selection Helper Settings)
+        const customOptionDialog = document.querySelector('.custom-option-dialog-overlay');
+        if (customOptionDialog) {
+            const closeBtn = customOptionDialog.querySelector('.custom-option-dialog-close');
+            if (closeBtn) closeBtn.click(); else customOptionDialog.remove();
+            return true;
+        }
+
+        // 5) Delete/Import conflict overlays in Selection Helper Settings
+        const deleteDialog = document.getElementById('delete-custom-option-dialog');
+        if (deleteDialog) {
+            const cancelBtn = deleteDialog.querySelector('.dialog-cancel');
+            if (cancelBtn) cancelBtn.click(); else deleteDialog.remove();
+            return true;
+        }
+        const importConflictDialog = document.getElementById('import-conflict-dialog');
+        if (importConflictDialog) {
+            const cancelBtn = importConflictDialog.querySelector('.dialog-cancel');
+            if (cancelBtn) cancelBtn.click(); else importConflictDialog.remove();
+            return true;
+        }
+
+        // 6) Generic overlays created in settings (e.g., import/export confirms)
+        const overlays = Array.from(document.querySelectorAll('body > .dialog-overlay'));
+        if (overlays.length > 0) {
+            const topOverlay = overlays[overlays.length - 1];
+            // Try common cancel/close selectors across the project
+            const cancelBtn = topOverlay.querySelector('.dialog-cancel, .cancel-btn, .close-btn');
+            if (topOverlay.id === 'delete-confirm-dialog') {
+                topOverlay.style.display = 'none';
+            } else if (cancelBtn) {
+                cancelBtn.click();
+            } else {
+                // Fallback: hide instead of removing to avoid breaking cached references
+                topOverlay.style.display = 'none';
+            }
+            return true;
+        }
+
+        // 7) Image preview modal
+        if (elements.imageModal && getComputedStyle(elements.imageModal).display !== 'none') {
+            hideImageModal(elements);
+            return true;
+        }
+
+        // 8) Mermaid preview modal
+        if (elements.mermaidModal && getComputedStyle(elements.mermaidModal).display !== 'none') {
+            hideMermaidModal(elements);
+            return true;
+        }
+
+        return false;
+    } catch (err) {
+        console.warn('[main.js] handleGlobalEscapeForModals error:', err);
+        return false;
+    }
+}
+
+// Ensure the delete-confirm dialog exists and has the expected structure
+function ensureDeleteConfirmDialogStructure() {
+    const existing = document.getElementById('delete-confirm-dialog');
+    if (existing) return;
+    // Build a minimal dialog compatible with our event wiring
+    const overlay = document.createElement('div');
+    overlay.id = 'delete-confirm-dialog';
+    overlay.className = 'dialog-overlay';
+    overlay.style.display = 'none';
+    overlay.innerHTML = `
+        <div class="dialog-content">
+            <h3>${(window.I18n?.tr && window.I18n.tr('deleteConfirmHeading', {}, {})) || '确认删除'}</h3>
+            <p>${(window.I18n?.tr && window.I18n.tr('deleteConfirmPrompt', { agentName: '<strong></strong>' }, {})) || '您确定要删除助手吗？此操作无法撤销。'}</p>
+            <div class="dialog-actions">
+                <button id="cancel-delete" class="cancel-btn">${(window.I18n?.tr && window.I18n.tr('cancel', {}, {})) || '取消'}</button>
+                <button id="confirm-delete" class="delete-btn" style="background-color: var(--error-color); color: white;">${(window.I18n?.tr && window.I18n.tr('delete', {}, {})) || '删除'}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
 }
 
 // 新增：移除选中的上下文标签页
