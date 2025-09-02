@@ -210,6 +210,9 @@ if (typeof window.translations === 'undefined') {
     'interpret': '解读',
     'translate': '翻译',
     'chat': '对话',
+    // 窗口控制
+    'maximizeWindow': '最大化窗口',
+    'restoreWindow': '还原窗口',
     'interpretSystemPrompt': '解读一下',
     'translateSystemPrompt': '翻译一下',
     'interpretSettings': '解读设置',
@@ -704,6 +707,9 @@ Format：
     'interpret': 'Interpret',
     'translate': 'Translate',
     'chat': 'Chat',
+    // Window controls
+    'maximizeWindow': 'Maximize Window',
+    'restoreWindow': 'Restore Window',
     'interpretSystemPrompt': 'Interpret this',
     'translateSystemPrompt': 'Translate this',
     'interpretSettings': 'Interpret Settings',

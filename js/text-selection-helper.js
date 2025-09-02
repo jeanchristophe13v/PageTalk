@@ -1350,6 +1350,119 @@ async function showFunctionWindow(optionId) {
         hideFunctionWindow();
     });
 
+    // 添加最大化/还原按钮（位于关闭按钮左侧）
+    const maximizeButton = document.createElement('button');
+    maximizeButton.className = 'pagetalk-window-maximize';
+    // i18n: 设置按钮文案
+    const _tr = getTranslationFunction();
+    maximizeButton.setAttribute('aria-label', _tr('maximizeWindow'));
+    maximizeButton.title = _tr('maximizeWindow');
+    maximizeButton.style.cssText = `
+        position: absolute;
+        top: 8px;
+        right: 36px; /* 紧挨关闭按钮左侧 */
+        width: 24px;
+        height: 24px;
+        border: none;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        cursor: pointer;
+        color: #666;
+        z-index: 10;
+        display: flex; align-items: center; justify-content: center;
+    `;
+
+    // 更精致的 SVG 图标
+    const ICON_MAXIMIZE = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3H3v5"/>
+            <path d="M21 8V3h-5"/>
+            <path d="M16 21h5v-5"/>
+            <path d="M3 16v5h5"/>
+        </svg>`;
+    const ICON_RESTORE = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 8H3v5"/>
+            <path d="M21 8h-5V3"/>
+            <path d="M16 21v-5h5"/>
+            <path d="M8 21H3v-5"/>
+        </svg>`;
+    maximizeButton.innerHTML = ICON_MAXIMIZE;
+
+    // 最大化/还原逻辑
+    function maximizeWindow(win) {
+        try {
+            isProgrammaticResize = true;
+            // 保存当前尺寸和位置
+            win.dataset.prevLeft = win.style.left;
+            win.dataset.prevTop = win.style.top;
+            win.dataset.prevWidth = win.style.width;
+            win.dataset.prevHeight = win.style.height;
+
+            // 扩展至视口的 70%，并居中
+            const targetWidth = Math.round(window.innerWidth * 0.7);
+            const targetHeight = Math.round(window.innerHeight * 0.7);
+            const targetLeft = Math.max(0, Math.round((window.innerWidth - targetWidth) / 2));
+            const targetTop = Math.max(0, Math.round((window.innerHeight - targetHeight) / 2));
+
+            win.style.left = `${targetLeft}px`;
+            win.style.top = `${targetTop}px`;
+            win.style.width = `${targetWidth}px`;
+            win.style.height = `${targetHeight}px`;
+            win.style.resize = 'none';
+            win.dataset.maximized = 'true';
+
+            // 更新图标与可访问性文本
+            maximizeButton.innerHTML = ICON_RESTORE;
+            maximizeButton.setAttribute('aria-label', _tr('restoreWindow'));
+            maximizeButton.title = _tr('restoreWindow');
+        } finally {
+            // 稍后恢复标志，避免被当作用户手动调整
+            setTimeout(() => { isProgrammaticResize = false; }, 50);
+        }
+    }
+
+    function restoreWindow(win) {
+        try {
+            isProgrammaticResize = true;
+            const prevLeft = win.dataset.prevLeft || `${(window.innerWidth - win.offsetWidth) / 2}px`;
+            const prevTop = win.dataset.prevTop || `${(window.innerHeight - win.offsetHeight) / 2}px`;
+            const prevWidth = win.dataset.prevWidth || win.style.width;
+            const prevHeight = win.dataset.prevHeight || win.style.height;
+
+            win.style.left = prevLeft;
+            win.style.top = prevTop;
+            win.style.width = prevWidth;
+            win.style.height = prevHeight;
+            win.style.resize = 'both';
+            delete win.dataset.maximized;
+
+            maximizeButton.innerHTML = ICON_MAXIMIZE;
+            maximizeButton.setAttribute('aria-label', _tr('maximizeWindow'));
+            maximizeButton.title = _tr('maximizeWindow');
+        } finally {
+            setTimeout(() => { isProgrammaticResize = false; }, 50);
+        }
+    }
+
+    maximizeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const maximized = functionWindow.dataset.maximized === 'true';
+        if (maximized) {
+            restoreWindow(functionWindow);
+        } else {
+            maximizeWindow(functionWindow);
+        }
+        // 放大/还原后维持聊天输入框焦点（若为对话窗口）
+        if (optionId === 'chat') {
+            const textarea = functionWindow.querySelector('.pagetalk-chat-input textarea');
+            if (textarea) {
+                setTimeout(() => textarea.focus(), 0);
+            }
+        }
+    });
+
     // 设置基础样式
     functionWindow.style.cssText = `
         position: fixed;
@@ -1382,7 +1495,8 @@ async function showFunctionWindow(optionId) {
     // 根据选项类型创建内容
     await createFunctionWindowContent(functionWindow, optionId);
 
-    // 添加关闭按钮到窗口
+    // 添加按钮到窗口
+    functionWindow.appendChild(maximizeButton);
     functionWindow.appendChild(closeButton);
 
     document.body.appendChild(functionWindow);
@@ -1608,6 +1722,20 @@ function handleDocumentClick(event) {
  * 处理窗口大小变化
  */
 function handleWindowResize() {
+    // 若已最大化，则随视口自适应
+    if (currentFunctionWindow && currentFunctionWindow.dataset.maximized === 'true') {
+        const targetWidth = Math.round(window.innerWidth * 0.7);
+        const targetHeight = Math.round(window.innerHeight * 0.7);
+        const targetLeft = Math.max(0, Math.round((window.innerWidth - targetWidth) / 2));
+        const targetTop = Math.max(0, Math.round((window.innerHeight - targetHeight) / 2));
+
+        currentFunctionWindow.style.left = `${targetLeft}px`;
+        currentFunctionWindow.style.top = `${targetTop}px`;
+        currentFunctionWindow.style.width = `${targetWidth}px`;
+        currentFunctionWindow.style.height = `${targetHeight}px`;
+        return;
+    }
+
     // 重新定位功能窗口，确保不超出屏幕
     if (currentFunctionWindow) {
         const rect = currentFunctionWindow.getBoundingClientRect();
@@ -2156,6 +2284,8 @@ function makeFunctionWindowDraggable(windowElement) {
     dragHandle.style.userSelect = 'none';
 
     dragHandle.addEventListener('mousedown', (e) => {
+        // 最大化状态下禁用拖拽
+        if (windowElement.dataset.maximized === 'true') return;
         // 只有点击标题栏空白区域才能拖拽
         if (e.target.closest('button, select')) return;
 
@@ -3556,6 +3686,10 @@ function addCopyButtonToCodeBlock(codeBlock) {
  */
 function adjustWindowSize(windowElement) {
     try {
+        // 在“最大化（70%）”状态下跳过自动调整，保持一致尺寸
+        if (windowElement && windowElement.dataset && windowElement.dataset.maximized === 'true') {
+            return;
+        }
         if (userHasManuallyResized) {
             console.log('[TextSelectionHelper] Skipping auto-resize: user has manually resized');
             return;
