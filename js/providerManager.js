@@ -308,6 +308,16 @@ export async function removeCustomProvider(providerId) {
             return false;
         }
 
+        // 先移除与该供应商相关的模型与设置，避免遗留模型冲突
+        try {
+            if (window.ModelManager?.instance) {
+                await window.ModelManager.instance.removeModelsByProvider(providerId);
+                await window.ModelManager.instance.removeProviderSettings(providerId);
+            }
+        } catch (cleanupError) {
+            console.warn('[ProviderManager] Failed to cleanup models/settings for provider removal:', cleanupError);
+        }
+
         // 从providers对象中删除
         delete providers[providerId];
 

@@ -82,7 +82,7 @@ const STORAGE_KEYS = {
 /**
  * 当前版本号 - 用于数据迁移
  */
-const CURRENT_VERSION = '2.0.0'; // 升级到2.0.0以支持多供应商
+const CURRENT_VERSION = '2.0.1'; // 2.0.1: 清理已删除供应商遗留的模型，防重复冲突
 
 /**
  * 模型管理器类
@@ -104,6 +104,9 @@ class ModelManager {
         try {
             await this.loadFromStorage();
             await this.migrateIfNeeded();
+            // 额外的健全性检查：清理因删除供应商而遗留的“孤儿”模型
+            // 这一步不依赖 ProviderManager 是否已加载自定义提供商，因为会直接读取存储
+            await this.cleanupOrphanedModels();
             this.initialized = true;
             console.log('[ModelManager] Initialized successfully');
         } catch (error) {
@@ -1040,6 +1043,97 @@ class ModelManager {
     getProvidersNeedingConfiguration() {
         const configuredProviders = this.getConfiguredProviders();
         return configuredProviders.filter(providerId => !this.isProviderConfigured(providerId));
+    }
+
+    /**
+     * 删除指定供应商的所有模型和激活记录
+     * @param {string} providerId - 供应商ID
+     */
+    async removeModelsByProvider(providerId) {
+        const beforeCount = this.managedModels.length;
+        const removedIds = new Set(
+            this.managedModels.filter(m => m.providerId === providerId).map(m => m.id)
+        );
+
+        if (removedIds.size === 0) {
+            return { removed: 0 };
+        }
+
+        // 过滤管理列表
+        this.managedModels = this.managedModels.filter(m => m.providerId !== providerId);
+
+        // 过滤激活列表
+        this.userActiveModels = this.userActiveModels.filter(id => !removedIds.has(id));
+
+        await this.saveToStorage();
+        console.log(`[ModelManager] Removed ${beforeCount - this.managedModels.length} models for provider: ${providerId}`);
+        return { removed: beforeCount - this.managedModels.length };
+    }
+
+    /**
+     * 删除供应商设置（API Key 等）
+     * @param {string} providerId - 供应商ID
+     */
+    async removeProviderSettings(providerId) {
+        if (this.providerSettings && this.providerSettings[providerId]) {
+            delete this.providerSettings[providerId];
+            await this.saveToStorage();
+            console.log(`[ModelManager] Removed provider settings: ${providerId}`);
+        }
+    }
+
+    /**
+     * 清理“孤儿”模型：其 providerId 在当前或存储的自定义提供商中不存在
+     * 目的：
+     * - 修复用户删除自定义提供商后遗留的模型导致的“再次发现模型时被错误过滤”的问题
+     * - 保证模型ID空间干净，避免与新加入的供应商发生冲突
+     */
+    async cleanupOrphanedModels() {
+        try {
+            // 收集已知供应商ID（内置 + 存储中的自定义提供商）
+            const knownIds = new Set();
+            try {
+                // 内置（当前进程中已注册的）
+                if (window.ProviderManager?.getProviderIds) {
+                    window.ProviderManager.getProviderIds().forEach(id => knownIds.add(id));
+                } else if (window.ProviderManager?.providers) {
+                    Object.keys(window.ProviderManager.providers).forEach(id => knownIds.add(id));
+                }
+            } catch (e) {
+                // 忽略
+            }
+
+            // 从存储读取自定义提供商，避免依赖 UI 加载顺序
+            const storedCustomIds = await new Promise((resolve) => {
+                chrome.storage.sync.get(['customProviders'], (result) => {
+                    const list = Array.isArray(result.customProviders) ? result.customProviders : [];
+                    resolve(list.map(p => p.id));
+                });
+            });
+            storedCustomIds.forEach(id => knownIds.add(id));
+
+            // 找出 providerId 不在 knownIds 中的模型
+            const orphanIds = new Set(
+                this.managedModels
+                    .filter(m => !m.providerId || !knownIds.has(m.providerId))
+                    .map(m => m.id)
+            );
+
+            if (orphanIds.size === 0) {
+                return { removed: 0 };
+            }
+
+            const beforeCount = this.managedModels.length;
+            this.managedModels = this.managedModels.filter(m => !orphanIds.has(m.id));
+            this.userActiveModels = this.userActiveModels.filter(id => !orphanIds.has(id));
+            await this.saveToStorage();
+            const removed = beforeCount - this.managedModels.length;
+            console.log(`[ModelManager] Cleanup removed ${removed} orphaned models (providers missing)`);
+            return { removed };
+        } catch (error) {
+            console.warn('[ModelManager] Orphaned model cleanup failed:', error);
+            return { removed: 0 };
+        }
     }
 }
 
