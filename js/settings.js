@@ -385,7 +385,11 @@ export function handleExportChat(state, elements, showToastCallback, currentTran
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        if (a && a.parentNode) {
+            a.parentNode.removeChild(a);
+        } else if (typeof a.remove === 'function') {
+            a.remove();
+        }
         URL.revokeObjectURL(url);
         showToastCallback(_('chatExportSuccess', {}, currentTranslations), 'success');
     } catch (error) {
@@ -622,7 +626,9 @@ function createModelCard(model, currentTranslations) {
     card.className = 'model-card';
     card.dataset.modelId = model.id;
 
-    const removeTooltip = _('removeModelTooltip', {}, currentTranslations);
+    const removeTooltip = (model.canDelete !== false)
+        ? (_('deleteModelTooltip', {}, currentTranslations) || '删除此模型')
+        : (_('removeModelTooltip', {}, currentTranslations) || '移除此模型');
 
     // 根据模型的canDelete属性决定是否显示删除按钮
     const canDelete = model.canDelete !== false; // 默认可删除，除非明确设置为false
@@ -772,8 +778,12 @@ async function removeModelFromSelection(modelId) {
         return;
     }
 
-    // 从激活列表中移除（但保留在管理列表中，以便重新发现）
-    await modelManager.removeModel(modelId);
+    // 可删除且非默认 -> 彻底删除；否则仅从激活列表移除
+    if (model.canDelete !== false && model.isDefault !== true) {
+        await modelManager.deleteModel(modelId);
+    } else {
+        await modelManager.removeModel(modelId);
+    }
 
     // 更新UI
     await updateModelCardsDisplay();
@@ -1368,8 +1378,16 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm, onCanc
 
     // 关闭对话框
     function closeDialog() {
-        document.body.removeChild(dialog);
-        document.head.removeChild(style);
+        if (dialog && dialog.parentNode) {
+            dialog.parentNode.removeChild(dialog);
+        } else if (dialog && typeof dialog.remove === 'function') {
+            dialog.remove();
+        }
+        if (style && style.parentNode) {
+            style.parentNode.removeChild(style);
+        } else if (style && typeof style.remove === 'function') {
+            style.remove();
+        }
         // 调用取消回调（如果提供）
         if (onCancel && typeof onCancel === 'function') {
             onCancel();
@@ -2118,7 +2136,9 @@ async function handleManualAddModel(modelName, modelId, providerId, currentTrans
             params: null,
             isAlias: false,
             isDefault: false,
-            canDelete: true
+            canDelete: true,
+            // 标记来源为手动添加，便于后续发现模型时过滤
+            source: 'manual'
         };
 
         // 添加模型
@@ -3144,7 +3164,11 @@ function handleQuickActionsExport(translations) {
         link.download = `pagetalk-quick-actions-${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        if (link && link.parentNode) {
+            link.parentNode.removeChild(link);
+        } else if (link && typeof link.remove === 'function') {
+            link.remove();
+        }
         URL.revokeObjectURL(url);
 
         const message = translations?.exportSuccess || '导出成功';

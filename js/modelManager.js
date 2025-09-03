@@ -809,8 +809,11 @@ class ModelManager {
                 continue;
             }
 
-            // 添加新模型
-            const success = await this.addModel(discoveredModel);
+            // 添加新模型（加注来源）
+            const success = await this.addModel({
+                ...discoveredModel,
+                source: discoveredModel.source || 'discovered'
+            });
             if (success) {
                 // 自动激活新添加的模型
                 await this.activateModel(modelId);
@@ -833,6 +836,7 @@ class ModelManager {
     getNewDiscoveredModels(discoveredModels, providerId = null) {
         const activeModelIds = new Set(this.userActiveModels);
         const managedModelIds = new Set(this.managedModels.map(model => model.id));
+        const discoveredIds = new Set((discoveredModels || []).map(m => m.id));
 
         // 首先恢复缺失的默认模型（只包括指定供应商的模型）
         const missingDefaultModels = this.getMissingDefaultModels();
@@ -846,7 +850,11 @@ class ModelManager {
         const inactiveModels = this.managedModels.filter(model =>
             !activeModelIds.has(model.id) &&
             !relevantMissingModels.some(dm => dm.id === model.id) &&
-            (!providerId || model.providerId === providerId)
+            (!providerId || model.providerId === providerId) &&
+            // 不要把“手动添加”的模型带入发现列表（兼容新版本）
+            model.source !== 'manual' &&
+            // 仅保留可从 API 再发现的或默认模型（兼容旧版本未打标的条目）
+            (model.isDefault === true || discoveredIds.has(model.id) || model.source === 'discovered')
         );
         availableModels.push(...inactiveModels);
 
