@@ -5,6 +5,24 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.7.7",
+        date: "2025-09-03",
+        changes: {
+            "zh-CN": [
+                "1. 为划词助手窗口添加“放大”按钮",
+                "2. 修复自定义供应商与模型的严重 bug",
+                "3. 优化模型界面交互",
+                "4. 一些微小的优化"
+            ],
+            "en": [
+                "1. Added an 'Enlarge' button to the Selection Tool window",
+                "2. Fixed a critical bug with custom providers and models",
+                "3. Improved model interface interactions",
+                "4. Minor optimizations"
+            ]
+        }
+    },
+    {
         version: "3.7.5",
         date: "2025-09-01",
         changes: {
