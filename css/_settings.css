@@ -779,6 +779,13 @@ body.dark-mode .setting-action-btn:hover {
     transition: all 0.2s ease;
 }
 
+/* 模型管理头部右侧按钮分组 */
+.model-actions-right {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
 .provider-settings:hover {
     border-color: rgba(76, 110, 245, 0.2);
     box-shadow: 0 2px 12px rgba(76, 110, 245, 0.08);
@@ -807,6 +814,13 @@ body.dark-mode .setting-action-btn:hover {
     color: var(--text-color);
     letter-spacing: -0.01em;
     flex: 1;
+}
+
+/* API Key 行：输入 + 测试按钮 */
+.api-key-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
 .edit-custom-provider-btn,
@@ -874,6 +888,14 @@ body.dark-mode .setting-action-btn:hover {
     color: white;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(76, 110, 245, 0.25);
+}
+
+/* 供应商操作提示 */
+.provider-actions-hint {
+    display: block;
+    margin-top: var(--spacing-xs);
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
 .test-api-key-btn:disabled,
@@ -1840,7 +1862,7 @@ body.dark-mode .setting-action-btn:hover {
     background-color: var(--card-background);
     color: var(--text-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 11000; /* 高于各类模态框(10000) */
     font-size: 13px;
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease, bottom 0.3s ease; /* 添加 transform 和 bottom 过渡 */

@@ -661,15 +661,23 @@ function updateManualAddButton(currentTranslations) {
     const header = document.querySelector('.model-management-header');
     if (!header) return;
 
-    // 移除已存在的按钮
-    const existingButton = header.querySelector('.manual-add-model-btn');
-    if (existingButton) {
-        existingButton.remove();
-    }
+    // 清理右侧按钮容器
+    const existingGroup = header.querySelector('.model-actions-right');
+    if (existingGroup) existingGroup.remove();
 
-    // 创建新按钮
-    const button = createManualAddButton(currentTranslations);
-    header.appendChild(button);
+    // 创建右侧按钮容器
+    const group = document.createElement('div');
+    group.className = 'model-actions-right';
+
+    // 创建“抓取模型”按钮（从当前选中供应商抓取）
+    const discoverBtn = createDiscoverHeaderButton(currentTranslations);
+    group.appendChild(discoverBtn);
+
+    // 创建“添加自定义模型”按钮
+    const manualBtn = createManualAddButton(currentTranslations);
+    group.appendChild(manualBtn);
+
+    header.appendChild(group);
 }
 
 /**
@@ -693,6 +701,38 @@ function createManualAddButton(currentTranslations) {
         // 获取最新的翻译对象
         const latestTranslations = getCurrentTranslations();
         showManualAddModelDialog(latestTranslations);
+    });
+
+    return button;
+}
+
+/**
+ * 创建“抓取模型”按钮（放在模型管理头部）
+ */
+function createDiscoverHeaderButton(currentTranslations) {
+    const button = document.createElement('button');
+    // 复用 discover-models-btn 的视觉风格，便于一致性
+    button.className = 'discover-models-btn';
+    button.title = _('discoverModels', {}, currentTranslations);
+    button.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;margin-right:6px;">
+            <path d="M12 2l3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7z"/>
+        </svg>
+        <span>${_('discoverModels', {}, currentTranslations)}</span>
+    `;
+
+    button.addEventListener('click', async () => {
+        // 直接调用发现模型逻辑，并以此按钮作为UI反馈对象
+        const providerSelect = document.getElementById('provider-select');
+        const providerId = providerSelect ? providerSelect.value : null;
+        if (!providerId) return;
+
+        const state = window.state || {};
+        const elements = {
+            modelSelection: document.getElementById('model-selection'),
+            chatModelSelection: document.getElementById('chat-model-selection')
+        };
+        await handleDiscoverModelsForProvider(providerId, state, elements, window.showToastUI || (()=>{}), button);
     });
 
     return button;
@@ -1717,7 +1757,7 @@ async function autoDiscoverModelsAfterTest(providerId, showToastCallback) {
 /**
  * 处理指定供应商的模型发现
  */
-async function handleDiscoverModelsForProvider(providerId, state, elements, showToastCallback) {
+async function handleDiscoverModelsForProvider(providerId, state, elements, showToastCallback, uiButton = null) {
     const currentTranslations = getCurrentTranslations();
 
     if (!window.PageTalkAPI?.fetchModels) {
@@ -1738,25 +1778,22 @@ async function handleDiscoverModelsForProvider(providerId, state, elements, show
         return;
     }
 
-    const discoverButton = document.querySelector(`.discover-models-btn[data-provider="${providerId}"]`);
-    if (!discoverButton) {
-        console.error(`[Settings] Discover button not found for provider: ${providerId}`);
-        return;
-    }
-
-    const originalText = discoverButton.textContent;
+    const discoverButton = uiButton || document.querySelector(`.discover-models-btn[data-provider="${providerId}"]`);
+    const originalText = discoverButton ? discoverButton.textContent : '';
 
     // 恢复按钮状态的函数
     const restoreButtonState = () => {
         if (discoverButton) {
             discoverButton.disabled = false;
-            discoverButton.textContent = originalText;
+            discoverButton.textContent = originalText || _('discoverModels', {}, currentTranslations);
         }
     };
 
     try {
-        discoverButton.disabled = true;
-        discoverButton.textContent = _('discoveringModels', {}, currentTranslations);
+        if (discoverButton) {
+            discoverButton.disabled = true;
+            discoverButton.textContent = _('discoveringModels', {}, currentTranslations);
+        }
 
         // 获取可用模型
         const discoveredModels = await window.PageTalkAPI.fetchModels(providerId);
@@ -1826,13 +1863,6 @@ function showManualAddModelDialog(currentTranslations) {
         existingDialog.remove();
     }
 
-    // 获取可用的供应商列表
-    const providers = window.ProviderManager?.getAllProviders() || {};
-    const providerOptions = Object.values(providers).map(provider => ({
-        value: provider.id,
-        text: provider.name
-    }));
-
     // 创建对话框
     const dialog = document.createElement('div');
     dialog.className = 'manual-add-model-dialog';
@@ -1856,15 +1886,6 @@ function showManualAddModelDialog(currentTranslations) {
                                placeholder="${_('manualAddModelIdPlaceholder', {}, currentTranslations)}"
                                autocomplete="off" required>
                     </div>
-                    <div class="form-group">
-                        <label for="manual-model-provider">${_('manualAddModelProvider', {}, currentTranslations)} *</label>
-                        <select id="manual-model-provider" class="form-select" required>
-                            <option value="">${_('manualAddModelProviderPlaceholder', {}, currentTranslations)}</option>
-                            ${providerOptions.map(option =>
-                                `<option value="${option.value}">${option.text}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
                 </div>
                 <div class="dialog-footer">
                     <div class="dialog-actions">
@@ -1882,7 +1903,6 @@ function showManualAddModelDialog(currentTranslations) {
     // 获取表单元素
     const nameInput = dialog.querySelector('#manual-model-name');
     const idInput = dialog.querySelector('#manual-model-id');
-    const providerSelect = dialog.querySelector('#manual-model-provider');
     const confirmBtn = dialog.querySelector('.confirm-btn');
     const cancelBtn = dialog.querySelector('.cancel-btn');
     const closeBtn = dialog.querySelector('.close-btn');
@@ -1891,9 +1911,7 @@ function showManualAddModelDialog(currentTranslations) {
     const validateForm = () => {
         const name = nameInput.value.trim();
         const id = idInput.value.trim();
-        const provider = providerSelect.value;
-
-        const isValid = name && id && provider;
+        const isValid = !!(name && id);
         confirmBtn.disabled = !isValid;
         return isValid;
     };
@@ -1901,7 +1919,7 @@ function showManualAddModelDialog(currentTranslations) {
     // 添加输入事件监听器
     nameInput.addEventListener('input', validateForm);
     idInput.addEventListener('input', validateForm);
-    providerSelect.addEventListener('change', validateForm);
+    // no provider select
 
     // 关闭对话框函数
     const closeDialog = () => {
@@ -1934,13 +1952,36 @@ function showManualAddModelDialog(currentTranslations) {
         }
     });
 
+    // ESC 快捷关闭
+    const onKeyDown = (e) => {
+        if (e.key === 'Escape') {
+            closeDialog();
+            document.removeEventListener('keydown', onKeyDown, true);
+        }
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+
     // 确认添加
     confirmBtn.addEventListener('click', async () => {
         if (!validateForm()) return;
 
         const name = nameInput.value.trim();
         const id = idInput.value.trim();
-        const providerId = providerSelect.value;
+        // 锚定到当前所选供应商
+        const providerSelectEl = document.getElementById('provider-select');
+        let providerId = providerSelectEl ? providerSelectEl.value : '';
+        if (!providerId) {
+            // 回退：尝试从当前显示的供应商设置区域推断 providerId
+            const visibleSettings = Array.from(document.querySelectorAll('.provider-settings')).find(el => el.style.display !== 'none');
+            if (visibleSettings && visibleSettings.id) {
+                providerId = visibleSettings.id.replace('provider-settings-', '');
+            }
+        }
+        if (!providerId) {
+            const latestTranslations = getCurrentTranslations();
+            if (window.showToastUI) window.showToastUI(latestTranslations.noProviderSelected || '请先选择供应商', 'error');
+            return;
+        }
 
         // 获取最新的翻译对象
         const latestTranslations = getCurrentTranslations();
@@ -2036,13 +2077,34 @@ async function handleManualAddModel(modelName, modelId, providerId, currentTrans
     }
 
     const modelManager = window.ModelManager.instance;
+    try { await modelManager.initialize(); } catch (_) {}
 
     try {
-        // 检查模型是否已存在
+        // 检查模型是否已存在于管理列表
         const existingModel = modelManager.getModelById(modelId);
         if (existingModel) {
-            if (window.showToastUI) {
-                window.showToastUI(_('manualAddModelExists', {}, currentTranslations), 'error');
+            // 如果已存在于管理列表：
+            // - 若未被选中，则直接激活并提示成功
+            // - 若已被选中，则提示已在列表中
+            const alreadyActive = modelManager.isModelActive(modelId);
+            if (!alreadyActive) {
+                await modelManager.activateModel(modelId);
+                await updateModelCardsDisplay();
+                const state = window.state || {};
+                const elements = {
+                    modelSelection: document.getElementById('model-selection'),
+                    chatModelSelection: document.getElementById('chat-model-selection')
+                };
+                await initModelSelection(state, elements);
+                if (window.showToastUI) {
+                    window.showToastUI(_('manualAddModelActivated', {}, currentTranslations) || '已选中该模型', 'success');
+                }
+                closeDialog();
+            } else {
+                if (window.showToastUI) {
+                    window.showToastUI(_('manualAddModelAlreadySelected', {}, currentTranslations) || '该模型已在已选择列表中', 'info');
+                }
+                closeDialog();
             }
             return;
         }
@@ -2542,7 +2604,7 @@ function createProviderSettingsElement(provider) {
         </div>
         <div class="setting-group">
             <label for="${provider.id}-api-key">API Key:</label>
-            <div class="api-key-input-container">
+            <div class="api-key-row"><div class="api-key-input-container" style="flex:1;">
                 <input type="password" id="${provider.id}-api-key" data-i18n-placeholder="providerApiKeyPlaceholder" placeholder="${currentTranslations.providerApiKeyPlaceholder}">
                 <button class="toggle-api-key-button" type="button" data-target="${provider.id}-api-key">
                     <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -2555,14 +2617,11 @@ function createProviderSettingsElement(provider) {
                         <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
                     </svg>
                 </button>
-            </div>
+            </div><button class="test-api-key-btn" data-provider="${provider.id}" data-i18n="testConnection">${currentTranslations.testConnection}</button></div>
             ${provider.apiKeyUrl ? `<p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="${provider.apiKeyUrl}" target="_blank" rel="noopener">${getProviderApiKeyLinkText(provider)}</a></p>` : ''}
             ${provider.isCustom && provider.apiHost ? `<p class="hint">Base URL: ${provider.apiHost}</p>` : ''}
         </div>
-        <div class="provider-actions">
-            <button class="test-api-key-btn" data-provider="${provider.id}" data-i18n="testConnection">${currentTranslations.testConnection}</button>
-            <button class="discover-models-btn" data-provider="${provider.id}" data-i18n="discoverModels">${currentTranslations.discoverModels}</button>
-        </div>
+            
     `;
 
     // 注意：不在这里添加API Key切换按钮的事件监听器，因为已经通过事件委托在 setupProviderEventListeners 中处理了
