@@ -794,6 +794,7 @@ body.dark-mode .setting-action-btn:hover {
 .provider-header {
     display: flex;
     align-items: center;
+    flex-wrap: wrap; /* 窄宽度时换行，避免右侧溢出 */
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-sm);
@@ -805,7 +806,7 @@ body.dark-mode .setting-action-btn:hover {
     -webkit-appearance: none;
     appearance: none;
     background-color: var(--input-background);
-    border: 1px solid var(--border-color);
+    border: 1px solid #4774ff8f; /* 设置统一边框颜色 */
     border-radius: var(--radius-lg);
     padding: 6px 28px 6px 10px;
     min-height: 30px;
@@ -835,7 +836,7 @@ body.dark-mode .setting-action-btn:hover {
 /* 深色模式下的下拉箭头颜色与边框 */
 body.dark-mode .provider-selection-container .provider-select {
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 20 20" fill="%239aa3ad"><path d="M5.5 7l4.5 6 4.5-6z"/></svg>');
-    border-color: var(--border-color);
+    border-color: #4774ff8f; /* 深色模式下同样使用统一边框颜色 */
 }
 
 .provider-icon {
@@ -1690,14 +1691,13 @@ body.dark-mode .provider-selection-container .provider-select {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
-    flex-grow: 1;
-    overflow-y: auto;
-    overflow-x: hidden; /* 防止水平滚动条 */
-    min-height: 100px;
-    max-height: 400px;
+    /* 让列表高度自适应内容，不再内部滚动 */
+    overflow: visible;
+    /* 取消固定高度，交由外层页面滚动 */
+    min-height: 0;
     /* 简化：只保留必要的内边距 */
     padding: var(--spacing-xs) 0 var(--spacing-md) 0;
-    /* 自定义滚动条样式 */
+    /* 自定义滚动条样式（无内部滚动时不生效，但保留兼容性） */
     scrollbar-width: thin;
     scrollbar-color: var(--border-color) transparent;
 }
