@@ -559,8 +559,9 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     setTitle('#send-message', 'sendMessageTitle'); // Default title
     // New: ensure settings close button has translated title
     setTitle('#close-panel-settings', 'closePanelTitle');
-    // New: ensure add-provider has title
-    setTitle('#add-provider-btn', 'addProvider');
+    // New: ensure add-provider has title (supports multiple in-card buttons)
+    const addProviderBtns = document.querySelectorAll('.add-provider-btn');
+    addProviderBtns.forEach(btn => btn.setAttribute('title', _tr('addProvider')));
 
     // YouTube URL Dialog
     setTitle('#add-youtube-url', 'addYoutubeLinkTitle');

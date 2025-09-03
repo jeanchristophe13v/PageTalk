@@ -840,15 +840,14 @@ Format：
 
     // --- Multi-Provider Settings Related Translations ---
     'aiProviderLabel': 'Provider:',
-    'testConnection': 'Test Connection',
+    'testConnection': 'Test',
     'discoverModels': 'Fetch',
     'currentModelLabel': 'Current Model:',
-    'testingConnection': 'Testing Connection...',
+    'testingConnection': 'Testing...',
     'discoveringModels': 'Fetching...',
     'noModelsSelected': 'No models selected yet, click "Fetch" or "Manual Add"',
     'providerApiKeyPlaceholder': 'Enter your API Key',
     'getApiKeyHint': 'Get API Key',
-    'discoverModelsHint': 'It’s recommended to click "Test Connection" first, then click "Fetch" to load available models',
     'selectedText': 'Selected Text',
     'relatedContext': 'Related Context',
     'userQuestion': 'User Question',

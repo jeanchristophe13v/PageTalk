@@ -731,7 +731,7 @@ body.dark-mode .setting-action-btn:hover {
 }
 
 .provider-selection-container select {
-    flex: 1;
+    flex: 0 0 auto;
 }
 
 .add-provider-btn {
@@ -800,6 +800,44 @@ body.dark-mode .setting-action-btn:hover {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* 美化：供应商选择器（下拉） */
+.provider-selection-container .provider-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: var(--input-background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 6px 28px 6px 10px;
+    min-height: 30px;
+    min-width: 180px;
+    font-size: 13px;
+    color: var(--text-color);
+    line-height: 1.2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 20 20" fill="%236c6f7a"><path d="M5.5 7l4.5 6 4.5-6z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px 12px;
+}
+
+.provider-selection-container .provider-select:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(70, 116, 255, 0.08);
+}
+
+.provider-selection-container .provider-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(70, 116, 255, 0.12);
+}
+
+/* 深色模式下的下拉箭头颜色与边框 */
+body.dark-mode .provider-selection-container .provider-select {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 20 20" fill="%239aa3ad"><path d="M5.5 7l4.5 6 4.5-6z"/></svg>');
+    border-color: var(--border-color);
+}
+
 .provider-icon {
     width: 24px;
     height: 24px;
@@ -851,8 +889,13 @@ body.dark-mode .setting-action-btn:hover {
     height: 14px;
 }
 
-.provider-header .edit-custom-provider-btn:first-of-type {
+.provider-header > .edit-custom-provider-btn:first-of-type {
     margin-left: auto;
+}
+
+/* 当编辑/删除按钮位于选择容器内部时，不要推到最右侧 */
+.provider-selection-container .edit-custom-provider-btn:first-of-type {
+    margin-left: 0;
 }
 
 .provider-actions {
@@ -1138,14 +1181,6 @@ body.dark-mode .setting-action-btn:hover {
     box-shadow: 0 2px 8px rgba(76, 110, 245, 0.3);
 }
 
-.btn-primary:disabled {
-    background: var(--border-color);
-    color: var(--text-secondary);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
 .model-settings-group-box .setting-group {
     border-bottom: none;
     margin-bottom: var(--spacing-sm);
@@ -1272,31 +1307,20 @@ body.dark-mode .setting-action-btn:hover {
 .manual-add-model-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--spacing-xs);
-    padding: 6px 12px;
-    background-color: #32a45cd4;
-    border: 1px solid #16a34a;
+    padding: var(--spacing-xs) var(--spacing-sm); /* 与其它按钮统一 */
+    background-color: #32a45cd4; /* 颜色保持不变 */
+    border: 1px solid #16a34a; /* 边框保持 */
     border-radius: var(--radius-lg);
     color: white;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 28px;
+    height: 32px; /* 统一高度 */
+    min-width: 60px; /* 与其它按钮最小宽度一致 */
     white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.manual-add-model-btn:hover {
-    background-color: #16a34a;
-    border-color: #15803d;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
-}
-
-.manual-add-model-btn svg {
-    width: 14px;
-    height: 14px;
     flex-shrink: 0;
 }
 

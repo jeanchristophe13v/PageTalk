@@ -86,10 +86,10 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         // 加载供应商设置到 UI
         await loadProviderSettingsToUI(elements);
 
-        // 初始化供应商选择器
+        // 初始化供应商选择器（已集成到供应商卡片头部）
         await initProviderSelection(elements);
 
-        // 初始化自定义提供商功能
+        // 初始化自定义提供商功能（事件委托方式）
         initCustomProviderModal();
 
         // 初始化快捷操作管理器
@@ -729,8 +729,7 @@ function createDiscoverHeaderButton(currentTranslations) {
 
     button.addEventListener('click', async () => {
         // 直接调用发现模型逻辑，并以此按钮作为UI反馈对象
-        const providerSelect = document.getElementById('provider-select');
-        const providerId = providerSelect ? providerSelect.value : null;
+        const providerId = getCurrentVisibleProviderId();
         if (!providerId) return;
 
         const state = window.state || {};
@@ -1472,34 +1471,73 @@ function showModelSelectionDialog(models, currentTranslations, onConfirm, onCanc
 // === 多供应商支持函数 ===
 
 /**
+ * 获取当前可见的供应商设置卡片元素
+ */
+function getVisibleProviderSettingsEl() {
+    const all = document.querySelectorAll('.provider-settings');
+    for (const el of all) {
+        const style = window.getComputedStyle(el);
+        if (style.display !== 'none') return el;
+    }
+    return null;
+}
+
+/**
+ * 获取当前可见供应商ID
+ */
+function getCurrentVisibleProviderId() {
+    const visible = getVisibleProviderSettingsEl();
+    if (!visible || !visible.id) return null;
+    return visible.id.replace('provider-settings-', '');
+}
+
+/**
+ * 填充供应商下拉框
+ */
+function populateProviderSelect(selectEl, options, selectedValue) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '';
+    options.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.text;
+        selectEl.appendChild(o);
+    });
+    if (selectedValue) {
+        selectEl.value = selectedValue;
+    }
+}
+
+/**
+ * 更新当前可见卡片中的供应商选择器
+ */
+function updateProviderSelectInVisibleCard() {
+    const providerOptions = window.ProviderManager?.getProviderOptionsForUI() || [];
+    const visible = getVisibleProviderSettingsEl();
+    if (!visible) return;
+    const currentId = getCurrentVisibleProviderId() || 'google';
+    const select = visible.querySelector('select.provider-select');
+    if (!select) return;
+
+    populateProviderSelect(select, providerOptions, currentId);
+
+    // 绑定变更事件（重置以避免重复）
+    select.onchange = async (e) => {
+        const nextId = e.target.value;
+        await showProviderSettings(nextId);
+        // 切换后更新新卡片中的下拉框
+        updateProviderSelectInVisibleCard();
+    };
+}
+
+/**
  * 初始化供应商选择器
  */
 async function initProviderSelection(elements) {
-    const providerSelect = document.getElementById('provider-select');
-    if (!providerSelect) return;
-
-    // 获取供应商选项
-    const providerOptions = window.ProviderManager?.getProviderOptionsForUI() || [];
-
-    // 清空并填充选项
-    providerSelect.innerHTML = '';
-    providerOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option.value;
-        optionElement.textContent = option.text;
-        providerSelect.appendChild(optionElement);
-    });
-
-    // 设置默认选择（Google）
-    providerSelect.value = 'google';
-
-    // 显示对应的供应商设置
+    // 首次显示默认供应商
     await showProviderSettings('google');
-
-    // 监听供应商切换
-    providerSelect.addEventListener('change', async (e) => {
-        await showProviderSettings(e.target.value);
-    });
+    // 填充并绑定当前可见卡片中的选择器
+    updateProviderSelectInVisibleCard();
 }
 
 /**
@@ -1527,6 +1565,8 @@ async function showProviderSettings(providerId) {
 
     if (targetSettings) {
         targetSettings.style.display = 'block';
+        // 同步头部选择器的当前值
+        updateProviderSelectInVisibleCard();
     } else {
         console.warn(`[Settings] Settings area not found for provider: ${providerId}`);
     }
@@ -1986,15 +2026,7 @@ function showManualAddModelDialog(currentTranslations) {
         const name = nameInput.value.trim();
         const id = idInput.value.trim();
         // 锚定到当前所选供应商
-        const providerSelectEl = document.getElementById('provider-select');
-        let providerId = providerSelectEl ? providerSelectEl.value : '';
-        if (!providerId) {
-            // 回退：尝试从当前显示的供应商设置区域推断 providerId
-            const visibleSettings = Array.from(document.querySelectorAll('.provider-settings')).find(el => el.style.display !== 'none');
-            if (visibleSettings && visibleSettings.id) {
-                providerId = visibleSettings.id.replace('provider-settings-', '');
-            }
-        }
+        let providerId = getCurrentVisibleProviderId() || '';
         if (!providerId) {
             const latestTranslations = getCurrentTranslations();
             if (window.showToastUI) window.showToastUI(latestTranslations.noProviderSelected || '请先选择供应商', 'error');
@@ -2186,13 +2218,12 @@ async function handleManualAddModel(modelName, modelId, providerId, currentTrans
  * 初始化自定义提供商模态框
  */
 function initCustomProviderModal() {
-    const addProviderBtn = document.getElementById('add-provider-btn');
     const modal = document.getElementById('custom-provider-modal');
     const closeBtn = modal?.querySelector('.custom-provider-close');
     const cancelBtn = document.getElementById('custom-provider-cancel');
     const saveBtn = document.getElementById('custom-provider-save');
 
-    if (!addProviderBtn || !modal) return;
+    if (!modal) return;
 
     // 防止重复绑定事件监听器
     if (modal.dataset.eventListenersSetup === 'true') {
@@ -2201,10 +2232,16 @@ function initCustomProviderModal() {
     }
     modal.dataset.eventListenersSetup = 'true';
 
-    // 打开模态框
-    addProviderBtn.addEventListener('click', () => {
-        openCustomProviderModal();
-    });
+    // 通过事件委托处理“添加供应商”按钮（集成在卡片头部）
+    const container = document.querySelector('.provider-settings-container');
+    if (container) {
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('.add-provider-btn');
+            if (btn) {
+                openCustomProviderModal();
+            }
+        });
+    }
 
     // 关闭模态框
     const closeModal = () => {
@@ -2390,15 +2427,14 @@ async function saveCustomProvider() {
             modal.classList.remove('show');
             clearCustomProviderForm();
 
-            // 刷新供应商选择器
+            // 刷新供应商选择器并切换到相关提供商
             await refreshProviderSelection();
 
             // 选择相关提供商并填入API Key
             const targetProviderId = result.providerId || (isEditMode ? editProviderId : result.providerId);
-            const providerSelect = document.getElementById('provider-select');
-            if (providerSelect && targetProviderId) {
-                providerSelect.value = targetProviderId;
+            if (targetProviderId) {
                 await showProviderSettings(targetProviderId);
+                updateProviderSelectInVisibleCard();
 
                 // 自动填入API Key
                 setTimeout(() => {
@@ -2520,30 +2556,11 @@ async function updateCustomProvider(providerId, updates) {
  * 刷新供应商选择器
  */
 async function refreshProviderSelection() {
-    const providerSelect = document.getElementById('provider-select');
-    if (!providerSelect) return;
-
-    const currentValue = providerSelect.value;
-
-    // 获取更新后的供应商选项
-    const providerOptions = window.ProviderManager?.getProviderOptionsForUI() || [];
-
-    // 清空并重新填充选项
-    providerSelect.innerHTML = '';
-    providerOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option.value;
-        optionElement.textContent = option.text;
-        providerSelect.appendChild(optionElement);
-    });
-
-    // 尝试恢复之前的选择
-    if (currentValue && providerOptions.find(opt => opt.value === currentValue)) {
-        providerSelect.value = currentValue;
-    }
-
     // 确保为新的自定义提供商创建设置区域
     await createAllProviderSettings();
+
+    // 更新当前可见卡片中的选择器
+    updateProviderSelectInVisibleCard();
 }
 
 /**
@@ -2607,20 +2624,31 @@ function createProviderSettingsElement(provider) {
         <div class="provider-header">
             <img src="../icons/${provider.icon}" alt="${provider.name}" class="provider-icon">
             <h3>${provider.name}</h3>
-            ${provider.isCustom ? `
-                <button class="edit-custom-provider-btn" data-provider="${provider.id}" title="${currentTranslations.customProviderEdit || '编辑提供商'}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M5.707 13.707a1 1 0 0 1-.39.242l-3 1a1 1 0 0 1-1.266-1.265l1-3a1 1 0 0 1 .242-.391L10.086 2.5a2 2 0 0 1 2.828 0l.586.586a2 2 0 0 1 0 2.828L5.707 13.707zM3 11l7.5-7.5 1 1L4 12l-1-1zm0 2.5l1-1L5.5 14l-1 1-1.5-1.5z"/>
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
-                    </svg>
-                </button>
-                <button class="remove-custom-provider-btn" data-provider="${provider.id}" title="${currentTranslations.customProviderDelete || '删除提供商'}">
+            <div class="provider-selection-container">
+                <select class="provider-select setting-select" aria-label="Select Provider">
+                    <!-- 选项由 JS 填充 -->
+                </select>
+                ${provider.isCustom ? `
+                    <button class=\"edit-custom-provider-btn\" data-provider=\"${provider.id}\" title=\"${currentTranslations.customProviderEdit || '编辑提供商'}\">
+                        <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" fill=\"currentColor\" viewBox=\"0 0 16 16\">
+                            <path d=\"M5.707 13.707a1 1 0 0 1-.39.242l-3 1a1 1 0 0 1-1.266-1.265l1-3a1 1 0 0 1 .242-.391L10.086 2.5a2 2 0 0 1 2.828 0l.586.586a2 2 0 0 1 0 2.828L5.707 13.707zM3 11l7.5-7.5 1 1L4 12l-1-1zm0 2.5l1-1L5.5 14l-1 1-1.5-1.5z\"/>
+                            <path d=\"M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z\"/>
+                        </svg>
+                    </button>
+                    <button class=\"remove-custom-provider-btn\" data-provider=\"${provider.id}\" title=\"${currentTranslations.customProviderDelete || '删除提供商'}\">
+                        <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" fill=\"currentColor\" viewBox=\"0 0 16 16\">
+                            <path d=\"M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z\"/>
+                            <path fill-rule=\"evenodd\" d=\"M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z\"/>
+                        </svg>
+                    </button>
+                ` : ''}
+                <button class="add-provider-btn" data-i18n="addProvider" data-i18n-title="addProvider" title="${currentTranslations.addProvider || '添加供应商'}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
                     </svg>
+                    <span data-i18n="addProvider">${currentTranslations.addProvider || '添加'}</span>
                 </button>
-            ` : ''}
+            </div>
         </div>
         <div class="setting-group">
             <label for="${provider.id}-api-key">API Key:</label>
@@ -2740,11 +2768,11 @@ async function removeCustomProvider(providerId) {
             // 刷新供应商选择器
             await refreshProviderSelection();
 
-            // 如果当前选择的是被删除的提供商，切换到默认提供商
-            const providerSelect = document.getElementById('provider-select');
-            if (providerSelect && providerSelect.value === providerId) {
-                providerSelect.value = 'google';
+            // 如果当前显示的是被删除的提供商，切换到默认提供商
+            const currentVisible = getCurrentVisibleProviderId();
+            if (currentVisible === providerId) {
                 await showProviderSettings('google');
+                updateProviderSelectInVisibleCard();
             }
 
             if (window.showToastUI) {
