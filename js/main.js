@@ -763,7 +763,10 @@ function handleTabsSelectedFromPopup(selectedTabs) {
 
 function handleChatModelChange() {
     state.model = elements.chatModelSelection.value;
-    elements.modelSelection.value = state.model; // Sync settings tab
+    // 同步设置页下拉（若存在）
+    if (elements.modelSelection) {
+        elements.modelSelection.value = state.model;
+    }
 
     // 在多供应商模式下，只需要保存模型选择，不需要测试API Key
     chrome.storage.sync.set({ model: state.model }, () => {
