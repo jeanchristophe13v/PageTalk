@@ -65,7 +65,6 @@ const state = {
     systemPrompt: '',
     temperature: 0.7,
     maxTokens: '', // 改为空值，让模型使用自己的默认值
-    topP: 0.95,
     // Other state
     pageContext: null, // Use null initially to indicate not yet extracted
     chatHistory: [],
@@ -91,7 +90,6 @@ const defaultSettings = {
     systemPrompt: '',
     temperature: 0.7,
     maxTokens: '', // 改为空值，让模型使用自己的默认值
-    topP: 0.95,
 };
 // Default agent (used by agent module)
 const defaultAgent = {

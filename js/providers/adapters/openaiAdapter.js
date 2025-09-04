@@ -39,14 +39,18 @@ export async function openaiAdapter(modelConfig, provider, providerSettings, mes
     // 转换消息格式为 OpenAI 格式（已经是标准格式，无需转换）
     const openaiMessages = convertMessagesToOpenAIFormat(messages);
     
+    // 根据供应商与模型确定是否应省略 temperature（某些推理模型不支持）
+    const omitTemperature = isTemperatureUnsupported(provider.id, apiModelName);
+
     // 构建请求体
     const requestBody = {
         model: apiModelName,
         messages: openaiMessages,
-        temperature: options.temperature || 0.7,
-        top_p: options.topP || 0.95,
         stream: true
     };
+    if (!omitTemperature) {
+        requestBody.temperature = options.temperature || 0.7;
+    }
 
     // 只有当用户明确设置了maxTokens且大于0时才添加该参数
     if (options.maxTokens && parseInt(options.maxTokens) > 0) {
@@ -113,6 +117,27 @@ export async function openaiAdapter(modelConfig, provider, providerSettings, mes
         console.error('[OpenAIAdapter] API call failed:', error);
         throw error;
     }
+}
+
+/**
+ * 判断是否需要为该供应商/模型省略 temperature 参数
+ * 规则：
+ * - openai: gpt-5 系列、o 系列（推理模型）不支持 temperature
+ * - deepseek: deepseek-reasoner 不支持 temperature
+ */
+function isTemperatureUnsupported(providerId, modelName) {
+    if (!providerId || !modelName) return false;
+    const m = String(modelName).toLowerCase();
+    if (providerId === 'openai') {
+        // gpt-5 系列或 o 系列（如 o1, o3, o4, o4-mini 等）
+        if (m.startsWith('gpt-5')) return true;
+        if (/^o\d/.test(m) || m.startsWith('o-')) return true;
+        return false;
+    }
+    if (providerId === 'deepseek') {
+        return m.startsWith('deepseek-reasoner');
+    }
+    return false;
 }
 
 /**

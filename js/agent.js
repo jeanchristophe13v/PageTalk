@@ -9,7 +9,6 @@ const defaultAgentSettings = {
     systemPrompt: '',
     temperature: 0.7,
     maxTokens: '', // 改为空值，让模型使用自己的默认值
-    topP: 0.95,
 };
 
 // 使用 utils/i18n.js 提供的 tr 作为翻译函数
@@ -144,9 +143,7 @@ export function updateAgentsListUI(state, elements, currentTranslations, autoSav
         const tempGroup = createSliderGroup(agent.id, 'temperature', _('agentTemperatureLabel', {}, currentTranslations), agent.temperature, 0, 1, 0.1, autoSaveAgentSettingsCallback, agentItem);
         body.appendChild(tempGroup);
 
-        // Top P Slider
-        const topPGroup = createSliderGroup(agent.id, 'top-p', _('agentTopPLabel', {}, currentTranslations), agent.topP, 0, 1, 0.05, autoSaveAgentSettingsCallback, agentItem);
-        body.appendChild(topPGroup);
+        // Top P 已移除
 
         // Max Tokens Input
         const maxTokensGroup = document.createElement('div');
@@ -241,13 +238,11 @@ export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgen
     const nameInput = agentItemElement.querySelector(`#agent-name-${agentId}`);
     const systemPromptInput = agentItemElement.querySelector(`#system-prompt-${agentId}`);
     const temperatureInput = agentItemElement.querySelector(`#temperature-${agentId}`);
-    const topPInput = agentItemElement.querySelector(`#top-p-${agentId}`);
     const maxTokensInput = agentItemElement.querySelector(`#max-tokens-${agentId}`);
 
     const newName = nameInput ? nameInput.value.trim() : state.agents[agentIndex].name;
     const newSystemPrompt = systemPromptInput ? systemPromptInput.value : state.agents[agentIndex].systemPrompt;
     const newTemperature = temperatureInput ? parseFloat(temperatureInput.value) : state.agents[agentIndex].temperature;
-    const newTopP = topPInput ? parseFloat(topPInput.value) : state.agents[agentIndex].topP;
 
     // --- 修复最大输出长度处理逻辑 ---
     // 处理 maxTokens 的逻辑，正确处理空字符串情况
@@ -282,7 +277,6 @@ export function autoSaveAgentSettings(agentId, agentItemElement, state, saveAgen
     agentToUpdate.name = newName; // Save the raw name (user input)
     agentToUpdate.systemPrompt = newSystemPrompt;
     agentToUpdate.temperature = newTemperature;
-    agentToUpdate.topP = newTopP;
     agentToUpdate.maxTokens = newMaxTokens;
     console.log(`Agent ${agentId} updated in state (Name: ${newName}, Prompt: "${newSystemPrompt}"):`, agentToUpdate);
 
@@ -539,8 +533,7 @@ export function handleAgentExport(state, showToastCallback, currentTranslations)
             name: agent.name,
             systemPrompt: agent.systemPrompt,
             temperature: agent.temperature,
-            maxTokens: agent.maxTokens,
-            topP: agent.topP
+            maxTokens: agent.maxTokens
         }));
         const jsonString = JSON.stringify(agentsToExport, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
@@ -604,7 +597,6 @@ export function handleAgentImport(event, state, saveAgentsListCallback, updateAg
                     agentToUpdate.systemPrompt = importedAgent.systemPrompt;
                     agentToUpdate.temperature = importedAgent.temperature;
                     agentToUpdate.maxTokens = importedAgent.maxTokens;
-                    agentToUpdate.topP = importedAgent.topP;
                     updatedCount++;
                 } else {
                     // Add new
@@ -613,8 +605,7 @@ export function handleAgentImport(event, state, saveAgentsListCallback, updateAg
                         name: importedAgent.name.trim(),
                         systemPrompt: importedAgent.systemPrompt,
                         temperature: importedAgent.temperature,
-                        maxTokens: importedAgent.maxTokens,
-                        topP: importedAgent.topP
+                        maxTokens: importedAgent.maxTokens
                     };
                     state.agents.push(newAgent);
                     importedCount++;
@@ -696,10 +687,7 @@ function validateImportedAgent(agent, index, currentTranslations) {
     if (agent.maxTokens !== '' && (typeof agent.maxTokens !== 'number' || !Number.isInteger(agent.maxTokens) || agent.maxTokens < 50 || agent.maxTokens > 65536)) {
         errors.push(`${prefix} ${_('importValidationErrorInvalidTokens', {}, currentTranslations)}`); // Need translation
     }
-    // Validate Top P
-    if (typeof agent.topP !== 'number' || isNaN(agent.topP) || agent.topP < 0 || agent.topP > 1) {
-        errors.push(`${prefix} ${_('importValidationErrorInvalidTopP', {}, currentTranslations)}`); // Need translation
-    }
+    // Top P 已移除，无需校验
 
     return errors;
 }
@@ -715,7 +703,6 @@ export function loadCurrentAgentSettingsIntoState(state) {
         state.systemPrompt = currentAgent.systemPrompt;
         state.temperature = currentAgent.temperature;
         state.maxTokens = currentAgent.maxTokens;
-        state.topP = currentAgent.topP;
         console.log(`Loaded settings for agent ${state.currentAgentId} (Prompt: "${currentAgent.systemPrompt}") into global state.`);
     } else if (state.agents.length > 0) {
         // Fallback: if currentAgentId is somehow invalid, load the first agent's settings
@@ -725,7 +712,6 @@ export function loadCurrentAgentSettingsIntoState(state) {
         state.systemPrompt = firstAgent.systemPrompt;
         state.temperature = firstAgent.temperature;
         state.maxTokens = firstAgent.maxTokens;
-        state.topP = firstAgent.topP;
         saveCurrentAgentId(state); // Save the corrected ID
         console.log(`Loaded settings for agent ${state.currentAgentId} (Prompt: "${state.systemPrompt}") into global state.`);
     } else {
@@ -735,6 +721,5 @@ export function loadCurrentAgentSettingsIntoState(state) {
         state.systemPrompt = defaultAgentSettings.systemPrompt;
         state.temperature = defaultAgentSettings.temperature;
         state.maxTokens = defaultAgentSettings.maxTokens;
-        state.topP = defaultAgentSettings.topP;
-    }
+}
 }

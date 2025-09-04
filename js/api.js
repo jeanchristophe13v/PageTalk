@@ -617,8 +617,7 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         const requestBody = {
             contents: [], // Initialize contents array
             generationConfig: {
-                temperature: parseFloat(stateRef.temperature),
-                topP: parseFloat(stateRef.topP),
+                temperature: parseFloat(stateRef.temperature)
             },
             tools: []
         };
@@ -1009,7 +1008,6 @@ async function callUnifiedAPI(userMessage, images = [], videos = [], thinkingEle
         // 调用统一API接口
         const callOptions = {
             temperature: parseFloat(stateRef.temperature),
-            topP: parseFloat(stateRef.topP),
             signal: controller.signal
         };
 

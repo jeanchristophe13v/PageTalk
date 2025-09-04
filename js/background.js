@@ -1305,13 +1305,15 @@ function notifyProxyAutoCleared(failedProxyAddress) {
  * 在background中直接调用OpenAI兼容API（支持流式）
  */
 async function callOpenAICompatibleAPIInBackgroundStream(apiHost, apiKey, modelName, messages, options, providerId, streamCallback) {
+    const omitTemperature = isTemperatureUnsupported(providerId, modelName);
     const requestBody = {
         model: modelName,
         messages: messages,
-        temperature: options.temperature || 0.7,
-        top_p: options.topP || 0.95,
         stream: true // 启用流式输出
     };
+    if (!omitTemperature) {
+        requestBody.temperature = options.temperature || 0.7;
+    }
 
     if (options.maxTokens && parseInt(options.maxTokens) > 0) {
         requestBody.max_tokens = parseInt(options.maxTokens);
@@ -1407,7 +1409,6 @@ async function callGeminiAPIInBackgroundStream(apiHost, apiKey, modelName, messa
         contents: geminiMessages,
         generationConfig: {
             temperature: options.temperature || 0.7,
-            topP: options.topP || 0.95,
             ...(params?.generationConfig || {})
         }
     };
@@ -1479,7 +1480,6 @@ async function callAnthropicAPIInBackgroundStream(apiHost, apiKey, modelName, me
         model: modelName,
         messages: userMessages,
         temperature: options.temperature || 0.7,
-        top_p: options.topP || 0.95,
         stream: true
     };
 
@@ -1553,4 +1553,22 @@ async function callAnthropicAPIInBackgroundStream(apiHost, apiKey, modelName, me
 
     streamCallback('', true);
     return fullResponse;
+}
+
+/**
+ * 判断是否需要为该供应商/模型省略 temperature 参数
+ * 与适配器中的逻辑保持一致
+ */
+function isTemperatureUnsupported(providerId, modelName) {
+    if (!providerId || !modelName) return false;
+    const m = String(modelName).toLowerCase();
+    if (providerId === 'openai') {
+        if (m.startsWith('gpt-5')) return true;
+        if (/^o\d/.test(m) || m.startsWith('o-')) return true;
+        return false;
+    }
+    if (providerId === 'deepseek') {
+        return m.startsWith('deepseek-reasoner');
+    }
+    return false;
 }

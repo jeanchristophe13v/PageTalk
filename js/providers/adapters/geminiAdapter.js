@@ -31,8 +31,7 @@ export async function geminiAdapter(modelConfig, provider, providerSettings, mes
     const requestBody = {
         contents,
         generationConfig: {
-            temperature: options.temperature || 0.7,
-            topP: options.topP || 0.95,
+            temperature: options.temperature || 0.7
         }
     };
 

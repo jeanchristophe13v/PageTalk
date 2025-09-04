@@ -27,12 +27,11 @@ export async function anthropicAdapter(modelConfig, provider, providerSettings, 
     // 转换消息格式为 Anthropic 格式
     const { anthropicMessages, systemPrompt } = convertMessagesToAnthropicFormat(messages, options.systemPrompt);
     
-    // 构建请求体
+    // 构建请求体（Anthropic 不使用 top_p，这里已移除）
     const requestBody = {
         model: apiModelName,
         messages: anthropicMessages,
         temperature: options.temperature || 0.7,
-        top_p: options.topP || 0.95,
         stream: true
     };
 

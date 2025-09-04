@@ -3212,8 +3212,7 @@ async function callAIAPI(messages, model, temperature, onStream, maxOutputLength
         const streamId = 'stream_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
 
         const callOptions = {
-            temperature: temperature,
-            topP: 0.95,
+            temperature: temperature
         };
         if (maxOutputLength && parseInt(maxOutputLength) > 0) {
             callOptions.maxTokens = parseInt(maxOutputLength);
