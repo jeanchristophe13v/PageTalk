@@ -5,6 +5,22 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: "3.7.8",
+        date: "2025-09-04",
+        changes: {
+            "zh-CN": [
+                "1. 修复不同供应商来源的模型 ID 冲突问题，现在可以添加来源不同而模型 ID 相同的模型。",
+                "2. 修复划词助手对话模型不继承问题。",
+                "3. 修复主页模型持续化存储 bug。"
+            ],
+            "en": [
+                "1. Fixed model ID collisions across providers; you can now add models with the same ID from different providers.",
+                "2. Fixed Selection Tool chat not inheriting models from the homepage.",
+                "3. Fixed homepage model persistence bug."
+            ]
+        }
+    },
+    {
         version: "3.7.7",
         date: "2025-09-03",
         changes: {
