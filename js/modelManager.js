@@ -82,7 +82,7 @@ const STORAGE_KEYS = {
 /**
  * 当前版本号 - 用于数据迁移
  */
-const CURRENT_VERSION = '2.0.1'; // 2.0.1: 清理已删除供应商遗留的模型，防重复冲突
+const CURRENT_VERSION = '2.1.0'; // 2.1.0: 复合键(providerId::modelId)支持，修复跨供应商同名模型冲突
 
 /**
  * 模型管理器类
@@ -93,6 +93,24 @@ class ModelManager {
         this.userActiveModels = [];
         this.providerSettings = {}; // 存储各供应商的设置（API Keys等）
         this.initialized = false;
+    }
+
+    // === 复合键工具 ===
+    buildKey(providerId, modelId) {
+        return `${providerId}::${modelId}`;
+    }
+
+    parseKey(keyOrId) {
+        if (typeof keyOrId !== 'string') return { providerId: null, modelId: '', isComposite: false };
+        const idx = keyOrId.indexOf('::');
+        if (idx > 0) {
+            return {
+                providerId: keyOrId.slice(0, idx),
+                modelId: keyOrId.slice(idx + 2),
+                isComposite: true
+            };
+        }
+        return { providerId: null, modelId: keyOrId, isComposite: false };
     }
 
     /**
@@ -170,12 +188,20 @@ class ModelManager {
                     this.managedModels = this.getInitialDefaultModels();
                 }
 
-                // 加载用户已选模型列表
+                // 加载用户已选模型列表（向后兼容：将旧的纯ID迁移为复合键）
                 if (result[STORAGE_KEYS.USER_ACTIVE_MODELS]) {
-                    this.userActiveModels = result[STORAGE_KEYS.USER_ACTIVE_MODELS];
+                    const loaded = result[STORAGE_KEYS.USER_ACTIVE_MODELS];
+                    if (Array.isArray(loaded) && loaded.some(v => typeof v === 'string' && v.includes('::'))) {
+                        this.userActiveModels = loaded;
+                    } else {
+                        this.userActiveModels = (loaded || []).map(id => {
+                            const model = this.managedModels.find(m => m.id === id);
+                            return model ? this.buildKey(model.providerId, model.id) : id;
+                        });
+                    }
                 } else {
                     // 首次使用，默认选择已添加的管理模型
-                    this.userActiveModels = this.managedModels.map(model => model.id);
+                    this.userActiveModels = this.managedModels.map(model => this.buildKey(model.providerId, model.id));
                 }
 
                 console.log('[ModelManager] Loaded from storage:', {
@@ -319,14 +345,18 @@ class ModelManager {
                         if (this.managedModels.length === 0) {
                             const googleModels = DEFAULT_MODELS.filter(model => model.providerId === 'google');
                             this.managedModels.push(...googleModels);
-                            this.userActiveModels.push(...googleModels.map(model => model.id));
+                            this.userActiveModels.push(...googleModels.map(model => this.buildKey(model.providerId, model.id)));
                             console.log('[ModelManager] Added Google default models after API key migration');
                         }
                     }
 
                     // 迁移旧的选中模型列表
                     if (result[STORAGE_KEYS.OLD_SELECTED_MODELS] && this.userActiveModels.length === 0) {
-                        this.userActiveModels = result[STORAGE_KEYS.OLD_SELECTED_MODELS];
+                        // 旧格式为纯ID，这里迁移为复合键
+                        this.userActiveModels = result[STORAGE_KEYS.OLD_SELECTED_MODELS].map(id => {
+                            const m = this.managedModels.find(mm => mm.id === id);
+                            return m ? this.buildKey(m.providerId, m.id) : id;
+                        });
                         console.log('[ModelManager] Migrated selected models list');
                     }
 
@@ -400,7 +430,13 @@ class ModelManager {
         }
 
         const activeModels = this.userActiveModels
-            .map(modelId => this.managedModels.find(model => model.id === modelId))
+            .map(key => {
+                const { providerId, modelId, isComposite } = this.parseKey(key);
+                if (isComposite) {
+                    return this.managedModels.find(m => m.id === modelId && m.providerId === providerId);
+                }
+                return this.managedModels.find(m => m.id === modelId);
+            })
             .filter(model => model !== undefined);
 
         // 按模型ID进行字母排序
@@ -426,12 +462,26 @@ class ModelManager {
     }
 
     /**
+     * 根据复合键获取模型定义
+     * @param {string} keyOrId - providerId::modelId 或 旧的纯 id
+     * @returns {Object|null}
+     */
+    getModelByKey(keyOrId) {
+        const { providerId, modelId, isComposite } = this.parseKey(keyOrId);
+        if (isComposite) {
+            return this.managedModels.find(m => m.id === modelId && m.providerId === providerId) || null;
+        }
+        return this.getModelById(modelId);
+    }
+
+    /**
      * 获取模型的API调用配置
      * @param {string} modelId - 模型ID
      * @returns {Object} API调用配置 { apiModelName, params, providerId }
      */
     getModelApiConfig(modelId) {
-        const model = this.getModelById(modelId);
+        const composite = this.getModelByKey(modelId);
+        const model = composite || this.getModelById(modelId);
         if (!model) {
             console.warn(`[ModelManager] Model not found: ${modelId}, using fallback`);
             return {
@@ -511,16 +561,17 @@ class ModelManager {
         let hasChanges = false;
 
         for (const defaultModel of googleModels) {
-            // 检查是否已存在于管理列表中
-            if (!this.managedModels.find(model => model.id === defaultModel.id)) {
+            // 检查是否已存在于管理列表中（按复合键）
+            if (!this.managedModels.find(model => model.id === defaultModel.id && model.providerId === defaultModel.providerId)) {
                 this.managedModels.push({ ...defaultModel });
                 hasChanges = true;
                 console.log(`[ModelManager] Added missing Google default model: ${defaultModel.id}`);
             }
 
             // 检查是否已激活
-            if (!this.userActiveModels.includes(defaultModel.id)) {
-                this.userActiveModels.push(defaultModel.id);
+            const key = this.buildKey(defaultModel.providerId, defaultModel.id);
+            if (!this.userActiveModels.includes(key)) {
+                this.userActiveModels.push(key);
                 hasChanges = true;
                 console.log(`[ModelManager] Activated Google default model: ${defaultModel.id}`);
             }
@@ -562,9 +613,9 @@ class ModelManager {
             return false;
         }
 
-        // 检查是否已存在
-        if (this.managedModels.find(model => model.id === modelDefinition.id)) {
-            console.warn(`[ModelManager] Model already exists: ${modelDefinition.id}`);
+        // 检查是否已存在（按供应商+模型ID区分）
+        if (this.managedModels.find(model => model.id === modelDefinition.id && model.providerId === modelDefinition.providerId)) {
+            console.warn(`[ModelManager] Model already exists: ${modelDefinition.providerId}::${modelDefinition.id}`);
             return false;
         }
 
@@ -586,7 +637,10 @@ class ModelManager {
      * @returns {boolean} 是否移除成功
      */
     async removeModel(modelId) {
-        const model = this.managedModels.find(model => model.id === modelId);
+        const { providerId, modelId: plainId, isComposite } = this.parseKey(modelId);
+        const model = isComposite
+            ? this.managedModels.find(m => m.id === plainId && m.providerId === providerId)
+            : this.managedModels.find(m => m.id === modelId);
         if (!model) {
             console.warn(`[ModelManager] Model not found for removal: ${modelId}`);
             return false;
@@ -600,7 +654,8 @@ class ModelManager {
 
         // 只从用户已选列表中移除，不从管理列表中删除
         // 这样模型仍然可以在下次发现时重新出现
-        const activeIndex = this.userActiveModels.indexOf(modelId);
+        const key = this.buildKey(model.providerId, model.id);
+        const activeIndex = this.userActiveModels.indexOf(key);
         if (activeIndex !== -1) {
             this.userActiveModels.splice(activeIndex, 1);
         }
@@ -616,7 +671,8 @@ class ModelManager {
      * @returns {boolean} 是否删除成功
      */
     async deleteModel(modelId) {
-        const modelIndex = this.managedModels.findIndex(model => model.id === modelId);
+        const { providerId, modelId: plainId, isComposite } = this.parseKey(modelId);
+        const modelIndex = this.managedModels.findIndex(model => isComposite ? (model.id === plainId && model.providerId === providerId) : (model.id === modelId));
         if (modelIndex === -1) {
             console.warn(`[ModelManager] Model not found for deletion: ${modelId}`);
             return false;
@@ -634,7 +690,8 @@ class ModelManager {
         this.managedModels.splice(modelIndex, 1);
 
         // 从用户已选列表中移除
-        const activeIndex = this.userActiveModels.indexOf(modelId);
+        const key = this.buildKey(model.providerId, model.id);
+        const activeIndex = this.userActiveModels.indexOf(key);
         if (activeIndex !== -1) {
             this.userActiveModels.splice(activeIndex, 1);
         }
@@ -650,9 +707,11 @@ class ModelManager {
      */
     async updateUserActiveModels(modelIds) {
         // 验证所有模型ID都存在于管理列表中
-        const validModelIds = modelIds.filter(id =>
-            this.managedModels.find(model => model.id === id)
-        );
+        const validModelIds = modelIds.filter(id => {
+            const { providerId, modelId, isComposite } = this.parseKey(id);
+            if (isComposite) return !!this.managedModels.find(m => m.id === modelId && m.providerId === providerId);
+            return !!this.managedModels.find(m => m.id === modelId);
+        });
 
         if (validModelIds.length !== modelIds.length) {
             console.warn('[ModelManager] Some model IDs are invalid:',
@@ -671,7 +730,13 @@ class ModelManager {
      * @returns {boolean}
      */
     isModelActive(modelId) {
-        return this.userActiveModels.includes(modelId);
+        const { providerId, modelId: plainId, isComposite } = this.parseKey(modelId);
+        if (isComposite) return this.userActiveModels.includes(modelId);
+        // 兼容旧调用：检查任意供应商下是否有此ID激活
+        return this.userActiveModels.some(key => {
+            const parsed = this.parseKey(key);
+            return parsed.modelId === plainId;
+        });
     }
 
     /**
@@ -679,15 +744,16 @@ class ModelManager {
      * @param {string} modelId - 模型ID
      */
     async activateModel(modelId) {
-        if (!this.getModelById(modelId)) {
+        const model = this.getModelByKey(modelId);
+        if (!model) {
             console.warn(`[ModelManager] Cannot activate non-existent model: ${modelId}`);
             return false;
         }
-
-        if (!this.userActiveModels.includes(modelId)) {
-            this.userActiveModels.push(modelId);
+        const key = this.buildKey(model.providerId, model.id);
+        if (!this.userActiveModels.includes(key)) {
+            this.userActiveModels.push(key);
             await this.saveToStorage();
-            console.log(`[ModelManager] Activated model: ${modelId}`);
+            console.log(`[ModelManager] Activated model: ${key}`);
         }
         return true;
     }
@@ -697,11 +763,13 @@ class ModelManager {
      * @param {string} modelId - 模型ID
      */
     async deactivateModel(modelId) {
-        const index = this.userActiveModels.indexOf(modelId);
+        const { providerId, modelId: plainId, isComposite } = this.parseKey(modelId);
+        const key = isComposite ? modelId : (this.managedModels.find(m => m.id === plainId) ? this.buildKey(this.managedModels.find(m => m.id === plainId).providerId, plainId) : modelId);
+        const index = this.userActiveModels.indexOf(key);
         if (index !== -1) {
             this.userActiveModels.splice(index, 1);
             await this.saveToStorage();
-            console.log(`[ModelManager] Deactivated model: ${modelId}`);
+            console.log(`[ModelManager] Deactivated model: ${key}`);
         }
         return true;
     }
@@ -786,26 +854,26 @@ class ModelManager {
         let skipped = 0;
 
         for (const modelId of selectedModelIds) {
-            // 首先检查是否是已存在但未激活的模型
-            const existingModel = this.managedModels.find(model => model.id === modelId);
-            if (existingModel) {
-                // 模型已存在，只需激活
-                if (!this.userActiveModels.includes(modelId)) {
-                    await this.activateModel(modelId);
-                    activated++;
-                    console.log(`[ModelManager] Reactivated existing model: ${modelId}`);
-                } else {
-                    skipped++;
-                    console.log(`[ModelManager] Model already active: ${modelId}`);
-                }
-                continue;
-            }
-
-            // 查找新发现的模型
-            const discoveredModel = discoveredModels.find(model => model.id === modelId);
+            // 查找新发现的模型（包含 providerId）
+            const discoveredModel = (discoveredModels || []).find(model => model.id === modelId);
             if (!discoveredModel) {
                 console.warn(`[ModelManager] Discovered model not found: ${modelId}`);
                 skipped++;
+                continue;
+            }
+
+            const compositeKey = this.buildKey(discoveredModel.providerId, discoveredModel.id);
+            const existingModel = this.managedModels.find(model => model.id === discoveredModel.id && model.providerId === discoveredModel.providerId);
+            if (existingModel) {
+                // 模型已存在，只需激活
+                if (!this.userActiveModels.includes(compositeKey)) {
+                    await this.activateModel(compositeKey);
+                    activated++;
+                    console.log(`[ModelManager] Reactivated existing model: ${compositeKey}`);
+                } else {
+                    skipped++;
+                    console.log(`[ModelManager] Model already active: ${compositeKey}`);
+                }
                 continue;
             }
 
@@ -816,7 +884,7 @@ class ModelManager {
             });
             if (success) {
                 // 自动激活新添加的模型
-                await this.activateModel(modelId);
+                await this.activateModel(compositeKey);
                 added++;
             } else {
                 skipped++;
@@ -834,9 +902,9 @@ class ModelManager {
      * @returns {Array} 可添加的模型列表
      */
     getNewDiscoveredModels(discoveredModels, providerId = null) {
-        const activeModelIds = new Set(this.userActiveModels);
-        const managedModelIds = new Set(this.managedModels.map(model => model.id));
-        const discoveredIds = new Set((discoveredModels || []).map(m => m.id));
+        const activeModelKeys = new Set(this.userActiveModels);
+        const managedKeys = new Set(this.managedModels.map(model => this.buildKey(model.providerId, model.id)));
+        const discoveredKeys = new Set((discoveredModels || []).map(m => this.buildKey(m.providerId, m.id)));
 
         // 首先恢复缺失的默认模型（只包括指定供应商的模型）
         const missingDefaultModels = this.getMissingDefaultModels();
@@ -848,28 +916,21 @@ class ModelManager {
         // 添加已管理但未激活的模型（被用户移除但仍在管理列表中的模型）
         // 只包括指定供应商的模型
         const inactiveModels = this.managedModels.filter(model =>
-            !activeModelIds.has(model.id) &&
-            !relevantMissingModels.some(dm => dm.id === model.id) &&
+            !activeModelKeys.has(this.buildKey(model.providerId, model.id)) &&
+            !relevantMissingModels.some(dm => dm.id === model.id && dm.providerId === model.providerId) &&
             (!providerId || model.providerId === providerId) &&
             // 不要把“手动添加”的模型带入发现列表（兼容新版本）
             model.source !== 'manual' &&
             // 仅保留可从 API 再发现的或默认模型（兼容旧版本未打标的条目）
-            (model.isDefault === true || discoveredIds.has(model.id) || model.source === 'discovered')
+            (model.isDefault === true || discoveredKeys.has(this.buildKey(model.providerId, model.id)) || model.source === 'discovered')
         );
         availableModels.push(...inactiveModels);
 
-        // 然后添加所有从API发现但不在管理列表中的新模型
-        const newDiscoveredModels = discoveredModels.filter(model => {
-            // 过滤掉已经在管理列表中的模型
-            if (managedModelIds.has(model.id)) {
-                return false;
-            }
-
-            // 过滤掉已经在缺失默认模型列表中的模型
-            if (relevantMissingModels.some(defaultModel => defaultModel.id === model.id)) {
-                return false;
-            }
-
+        // 然后添加所有从API发现但不在管理列表中的新模型（按复合键判断）
+        const newDiscoveredModels = (discoveredModels || []).filter(model => {
+            const key = this.buildKey(model.providerId, model.id);
+            if (managedKeys.has(key)) return false;
+            if (relevantMissingModels.some(defaultModel => defaultModel.id === model.id && defaultModel.providerId === model.providerId)) return false;
             return true;
         });
 
@@ -879,7 +940,7 @@ class ModelManager {
         availableModels.sort((a, b) => a.id.localeCompare(b.id));
 
         console.log(`[ModelManager] Found ${availableModels.length} models available for addition for provider ${providerId || 'all'}:`,
-            availableModels.map(m => `${m.id} (${managedModelIds.has(m.id) ? 'inactive' : 'new'})`));
+            availableModels.map(m => `${m.providerId}::${m.id} (${managedKeys.has(this.buildKey(m.providerId, m.id)) ? 'inactive' : 'new'})`));
 
         return availableModels;
     }
@@ -915,9 +976,9 @@ class ModelManager {
             }
 
             return {
-                value: model.id,
+                value: this.buildKey(model.providerId, model.id),
                 text: model.displayName,
-                disabled: includeInactive ? !this.isModelActive(model.id) : false,
+                disabled: includeInactive ? !this.isModelActive(this.buildKey(model.providerId, model.id)) : false,
                 isAlias: model.isAlias,
                 isDefault: model.isDefault,
                 canDelete: model.canDelete !== false, // 默认可删除，除非明确设置为false
@@ -940,9 +1001,11 @@ class ModelManager {
         }
 
         // 检查激活的模型是否都存在于管理列表中
-        const missingModels = this.userActiveModels.filter(id =>
-            !this.managedModels.find(model => model.id === id)
-        );
+        const missingModels = this.userActiveModels.filter(key => {
+            const { providerId, modelId, isComposite } = this.parseKey(key);
+            if (isComposite) return !this.managedModels.find(model => model.id === modelId && model.providerId === providerId);
+            return !this.managedModels.find(model => model.id === modelId);
+        });
         if (missingModels.length > 0) {
             issues.push(`Active models not found in managed list: ${missingModels.join(', ')}`);
         }
@@ -978,7 +1041,7 @@ class ModelManager {
                 providerStats[providerId] = { total: 0, active: 0 };
             }
             providerStats[providerId].total++;
-            if (this.userActiveModels.includes(model.id)) {
+            if (this.userActiveModels.includes(this.buildKey(model.providerId, model.id))) {
                 providerStats[providerId].active++;
             }
         });
@@ -1005,7 +1068,7 @@ class ModelManager {
         let models = this.managedModels.filter(model => model.providerId === providerId);
 
         if (activeOnly) {
-            models = models.filter(model => this.userActiveModels.includes(model.id));
+            models = models.filter(model => this.userActiveModels.includes(this.buildKey(model.providerId, model.id)));
         }
 
         return models.sort((a, b) => a.id.localeCompare(b.id));
@@ -1059,19 +1122,18 @@ class ModelManager {
      */
     async removeModelsByProvider(providerId) {
         const beforeCount = this.managedModels.length;
-        const removedIds = new Set(
-            this.managedModels.filter(m => m.providerId === providerId).map(m => m.id)
-        );
+        const removedModels = this.managedModels.filter(m => m.providerId === providerId);
+        const removedKeys = new Set(removedModels.map(m => this.buildKey(m.providerId, m.id)));
 
-        if (removedIds.size === 0) {
+        if (removedKeys.size === 0) {
             return { removed: 0 };
         }
 
         // 过滤管理列表
         this.managedModels = this.managedModels.filter(m => m.providerId !== providerId);
 
-        // 过滤激活列表
-        this.userActiveModels = this.userActiveModels.filter(id => !removedIds.has(id));
+        // 过滤激活列表（按复合键）
+        this.userActiveModels = this.userActiveModels.filter(key => !removedKeys.has(key));
 
         await this.saveToStorage();
         console.log(`[ModelManager] Removed ${beforeCount - this.managedModels.length} models for provider: ${providerId}`);
@@ -1121,19 +1183,16 @@ class ModelManager {
             storedCustomIds.forEach(id => knownIds.add(id));
 
             // 找出 providerId 不在 knownIds 中的模型
-            const orphanIds = new Set(
-                this.managedModels
-                    .filter(m => !m.providerId || !knownIds.has(m.providerId))
-                    .map(m => m.id)
-            );
+            const orphanModels = this.managedModels.filter(m => !m.providerId || !knownIds.has(m.providerId));
+            const orphanKeys = new Set(orphanModels.map(m => this.buildKey(m.providerId, m.id)));
 
-            if (orphanIds.size === 0) {
+            if (orphanKeys.size === 0) {
                 return { removed: 0 };
             }
 
             const beforeCount = this.managedModels.length;
-            this.managedModels = this.managedModels.filter(m => !orphanIds.has(m.id));
-            this.userActiveModels = this.userActiveModels.filter(id => !orphanIds.has(id));
+            this.managedModels = this.managedModels.filter(m => !orphanModels.some(o => o.id === m.id && o.providerId === m.providerId));
+            this.userActiveModels = this.userActiveModels.filter(key => !orphanKeys.has(key));
             await this.saveToStorage();
             const removed = beforeCount - this.managedModels.length;
             console.log(`[ModelManager] Cleanup removed ${removed} orphaned models (providers missing)`);

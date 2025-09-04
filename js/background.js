@@ -236,12 +236,18 @@ async function handleGetAvailableModelsRequest(sendResponse) {
             }
 
             const activeModelOptions = userActiveModels
-                .map(modelId => managedModels.find(model => model.id === modelId))
+                .map(key => {
+                    if (typeof key === 'string' && key.includes('::')) {
+                        const [providerId, modelId] = key.split('::');
+                        return managedModels.find(model => model.id === modelId && model.providerId === providerId);
+                    }
+                    return managedModels.find(model => model.id === key);
+                })
                 .filter(model => model !== undefined)
                 .map(model => {
                     const providerName = providerMap[model.providerId] || model.providerId || 'Unknown';
                     return {
-                        value: model.id,
+                        value: `${model.providerId}::${model.id}`,
                         text: model.displayName,
                         providerId: model.providerId,
                         providerName: providerName
@@ -257,9 +263,9 @@ async function handleGetAvailableModelsRequest(sendResponse) {
             if (hasGoogleApiKey) {
                 // 用户配置了Google API key，返回默认Gemini模型
                 const defaultModelOptions = [
-                    { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
-                    { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
-                    { value: 'gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
+                    { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+                    { value: 'google::gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+                    { value: 'google::gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
                 ];
                 console.log('[Background] No stored models but Google API key configured, returning Gemini defaults:', defaultModelOptions);
                 sendResponse({ success: true, models: defaultModelOptions });
@@ -277,9 +283,9 @@ async function handleGetAvailableModelsRequest(sendResponse) {
 
         if (hasGoogleApiKey) {
             const fallbackModelOptions = [
-                { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
-                { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
-                { value: 'gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
+                { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+                { value: 'google::gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+                { value: 'google::gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
             ];
             sendResponse({ success: true, models: fallbackModelOptions });
         } else {
@@ -299,7 +305,13 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
         if (result.managedModels) {
             // 查找指定的模型配置
             const managedModels = result.managedModels;
-            const modelConfig = managedModels.find(model => model.id === modelId);
+            let modelConfig = null;
+            if (typeof modelId === 'string' && modelId.includes('::')) {
+                const [providerId, id] = modelId.split('::');
+                modelConfig = managedModels.find(model => model.id === id && model.providerId === providerId);
+            } else {
+                modelConfig = managedModels.find(model => model.id === modelId);
+            }
 
             if (modelConfig) {
                 console.log('[Background] Returning model config for:', modelId, modelConfig);
@@ -314,36 +326,39 @@ async function handleGetModelConfigRequest(modelId, sendResponse) {
             } else {
                 // 模型不存在，返回默认配置
                 console.warn('[Background] Model not found, using fallback config for:', modelId);
+                const plainId = (typeof modelId === 'string' && modelId.includes('::')) ? modelId.split('::')[1] : modelId;
                 sendResponse({
                     success: true,
                     config: {
-                        apiModelName: modelId,
+                        apiModelName: plainId,
                         providerId: 'google',
-                        params: getDefaultModelParams(modelId)
+                        params: getDefaultModelParams(plainId)
                     }
                 });
             }
         } else {
             // 没有存储数据，返回默认配置
             console.warn('[Background] No stored models, using fallback config for:', modelId);
+            const plainId = (typeof modelId === 'string' && modelId.includes('::')) ? modelId.split('::')[1] : modelId;
             sendResponse({
                 success: true,
                 config: {
-                    apiModelName: modelId,
+                    apiModelName: plainId,
                     providerId: 'google',
-                    params: getDefaultModelParams(modelId)
+                    params: getDefaultModelParams(plainId)
                 }
             });
         }
     } catch (error) {
         console.error('[Background] Error getting model config:', error);
         // 返回默认配置作为回退
+        const plainId = (typeof modelId === 'string' && modelId.includes('::')) ? modelId.split('::')[1] : modelId;
         sendResponse({
             success: true,
             config: {
-                apiModelName: modelId,
+                apiModelName: plainId,
                 providerId: 'google',
-                params: getDefaultModelParams(modelId)
+                params: getDefaultModelParams(plainId)
             }
         });
     }
@@ -442,8 +457,14 @@ async function handleUnifiedAPICall(message, sendResponse, sender) {
             throw new Error('Model configuration not found. Please configure models in the main panel first.');
         }
 
-        // 查找模型配置
-        const modelConfig = result.managedModels.find(m => m.id === model);
+        // 查找模型配置（支持复合键）
+        let modelConfig = null;
+        if (typeof model === 'string' && model.includes('::')) {
+            const [providerId, id] = model.split('::');
+            modelConfig = result.managedModels.find(m => m.id === id && m.providerId === providerId);
+        } else {
+            modelConfig = result.managedModels.find(m => m.id === model);
+        }
         if (!modelConfig) {
             throw new Error(`Model not found: ${model}`);
         }

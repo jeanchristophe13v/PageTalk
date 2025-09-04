@@ -58,7 +58,7 @@ import {
 // --- State Management ---
 const state = {
     apiKey: '',
-    model: 'gemini-2.5-flash',
+    model: 'google::gemini-2.5-flash',
     agents: [],
     currentAgentId: null,
     // Settings derived from current agent

@@ -47,7 +47,7 @@ function getDefaultSettings(language = 'zh-CN') {
     return {
         enabled: true, // 默认启用划词助手
         interpret: {
-            model: 'gemini-2.5-flash',
+            model: 'google::gemini-2.5-flash',
             systemPrompt: interpretPrompt,
             temperature: 0.7,
             contextMode: 'custom', // 'custom' 或 'full'
@@ -56,7 +56,7 @@ function getDefaultSettings(language = 'zh-CN') {
             maxOutputLength: 65536
         },
         translate: {
-            model: 'gemini-2.5-flash',
+            model: 'google::gemini-2.5-flash',
             systemPrompt: translatePrompt,
             temperature: 0.2,
             contextMode: 'custom', // 'custom' 或 'full'
@@ -501,9 +501,9 @@ async function getModelOptions() {
         console.warn('[TextSelectionHelperSettings] Failed to get models from background, using fallback:', error);
         // 回退到基本选项
         return [
-            { value: 'gemini-2.5-flash', text: 'gemini-2.5-flash' },
-            { value: 'gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking' },
-            { value: 'gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite' }
+            { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+            { value: 'google::gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+            { value: 'google::gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
         ];
     }
 }
@@ -511,7 +511,7 @@ async function getModelOptions() {
 /**
  * 生成模型选项HTML - 按提供商分组
  */
-async function generateModelOptionsHTML(selectedModel = 'gemini-2.5-flash') {
+async function generateModelOptionsHTML(selectedModel = 'google::gemini-2.5-flash') {
     const modelOptions = await getModelOptions();
 
     // 按提供商分组模型
@@ -1258,7 +1258,7 @@ export function addCustomOption(optionData) {
     const newOption = {
         id: generateUniqueId(),
         name: optionData.name,
-        model: optionData.model || 'gemini-2.5-flash',
+        model: optionData.model || 'google::gemini-2.5-flash',
         systemPrompt: optionData.systemPrompt,
         temperature: optionData.temperature || 0.7,
         contextBefore: optionData.contextBefore !== undefined ? optionData.contextBefore : 500,

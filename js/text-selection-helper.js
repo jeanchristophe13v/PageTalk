@@ -1796,8 +1796,12 @@ async function createFunctionWindowContent(windowElement, optionId) {
             }
         } catch (error) {
             console.warn('[TextSelectionHelper] Failed to get models from background, using fallback:', error);
-            // 回退到基本模型列表
-            modelOptions = ['gemini-2.5-flash', 'gemini-2.5-flash-thinking', 'gemini-2.5-flash-lite'];
+            // 回退到基本模型列表（包含提供商信息与复合键）
+            modelOptions = [
+                { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+                { value: 'google::gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+                { value: 'google::gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
+            ];
         }
 
         let modelOptionsHTML = '';
@@ -2492,7 +2496,7 @@ async function sendChatMessage(windowElement) {
 
         // 获取当前窗口选择的模型
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
-        const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
+        const currentModel = modelSelect ? modelSelect.value : 'google::gemini-2.5-flash';
 
         const temperature = currentAgent ? currentAgent.temperature : 0.7;
         const maxOutputLength = currentAgent ? currentAgent.maxTokens : null;
@@ -2999,7 +3003,7 @@ async function regenerateChatMessage(windowElement, userMessage) {
 
         // 获取当前窗口选择的模型
         const modelSelect = windowElement.querySelector('.pagetalk-model-select');
-        const currentModel = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
+        const currentModel = modelSelect ? modelSelect.value : 'google::gemini-2.5-flash';
 
         const temperature = currentAgent ? currentAgent.temperature : 0.7;
         const maxOutputLength = currentAgent ? currentAgent.maxTokens : null;
@@ -3275,7 +3279,7 @@ async function getTextSelectionHelperSettings() {
 
                 const defaultSettings = {
                     interpret: {
-                        model: 'gemini-2.5-flash',
+                        model: 'google::gemini-2.5-flash',
                         systemPrompt: interpretPrompt,
                         temperature: 0.7,
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3283,7 +3287,7 @@ async function getTextSelectionHelperSettings() {
                         contextAfter: 500
                     },
                     translate: {
-                        model: 'gemini-2.5-flash',
+                        model: 'google::gemini-2.5-flash',
                         systemPrompt: translatePrompt,
                         temperature: 0.2,
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3344,7 +3348,7 @@ async function getTextSelectionHelperSettings() {
 
                 const defaultSettings = {
                     interpret: {
-                        model: 'gemini-2.5-flash',
+                        model: 'google::gemini-2.5-flash',
                         systemPrompt: interpretPrompt,
                         temperature: 0.7,
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3352,7 +3356,7 @@ async function getTextSelectionHelperSettings() {
                         contextAfter: 500
                     },
                     translate: {
-                        model: 'gemini-2.5-flash',
+                        model: 'google::gemini-2.5-flash',
                         systemPrompt: translatePrompt,
                         temperature: 0.2,
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3371,7 +3375,7 @@ async function getTextSelectionHelperSettings() {
                 // 最终回退
                 const defaultSettings = {
                     interpret: {
-                        model: 'gemini-2.5-flash',
+                        model: 'google::gemini-2.5-flash',
                         systemPrompt: '请解释一下：',
                         temperature: 0.7,
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3379,7 +3383,7 @@ async function getTextSelectionHelperSettings() {
                         contextAfter: 500
                     },
                     translate: {
-                        model: 'gemini-2.5-flash',
+                        model: 'google::gemini-2.5-flash',
                         systemPrompt: '翻译一下：',
                         temperature: 0.2,
                         contextMode: 'custom', // 'full' 或 'custom'
@@ -3405,7 +3409,7 @@ async function getTextSelectionHelperSettings() {
 function getCurrentMainPanelModel() {
     return new Promise((resolve) => {
         chrome.storage.sync.get(['model'], (result) => {
-            resolve(result.model || 'gemini-2.5-flash');
+            resolve(result.model || 'google::gemini-2.5-flash');
         });
     });
 }

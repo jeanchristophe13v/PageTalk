@@ -624,7 +624,9 @@ export async function updateModelCardsDisplay() {
 function createModelCard(model, currentTranslations) {
     const card = document.createElement('div');
     card.className = 'model-card';
-    card.dataset.modelId = model.id;
+    // 复合键用于准确操作
+    const modelKey = `${model.providerId}::${model.id}`;
+    card.dataset.modelKey = modelKey;
 
     const removeTooltip = (model.canDelete !== false)
         ? (_('deleteModelTooltip', {}, currentTranslations) || '删除此模型')
@@ -640,8 +642,48 @@ function createModelCard(model, currentTranslations) {
         </button>
     ` : '';
 
+    // 悬浮展示“provider: model id” - 使用自定义 tooltip（立即显示）
+    const hoverLabel = `${model.providerId}: ${model.id}`;
+    card.classList.add('has-tooltip');
+    card.setAttribute('data-tooltip', hoverLabel);
+
+    // 确保 tooltip 样式只注入一次
+    if (!document.getElementById('model-card-tooltip-style')) {
+        const style = document.createElement('style');
+        style.id = 'model-card-tooltip-style';
+        style.textContent = `
+            .model-card.has-tooltip { position: relative; }
+            .model-card.has-tooltip::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translate(-50%, -6px);
+                background: rgba(0, 0, 0, 0.85);
+                color: #fff;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                line-height: 1;
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.06s ease;
+                z-index: 2000;
+            }
+            .model-card.has-tooltip:hover::after { opacity: 1; }
+
+            /* 深色模式适配 */
+            body.dark-mode .model-card.has-tooltip::after {
+                background: rgba(255, 255, 255, 0.95);
+                color: #000;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     card.innerHTML = `
-        <span class="model-card-name" title="${model.displayName}">${model.displayName}</span>
+        <span class="model-card-name">${model.displayName}</span>
         ${removeButtonHtml}
     `;
 
@@ -651,7 +693,7 @@ function createModelCard(model, currentTranslations) {
         if (removeBtn) {
             removeBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                await removeModelFromSelection(model.id);
+                await removeModelFromSelection(modelKey);
             });
         }
     }
@@ -745,9 +787,9 @@ function createDiscoverHeaderButton(currentTranslations) {
 
 /**
  * 从选择中移除模型
- * @param {string} modelId - 模型ID
+ * @param {string} modelKey - 复合键 providerId::modelId（兼容旧id）
  */
-async function removeModelFromSelection(modelId) {
+async function removeModelFromSelection(modelKey) {
     if (!window.ModelManager?.instance) {
         console.error('[Settings] ModelManager not available for model removal');
         return;
@@ -757,9 +799,9 @@ async function removeModelFromSelection(modelId) {
     await modelManager.initialize();
 
     // 检查模型是否可以删除
-    const model = modelManager.getModelById(modelId);
+    const model = modelManager.getModelByKey(modelKey);
     if (!model) {
-        console.error('[Settings] Model not found:', modelId);
+        console.error('[Settings] Model not found:', modelKey);
         return;
     }
 
@@ -779,9 +821,9 @@ async function removeModelFromSelection(modelId) {
 
     // 可删除且非默认 -> 彻底删除；否则仅从激活列表移除
     if (model.canDelete !== false && model.isDefault !== true) {
-        await modelManager.deleteModel(modelId);
+        await modelManager.deleteModel(modelKey);
     } else {
-        await modelManager.removeModel(modelId);
+        await modelManager.removeModel(modelKey);
     }
 
     // 更新UI
@@ -850,7 +892,7 @@ async function removeModelFromSelection(modelId) {
         });
     }
 
-    console.log(`[Settings] Removed model: ${modelId}`);
+    console.log(`[Settings] Removed model: ${modelKey}`);
 }
 
 
@@ -2013,6 +2055,9 @@ function showManualAddModelDialog(currentTranslations) {
     // ESC 快捷关闭
     const onKeyDown = (e) => {
         if (e.key === 'Escape') {
+            // 防止事件冒泡到主面板的 ESC 处理器
+            e.preventDefault();
+            e.stopPropagation();
             closeDialog();
             document.removeEventListener('keydown', onKeyDown, true);
         }
@@ -2130,15 +2175,16 @@ async function handleManualAddModel(modelName, modelId, providerId, currentTrans
     try { await modelManager.initialize(); } catch (_) {}
 
     try {
-        // 检查模型是否已存在于管理列表
-        const existingModel = modelManager.getModelById(modelId);
+        // 检查模型是否已存在于管理列表（按供应商+ID）
+        const existingModel = modelManager.getModelByKey(`${providerId}::${modelId}`);
         if (existingModel) {
             // 如果已存在于管理列表：
             // - 若未被选中，则直接激活并提示成功
             // - 若已被选中，则提示已在列表中
-            const alreadyActive = modelManager.isModelActive(modelId);
+            const compositeKey = `${providerId}::${modelId}`;
+            const alreadyActive = modelManager.isModelActive(compositeKey);
             if (!alreadyActive) {
-                await modelManager.activateModel(modelId);
+                await modelManager.activateModel(compositeKey);
                 await updateModelCardsDisplay();
                 const state = window.state || {};
                 const elements = {
@@ -2178,7 +2224,7 @@ async function handleManualAddModel(modelName, modelId, providerId, currentTrans
 
         if (success) {
             // 激活模型
-            await modelManager.activateModel(modelId);
+            await modelManager.activateModel(`${providerId}::${modelId}`);
 
             // 更新UI
             await updateModelCardsDisplay();
