@@ -1411,7 +1411,8 @@ function handleGlobalEscapeForModals() {
         }
         // 1) Tab selection popup inside chat
         const tabPopup = document.getElementById('tab-selection-popup');
-        if (tabPopup) {
+        // 仅当弹窗实际可见时才拦截 ESC
+        if (tabPopup && getComputedStyle(tabPopup).display !== 'none') {
             closeTabSelectionPopupUIFromMain();
             return true;
         }
@@ -1454,7 +1455,13 @@ function handleGlobalEscapeForModals() {
         }
 
         // 6) Generic overlays created in settings (e.g., import/export confirms)
-        const overlays = Array.from(document.querySelectorAll('body > .dialog-overlay'));
+        // 仅处理“可见”的 overlay，避免隐藏的对话框常驻导致 ESC 失效
+        const overlays = Array
+            .from(document.querySelectorAll('body > .dialog-overlay'))
+            .filter(ov => {
+                const cs = getComputedStyle(ov);
+                return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
+            });
         if (overlays.length > 0) {
             const topOverlay = overlays[overlays.length - 1];
             // Try common cancel/close selectors across the project
