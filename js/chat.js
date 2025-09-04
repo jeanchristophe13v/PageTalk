@@ -589,6 +589,16 @@ export async function createWelcomeMessage(currentTranslations) {
             const prompt = button.dataset.prompt;
             const ignoreAssistant = button.dataset.ignoreAssistant === 'true';
 
+            // 点击快捷操作后先移除欢迎消息，释放空间
+            try {
+                const parentWelcome = button.closest('.welcome-message');
+                if (parentWelcome && parentWelcome.parentNode) {
+                    parentWelcome.parentNode.removeChild(parentWelcome);
+                }
+            } catch (e) {
+                console.warn('[createWelcomeMessage] Failed to remove welcome message on quick action click:', e);
+            }
+
             // 触发快捷操作
             if (window.triggerQuickAction) {
                 window.triggerQuickAction(actionId, prompt, ignoreAssistant);

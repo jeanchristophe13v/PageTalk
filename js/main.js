@@ -801,6 +801,16 @@ function handleChatScroll() {
 
 // Wrapper function to trigger sendUserMessage with all dependencies
 function sendUserMessageTrigger() {
+    // 若存在欢迎消息，先移除，避免占用顶部空间
+    try {
+        const welcome = elements.chatMessages && elements.chatMessages.querySelector('.welcome-message');
+        if (welcome && welcome.parentNode) {
+            welcome.parentNode.removeChild(welcome);
+        }
+    } catch (e) {
+        console.warn('[main.js] Failed to remove welcome message before sending:', e);
+    }
+
     // 添加发送动效
     if (elements.sendMessage) {
         elements.sendMessage.classList.add('sending');
