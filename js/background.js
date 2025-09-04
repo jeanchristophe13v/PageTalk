@@ -218,62 +218,64 @@ async function handleGetAvailableModelsRequest(sendResponse) {
         // 从存储中获取模型管理器的数据、自定义提供商、供应商设置和旧版本API key
         const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels', 'customProviders', 'providerSettings', 'apiKey']);
 
-        if (result.managedModels && result.userActiveModels) {
-            // 获取用户激活的模型
-            const managedModels = result.managedModels;
-            const userActiveModels = result.userActiveModels;
+        const managedModels = Array.isArray(result.managedModels) ? result.managedModels : [];
+        const userActiveModels = Array.isArray(result.userActiveModels) ? result.userActiveModels : [];
 
-            // 构建提供商映射（包括内置与自定义）
-            const providerMap = Object.fromEntries(
-                Object.values(providers).map(p => [p.id, p.name || p.id])
-            );
+        // 构建提供商映射（包括内置与自定义）
+        const providerMap = Object.fromEntries(
+            Object.values(providers).map(p => [p.id, p.name || p.id])
+        );
+        if (Array.isArray(result.customProviders)) {
+            result.customProviders.forEach(provider => {
+                providerMap[provider.id] = provider.name || provider.id;
+            });
+        }
 
-            // 合并自定义提供商到映射
-            if (result.customProviders && Array.isArray(result.customProviders)) {
-                result.customProviders.forEach(provider => {
-                    providerMap[provider.id] = provider.name || provider.id;
-                });
-            }
-
-            const activeModelOptions = userActiveModels
-                .map(key => {
+        // 优先返回“用户激活的模型”；如果激活列表为空但管理列表非空，则回退为“全部管理的模型”
+        if (managedModels.length > 0) {
+            const sourceList = userActiveModels.length > 0
+                ? userActiveModels.map(key => {
                     if (typeof key === 'string' && key.includes('::')) {
                         const [providerId, modelId] = key.split('::');
-                        return managedModels.find(model => model.id === modelId && model.providerId === providerId);
+                        return managedModels.find(m => m.id === modelId && m.providerId === providerId);
                     }
-                    return managedModels.find(model => model.id === key);
+                    // 兼容旧格式（纯ID）
+                    return managedModels.find(m => m.id === key);
                 })
-                .filter(model => model !== undefined)
-                .map(model => {
-                    const providerName = providerMap[model.providerId] || model.providerId || 'Unknown';
-                    return {
-                        value: `${model.providerId}::${model.id}`,
-                        text: model.displayName,
-                        providerId: model.providerId,
-                        providerName: providerName
-                    };
-                });
+                : managedModels; // 回退：没有激活列表时返回全部管理的模型
 
-            console.log('[Background] Returning active model options:', activeModelOptions);
-            sendResponse({ success: true, models: activeModelOptions });
+            const options = sourceList
+                .filter(model => model)
+                .map(model => ({
+                    value: `${model.providerId}::${model.id}`,
+                    text: model.displayName,
+                    providerId: model.providerId,
+                    providerName: providerMap[model.providerId] || model.providerId || 'Unknown'
+                }));
+
+            console.log('[Background] Returning model options:', {
+                totalManaged: managedModels.length,
+                totalActive: userActiveModels.length,
+                returned: options.length,
+                mode: userActiveModels.length > 0 ? 'active' : 'managed-fallback'
+            });
+            sendResponse({ success: true, models: options });
+            return;
+        }
+
+        // 没有任何存储的模型，则基于是否配置了 Google API Key 返回默认 Gemini 模型，或空列表
+        const hasGoogleApiKey = checkGoogleApiKeyConfigured(result.providerSettings, result.apiKey);
+        if (hasGoogleApiKey) {
+            const defaultModelOptions = [
+                { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
+                { value: 'google::gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
+                { value: 'google::gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
+            ];
+            console.log('[Background] No stored models but Google API key configured, returning Gemini defaults:', defaultModelOptions);
+            sendResponse({ success: true, models: defaultModelOptions });
         } else {
-            // 如果没有存储数据，检查是否配置了Google API key再决定是否返回默认模型
-            const hasGoogleApiKey = checkGoogleApiKeyConfigured(result.providerSettings, result.apiKey);
-
-            if (hasGoogleApiKey) {
-                // 用户配置了Google API key，返回默认Gemini模型
-                const defaultModelOptions = [
-                    { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
-                    { value: 'google::gemini-2.5-flash-thinking', text: 'gemini-2.5-flash-thinking', providerId: 'google', providerName: 'Google' },
-                    { value: 'google::gemini-2.5-flash-lite', text: 'gemini-2.5-flash-lite', providerId: 'google', providerName: 'Google' }
-                ];
-                console.log('[Background] No stored models but Google API key configured, returning Gemini defaults:', defaultModelOptions);
-                sendResponse({ success: true, models: defaultModelOptions });
-            } else {
-                // 用户没有配置Google API key，返回空模型列表
-                console.log('[Background] No stored models and no Google API key configured, returning empty list');
-                sendResponse({ success: true, models: [] });
-            }
+            console.log('[Background] No stored models and no provider configured, returning empty list');
+            sendResponse({ success: true, models: [] });
         }
     } catch (error) {
         console.error('[Background] Error getting available models:', error);
