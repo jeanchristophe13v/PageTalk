@@ -5,6 +5,20 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.7.9',
+        date: '2025-09-06',
+        changes: {
+            'zh-CN': [
+                '1. 去除 topP 参数，改为默认值，避免模型不支持。',
+                '2. 优化欢迎消息的交互。'
+            ],
+            'en': [
+                '1. Removed topP parameter; use default to avoid unsupported models.',
+                '2. Improved welcome message interactions.'
+            ]
+        }
+    },
+    {
         version: "3.7.8",
         date: "2025-09-04",
         changes: {
