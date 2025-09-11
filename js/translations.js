@@ -352,6 +352,12 @@ if (typeof window.translations === 'undefined') {
     'userQuestion': '用户问题',
     'noProviderSelected': '请先选择供应商',
 
+    // --- 供应商 Base URL 覆盖 ---
+    'providerBaseUrlLabel': 'Base URL（可选）',
+    'providerBaseUrlPlaceholder': '{url}',
+    'providerBaseUrlHint': '按供应商覆盖 API 基础地址。用于直连不通或需经代理的场景。',
+    'providerBaseUrlInvalidUrl': 'Base URL 格式无效',
+
     // --- 自定义提供商相关翻译 ---
     'addProvider': '添加供应商',
     'customProviderTitle': 'OpenAI Compatible',
@@ -852,6 +858,12 @@ Format：
     'relatedContext': 'Related Context',
     'userQuestion': 'User Question',
     'noProviderSelected': 'Please select a provider first',
+
+    // --- Provider Base URL Override ---
+    'providerBaseUrlLabel': 'Base URL (optional)',
+    'providerBaseUrlPlaceholder': '{url}',
+    'providerBaseUrlHint': 'Override API base URL per provider. Useful when direct access is blocked or via proxy.',
+    'providerBaseUrlInvalidUrl': 'Invalid Base URL format',
 
     // --- Custom Provider Related Translations ---
     'addProvider': 'Add Provider',

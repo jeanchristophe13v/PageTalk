@@ -1633,6 +1633,13 @@ async function loadProviderSettingsToUI(elements) {
         if (apiKeyInput && apiKey) {
             apiKeyInput.value = apiKey;
         }
+
+        // 加载 Base URL 覆盖（如果已设置）
+        const apiHostOverride = modelManager.getProviderApiHost(providerId);
+        const apiHostInput = document.getElementById(`${providerId}-api-host`);
+        if (apiHostInput) {
+            apiHostInput.value = apiHostOverride || '';
+        }
     }
 }
 
@@ -1711,6 +1718,40 @@ export function setupProviderEventListeners(state, elements, showToastCallback, 
                 if (updateConnectionIndicatorCallback) {
                     updateConnectionIndicatorCallback();
                 }
+            }
+        }
+        
+        // Base URL 覆盖输入事件
+        if (e.target.matches('[id$="-api-host"]')) {
+            const input = e.target;
+            const providerId = input.id.replace('-api-host', '');
+            const raw = input.value.trim();
+
+            // 空值表示使用默认，直接清除覆盖
+            if (!raw) {
+                input.classList.remove('error');
+                if (window.ModelManager?.instance) {
+                    await window.ModelManager.instance.setProviderApiHost(providerId, '');
+                }
+                return;
+            }
+
+            // 校验 URL 格式
+            try {
+                // 允许 http/https，自然校验格式
+                new URL(raw);
+                input.classList.remove('error');
+            } catch (_) {
+                input.classList.add('error');
+                const currentTranslations = getCurrentTranslations();
+                if (window.showToastUI) {
+                    window.showToastUI(currentTranslations.providerBaseUrlInvalidUrl || 'Invalid Base URL format', 'error');
+                }
+                return;
+            }
+
+            if (window.ModelManager?.instance) {
+                await window.ModelManager.instance.setProviderApiHost(providerId, raw.replace(/\/$/, ''));
             }
         }
     }, true); // 使用捕获阶段
@@ -2713,9 +2754,17 @@ function createProviderSettingsElement(provider) {
                 </button>
             </div><button class="test-api-key-btn" data-provider="${provider.id}" data-i18n="testConnection">${currentTranslations.testConnection}</button></div>
             ${provider.apiKeyUrl ? `<p class="hint"><span data-i18n="getApiKeyHint">获取 API Key</span>: <a href="${provider.apiKeyUrl}" target="_blank" rel="noopener">${getProviderApiKeyLinkText(provider)}</a></p>` : ''}
-            ${provider.isCustom && provider.apiHost ? `<p class="hint">Base URL: ${provider.apiHost}</p>` : ''}
         </div>
-            
+
+        ${provider.isCustom
+            ? (provider.apiHost ? `<p class=\"hint\">Base URL: ${provider.apiHost}</p>` : '')
+            : `
+        <div class=\"setting-group\"> 
+            <label for=\"${provider.id}-api-host\" data-i18n=\"providerBaseUrlLabel\">${currentTranslations.providerBaseUrlLabel || 'Base URL (optional)'}</label>
+            <input type=\"text\" id=\"${provider.id}-api-host\" style=\"border: 1px solid #4774ff8f;\"
+                   placeholder=\"${(currentTranslations.providerBaseUrlPlaceholder || 'Leave empty to use default: {url}').replace('{url}', provider.apiHost)}\">
+        </div>`}
+        
     `;
 
     // 注意：不在这里添加API Key切换按钮的事件监听器，因为已经通过事件委托在 setupProviderEventListeners 中处理了

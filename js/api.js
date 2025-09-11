@@ -432,7 +432,19 @@ async function _testAndVerifyApiKey(apiKey, model) {
         const requestBody = {
             contents: [{ role: 'user', parts: [{ text: 'test' }] }] // Simple test payload
         };
-        const googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+        // 解析 Google API Host，优先使用用户覆盖
+        let googleApiHost = null;
+        try {
+            if (window.ModelManager?.instance) {
+                const override = window.ModelManager.instance.getProviderApiHost('google');
+                if (override && override.trim()) {
+                    googleApiHost = override.trim();
+                }
+            }
+        } catch (_) { /* ignore */ }
+        if (!googleApiHost) {
+            googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+        }
         if (!googleApiHost) {
             throw new Error('Google provider apiHost not configured');
         }
@@ -714,7 +726,19 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
         }
 
         // 使用 Google Gemini API 端点
-        const googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+        // 解析 Google API Host，优先使用用户覆盖
+        let googleApiHost = null;
+        try {
+            if (window.ModelManager?.instance) {
+                const override = window.ModelManager.instance.getProviderApiHost('google');
+                if (override && override.trim()) {
+                    googleApiHost = override.trim();
+                }
+            }
+        } catch (_) { /* ignore */ }
+        if (!googleApiHost) {
+            googleApiHost = window.ProviderManager?.providers?.google?.apiHost;
+        }
         if (!googleApiHost) {
             throw new Error('Google provider apiHost not configured');
         }
@@ -1159,7 +1183,16 @@ async function testApiKey(providerId, apiKey, testModel = null) {
         return { success: false, message: `Provider not found: ${providerId}` };
     }
 
+    // 合成 providerSettings，包含可能的 Base URL 覆盖
     const providerSettings = { apiKey };
+    try {
+        if (window.ModelManager?.instance) {
+            const override = window.ModelManager.instance.getProviderApiHost(providerId);
+            if (override && override.trim()) {
+                providerSettings.apiHost = override.trim();
+            }
+        }
+    } catch (_) { /* ignore */ }
 
     try {
         switch (provider.type) {
