@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.8.0',
+        date: '2025-09-11',
+        changes: {
+            'zh-CN': [
+                '1. 为内置供应商加上了自定义 Base URL'
+            ],
+            'en': [
+                '1. Added custom Base URL for built-in providers.'
+            ]
+        }
+    },
+    {
         version: '3.7.9',
         date: '2025-09-06',
         changes: {
