@@ -30,6 +30,7 @@
         "matches": ["<all_urls>"],
         "js": [
           "js/lib/Readability.js",
+          "js/lib/turndown.min.js",
           "js/lib/markdown-it.min.js",
           "js/lib/highlight.min.js",
           "js/lib/python.min.js",

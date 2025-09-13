@@ -119,7 +119,7 @@ function setupResizeEvents(resizer, panel) {
 
       const diffX = initialX - eMove.clientX;
       let newWidth = initialWidth + diffX;
-      
+
       const windowWidth = window.innerWidth;
       // 限制新宽度的范围
       newWidth = Math.max(minPanelWidth, Math.min(newWidth, windowWidth * maxPanelWidthPercentage));
@@ -172,7 +172,7 @@ function setupResizeEvents(resizer, panel) {
         iframe.style.pointerEvents = 'auto'; // 恢复iframe的鼠标事件
       }
       document.body.classList.remove('pagetalk-resizing-active'); // 移除此类
-      
+
       localStorage.setItem('pagetalkPanelWidth', panelWidth.toString()); // 保存宽度
 
       if (iframe && iframe.contentWindow) {
@@ -213,7 +213,7 @@ function showPanel() {
                       document.querySelector('div#viewer.pdfViewer') !== null ||
                       document.querySelector('div#viewerContainer') !== null ||
                       document.querySelector('embed[type="application/pdf"]') !== null;
-    
+
     if (isPdfPage) {
       console.log('[PageTalk] PDF page detected. Attempting to adjust PDF viewer.');
       let adjusted = false;
@@ -254,7 +254,7 @@ function showPanel() {
         iframe.contentWindow.postMessage({ action: 'panelShownAndFocusInput' }, '*');
       }
     }, 100);
-  
+
     setTimeout(detectAndSendTheme, 150);
   }
 }
@@ -549,8 +549,14 @@ async function extractPageContent() {
     console.log('[PageTalk] Embedded PDF.js viewer detected. Attempting DOM extraction.');
     return extractFromPdfJsDom();
   } else {
-    // 对于普通 HTML 页面，使用 Readability
-    console.log('[PageTalk] Standard HTML page. Using Readability.');
+    // 对于普通 HTML 页面，优先使用通用的结构化提取（Markdown 化 + Meta + 内嵌数据），回退到 Readability
+    console.log('[PageTalk] Standard HTML page. Using comprehensive structured extraction.');
+    try {
+      const content = extractComprehensivePageContent();
+      if (content && content.trim().length > 0) return content;
+    } catch (e) {
+      console.warn('[PageTalk] Comprehensive extraction failed, falling back to Readability:', e);
+    }
     return extractWithReadability();
   }
 }
@@ -618,10 +624,291 @@ function extractWithReadability() {
   }
 }
 
-/**
- * 从 PDF.js 渲染的 DOM 结构中提取文本 (同步函数)
- * @returns {string}
- */
+// 页面内容提取：并行正文与全量，择优合并
+function extractComprehensivePageContent() {
+  const parts = [];
+
+  // 1) 标题与元信息
+  try {
+    const title = (document.querySelector('title')?.innerText || '').trim();
+    if (title) parts.push(`# ${title}`);
+
+    const metaDesc = document.querySelector('meta[name="description"]')?.getAttribute('content')
+      || document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+      || document.querySelector('meta[name="twitter:description"]')?.getAttribute('content')
+      || '';
+    if (metaDesc && metaDesc.trim()) {
+      parts.push(metaDesc.trim());
+    }
+  } catch (_) { /* ignore */ }
+
+  // 2) 并行提取：整页可见 DOM（全量）与 Readability（正文）
+  let domMarkdown = '';
+  let readabilityMarkdown = '';
+  try {
+    const td = new window.TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced', bulletListMarker: '-' });
+    td.remove(['script', 'style', 'noscript']);
+    td.addRule('stripSiteInitScripts', {
+      filter: function (node) {
+        try {
+          if (!node) return false;
+          const tag = node.nodeName;
+          if (tag === 'PRE' || tag === 'CODE') {
+            const t = (node.textContent || '').trim();
+            return isLikelySiteScript(t, node);
+          }
+          return false;
+        } catch (_) { return false; }
+      },
+      replacement: function () { return ''; }
+    });
+    // 2.1 整页可见 DOM → Turndown（尽可能全）
+    try {
+      const domCleaned = cloneAndPruneRootForConversion(document.body || document.documentElement);
+      domMarkdown = td.turndown(domCleaned) || '';
+    } catch (e1) {
+      domMarkdown = (document.body && document.body.innerText) ? document.body.innerText : '';
+    }
+    // 2.2 Readability → Turndown（较干净的正文）
+    try {
+      if (typeof Readability !== 'undefined') {
+        const docClone = document.cloneNode(true);
+        const reader = new Readability(docClone);
+        const article = reader.parse();
+        if (article && article.content) {
+          const host = document.createElement('div');
+          host.innerHTML = article.content;
+          // 清理嵌入式脚本
+          host.querySelectorAll('script,style,noscript').forEach(n => n.remove());
+          readabilityMarkdown = td.turndown(host) || '';
+        } else if (article && article.textContent) {
+          readabilityMarkdown = article.textContent.trim();
+        }
+      }
+    } catch (e2) {
+      // 忽略，保持空即可
+    }
+  } catch (e) {
+    // Turndown 初始化失败，降级到纯文本
+    domMarkdown = (document.body && document.body.innerText) ? document.body.innerText : '';
+  }
+
+  // 3) 选择/合并策略
+  const domLen = (domMarkdown || '').length;
+  const readLen = (readabilityMarkdown || '').length;
+  const noiseScore = (txt) => {
+    if (!txt) return 0;
+    let score = 0;
+    const pats = [/\$\(document\)\.ready/i, /ReactDOM\.render/i, /kmsReact/i, /analyticsContext/i, /cspNonce/i];
+    pats.forEach(r => { if (r.test(txt)) score++; });
+    return score;
+  };
+  const domNoise = noiseScore(domMarkdown);
+  const readNoise = noiseScore(readabilityMarkdown);
+
+  // 经验规则：
+  // - 优先选择 DOM 全量（更全），除非噪音过高且 Readability 有效
+  // - 两者都有效且噪音可接受时，合并：正文在前，DOM 在后
+  const combined = [];
+  if (readLen > 0 && (domNoise > 2 && readNoise <= domNoise)) {
+    combined.push(readabilityMarkdown.trim());
+  } else if (domLen > 0 && readLen === 0) {
+    combined.push(domMarkdown.trim());
+  } else if (domLen === 0 && readLen > 0) {
+    combined.push(readabilityMarkdown.trim());
+  } else if (domLen > 0 && readLen > 0) {
+    // 两者都存在：先正文，再全量
+    combined.push(readabilityMarkdown.trim());
+    // 分隔线
+    combined.push('---');
+    combined.push(domMarkdown.trim());
+  }
+  if (combined.length) parts.push(combined.join('\n\n'));
+
+  // 4) 解析内嵌 JSON（ld+json / application/json），提取可读文本（受限）
+  try {
+    const embeddedText = extractEmbeddedJsonText();
+    if (embeddedText && embeddedText.trim()) {
+      parts.push('---');
+      parts.push(embeddedText.trim());
+    }
+  } catch (_) { /* ignore */ }
+
+  // 5) 拼装与总长度限制
+  let full = parts.filter(Boolean).join('\n\n');
+  const maxLength = 500000;
+  if (full.length > maxLength) {
+    const truncatedSuffix = trContent('contentTruncated') || '...(Content truncated)';
+    full = full.substring(0, maxLength) + truncatedSuffix;
+  }
+  return full;
+}
+
+// 选择主内容容器
+function pickMainRootNode() {
+  const candidates = [
+    'main',
+    '[role="main"]',
+    'article',
+    '#content',
+    '.content',
+    '#main-content',
+    '.markdown-body',
+  ];
+  for (const sel of candidates) {
+    const el = document.querySelector(sel);
+    if (el) return el;
+  }
+  return document.body || document.documentElement;
+}
+
+// 克隆并裁剪根节点（移除 script/style/noscript）
+function cloneAndPruneRootForConversion(root) {
+  const clone = root.cloneNode(true);
+  // 移除 script/style/noscript
+  try { clone.querySelectorAll('script,style,noscript').forEach(n => n.remove()); } catch (_) {}
+  // 不再移除不可见节点：按需保留隐藏元素以获取尽可能全的内容
+  return clone;
+}
+
+/** 识别站点脚本噪音（IIFE、初始化脚本、繁杂站点配置等） */
+function isLikelySiteScript(text, node) {
+  if (!text) return false;
+  const t = text.trim();
+
+  // 0) 示例代码白名单：有明显代码示例类名且位于典型内容容器内的代码块 → 不判为噪音
+  try {
+    const el = node && node.nodeType === 1 ? node : (node && node.parentElement ? node.parentElement : null);
+    const exampleSelector = 'pre[class*="language-"], code[class*="language-"], pre.hljs, code.hljs, pre code, .code-block, .highlight, .prettyprint';
+    const contentContainerSelector = 'article, main, .markdown-body, .content, #content, [role="main"]';
+    const inExample = el && (el.matches?.(exampleSelector) || el.closest?.(exampleSelector));
+    const inContent = el && (el.matches?.(contentContainerSelector) || el.closest?.(contentContainerSelector));
+    if (inExample && inContent) return false;
+  } catch (_) {}
+
+  // 1) 典型初始化/站点脚本特征（强匹配）
+  const patterns = [
+    /\$\(document\)\.ready\s*\(/i,
+    /ReactDOM\.render\s*\(/i,
+    /kmsReact\./i,
+    /document\.getElementById\s*\(/i,
+    /window\./i,
+    /analyticsContext/i,
+    /cspNonce/i
+  ];
+  if (patterns.some(r => r.test(t))) return true;
+
+  // 2) highlight.js 语言识别（优先用于 JS/CSS 的剔除）
+  try {
+    if (typeof hljs !== 'undefined' && typeof hljs.highlightAuto === 'function') {
+      const sample = t.length > 20000 ? t.slice(0, 20000) : t;
+      const res = hljs.highlightAuto(sample);
+      const lang = (res && res.language ? String(res.language).toLowerCase() : '');
+      const jsCss = ['javascript','js','typescript','ts','tsx','jsx','css','scss','less'];
+      if (jsCss.includes(lang)) {
+        const el = node && node.nodeType === 1 ? node : (node && node.parentElement ? node.parentElement : null);
+        const contentContainerSelector = 'article, main, .markdown-body, .content, #content, [role="main"]';
+        const inContent = el && (el.matches?.(contentContainerSelector) || el.closest?.(contentContainerSelector));
+        if (!inContent) return true;
+      }
+    }
+  } catch (_) {}
+
+  // 3) CSS 片段启发式（大量 { } : ; 且含常见 CSS 属性）
+  try {
+    const cssTokens = (t.match(/[{}:;]/g) || []).length;
+    const cssWords = /(color|width|height|margin|padding|display|position|border|font|background|flex|grid)/i.test(t);
+    if (cssTokens > 30 && cssWords && t.length > 150) return true;
+  } catch (_) {}
+
+  // 4) 符号密度启发（兜底）
+  const letters = (t.match(/[A-Za-z\u4e00-\u9fa5]/g) || []).length;
+  const punct = (t.match(/[^\w\s]/g) || []).length;
+  if (punct > letters * 2 && t.length > 120) return true;
+
+  return false;
+}
+
+// 提取内嵌 JSON 的可读文本（受限）
+function extractEmbeddedJsonText() {
+  const lines = [];
+  const MAX_SCRIPT_SIZE = 200 * 1024; // 200KB
+  const MAX_TOTAL_CHARS = 50 * 1024;  // 累计 50KB
+  const MIN_STR_LEN = 60;             // 仅提取较长可读段
+
+  function safeParse(jsonText) {
+    try { return JSON.parse(jsonText); } catch (_) { return null; }
+  }
+
+  function collectStrings(obj, acc) {
+    if (!obj || acc.total >= MAX_TOTAL_CHARS) return;
+    if (typeof obj === 'string') {
+      const s = obj.trim();
+      if (s.length >= MIN_STR_LEN && s.length <= 5000) { // 单段上限 5k
+        acc.total += s.length;
+        if (acc.total <= MAX_TOTAL_CHARS) acc.items.push(s);
+      }
+      return;
+    }
+    if (Array.isArray(obj)) {
+      for (const v of obj) { collectStrings(v, acc); if (acc.total >= MAX_TOTAL_CHARS) break; }
+      return;
+    }
+    if (typeof obj === 'object') {
+      const keys = Object.keys(obj);
+      for (const k of keys) {
+        // 常见噪音键过滤
+        if (/url|avatar|image|icon|src|href|class|style|nonce|sha|hash|id|guid|uid|timestamp|date|time/i.test(k)) continue;
+        collectStrings(obj[k], acc);
+        if (acc.total >= MAX_TOTAL_CHARS) break;
+      }
+    }
+  }
+
+  // ld+json 优先
+  document.querySelectorAll('script[type="application/ld+json"]').forEach(s => {
+    if (s.textContent && s.textContent.length <= MAX_SCRIPT_SIZE) {
+      const data = safeParse(s.textContent);
+      if (data) {
+        const fields = [];
+        const pick = (o, k) => (o && typeof o[k] === 'string' && o[k].trim()) ? o[k].trim() : '';
+        const pushIf = v => { if (v) fields.push(v); };
+        const arr = Array.isArray(data) ? data : [data];
+        arr.forEach(o => {
+          pushIf(pick(o, 'headline'));
+          pushIf(pick(o, 'name'));
+          pushIf(pick(o, 'description'));
+          pushIf(pick(o, 'articleBody'));
+        });
+        if (fields.length) {
+          lines.push('Embedded JSON-LD:');
+          lines.push(fields.join('\n\n'));
+        }
+      }
+    }
+  });
+
+  // 通用 application/json
+  const acc = { items: [], total: 0 };
+  document.querySelectorAll('script[type="application/json"]').forEach(s => {
+    if (!s.textContent) return;
+    if (s.textContent.length > MAX_SCRIPT_SIZE) return;
+    const data = safeParse(s.textContent);
+    if (!data) return;
+    collectStrings(data, acc);
+  });
+  if (acc.items.length) {
+    lines.push('Embedded JSON Text:');
+    lines.push(acc.items.join('\n\n'));
+  }
+
+  // 汇总并限制总长
+  let text = lines.filter(Boolean).join('\n\n');
+  if (text.length > 100 * 1024) text = text.slice(0, 100 * 1024) + '\n...(Embedded data truncated)';
+  return text;
+}
+
+// 从 PDF.js 渲染的 DOM 结构中提取文本
 function extractFromPdfJsDom() {
   let pdfText = '';
   // 尝试常见的 PDF.js viewer 容器选择器
