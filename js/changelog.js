@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.8.1',
+        date: '2025-09-14',
+        changes: {
+            'zh-CN': [
+                '1. 解析库从 Readability 换为 Turndown，并增强去噪，现在页面信息获取更加完整，回答质量更高。感谢@Luo-hongyi 的 PR ❤️'
+            ],
+            'en': [
+                '1. Switched parsing library from Readability to Turndown and enhanced noise reduction, making page extraction more complete and improving answer quality. Thanks to @Luo-hongyi for the PR ❤️'
+            ]
+        }
+    },
+    {
         version: '3.8.0',
         date: '2025-09-11',
         changes: {
