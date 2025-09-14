@@ -1774,6 +1774,14 @@ async function collectAllSettingsData() {
                     localResult = {};
                 }
 
+                // 优先从 local 获取模型数据，避免 sync 配额导致的不完整
+                const managedModelsForExport = Array.isArray(localResult.managedModels) && localResult.managedModels.length > 0
+                    ? localResult.managedModels
+                    : (syncResult.managedModels || []);
+                const userActiveModelsForExport = Array.isArray(localResult.userActiveModels) && localResult.userActiveModels.length > 0
+                    ? localResult.userActiveModels
+                    : (syncResult.userActiveModels || []);
+
                 // 构建导出数据结构
                 const exportData = {
                     app: 'PageTalk',
@@ -1786,9 +1794,9 @@ async function collectAllSettingsData() {
                             currentAgentId: syncResult.currentAgentId || null,
                             // 供应商设置（API Keys等）
                             providerSettings: syncResult.providerSettings || {},
-                            // 模型管理器相关
-                            managedModels: syncResult.managedModels || [],
-                            userActiveModels: syncResult.userActiveModels || [],
+                            // 模型管理器相关（与旧版保持兼容，依然放入 sync）
+                            managedModels: managedModelsForExport,
+                            userActiveModels: userActiveModelsForExport,
                             modelManagerVersion: syncResult.modelManagerVersion || null,
                             // 通用设置
                             language: syncResult.language || 'zh-CN',
@@ -1802,7 +1810,10 @@ async function collectAllSettingsData() {
                             textSelectionHelperSettings: localResult.textSelectionHelperSettings || {},
                             textSelectionHelperSettingsVersion: localResult.textSelectionHelperSettingsVersion || null,
                             // 快捷操作
-                            quickActions: localResult.quickActions || { actions: [] }
+                            quickActions: localResult.quickActions || { actions: [] },
+                            // 也同时把模型数据放到 local，便于导入时直接写入
+                            managedModels: managedModelsForExport,
+                            userActiveModels: userActiveModelsForExport
                         }
                     }
                 };

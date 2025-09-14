@@ -139,6 +139,7 @@ class ModelManager {
      */
     async loadFromStorage() {
         return new Promise((resolve) => {
+            // 同步读取 sync 与 local，优先使用 local（更大容量，避免 sync 配额影响）
             chrome.storage.sync.get([
                 STORAGE_KEYS.MANAGED_MODELS,
                 STORAGE_KEYS.USER_ACTIVE_MODELS,
@@ -147,25 +148,41 @@ class ModelManager {
                 // 旧版本兼容性
                 STORAGE_KEYS.OLD_API_KEY,
                 STORAGE_KEYS.OLD_SELECTED_MODELS
-            ], (result) => {
+            ], (syncResult) => {
                 if (chrome.runtime.lastError) {
-                    console.error('[ModelManager] Storage load error:', chrome.runtime.lastError);
-                    resolve();
-                    return;
+                    console.error('[ModelManager] Storage (sync) load error:', chrome.runtime.lastError);
                 }
+                chrome.storage.local.get([
+                    STORAGE_KEYS.MANAGED_MODELS,
+                    STORAGE_KEYS.USER_ACTIVE_MODELS
+                ], (localResult) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('[ModelManager] Storage (local) load error:', chrome.runtime.lastError);
+                    }
 
-                // 加载供应商设置
-                if (result[STORAGE_KEYS.PROVIDER_SETTINGS]) {
-                    this.providerSettings = result[STORAGE_KEYS.PROVIDER_SETTINGS];
-                } else {
-                    this.providerSettings = {};
-                }
+                    const result = syncResult || {};
 
-                // 加载主模型列表
-                if (result[STORAGE_KEYS.MANAGED_MODELS]) {
-                    this.managedModels = result[STORAGE_KEYS.MANAGED_MODELS];
+                    // 加载供应商设置（仅从 sync）
+                    if (result[STORAGE_KEYS.PROVIDER_SETTINGS]) {
+                        this.providerSettings = result[STORAGE_KEYS.PROVIDER_SETTINGS];
+                    } else {
+                        this.providerSettings = {};
+                    }
+
+                    // 加载主模型列表：优先 local
+                    const managedFromLocal = localResult?.[STORAGE_KEYS.MANAGED_MODELS];
+                    const managedFromSync = result?.[STORAGE_KEYS.MANAGED_MODELS];
+                    if (Array.isArray(managedFromLocal) && managedFromLocal.length > 0) {
+                        this.managedModels = managedFromLocal;
+                    } else if (Array.isArray(managedFromSync)) {
+                        this.managedModels = managedFromSync;
+                    } else {
+                        // 首次使用，根据API key配置情况初始化默认模型
+                        this.managedModels = this.getInitialDefaultModels();
+                    }
+
                     // 为旧数据添加缺失的属性
-                    this.managedModels = this.managedModels.map(model => {
+                    this.managedModels = (this.managedModels || []).map(model => {
                         // 添加 providerId（如果缺失）
                         if (!model.providerId) {
                             // 旧模型默认为 Google
@@ -183,34 +200,32 @@ class ModelManager {
                         }
                         return model;
                     });
-                } else {
-                    // 首次使用，根据API key配置情况初始化默认模型
-                    this.managedModels = this.getInitialDefaultModels();
-                }
 
-                // 加载用户已选模型列表（向后兼容：将旧的纯ID迁移为复合键）
-                if (result[STORAGE_KEYS.USER_ACTIVE_MODELS]) {
-                    const loaded = result[STORAGE_KEYS.USER_ACTIVE_MODELS];
-                    if (Array.isArray(loaded) && loaded.some(v => typeof v === 'string' && v.includes('::'))) {
-                        this.userActiveModels = loaded;
-                    } else {
-                        this.userActiveModels = (loaded || []).map(id => {
+                    // 加载用户已选模型列表（向后兼容：将旧的纯ID迁移为复合键）——优先 local
+                    const activeFromLocal = localResult?.[STORAGE_KEYS.USER_ACTIVE_MODELS];
+                    const activeFromSync = result?.[STORAGE_KEYS.USER_ACTIVE_MODELS];
+                    if (Array.isArray(activeFromLocal) && activeFromLocal.length > 0) {
+                        this.userActiveModels = activeFromLocal;
+                    } else if (Array.isArray(activeFromSync) && activeFromSync.some(v => typeof v === 'string' && v.includes('::'))) {
+                        this.userActiveModels = activeFromSync;
+                    } else if (Array.isArray(activeFromSync)) {
+                        this.userActiveModels = activeFromSync.map(id => {
                             const model = this.managedModels.find(m => m.id === id);
                             return model ? this.buildKey(model.providerId, model.id) : id;
                         });
+                    } else {
+                        // 首次使用，默认选择已添加的管理模型
+                        this.userActiveModels = this.managedModels.map(model => this.buildKey(model.providerId, model.id));
                     }
-                } else {
-                    // 首次使用，默认选择已添加的管理模型
-                    this.userActiveModels = this.managedModels.map(model => this.buildKey(model.providerId, model.id));
-                }
 
-                console.log('[ModelManager] Loaded from storage:', {
-                    managedModels: this.managedModels.length,
-                    userActiveModels: this.userActiveModels.length,
-                    providerSettings: Object.keys(this.providerSettings).length
+                    console.log('[ModelManager] Loaded from storage:', {
+                        managedModels: this.managedModels.length,
+                        userActiveModels: this.userActiveModels.length,
+                        providerSettings: Object.keys(this.providerSettings).length
+                    });
+
+                    resolve();
                 });
-
-                resolve();
             });
         });
     }
@@ -220,12 +235,53 @@ class ModelManager {
      */
     async saveToStorage() {
         return new Promise((resolve) => {
+            // 为了避免超过 chrome.storage.sync 的单项大小限制，保存前对模型做瘦身
+            const compactModel = (m) => {
+                const compact = {
+                    id: m.id,
+                    displayName: m.displayName,
+                    apiModelName: m.apiModelName,
+                    providerId: m.providerId,
+                    params: m.params || null,
+                    isAlias: !!m.isAlias,
+                    isDefault: !!m.isDefault,
+                    // 默认可删除，除非明确标记为 false
+                    canDelete: m.canDelete === false ? false : true
+                };
+                if (m.source) compact.source = m.source;
+                return compact;
+            };
+
+            const managedModelsToSave = Array.isArray(this.managedModels)
+                ? this.managedModels.map(compactModel)
+                : [];
+
+            const userActiveModelsToSave = Array.isArray(this.userActiveModels)
+                ? this.userActiveModels
+                : [];
+
             const data = {
-                [STORAGE_KEYS.MANAGED_MODELS]: this.managedModels,
-                [STORAGE_KEYS.USER_ACTIVE_MODELS]: this.userActiveModels,
+                [STORAGE_KEYS.MANAGED_MODELS]: managedModelsToSave,
+                [STORAGE_KEYS.USER_ACTIVE_MODELS]: userActiveModelsToSave,
                 [STORAGE_KEYS.PROVIDER_SETTINGS]: this.providerSettings,
                 [STORAGE_KEYS.MODEL_MANAGER_VERSION]: CURRENT_VERSION
             };
+
+            // 先写入 local 作为可靠后备，避免 sync 配额导致的数据丢失
+            try {
+                chrome.storage.local.set({
+                    [STORAGE_KEYS.MANAGED_MODELS]: managedModelsToSave,
+                    [STORAGE_KEYS.USER_ACTIVE_MODELS]: userActiveModelsToSave
+                }, () => {
+                    if (chrome.runtime.lastError) {
+                        console.warn('[ModelManager] Local storage save warning:', chrome.runtime.lastError);
+                    } else {
+                        console.log('[ModelManager] Saved to local storage successfully');
+                    }
+                });
+            } catch (e) {
+                console.warn('[ModelManager] Local storage save threw:', e);
+            }
 
             chrome.storage.sync.set(data, () => {
                 if (chrome.runtime.lastError) {
@@ -234,6 +290,26 @@ class ModelManager {
                     console.log('[ModelManager] Saved to storage successfully');
                     // 广播模型更新事件
                     this.broadcastModelsUpdated();
+                }
+                resolve();
+            });
+        });
+    }
+
+    /**
+     * 仅保存供应商设置到存储（避免在未完全加载时覆盖模型列表）
+     */
+    async saveProviderSettingsOnly() {
+        return new Promise((resolve) => {
+            const data = {
+                [STORAGE_KEYS.PROVIDER_SETTINGS]: this.providerSettings,
+                [STORAGE_KEYS.MODEL_MANAGER_VERSION]: CURRENT_VERSION
+            };
+            chrome.storage.sync.set(data, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('[ModelManager] Storage save (provider settings) error:', chrome.runtime.lastError);
+                } else {
+                    console.log('[ModelManager] Provider settings saved to storage successfully');
                 }
                 resolve();
             });
@@ -413,7 +489,8 @@ class ModelManager {
     async resetToDefaults() {
         // 根据API key配置情况重置默认模型
         this.managedModels = this.getInitialDefaultModels();
-        this.userActiveModels = this.managedModels.map(model => model.id);
+        // 使用复合键，避免跨供应商同名模型冲突
+        this.userActiveModels = this.managedModels.map(model => this.buildKey(model.providerId, model.id));
         await this.saveToStorage();
         this.initialized = true;
         console.log('[ModelManager] Reset to defaults');
@@ -515,6 +592,14 @@ class ModelManager {
      * @param {Object} settings - 设置对象
      */
     async setProviderSettings(providerId, settings) {
+        // 确保在写入前已加载现有数据，避免覆盖
+        if (!this.initialized) {
+            try {
+                await this.loadFromStorage();
+            } catch (e) {
+                console.warn('[ModelManager] Failed to pre-load storage before saving provider settings:', e);
+            }
+        }
         if (!this.providerSettings[providerId]) {
             this.providerSettings[providerId] = {};
         }
@@ -525,7 +610,8 @@ class ModelManager {
             ...settings
         };
 
-        await this.saveToStorage();
+        // 只保存供应商设置，避免在尚未初始化时将空的模型列表写回存储
+        await this.saveProviderSettingsOnly();
         console.log(`[ModelManager] Updated settings for provider: ${providerId}`);
     }
 

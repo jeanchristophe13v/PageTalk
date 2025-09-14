@@ -215,18 +215,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 async function handleGetAvailableModelsRequest(sendResponse) {
     try {
-        // 从存储中获取模型管理器的数据、自定义提供商、供应商设置和旧版本API key
-        const result = await chrome.storage.sync.get(['managedModels', 'userActiveModels', 'customProviders', 'providerSettings', 'apiKey']);
+        // 从存储中获取模型管理器的数据（优先 local 以避免 sync 配额问题）、自定义提供商、供应商设置和旧版本API key
+        const syncResult = await chrome.storage.sync.get(['managedModels', 'userActiveModels', 'customProviders', 'providerSettings', 'apiKey']).catch(() => ({}));
+        const localResult = await chrome.storage.local.get(['managedModels', 'userActiveModels']).catch(() => ({}));
 
-        const managedModels = Array.isArray(result.managedModels) ? result.managedModels : [];
-        const userActiveModels = Array.isArray(result.userActiveModels) ? result.userActiveModels : [];
+        const managedModels = Array.isArray(localResult.managedModels) && localResult.managedModels.length > 0
+            ? localResult.managedModels
+            : (Array.isArray(syncResult.managedModels) ? syncResult.managedModels : []);
+        const userActiveModels = Array.isArray(localResult.userActiveModels) && localResult.userActiveModels.length > 0
+            ? localResult.userActiveModels
+            : (Array.isArray(syncResult.userActiveModels) ? syncResult.userActiveModels : []);
 
         // 构建提供商映射（包括内置与自定义）
         const providerMap = Object.fromEntries(
             Object.values(providers).map(p => [p.id, p.name || p.id])
         );
-        if (Array.isArray(result.customProviders)) {
-            result.customProviders.forEach(provider => {
+        if (Array.isArray(syncResult.customProviders)) {
+            syncResult.customProviders.forEach(provider => {
                 providerMap[provider.id] = provider.name || provider.id;
             });
         }
@@ -264,7 +269,7 @@ async function handleGetAvailableModelsRequest(sendResponse) {
         }
 
         // 没有任何存储的模型，则基于是否配置了 Google API Key 返回默认 Gemini 模型，或空列表
-        const hasGoogleApiKey = checkGoogleApiKeyConfigured(result.providerSettings, result.apiKey);
+        const hasGoogleApiKey = checkGoogleApiKeyConfigured(syncResult.providerSettings, syncResult.apiKey);
         if (hasGoogleApiKey) {
             const defaultModelOptions = [
                 { value: 'google::gemini-2.5-flash', text: 'gemini-2.5-flash', providerId: 'google', providerName: 'Google' },
@@ -301,12 +306,16 @@ async function handleGetAvailableModelsRequest(sendResponse) {
  */
 async function handleGetModelConfigRequest(modelId, sendResponse) {
     try {
-        // 从存储中获取模型管理器的数据
-        const result = await chrome.storage.sync.get(['managedModels']);
+        // 从存储中获取模型管理器的数据（优先 local）
+        const syncResult = await chrome.storage.sync.get(['managedModels']).catch(() => ({}));
+        const localResult = await chrome.storage.local.get(['managedModels']).catch(() => ({}));
+        const storeModels = Array.isArray(localResult.managedModels) && localResult.managedModels.length > 0
+            ? localResult.managedModels
+            : (Array.isArray(syncResult.managedModels) ? syncResult.managedModels : null);
 
-        if (result.managedModels) {
+        if (storeModels) {
             // 查找指定的模型配置
-            const managedModels = result.managedModels;
+            const managedModels = storeModels;
             let modelConfig = null;
             if (typeof modelId === 'string' && modelId.includes('::')) {
                 const [providerId, id] = modelId.split('::');
@@ -453,9 +462,13 @@ async function handleUnifiedAPICall(message, sendResponse, sender) {
         console.log('[Background] Handling independent unified API call for model:', model);
 
         // 从存储中获取模型配置和供应商设置
-        const result = await chrome.storage.sync.get(['managedModels', 'providerSettings']);
+        const syncResult = await chrome.storage.sync.get(['managedModels', 'providerSettings']).catch(() => ({}));
+        const localResult = await chrome.storage.local.get(['managedModels']).catch(() => ({}));
+        const storeModels = Array.isArray(localResult.managedModels) && localResult.managedModels.length > 0
+            ? localResult.managedModels
+            : (Array.isArray(syncResult.managedModels) ? syncResult.managedModels : null);
 
-        if (!result.managedModels) {
+        if (!storeModels) {
             throw new Error('Model configuration not found. Please configure models in the main panel first.');
         }
 
@@ -463,16 +476,16 @@ async function handleUnifiedAPICall(message, sendResponse, sender) {
         let modelConfig = null;
         if (typeof model === 'string' && model.includes('::')) {
             const [providerId, id] = model.split('::');
-            modelConfig = result.managedModels.find(m => m.id === id && m.providerId === providerId);
+            modelConfig = storeModels.find(m => m.id === id && m.providerId === providerId);
         } else {
-            modelConfig = result.managedModels.find(m => m.id === model);
+            modelConfig = storeModels.find(m => m.id === model);
         }
         if (!modelConfig) {
             throw new Error(`Model not found: ${model}`);
         }
 
         const providerId = modelConfig.providerId;
-        const providerSettings = result.providerSettings?.[providerId];
+        const providerSettings = syncResult.providerSettings?.[providerId];
 
         if (!providerSettings || !providerSettings.apiKey) {
             throw new Error(`API Key not configured for provider: ${providerId}`);
