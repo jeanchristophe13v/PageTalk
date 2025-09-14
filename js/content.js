@@ -537,27 +537,32 @@ async function extractPageContent() {
         console.log('[PageTalk] Falling back to DOM extraction for direct PDF (e.g. arXiv).');
         return extractFromPdfJsDom(); // 尝试从DOM中提取
       }
-      // 如果 DOM 提取方式不适用或失败，最终回退到 Readability
-      console.warn('[PageTalk] Falling back to Readability for direct PDF after fetch/parse error.');
-      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      // 如果 DOM 提取方式不适用或失败，最终回退到基础正文
+      console.warn('[PageTalk] Falling back to simple body text for direct PDF after fetch/parse error.');
       const errorTemplate = trContent('pdfProcessingError') || 'Error processing PDF: {error}';
       const errorMessage = errorTemplate.replace('{error}', pdfError.message);
-      return `${errorMessage} \n\n ${extractWithReadability()}`;
+      const bodyText = (document.body && (document.body.innerText || document.body.textContent)) ? (document.body.innerText || document.body.textContent) : '';
+      const merged = `${errorMessage}\n\n${(bodyText || '').trim()}`;
+      const maxLength = 500000;
+      return merged.length > maxLength ? merged.slice(0, maxLength) + (trContent('contentTruncated') || '...(Content truncated)') : merged;
     }
   } else if (isPdfJsViewerDom) {
     // 如果不是直接的 PDF 链接，但页面 DOM 结构像是 PDF.js 渲染的
     console.log('[PageTalk] Embedded PDF.js viewer detected. Attempting DOM extraction.');
     return extractFromPdfJsDom();
   } else {
-    // 对于普通 HTML 页面，优先使用通用的结构化提取（Markdown 化 + Meta + 内嵌数据），回退到 Readability
-    console.log('[PageTalk] Standard HTML page. Using comprehensive structured extraction.');
+    // 对于普通 HTML 页面，仅使用 Turndown（带去噪）
+    console.log('[PageTalk] Standard HTML page. Using Turndown-only extraction with denoising.');
     try {
       const content = extractComprehensivePageContent();
       if (content && content.trim().length > 0) return content;
     } catch (e) {
-      console.warn('[PageTalk] Comprehensive extraction failed, falling back to Readability:', e);
+      console.warn('[PageTalk] Turndown extraction failed, falling back to simple body text:', e);
     }
-    return extractWithReadability();
+    const text = (document.body && (document.body.innerText || document.body.textContent)) ? (document.body.innerText || document.body.textContent) : '';
+    const maxLength = 300000;
+    const out = (text || '').replace(/\s+/g, ' ').trim();
+    return out.length > maxLength ? out.slice(0, maxLength) + (trContent('contentTruncated') || '...(Content truncated)') : out;
   }
 }
 
@@ -642,12 +647,26 @@ function extractComprehensivePageContent() {
     }
   } catch (_) { /* ignore */ }
 
-  // 2) 并行提取：整页可见 DOM（全量）与 Readability（正文）
+  // 2) Turndown 仅对清理后的 DOM
   let domMarkdown = '';
-  let readabilityMarkdown = '';
   try {
     const td = new window.TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced', bulletListMarker: '-' });
+    // 基础剔除
     td.remove(['script', 'style', 'noscript']);
+
+    // 导航/页眉/页脚中的链接仅保留文本（不带 URL），减少噪音
+    td.addRule('navLinksAsText', {
+      filter: function (node) {
+        if (!node || node.nodeName !== 'A') return false;
+        try { return isInNavLike(node); } catch (_) { return false; }
+      },
+      replacement: function (content, node) {
+        const t = (node.textContent || '').trim();
+        return t;
+      }
+    });
+
+    // 剔除疑似站点脚本的代码块
     td.addRule('stripSiteInitScripts', {
       filter: function (node) {
         try {
@@ -662,70 +681,18 @@ function extractComprehensivePageContent() {
       },
       replacement: function () { return ''; }
     });
-    // 2.1 整页可见 DOM → Turndown（尽可能全）
-    try {
-      const domCleaned = cloneAndPruneRootForConversion(document.body || document.documentElement);
-      domMarkdown = td.turndown(domCleaned) || '';
-    } catch (e1) {
-      domMarkdown = (document.body && document.body.innerText) ? document.body.innerText : '';
-    }
-    // 2.2 Readability → Turndown（较干净的正文）
-    try {
-      if (typeof Readability !== 'undefined') {
-        const docClone = document.cloneNode(true);
-        const reader = new Readability(docClone);
-        const article = reader.parse();
-        if (article && article.content) {
-          const host = document.createElement('div');
-          host.innerHTML = article.content;
-          // 清理嵌入式脚本
-          host.querySelectorAll('script,style,noscript').forEach(n => n.remove());
-          readabilityMarkdown = td.turndown(host) || '';
-        } else if (article && article.textContent) {
-          readabilityMarkdown = article.textContent.trim();
-        }
-      }
-    } catch (e2) {
-      // 忽略，保持空即可
-    }
-  } catch (e) {
-    // Turndown 初始化失败，降级到纯文本
+
+    // 仅取主内容容器作为根，进行克隆与去噪
+    const domCleaned = cloneAndPruneRootForConversion(pickMainRootNode());
+    domMarkdown = td.turndown(domCleaned) || '';
+  } catch (e1) {
     domMarkdown = (document.body && document.body.innerText) ? document.body.innerText : '';
   }
 
-  // 3) 选择/合并策略
-  const domLen = (domMarkdown || '').length;
-  const readLen = (readabilityMarkdown || '').length;
-  const noiseScore = (txt) => {
-    if (!txt) return 0;
-    let score = 0;
-    const pats = [/\$\(document\)\.ready/i, /ReactDOM\.render/i, /kmsReact/i, /analyticsContext/i, /cspNonce/i];
-    pats.forEach(r => { if (r.test(txt)) score++; });
-    return score;
-  };
-  const domNoise = noiseScore(domMarkdown);
-  const readNoise = noiseScore(readabilityMarkdown);
+  // 3) 段落级去重与空白压缩
+  domMarkdown = dedupeMarkdownParagraphs(domMarkdown);
 
-  // 经验规则：
-  // - 优先选择 DOM 全量（更全），除非噪音过高且 Readability 有效
-  // - 两者都有效且噪音可接受时，合并：正文在前，DOM 在后
-  const combined = [];
-  if (readLen > 0 && (domNoise > 2 && readNoise <= domNoise)) {
-    combined.push(readabilityMarkdown.trim());
-  } else if (domLen > 0 && readLen === 0) {
-    combined.push(domMarkdown.trim());
-  } else if (domLen === 0 && readLen > 0) {
-    combined.push(readabilityMarkdown.trim());
-  } else if (domLen > 0 && readLen > 0) {
-    // 两者都存在：先正文，再全量
-    combined.push(readabilityMarkdown.trim());
-    // 分隔线
-    combined.push('---');
-    combined.push(domMarkdown.trim());
-  }
-  if (combined.length) parts.push(combined.join('\n\n'));
-
-  // 4) 解析内嵌 JSON（ld+json / application/json），提取可读文本（受限）
+  // 4) 仅解析 JSON-LD（内嵌结构化数据）
   try {
     const embeddedText = extractEmbeddedJsonText();
     if (embeddedText && embeddedText.trim()) {
@@ -734,9 +701,10 @@ function extractComprehensivePageContent() {
     }
   } catch (_) { /* ignore */ }
 
-  // 5) 拼装与总长度限制
+  // 5) 拼装与总长度限制（宽松软上限）
+  parts.unshift(domMarkdown.trim());
   let full = parts.filter(Boolean).join('\n\n');
-  const maxLength = 500000;
+  const maxLength = 300000; // 30 万字符软上限
   if (full.length > maxLength) {
     const truncatedSuffix = trContent('contentTruncated') || '...(Content truncated)';
     full = full.substring(0, maxLength) + truncatedSuffix;
@@ -762,110 +730,292 @@ function pickMainRootNode() {
   return document.body || document.documentElement;
 }
 
-// 克隆并裁剪根节点（移除 script/style/noscript）
+// 导航/页眉/页脚等容器判断
+function isInNavLike(node) {
+  try {
+    const el = node.nodeType === 1 ? node : node.parentElement;
+    if (!el) return false;
+    return !!el.closest('nav, header, footer, aside, [role="navigation"], [role="contentinfo"], [aria-label*="breadcrumb" i], .breadcrumb, .breadcrumbs');
+  } catch (_) {
+    return false;
+  }
+}
+
+// 克隆并裁剪根节点（去脚本/样式/不可见/广告弹层等噪音）
 function cloneAndPruneRootForConversion(root) {
-  const clone = root.cloneNode(true);
-  // 移除 script/style/noscript
+  const chosenRoot = root || pickMainRootNode();
+  const clone = chosenRoot.cloneNode(true);
+
+  // 1) 移除 script/style/noscript
   try { clone.querySelectorAll('script,style,noscript').forEach(n => n.remove()); } catch (_) {}
-  // 不再移除不可见节点：按需保留隐藏元素以获取尽可能全的内容
+
+  // 2) 移除不可见节点（基于属性/内联样式，避免使用 getComputedStyle 于脱离文档的节点）
+  try { clone.querySelectorAll('[hidden], [aria-hidden="true"], [inert], [style*="display:none" i], [style*="visibility:hidden" i]').forEach(n => n.remove()); } catch (_) {}
+
+  // 3) 移除弹窗/遮罩/对话框/订阅/同意等常见噪音（保留评论/内容）
+  try {
+    const noisySelectors = [
+      '[role="dialog"]', '[role="alertdialog"]', '.modal', '.popup', '.dialog', '.banner', '.interstitial',
+      '[class*="cookie" i]', '[id*="cookie" i]', '[class*="gdpr" i]', '[id*="gdpr" i]', '[class*="consent" i]', '[id*="consent" i]',
+      '[class*="subscribe" i]', '[id*="subscribe" i]', '[class*="newsletter" i]', '[id*="newsletter" i]',
+      '[class*="login" i]', '[id*="login" i]', '[class*="signup" i]', '[id*="signup" i]',
+      '[class*="overlay" i]', '[id*="overlay" i]', '[class*="backdrop" i]', '[id*="backdrop" i]', '[class*="mask" i]', '[id*="mask" i]', '[class*="tooltip" i]'
+    ].join(',');
+    clone.querySelectorAll(noisySelectors).forEach(el => {
+      const str = `${el.className || ''} ${el.id || ''} ${(el.getAttribute('aria-label') || '')} ${(el.getAttribute('title') || '')}`.toLowerCase();
+      if (/comment|giscus|utterances|remark42/.test(str)) return; // 保留评论系统
+      el.remove();
+    });
+  } catch (_) {}
+
+  // 4) 移除广告/推广/追踪容器（避免误删含“comment”）
+  try {
+    const adSelectors = [
+      '[class*="ad-" i]', '[class*="-ad" i]', '[class*="ads" i]', '[id*="ad-" i]', '[id*="ads" i]', '[id*="-ad" i]',
+      '[class*="sponsor" i]', '[id*="sponsor" i]', '[class*="promo" i]', '[id*="promo" i]', '[class*="advert" i]', '[id*="advert" i]',
+      '[class*="affiliate" i]', '[id*="affiliate" i]', '[class*="tracking" i]', '[id*="tracking" i]'
+    ].join(',');
+    clone.querySelectorAll(adSelectors).forEach(el => {
+      const str = `${el.className || ''} ${el.id || ''}`.toLowerCase();
+      if (/comment/.test(str)) return;
+      el.remove();
+    });
+  } catch (_) {}
+
   return clone;
 }
 
-/** 识别站点脚本噪音（IIFE、初始化脚本、繁杂站点配置等） */
-function isLikelySiteScript(text, node) {
-  if (!text) return false;
-  const t = text.trim();
-
-  // 0) 示例代码白名单：有明显代码示例类名且位于典型内容容器内的代码块 → 不判为噪音
+/**
+ * 翻译助手函数（优先使用统一 I18n，再回退到 window.translations）
+ */
+function trContent(key, replacements = {}) {
   try {
-    const el = node && node.nodeType === 1 ? node : (node && node.parentElement ? node.parentElement : null);
-    const exampleSelector = 'pre[class*="language-"], code[class*="language-"], pre.hljs, code.hljs, pre code, .code-block, .highlight, .prettyprint';
-    const contentContainerSelector = 'article, main, .markdown-body, .content, #content, [role="main"]';
-    const inExample = el && (el.matches?.(exampleSelector) || el.closest?.(exampleSelector));
-    const inContent = el && (el.matches?.(contentContainerSelector) || el.closest?.(contentContainerSelector));
-    if (inExample && inContent) return false;
-  } catch (_) {}
-
-  // 1) 典型初始化/站点脚本特征（强匹配）
-  const patterns = [
-    /\$\(document\)\.ready\s*\(/i,
-    /ReactDOM\.render\s*\(/i,
-    /kmsReact\./i,
-    /document\.getElementById\s*\(/i,
-    /window\./i,
-    /analyticsContext/i,
-    /cspNonce/i
-  ];
-  if (patterns.some(r => r.test(t))) return true;
-
-  // 2) highlight.js 语言识别（优先用于 JS/CSS 的剔除）
-  try {
-    if (typeof hljs !== 'undefined' && typeof hljs.highlightAuto === 'function') {
-      const sample = t.length > 20000 ? t.slice(0, 20000) : t;
-      const res = hljs.highlightAuto(sample);
-      const lang = (res && res.language ? String(res.language).toLowerCase() : '');
-      const jsCss = ['javascript','js','typescript','ts','tsx','jsx','css','scss','less'];
-      if (jsCss.includes(lang)) {
-        const el = node && node.nodeType === 1 ? node : (node && node.parentElement ? node.parentElement : null);
-        const contentContainerSelector = 'article, main, .markdown-body, .content, #content, [role="main"]';
-        const inContent = el && (el.matches?.(contentContainerSelector) || el.closest?.(contentContainerSelector));
-        if (!inContent) return true;
-      }
+    if (window.I18n && typeof window.I18n.tr === 'function') {
+      return window.I18n.tr(key, replacements);
     }
-  } catch (_) {}
-
-  // 3) CSS 片段启发式（大量 { } : ; 且含常见 CSS 属性）
-  try {
-    const cssTokens = (t.match(/[{}:;]/g) || []).length;
-    const cssWords = /(color|width|height|margin|padding|display|position|border|font|background|flex|grid)/i.test(t);
-    if (cssTokens > 30 && cssWords && t.length > 150) return true;
-  } catch (_) {}
-
-  // 4) 符号密度启发（兜底）
-  const letters = (t.match(/[A-Za-z\u4e00-\u9fa5]/g) || []).length;
-  const punct = (t.match(/[^\w\s]/g) || []).length;
-  if (punct > letters * 2 && t.length > 120) return true;
-
-  return false;
+  } catch (_) { /* ignore */ }
+  const currentLang = localStorage.getItem('language') || 'zh-CN';
+  let text = window.translations?.[currentLang]?.[key] || window.translations?.['zh-CN']?.[key] || ''; // legacy fallback inside trContent
+  if (!text) return '';
+  for (const ph in replacements) {
+    text = text.replace(`{${ph}}`, replacements[ph]);
+  }
+  return text;
 }
 
-// 提取内嵌 JSON 的可读文本（受限）
+/**
+ * 从 Readability.js 提取内容 (同步函数)
+ * @returns {string}
+ */
+function extractWithReadability() {
+  try {
+    if (typeof Readability === 'undefined') {
+      console.error('[PageTalk] Readability library not loaded.');
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      return trContent('readabilityNotLoaded') || '错误：无法加载页面内容提取库。';
+    }
+    const documentClone = document.cloneNode(true);
+    const reader = new Readability(documentClone);
+    const article = reader.parse();
+    let content = '';
+    if (article && article.textContent) {
+      content = article.textContent;
+      content = content.replace(/\s+/g, ' ').trim(); // 规范化空白字符
+    } else {
+      console.warn('[PageTalk] Readability could not parse the page content. Falling back to body text.');
+      content = document.body.textContent || '';
+      content = content.replace(/\s+/g, ' ').trim();
+      if (!content) {
+        const currentLang = localStorage.getItem('language') || 'zh-CN';
+        return trContent('unableToExtractContent') || 'Unable to extract page content.';
+      }
+      const currentLang = localStorage.getItem('language') || 'zh-CN';
+      const fallbackPrefix = trContent('fallbackToBodyText') || '(Fallback to body text) ';
+      content = fallbackPrefix + content; // 标记为后备提取
+    }
+    const maxLength = 500000; // 限制最大长度
+    if (content.length > maxLength) {
+      const truncatedSuffix = trContent('contentTruncated') || '...(Content truncated)';
+      content = content.substring(0, maxLength) + truncatedSuffix;
+    }
+    return content;
+
+  } catch (error) {
+    console.error('[PageTalk] Error extracting page content with Readability:', error);
+    const currentLang = localStorage.getItem('language') || 'zh-CN';
+    const errorTemplate = trContent('extractionError') || '提取页面内容时出错: {error}';
+    return errorTemplate.replace('{error}', error.message);
+  }
+}
+
+// 页面内容提取：并行正文与全量，择优合并
+function extractComprehensivePageContent() {
+  const parts = [];
+
+  // 1) 标题与元信息
+  try {
+    const title = (document.querySelector('title')?.innerText || '').trim();
+    if (title) parts.push(`# ${title}`);
+
+    const metaDesc = document.querySelector('meta[name="description"]')?.getAttribute('content')
+      || document.querySelector('meta[property="og:description"]')?.getAttribute('content')
+      || document.querySelector('meta[name="twitter:description"]')?.getAttribute('content')
+      || '';
+    if (metaDesc && metaDesc.trim()) {
+      parts.push(metaDesc.trim());
+    }
+  } catch (_) { /* ignore */ }
+
+  // 2) Turndown 仅对清理后的 DOM
+  let domMarkdown = '';
+  try {
+    const td = new window.TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced', bulletListMarker: '-' });
+    // 基础剔除
+    td.remove(['script', 'style', 'noscript']);
+
+    // 导航/页眉/页脚中的链接仅保留文本（不带 URL），减少噪音
+    td.addRule('navLinksAsText', {
+      filter: function (node) {
+        if (!node || node.nodeName !== 'A') return false;
+        try { return isInNavLike(node); } catch (_) { return false; }
+      },
+      replacement: function (content, node) {
+        const t = (node.textContent || '').trim();
+        return t;
+      }
+    });
+
+    // 剔除疑似站点脚本的代码块
+    td.addRule('stripSiteInitScripts', {
+      filter: function (node) {
+        try {
+          if (!node) return false;
+          const tag = node.nodeName;
+          if (tag === 'PRE' || tag === 'CODE') {
+            const t = (node.textContent || '').trim();
+            return isLikelySiteScript(t, node);
+          }
+          return false;
+        } catch (_) { return false; }
+      },
+      replacement: function () { return ''; }
+    });
+
+    // 仅取主内容容器作为根，进行克隆与去噪
+    const domCleaned = cloneAndPruneRootForConversion(pickMainRootNode());
+    domMarkdown = td.turndown(domCleaned) || '';
+  } catch (e1) {
+    domMarkdown = (document.body && document.body.innerText) ? document.body.innerText : '';
+  }
+
+  // 3) 段落级去重与空白压缩
+  domMarkdown = dedupeMarkdownParagraphs(domMarkdown);
+
+  // 4) 仅解析 JSON-LD（内嵌结构化数据）
+  try {
+    const embeddedText = extractEmbeddedJsonText();
+    if (embeddedText && embeddedText.trim()) {
+      parts.push('---');
+      parts.push(embeddedText.trim());
+    }
+  } catch (_) { /* ignore */ }
+
+  // 5) 拼装与总长度限制（宽松软上限）
+  parts.unshift(domMarkdown.trim());
+  let full = parts.filter(Boolean).join('\n\n');
+  const maxLength = 300000; // 30 万字符软上限
+  if (full.length > maxLength) {
+    const truncatedSuffix = trContent('contentTruncated') || '...(Content truncated)';
+    full = full.substring(0, maxLength) + truncatedSuffix;
+  }
+  return full;
+}
+
+// 选择主内容容器
+function pickMainRootNode() {
+  const candidates = [
+    'main',
+    '[role="main"]',
+    'article',
+    '#content',
+    '.content',
+    '#main-content',
+    '.markdown-body',
+  ];
+  for (const sel of candidates) {
+    const el = document.querySelector(sel);
+    if (el) return el;
+  }
+  return document.body || document.documentElement;
+}
+
+// 导航/页眉/页脚等容器判断
+function isInNavLike(node) {
+  try {
+    const el = node.nodeType === 1 ? node : node.parentElement;
+    if (!el) return false;
+    return !!el.closest('nav, header, footer, aside, [role="navigation"], [role="contentinfo"], [aria-label*="breadcrumb" i], .breadcrumb, .breadcrumbs');
+  } catch (_) {
+    return false;
+  }
+}
+
+// 克隆并裁剪根节点（去脚本/样式/不可见/广告弹层等噪音）
+function cloneAndPruneRootForConversion(root) {
+  const chosenRoot = root || pickMainRootNode();
+  const clone = chosenRoot.cloneNode(true);
+
+  // 1) 移除 script/style/noscript
+  try { clone.querySelectorAll('script,style,noscript').forEach(n => n.remove()); } catch (_) {}
+
+  // 2) 移除不可见节点（基于属性/内联样式，避免使用 getComputedStyle 于脱离文档的节点）
+  try { clone.querySelectorAll('[hidden], [aria-hidden="true"], [inert], [style*="display:none" i], [style*="visibility:hidden" i]').forEach(n => n.remove()); } catch (_) {}
+
+  // 3) 移除弹窗/遮罩/对话框/订阅/同意等常见噪音（保留评论/内容）
+  try {
+    const noisySelectors = [
+      '[role="dialog"]', '[role="alertdialog"]', '.modal', '.popup', '.dialog', '.banner', '.interstitial',
+      '[class*="cookie" i]', '[id*="cookie" i]', '[class*="gdpr" i]', '[id*="gdpr" i]', '[class*="consent" i]', '[id*="consent" i]',
+      '[class*="subscribe" i]', '[id*="subscribe" i]', '[class*="newsletter" i]', '[id*="newsletter" i]',
+      '[class*="login" i]', '[id*="login" i]', '[class*="signup" i]', '[id*="signup" i]',
+      '[class*="overlay" i]', '[id*="overlay" i]', '[class*="backdrop" i]', '[id*="backdrop" i]', '[class*="mask" i]', '[id*="mask" i]', '[class*="tooltip" i]'
+    ].join(',');
+    clone.querySelectorAll(noisySelectors).forEach(el => {
+      const str = `${el.className || ''} ${el.id || ''} ${(el.getAttribute('aria-label') || '')} ${(el.getAttribute('title') || '')}`.toLowerCase();
+      if (/comment|giscus|utterances|remark42/.test(str)) return; // 保留评论系统
+      el.remove();
+    });
+  } catch (_) {}
+
+  // 4) 移除广告/推广/追踪容器（避免误删含“comment”）
+  try {
+    const adSelectors = [
+      '[class*="ad-" i]', '[class*="-ad" i]', '[class*="ads" i]', '[id*="ad-" i]', '[id*="ads" i]', '[id*="-ad" i]',
+      '[class*="sponsor" i]', '[id*="sponsor" i]', '[class*="promo" i]', '[id*="promo" i]', '[class*="advert" i]', '[id*="advert" i]',
+      '[class*="affiliate" i]', '[id*="affiliate" i]', '[class*="tracking" i]', '[id*="tracking" i]'
+    ].join(',');
+    clone.querySelectorAll(adSelectors).forEach(el => {
+      const str = `${el.className || ''} ${el.id || ''}`.toLowerCase();
+      if (/comment/.test(str)) return;
+      el.remove();
+    });
+  } catch (_) {}
+
+  return clone;
+}
+
+/**
+ * 提取内嵌 JSON 的可读文本（受限）
+ */
 function extractEmbeddedJsonText() {
   const lines = [];
   const MAX_SCRIPT_SIZE = 200 * 1024; // 200KB
-  const MAX_TOTAL_CHARS = 50 * 1024;  // 累计 50KB
-  const MIN_STR_LEN = 60;             // 仅提取较长可读段
 
   function safeParse(jsonText) {
     try { return JSON.parse(jsonText); } catch (_) { return null; }
   }
 
-  function collectStrings(obj, acc) {
-    if (!obj || acc.total >= MAX_TOTAL_CHARS) return;
-    if (typeof obj === 'string') {
-      const s = obj.trim();
-      if (s.length >= MIN_STR_LEN && s.length <= 5000) { // 单段上限 5k
-        acc.total += s.length;
-        if (acc.total <= MAX_TOTAL_CHARS) acc.items.push(s);
-      }
-      return;
-    }
-    if (Array.isArray(obj)) {
-      for (const v of obj) { collectStrings(v, acc); if (acc.total >= MAX_TOTAL_CHARS) break; }
-      return;
-    }
-    if (typeof obj === 'object') {
-      const keys = Object.keys(obj);
-      for (const k of keys) {
-        // 常见噪音键过滤
-        if (/url|avatar|image|icon|src|href|class|style|nonce|sha|hash|id|guid|uid|timestamp|date|time/i.test(k)) continue;
-        collectStrings(obj[k], acc);
-        if (acc.total >= MAX_TOTAL_CHARS) break;
-      }
-    }
-  }
-
-  // ld+json 优先
+  // 仅 JSON-LD（headline/name/description/articleBody）
   document.querySelectorAll('script[type="application/ld+json"]').forEach(s => {
     if (s.textContent && s.textContent.length <= MAX_SCRIPT_SIZE) {
       const data = safeParse(s.textContent);
@@ -888,24 +1038,10 @@ function extractEmbeddedJsonText() {
     }
   });
 
-  // 通用 application/json
-  const acc = { items: [], total: 0 };
-  document.querySelectorAll('script[type="application/json"]').forEach(s => {
-    if (!s.textContent) return;
-    if (s.textContent.length > MAX_SCRIPT_SIZE) return;
-    const data = safeParse(s.textContent);
-    if (!data) return;
-    collectStrings(data, acc);
-  });
-  if (acc.items.length) {
-    lines.push('Embedded JSON Text:');
-    lines.push(acc.items.join('\n\n'));
-  }
+  // 不再抓取通用 application/json，避免引入庞大配置或敏感字段
 
-  // 汇总并限制总长
-  let text = lines.filter(Boolean).join('\n\n');
-  if (text.length > 100 * 1024) text = text.slice(0, 100 * 1024) + '\n...(Embedded data truncated)';
-  return text;
+  // 汇总
+  return lines.filter(Boolean).join('\n\n');
 }
 
 // 从 PDF.js 渲染的 DOM 结构中提取文本
@@ -953,10 +1089,28 @@ function extractFromPdfJsDom() {
     return `Title: ${title}\n\n${pdfText}`;
   }
 
-  const currentLang = localStorage.getItem('language') || 'zh-CN';
-  const fallbackMessage = trContent('pdfExtractionFailed') || 'Failed to extract text from PDF.js viewer DOM, falling back to Readability.';
+  const fallbackMessage = trContent('pdfExtractionFailed') || 'Failed to extract text from PDF.js viewer DOM.';
   console.warn(`[PageTalk] ${fallbackMessage}`);
-  return extractWithReadability(); // 如果 DOM 提取没有结果，则回退
+  const bodyText = (document.body && (document.body.innerText || document.body.textContent)) ? (document.body.innerText || document.body.textContent) : '';
+  return `${fallbackMessage}\n\n${(bodyText || '').trim()}`;
+}
+
+// 段落去重与空白压缩
+function dedupeMarkdownParagraphs(md) {
+  if (!md) return '';
+  const seen = new Set();
+  const out = [];
+  const blocks = String(md).split(/\n{2,}/);
+  for (const b of blocks) {
+    const norm = b.replace(/\s+/g, ' ').trim();
+    if (!norm) { continue; }
+    const key = norm.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(b.trim());
+    }
+  }
+  return out.join('\n\n').replace(/\n{3,}/g, '\n\n');
 }
 
 
@@ -1136,7 +1290,6 @@ window.addEventListener('load', () => {
   // initPagetalkPanel(); // 考虑是否在load时立即初始化，或者按需初始化
   detectAndSendTheme(); // 页面加载完成后立即发送主题
 });
-
 
 
 /**
