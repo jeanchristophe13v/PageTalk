@@ -2,7 +2,7 @@
  * PageTalk - OpenAI 兼容 API 适配器
  *
  * 处理 OpenAI 兼容 API 的请求格式转换和响应解析
- * 支持：OpenAI、SiliconFlow、OpenRouter、DeepSeek 等
+ * 支持：OpenAI、SiliconFlow、OpenRouter、DeepSeek、ModelScope 等
  */
 
 // 导入统一代理请求工具

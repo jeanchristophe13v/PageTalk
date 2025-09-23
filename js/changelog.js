@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.8.3',
+        date: '2025-09-23',
+        changes: {
+            'zh-CN': [
+                '新增 ModelScope 提供商支持'
+            ],
+            'en': [
+                'Added ModelScope provider support'
+            ]
+        }
+    },
+    {
         version: '3.8.2',
         date: '2025-09-14',
         changes: {

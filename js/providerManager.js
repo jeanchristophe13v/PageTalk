@@ -92,6 +92,18 @@ export const providers = {
         description: 'DeepSeek 深度求索的高性能 AI 模型'
     },
 
+    modelscope: {
+        id: 'modelscope',
+        name: 'ModelScope',
+        type: 'openai_compatible',
+        apiHost: 'https://api-inference.modelscope.cn/v1',
+        apiKeyUrl: 'https://modelscope.cn/my/myaccesstoken',
+        modelsUrl: 'https://modelscope.cn/models',
+        apiKeyNeeded: true,
+        icon: 'modelscope.svg',
+        description: 'ModelScope 阿里灵积提供的多模型推理服务'
+    },
+
     chatglm: {
         id: 'chatglm',
         name: 'ChatGLM',

@@ -15,6 +15,7 @@ const aiApiDomainSet = new Set([
     'api.siliconflow.cn',                 // SiliconFlow
     'openrouter.ai',                      // OpenRouter
     'api.deepseek.com',                   // DeepSeek
+    'api-inference.modelscope.cn',        // ModelScope
     'open.bigmodel.cn'                    // ChatGLM
 ]);
 

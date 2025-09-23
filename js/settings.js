@@ -2690,7 +2690,8 @@ function getProviderApiKeyLinkText(provider) {
         'siliconflow': 'SiliconFlow 控制台',
         'openrouter': 'OpenRouter 设置',
         'deepseek': 'DeepSeek 平台',
-        'chatglm': '智谱AI 平台'
+        'chatglm': '智谱AI 平台',
+        'modelscope': 'ModelScope 控制台'
     };
 
     return linkTexts[provider.id] || provider.name;
