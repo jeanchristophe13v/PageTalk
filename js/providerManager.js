@@ -28,8 +28,7 @@ export const providers = {
         apiKeyUrl: 'https://aistudio.google.com/',
         modelsUrl: 'https://ai.google.dev/models/gemini',
         apiKeyNeeded: true,
-        icon: 'Gemini.svg',
-        description: 'Google Gemini 系列模型，支持多模态输入和高质量文本生成'
+        icon: 'Gemini.svg'
     },
     
     openai: {
@@ -40,8 +39,7 @@ export const providers = {
         apiKeyUrl: 'https://platform.openai.com/api-keys',
         modelsUrl: 'https://platform.openai.com/docs/models',
         apiKeyNeeded: true,
-        icon: 'OpenAI.svg',
-        description: 'OpenAI GPT 系列模型，包括 GPT-4、GPT-3.5 等'
+        icon: 'OpenAI.svg'
     },
     
     anthropic: {
@@ -52,8 +50,7 @@ export const providers = {
         apiKeyUrl: 'https://console.anthropic.com/settings/keys',
         modelsUrl: 'https://docs.anthropic.com/en/docs/about-claude/models',
         apiKeyNeeded: true,
-        icon: 'Claude.svg',
-        description: 'Anthropic Claude 系列模型，专注于安全和有用的 AI 助手'
+        icon: 'Claude.svg'
     },
     
     siliconflow: {
@@ -64,8 +61,7 @@ export const providers = {
         apiKeyUrl: 'https://cloud.siliconflow.cn/account/ak',
         modelsUrl: 'https://docs.siliconflow.cn/docs/model-names',
         apiKeyNeeded: true,
-        icon: 'SiliconFlow.svg',
-        description: '硅基流动提供的高性价比 AI 模型服务'
+        icon: 'SiliconFlow.svg'
     },
     
     openrouter: {
@@ -76,8 +72,7 @@ export const providers = {
         apiKeyUrl: 'https://openrouter.ai/settings/keys',
         modelsUrl: 'https://openrouter.ai/models',
         apiKeyNeeded: true,
-        icon: 'OpenRouter.svg',
-        description: 'OpenRouter 聚合多个 AI 模型提供商的服务'
+        icon: 'OpenRouter.svg'
     },
     
     deepseek: {
@@ -88,8 +83,7 @@ export const providers = {
         apiKeyUrl: 'https://platform.deepseek.com/api_keys',
         modelsUrl: 'https://platform.deepseek.com/api-docs/zh-cn/',
         apiKeyNeeded: true,
-        icon: 'DeepSeek.svg',
-        description: 'DeepSeek 深度求索的高性能 AI 模型'
+        icon: 'DeepSeek.svg'
     },
 
     modelscope: {
@@ -100,8 +94,7 @@ export const providers = {
         apiKeyUrl: 'https://modelscope.cn/my/myaccesstoken',
         modelsUrl: 'https://modelscope.cn/models',
         apiKeyNeeded: true,
-        icon: 'modelscope.svg',
-        description: 'ModelScope 阿里灵积提供的多模型推理服务'
+        icon: 'modelscope.svg'
     },
 
     chatglm: {
@@ -112,8 +105,7 @@ export const providers = {
         apiKeyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
         modelsUrl: 'https://open.bigmodel.cn/modelcenter/square',
         apiKeyNeeded: true,
-        icon: 'ChatGLM.svg',
-        description: '智谱AI ChatGLM 系列模型，支持中文对话和代码生成'
+        icon: 'ChatGLM.svg'
     },
 
     ollama: {
@@ -124,8 +116,7 @@ export const providers = {
         apiKeyUrl: 'https://ollama.com/download',
         modelsUrl: 'https://ollama.com/library',
         apiKeyNeeded: true,
-        icon: 'ollama.svg',
-        description: 'Ollama 本地大语言模型运行平台，支持多种开源模型'
+        icon: 'ollama.svg'
     },
 
     lmstudio: {
@@ -136,8 +127,40 @@ export const providers = {
         apiKeyUrl: 'https://lmstudio.ai/docs/local-server',
         modelsUrl: 'https://lmstudio.ai/docs/app/basics/download-model',
         apiKeyNeeded: true,
-        icon: 'lmstudio.svg',
-        description: 'LM Studio 本地大语言模型运行平台，提供图形化界面和 API 服务'
+        icon: 'lmstudio.svg'
+    },
+
+    groq: {
+        id: 'groq',
+        name: 'Groq',
+        type: 'openai_compatible',
+        apiHost: 'https://api.groq.com/openai/v1',
+        apiKeyUrl: 'https://console.groq.com',
+        modelsUrl: 'https://console.groq.com/docs/models',
+        apiKeyNeeded: true,
+        icon: 'groq.svg'
+    },
+
+    cerebras: {
+        id: 'cerebras',
+        name: 'Cerebras',
+        type: 'openai_compatible',
+        apiHost: 'https://api.cerebras.ai/v1',
+        apiKeyUrl: 'https://cloud.cerebras.ai',
+        modelsUrl: 'https://cloud.cerebras.ai/docs/models',
+        apiKeyNeeded: true,
+        icon: 'cerebras.svg'
+    },
+
+    vercel: {
+        id: 'vercel',
+        name: 'Vercel AI Gateway',
+        type: 'openai_compatible',
+        apiHost: 'https://ai-gateway.vercel.sh/v1',
+        apiKeyUrl: 'https://vercel.com/ai-gateway',
+        modelsUrl: 'https://vercel.com/docs/ai/ai-gateway/models',
+        apiKeyNeeded: true,
+        icon: 'vercel.svg'
     }
 };
 
