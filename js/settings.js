@@ -2800,7 +2800,7 @@ async function removeCustomProvider(providerId) {
 
             // 如果当前显示的是被删除的提供商，切换到默认提供商
             const currentVisible = getCurrentVisibleProviderId();
-            if (currentVisible === providerId) {
+            if (currentVisible === providerId || !currentVisible) {
                 await showProviderSettings('google');
                 updateProviderSelectInVisibleCard();
             }
