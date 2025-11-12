@@ -3,7 +3,8 @@ if (typeof window.translations === 'undefined') {
   window.translations = {
   'zh-CN': {
     // --- General UI ---
-    'appName': 'Pagetalk',
+    'appName': 'PageTalk',
+    'userLabel': '我',
     'loading': '加载中...',
     'cancel': '取消',
     'delete': '删除',
@@ -510,7 +511,8 @@ Format：
   },
   'en': {
     // --- General UI ---
-    'appName': 'Pagetalk',
+    'appName': 'PageTalk',
+    'userLabel': 'Me',
     'loading': 'Loading...',
     'save': 'Save',
     'cancel': 'Cancel',

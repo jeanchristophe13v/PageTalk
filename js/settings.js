@@ -414,7 +414,7 @@ function exportChatToMarkdown(state, currentTranslations) {
 
     state.chatHistory.forEach(message => {
         const { text, images } = extractPartsFromMessage(message); // Use helper
-        const role = message.role === 'user' ? _tr('chatTab') : _tr('appName');
+        const role = message.role === 'user' ? _tr('userLabel') : _tr('appName');
         markdown += `## ${role}\n\n`;
 
         if (images.length > 0) {
@@ -453,7 +453,7 @@ function exportChatToText(state, currentTranslations) {
 
     state.chatHistory.forEach(message => {
         const { text, images } = extractPartsFromMessage(message); // Use helper
-        const role = message.role === 'user' ? _tr('chatTab') : _tr('appName');
+        const role = message.role === 'user' ? _tr('userLabel') : _tr('appName');
         textContent += `--- ${role} ---\n`;
 
         if (images.length > 0) {
