@@ -5,6 +5,7 @@ if (typeof window.translations === 'undefined') {
     // --- General UI ---
     'appName': 'PageTalk',
     'userLabel': '我',
+    'contextPagesLabel': '标签页',
     'loading': '加载中...',
     'cancel': '取消',
     'delete': '删除',
@@ -54,6 +55,7 @@ if (typeof window.translations === 'undefined') {
     'languageLabel': '语言',
     'languageDescription': '选择界面显示语言',
     'exportChatLabel': '导出聊天记录',
+    'chatHistoryLabel': '聊天记录',
     'exportChatDescription': '将当前聊天记录导出为文件',
     'exportFormatMarkdown': 'Markdown',
     'exportFormatText': 'Text',
@@ -513,6 +515,7 @@ Format：
     // --- General UI ---
     'appName': 'PageTalk',
     'userLabel': 'Me',
+    'contextPagesLabel': 'Tabs',
     'loading': 'Loading...',
     'save': 'Save',
     'cancel': 'Cancel',
@@ -564,6 +567,7 @@ Format：
     'languageLabel': 'Language',
     'languageDescription': 'Select interface display language',
     'exportChatLabel': 'Export Chat History',
+    'chatHistoryLabel': 'Chat History',
     'exportChatDescription': 'Export current chat history as a file',
     'exportFormatMarkdown': 'Markdown',
     'exportFormatText': 'Text',

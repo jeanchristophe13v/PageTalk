@@ -410,12 +410,21 @@ function exportChatToMarkdown(state, currentTranslations) {
     if (typeof dayjs !== 'undefined') dayjs.locale(locale);
     const timestamp = typeof dayjs !== 'undefined' ? dayjs().format('YYYY-MM-DD HH:mm:ss') : new Date().toLocaleString();
 
-    let markdown = `# ${_tr('appName')} ${_tr('chatTab')} History (${timestamp})\n\n`;
+    let markdown = `# ${_tr('appName')} ${_tr('chatHistoryLabel')} (${timestamp})\n\n`;
 
     state.chatHistory.forEach(message => {
         const { text, images } = extractPartsFromMessage(message); // Use helper
         const role = message.role === 'user' ? _tr('userLabel') : _tr('appName');
         markdown += `## ${role}\n\n`;
+
+        // 添加上下文标签页信息（如果有）
+        if (message.role === 'user' && message.sentContextTabsInfo && message.sentContextTabsInfo.length > 0) {
+            markdown += `**${_tr('contextPagesLabel')}:**\n`;
+            message.sentContextTabsInfo.forEach((tab, index) => {
+                markdown += `${index + 1}. [${tab.title}](${tab.url || tab.id})\n`;
+            });
+            markdown += '\n';
+        }
 
         if (images.length > 0) {
             images.forEach((img, index) => {
@@ -449,12 +458,25 @@ function exportChatToText(state, currentTranslations) {
     if (typeof dayjs !== 'undefined') dayjs.locale(locale);
     const timestamp = typeof dayjs !== 'undefined' ? dayjs().format('YYYY-MM-DD HH:mm:ss') : new Date().toLocaleString();
 
-    let textContent = `${_tr('appName')} ${_tr('chatTab')} History (${timestamp})\n\n`;
+    let textContent = `${_tr('appName')} ${_tr('chatHistoryLabel')} (${timestamp})\n\n`;
 
     state.chatHistory.forEach(message => {
         const { text, images } = extractPartsFromMessage(message); // Use helper
         const role = message.role === 'user' ? _tr('userLabel') : _tr('appName');
         textContent += `--- ${role} ---\n`;
+
+        // 添加上下文标签页信息（如果有）
+        if (message.role === 'user' && message.sentContextTabsInfo && message.sentContextTabsInfo.length > 0) {
+            textContent += `${_tr('contextPagesLabel')}:\n`;
+            message.sentContextTabsInfo.forEach((tab, index) => {
+                textContent += `${index + 1}. ${tab.title}`;
+                if (tab.url) {
+                    textContent += ` (${tab.url})`;
+                }
+                textContent += '\n';
+            });
+            textContent += '\n';
+        }
 
         if (images.length > 0) {
             textContent += `[${_tr('containsNImages', { count: images.length })}]\n`;

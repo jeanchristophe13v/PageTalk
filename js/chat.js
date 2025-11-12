@@ -94,7 +94,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
         if (tabsToSendNow.length > 0) {
             // Ensure contextTabsForApi includes id, title, and content
-            contextTabsForApi = tabsToSendNow.map(tab => ({ id: tab.id, title: tab.title, content: tab.content }));
+            contextTabsForApi = tabsToSendNow.map(tab => ({ id: tab.id, title: tab.title, url: tab.url, content: tab.content }));
 
             tabsToSendNow.forEach(tabSent => {
                 const originalTab = state.selectedContextTabs.find(t => t.id === tabSent.id);
@@ -369,7 +369,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
         );
 
         if (newlySelectedTabsToSend.length > 0) {
-            const newTabsForApi = newlySelectedTabsToSend.map(tab => ({ id: tab.id, title: tab.title, content: tab.content }));
+            const newTabsForApi = newlySelectedTabsToSend.map(tab => ({ id: tab.id, title: tab.title, url: tab.url, content: tab.content }));
             
             // 合并新选择的标签页，避免重复（基于ID去重）
             newTabsForApi.forEach(newTab => {
