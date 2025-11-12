@@ -402,18 +402,7 @@ function checkGoogleApiKeyConfigured(providerSettings, legacyApiKey = null) {
  * 获取默认模型参数（多供应商版本）
  */
 function getDefaultModelParams(modelId) {
-    // Google Gemini 模型的默认参数
-    if (modelId === 'gemini-2.5-flash') {
-        return { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
-    } else if (modelId === 'gemini-2.5-flash-thinking') {
-        return null; // 使用默认思考模式
-    } else if (modelId === 'gemini-2.5-pro') {
-        return null;
-    } else if (modelId === 'gemini-2.5-flash-lite') {
-        return null;
-    }
-
-    // 其他供应商的模型默认无特殊参数
+    // 所有模型默认无特殊参数
     return null;
 }
 

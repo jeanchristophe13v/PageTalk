@@ -12,7 +12,7 @@
 class SimpleRetryHandler {
     constructor() {
         this.config = {
-            maxRetries: 3,
+            maxRetries: 5,
             baseDelay: 1000,
             maxDelay: 10000,
             backoffFactor: 2
@@ -595,31 +595,15 @@ async function callGeminiAPIInternal(userMessage, images = [], videos = [], thin
                 modelParams = modelConfig.params;
             } catch (error) {
                 console.warn('[API] Failed to get model config from ModelManager, using fallback logic:', error);
-                // 回退到原有逻辑
-                if (stateRef.model === 'gemini-2.5-flash') {
-                    apiModelName = 'gemini-2.5-flash';
-                    modelParams = { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
-                } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
-                    apiModelName = 'gemini-2.5-flash';
-                    modelParams = null;
-                } else if (stateRef.model === 'gemini-2.5-pro') {
-                    apiModelName = 'gemini-2.5-pro';
-                    modelParams = null;
-                }
+                // 回退到原有逻辑：直接使用模型ID
+                apiModelName = stateRef.model;
+                modelParams = null;
             }
         } else {
             console.warn('[API] ModelManager not available, using fallback logic');
-            // 回退到原有逻辑
-            if (stateRef.model === 'gemini-2.5-flash') {
-                apiModelName = 'gemini-2.5-flash';
-                modelParams = { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } };
-            } else if (stateRef.model === 'gemini-2.5-flash-thinking') {
-                apiModelName = 'gemini-2.5-flash';
-                modelParams = null;
-            } else if (stateRef.model === 'gemini-2.5-pro') {
-                apiModelName = 'gemini-2.5-pro';
-                modelParams = null;
-            }
+            // 回退到原有逻辑：直接使用模型ID
+            apiModelName = stateRef.model;
+            modelParams = null;
         }
 
         console.log(`Using API model ${apiModelName} (selected: ${stateRef.model}) with params:`, modelParams);

@@ -29,20 +29,20 @@ const DEFAULT_MODELS = [
         displayName: 'gemini-2.5-flash',
         apiModelName: 'gemini-2.5-flash',
         providerId: 'google',
-        params: { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } },
+        params: null,
         isAlias: true,
         isDefault: true,
-        canDelete: false // 不可删除，有特殊参数配置
+        canDelete: true
     },
     {
         id: 'gemini-2.5-flash-thinking',
         displayName: 'gemini-2.5-flash-thinking',
         apiModelName: 'gemini-2.5-flash',
         providerId: 'google',
-        params: null, // 不设置thinkingBudget，使用默认思考模式
+        params: null,
         isAlias: true,
         isDefault: true,
-        canDelete: false // 不可删除，有特殊参数配置
+        canDelete: true
     },
     {
         id: 'gemini-2.5-pro',
@@ -82,7 +82,7 @@ const STORAGE_KEYS = {
 /**
  * 当前版本号 - 用于数据迁移
  */
-const CURRENT_VERSION = '2.1.0'; // 2.1.0: 复合键(providerId::modelId)支持，修复跨供应商同名模型冲突
+const CURRENT_VERSION = '2.1.1'; // 2.1.1: 移除Gemini模型特殊参数和保护，取消API测试后自动添加模型
 
 /**
  * 模型管理器类
@@ -404,6 +404,7 @@ class ModelManager {
                 STORAGE_KEYS.OLD_SELECTED_MODELS
             ], async (result) => {
                 const currentVersion = result[STORAGE_KEYS.MODEL_MANAGER_VERSION];
+                let hasChanges = false;
 
                 // 如果没有版本号或版本号低于2.0.0，执行迁移
                 if (!currentVersion || this.compareVersions(currentVersion, '2.0.0') < 0) {
@@ -444,10 +445,41 @@ class ModelManager {
                         return model;
                     });
 
+                    hasChanges = true;
+                }
+
+                // 版本 2.1.1 迁移：移除gemini模型的特殊参数和保护
+                if (!currentVersion || this.compareVersions(currentVersion, '2.1.1') < 0) {
+                    console.log('[ModelManager] Applying migration 2.1.1: removing Gemini special params and protection');
+
+                    // 更新现有的gemini模型配置
+                    this.managedModels = this.managedModels.map(model => {
+                        if (model.id === 'gemini-2.5-flash' || model.id === 'gemini-2.5-flash-thinking') {
+                            // 移除特殊参数
+                            if (model.params && model.params.generationConfig && model.params.generationConfig.thinkingConfig) {
+                                model.params = null;
+                                hasChanges = true;
+                                console.log(`[ModelManager] Removed special params from model: ${model.id}`);
+                            }
+
+                            // 允许删除
+                            if (model.canDelete === false) {
+                                model.canDelete = true;
+                                hasChanges = true;
+                                console.log(`[ModelManager] Made model deletable: ${model.id}`);
+                            }
+                        }
+                        return model;
+                    });
+                }
+
+                if (hasChanges) {
                     // 保存迁移后的数据
                     await this.saveToStorage();
+                }
 
-                    // 清理旧的存储键
+                // 清理旧的存储键
+                if (!currentVersion || this.compareVersions(currentVersion, '2.0.0') < 0) {
                     chrome.storage.sync.remove([
                         STORAGE_KEYS.OLD_API_KEY,
                         STORAGE_KEYS.OLD_SELECTED_MODELS
@@ -456,7 +488,7 @@ class ModelManager {
                         resolve();
                     });
                 } else {
-                    console.log('[ModelManager] No migration needed, current version:', currentVersion);
+                    console.log('[ModelManager] Migration completed, current version:', currentVersion);
                     resolve();
                 }
             });
@@ -632,43 +664,9 @@ class ModelManager {
      */
     async setProviderApiKey(providerId, apiKey) {
         await this.setProviderSettings(providerId, { apiKey });
-
-        // 如果是Google供应商且之前没有Google模型，添加默认模型
-        if (providerId === 'google' && apiKey && apiKey.trim()) {
-            await this.ensureGoogleDefaultModels();
-        }
     }
 
-    /**
-     * 确保Google默认模型存在（当配置了Google API key时）
-     */
-    async ensureGoogleDefaultModels() {
-        const googleModels = DEFAULT_MODELS.filter(model => model.providerId === 'google');
-        let hasChanges = false;
-
-        for (const defaultModel of googleModels) {
-            // 检查是否已存在于管理列表中（按复合键）
-            if (!this.managedModels.find(model => model.id === defaultModel.id && model.providerId === defaultModel.providerId)) {
-                this.managedModels.push({ ...defaultModel });
-                hasChanges = true;
-                console.log(`[ModelManager] Added missing Google default model: ${defaultModel.id}`);
-            }
-
-            // 检查是否已激活
-            const key = this.buildKey(defaultModel.providerId, defaultModel.id);
-            if (!this.userActiveModels.includes(key)) {
-                this.userActiveModels.push(key);
-                hasChanges = true;
-                console.log(`[ModelManager] Activated Google default model: ${defaultModel.id}`);
-            }
-        }
-
-        if (hasChanges) {
-            await this.saveToStorage();
-            console.log('[ModelManager] Google default models ensured');
-        }
-    }
-
+    
     /**
      * 获取指定供应商的API Host（如果有自定义的话）
      * @param {string} providerId - 供应商ID
@@ -732,12 +730,7 @@ class ModelManager {
             return false;
         }
 
-        // 检查是否可以删除（基于canDelete属性）
-        if (model.canDelete === false) {
-            console.warn(`[ModelManager] Cannot remove protected model: ${modelId}`);
-            return false;
-        }
-
+        
         // 只从用户已选列表中移除，不从管理列表中删除
         // 这样模型仍然可以在下次发现时重新出现
         const key = this.buildKey(model.providerId, model.id);

@@ -179,9 +179,7 @@ export async function saveModelSettings(showToastNotification = true, state, ele
                         elements.chatModelSelection.value = state.model;
                     }
 
-                    // API测试成功后，自动发现并添加默认模型
-                    await autoDiscoverModelsAfterTest('google', showToastCallback);
-                    state.hasDeterminedConnection = true;
+                                        state.hasDeterminedConnection = true;
                 }
                 updateConnectionIndicatorCallback(); // Update footer indicator
             });
@@ -1816,11 +1814,7 @@ async function handleTestApiKey(providerId, showToastCallback) {
         if (result.success) {
             showToastCallback(result.message, 'success');
 
-            // 只对Google供应商进行自动发现并添加默认模型
-            if (providerId === 'google') {
-                await autoDiscoverModelsAfterTest(providerId, showToastCallback);
-            }
-        } else {
+                    } else {
             showToastCallback(result.message, 'error');
         }
     } catch (error) {
@@ -1834,66 +1828,6 @@ async function handleTestApiKey(providerId, showToastCallback) {
     }
 }
 
-/**
- * Gemini API测试成功后自动发现模型（仅限Google供应商）
- */
-async function autoDiscoverModelsAfterTest(providerId, showToastCallback) {
-    // 只处理Google供应商
-    if (providerId !== 'google') {
-        console.log(`[Settings] Auto-discovery is only enabled for Google provider, skipping ${providerId}`);
-        return;
-    }
-
-    const currentTranslations = getCurrentTranslations();
-
-    try {
-        console.log(`[Settings] Auto-discovering Gemini models after successful API test`);
-
-        // 检查是否已有Google供应商的模型
-        const modelManager = window.ModelManager.instance;
-        const existingGoogleModels = modelManager.getModelsByProvider('google', false); // false = 包括未激活的模型
-
-        if (existingGoogleModels && existingGoogleModels.length > 0) {
-            console.log(`[Settings] Google provider already has ${existingGoogleModels.length} models, skipping auto-discovery`);
-            return;
-        }
-
-        console.log(`[Settings] No existing Google models found, proceeding with auto-discovery`);
-
-        // 获取Gemini可用模型
-        const discoveredModels = await window.PageTalkAPI.fetchModels('google');
-
-        if (!discoveredModels || discoveredModels.length === 0) {
-            console.log(`[Settings] No Gemini models discovered`);
-            return;
-        }
-
-        // 自动添加所有发现的Gemini模型
-        const result = await modelManager.addDiscoveredModels(discoveredModels, discoveredModels.map(m => m.id));
-
-        if (result.added > 0 || result.activated > 0) {
-            console.log(`[Settings] Auto-added ${result.added} Gemini models and activated ${result.activated} models`);
-
-            // 重新初始化模型选择器和卡片显示
-            const state = window.state || {};
-            const elements = {
-                modelSelection: document.getElementById('model-selection'),
-                chatModelSelection: document.getElementById('chat-model-selection')
-            };
-            await initModelSelection(state, elements);
-            await updateModelCardsDisplay();
-
-            // 广播模型更新事件
-            modelManager.broadcastModelsUpdated();
-
-            console.log(`[Settings] Successfully auto-discovered and added ${result.added} Gemini models`);
-        }
-
-    } catch (error) {
-        console.warn(`[Settings] Gemini auto-discovery failed:`, error);
-        // 静默失败，不显示错误提示，因为这是自动操作
-    }
-}
 
 /**
  * 处理指定供应商的模型发现
