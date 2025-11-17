@@ -558,17 +558,33 @@
     width: 140px; /* 增加宽度，确保完全覆盖按钮区域 */
     height: 1.6em; /* 稍微增加高度，确保覆盖完整 */
     background: linear-gradient(to right,
-        transparent 0%,
-        transparent 10%,
-        rgba(252, 252, 252, 0.2) 20%,
-        rgba(252, 252, 252, 0.5) 35%,
-        rgba(252, 252, 252, 0.8) 50%,
-        rgba(252, 252, 252, 0.95) 65%,
-        rgba(252, 252, 252, 1) 80%,
-        rgba(252, 252, 252, 1) 100%
+        var(--gradient-light-start, transparent) 0%,
+        var(--gradient-light-start, transparent) 10%,
+        var(--gradient-light-mid-1, rgba(252, 252, 252, 0.2)) 20%,
+        var(--gradient-light-mid-2, rgba(252, 252, 252, 0.5)) 35%,
+        var(--gradient-light-mid-3, rgba(252, 252, 252, 0.8)) 50%,
+        var(--gradient-light-mid-4, rgba(252, 252, 252, 0.95)) 65%,
+        var(--gradient-light-end, rgba(252, 252, 252, 1)) 80%,
+        var(--gradient-light-end, rgba(252, 252, 252, 1)) 100%
     );
     pointer-events: none; /* 不阻挡点击事件 */
     z-index: 2; /* 提高层级，确保在文字上方 */
+}
+
+/* 深色模式下的渐变遮罩 */
+body.dark-mode .pagetalk-quote-text.collapsed::after,
+body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::after,
+html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::after {
+    background: linear-gradient(to right,
+        var(--gradient-start, transparent) 0%,
+        var(--gradient-start, transparent) 10%,
+        var(--gradient-mid-1, rgba(44, 46, 51, 0.2)) 20%,
+        var(--gradient-mid-2, rgba(44, 46, 51, 0.5)) 35%,
+        var(--gradient-mid-3, rgba(44, 46, 51, 0.8)) 50%,
+        var(--gradient-mid-4, rgba(44, 46, 51, 0.95)) 65%,
+        var(--gradient-end, rgba(44, 46, 51, 1)) 80%,
+        var(--gradient-end, rgba(44, 46, 51, 1)) 100%
+    );
 }
 
 .pagetalk-quote-text.expanded {
@@ -2484,6 +2500,302 @@ input[name="translate-context-mode"][value="full"]:checked + label + .context-in
 }
 
 /* ===== 深色模式适配 ===== */
+
+/* 深色模式基础变量定义 - 提高特异性 */
+body.dark-mode .pagetalk-function-window,
+body .pagetalk-function-window.dark-mode,
+html body .pagetalk-function-window.dark-mode {
+    /* 深色模式变量覆盖 */
+    --primary-color: #748FFC;
+    --text-color: #e9ecefdb;
+    --text-secondary: #ADB5BD;
+    --border-color: #343A40;
+    --card-background: #2C2E33;
+    --input-background: #2C2E33;
+    --code-background: #343A40;
+    --code-text-color: #e9ecefdb;
+    --code-border: #495057;
+    --table-header-bg: #748FFC;
+    --table-even-row-bg: rgba(255, 255, 255, 0.04);
+    --button-hover-bg: rgba(116, 143, 252, 0.15);
+    --blockquote-bg: rgba(116, 143, 252, 0.1);
+    --blockquote-text: #ADB5BD;
+    --inline-code-bg: rgba(175, 184, 193, 0.2);
+    --inline-code-text: #e9ecef;
+    --inline-code-border: rgba(175, 184, 193, 0.2);
+
+    /* 新增渐变背景颜色变量 - 用于折叠文本的渐变遮罩 */
+    --gradient-start: rgba(44, 46, 51, 0);    /* 完全透明 */
+    --gradient-mid-1: rgba(44, 46, 51, 0.2);  /* 20% 透明度 */
+    --gradient-mid-2: rgba(44, 46, 51, 0.5);  /* 50% 透明度 */
+    --gradient-mid-3: rgba(44, 46, 51, 0.8);  /* 80% 透明度 */
+    --gradient-mid-4: rgba(44, 46, 51, 0.95); /* 95% 透明度 */
+    --gradient-end: rgba(44, 46, 51, 1);      /* 完全不透明 */
+
+    /* 浅色模式的渐变背景颜色变量（默认） */
+    --gradient-light-start: rgba(252, 252, 252, 0);
+    --gradient-light-mid-1: rgba(252, 252, 252, 0.2);
+    --gradient-light-mid-2: rgba(252, 252, 252, 0.5);
+    --gradient-light-mid-3: rgba(252, 252, 252, 0.8);
+    --gradient-light-mid-4: rgba(252, 252, 252, 0.95);
+    --gradient-light-end: rgba(252, 252, 252, 1);
+}
+
+/* 划词助手深色模式样式 */
+.pagetalk-mini-icon.pagetalk-dark-mode {
+    background: rgba(44, 46, 51, 0.9) !important;
+    border: 1px solid rgba(52, 58, 64, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.pagetalk-options-bar.pagetalk-dark-mode {
+    background: rgba(44, 46, 51, 0.9) !important;
+    border: 1px solid rgba(52, 58, 64, 0.3) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 深色模式选项内容 */
+.pagetalk-options-bar.pagetalk-dark-mode .pagetalk-option {
+    color: #e9ecefdb !important;
+}
+
+.pagetalk-options-bar.pagetalk-dark-mode .pagetalk-option:hover {
+    background: rgba(116, 143, 252, 0.15) !important;
+}
+
+.pagetalk-options-bar.pagetalk-dark-mode .pagetalk-option-icon {
+    color: #ADB5BD !important;
+}
+
+.pagetalk-options-bar.pagetalk-dark-mode .pagetalk-add-option-btn {
+    background: rgba(116, 143, 252, 0.15) !important;
+    border-color: rgba(116, 143, 252, 0.3) !important;
+    color: #748FFC !important;
+}
+
+.pagetalk-options-bar.pagetalk-dark-mode .pagetalk-add-option-btn:hover {
+    background: rgba(116, 143, 252, 0.25) !important;
+    border-color: rgba(116, 143, 252, 0.5) !important;
+}
+
+/* ===== 深色模式适配完成 ===== */
+
+/* 深色模式功能窗口核心样式 */
+body.dark-mode .pagetalk-function-window,
+body .pagetalk-function-window.dark-mode,
+html body .pagetalk-function-window.dark-mode {
+    background: var(--card-background) !important;
+    backdrop-filter: blur(15px);
+    border-color: var(--border-color) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* 深色模式窗口组件统一样式 */
+body.dark-mode .pagetalk-window-header,
+body .pagetalk-function-window.dark-mode .pagetalk-window-header {
+    background: var(--card-background) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-window-title,
+body .pagetalk-function-window.dark-mode .pagetalk-window-title {
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .pagetalk-quote-area,
+body .pagetalk-function-window.dark-mode .pagetalk-quote-area {
+    background: rgba(52, 58, 64, 0.3) !important;
+    border-bottom-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-quote-text,
+body .pagetalk-function-window.dark-mode .pagetalk-quote-text {
+    color: var(--text-secondary) !important;
+}
+
+body.dark-mode .pagetalk-response-content,
+body .pagetalk-function-window.dark-mode .pagetalk-response-content {
+    color: var(--text-color) !important;
+}
+
+/* 深色模式聊天输入区域 - 统一选择器 */
+body.dark-mode .pagetalk-chat-input,
+body .pagetalk-function-window.dark-mode .pagetalk-chat-input {
+    background: var(--card-background) !important;
+    border-top-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-chat-input textarea,
+body .pagetalk-function-window.dark-mode .pagetalk-chat-input textarea,
+html body .pagetalk-function-window.dark-mode .pagetalk-chat-input textarea {
+    background: var(--input-background) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-chat-input textarea:focus,
+body .pagetalk-function-window.dark-mode .pagetalk-chat-input textarea:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2) !important;
+}
+
+body.dark-mode .pagetalk-chat-input textarea::placeholder,
+body .pagetalk-function-window.dark-mode .pagetalk-chat-input textarea::placeholder {
+    color: var(--text-secondary) !important;
+}
+
+/* 深色模式模型选择器 - 提高特异性 */
+body.dark-mode .pagetalk-window-controls select,
+body .pagetalk-function-window.dark-mode .pagetalk-window-controls select,
+html body .pagetalk-function-window.dark-mode select {
+    background: var(--input-background) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-window-controls select:focus,
+body .pagetalk-function-window.dark-mode .pagetalk-window-controls select:focus,
+html body .pagetalk-function-window.dark-mode select:focus {
+    background: var(--card-background) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2) !important;
+}
+
+body.dark-mode .pagetalk-window-controls select option,
+.pagetalk-function-window.dark-mode .pagetalk-window-controls select option {
+    background: var(--card-background) !important;
+    color: var(--text-color) !important;
+}
+
+body.dark-mode .pagetalk-window-controls select optgroup,
+.pagetalk-function-window.dark-mode .pagetalk-window-controls select optgroup {
+    background: var(--card-background) !important;
+    color: var(--text-color) !important;
+}
+
+/* 深色模式按钮 */
+body.dark-mode .pagetalk-window-controls button,
+.pagetalk-function-window.dark-mode .pagetalk-window-controls button {
+    background: var(--button-hover-bg) !important;
+    color: var(--text-secondary) !important;
+}
+
+body.dark-mode .pagetalk-window-controls button:hover,
+.pagetalk-function-window.dark-mode .pagetalk-window-controls button:hover {
+    background: rgba(116, 143, 252, 0.25) !important;
+    color: var(--primary-color) !important;
+}
+
+/* 深色模式发送按钮 */
+body.dark-mode .pagetalk-send-btn,
+.pagetalk-function-window.dark-mode .pagetalk-send-btn {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+body.dark-mode .pagetalk-send-btn:hover,
+.pagetalk-function-window.dark-mode .pagetalk-send-btn:hover {
+    background: var(--primary-hover) !important;
+}
+
+/* 深色模式聊天消息 */
+body.dark-mode .pagetalk-chat-message-user .pagetalk-message-content,
+.pagetalk-function-window.dark-mode .pagetalk-chat-message-user .pagetalk-message-content {
+    background: var(--primary-color) !important;
+    color: white !important;
+}
+
+body.dark-mode .pagetalk-chat-message-assistant .pagetalk-message-content,
+.pagetalk-function-window.dark-mode .pagetalk-chat-message-assistant .pagetalk-message-content {
+    background: var(--card-background) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* 深色模式消息操作按钮 */
+body.dark-mode .pagetalk-message-actions button,
+.pagetalk-function-window.dark-mode .pagetalk-message-actions button {
+    background-color: var(--card-background) !important;
+    color: var(--text-secondary) !important;
+}
+
+body.dark-mode .pagetalk-message-actions button:hover,
+.pagetalk-function-window.dark-mode .pagetalk-message-actions button:hover {
+    transform: scale(1.1);
+    color: var(--primary-color) !important;
+    background-color: var(--button-hover-bg) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 深色模式用户消息内的操作按钮 */
+body.dark-mode .pagetalk-user-message .pagetalk-message-actions button,
+.pagetalk-function-window.dark-mode .pagetalk-user-message .pagetalk-message-actions button {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.dark-mode .pagetalk-user-message .pagetalk-message-actions button:hover,
+.pagetalk-function-window.dark-mode .pagetalk-user-message .pagetalk-message-actions button:hover {
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    color: var(--primary-color) !important;
+}
+
+/* 深色模式删除按钮特殊样式 */
+body.dark-mode .pagetalk-message-actions .pagetalk-delete-btn:hover,
+.pagetalk-function-window.dark-mode .pagetalk-message-actions .pagetalk-delete-btn:hover {
+    color: var(--error-color) !important;
+    background-color: rgba(255, 135, 135, 0.2) !important;
+}
+
+body.dark-mode .pagetalk-user-message .pagetalk-message-actions .pagetalk-delete-btn:hover,
+.pagetalk-function-window.dark-mode .pagetalk-user-message .pagetalk-message-actions .pagetalk-delete-btn:hover {
+    color: var(--error-color) !important;
+    background-color: rgba(255, 135, 135, 0.25) !important;
+}
+
+/* 深色模式设置相关 */
+body.dark-mode .pagetalk-function-window .setting-group input[type="text"],
+body.dark-mode .pagetalk-function-window .setting-group input[type="number"],
+body.dark-mode .pagetalk-function-window .setting-group textarea,
+body.dark-mode .pagetalk-function-window .setting-group select,
+.pagetalk-function-window.dark-mode .setting-group input[type="text"],
+.pagetalk-function-window.dark-mode .setting-group input[type="number"],
+.pagetalk-function-window.dark-mode .setting-group textarea,
+.pagetalk-function-window.dark-mode .setting-group select {
+    background: var(--input-background) !important;
+    color: var(--text-color) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-function-window .setting-group input:focus,
+body.dark-mode .pagetalk-function-window .setting-group textarea:focus,
+body.dark-mode .pagetalk-function-window .setting-group select:focus,
+.pagetalk-function-window.dark-mode .setting-group input:focus,
+.pagetalk-function-window.dark-mode .setting-group textarea:focus,
+.pagetalk-function-window.dark-mode .setting-group select:focus {
+    background: var(--card-background) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 2px rgba(116, 143, 252, 0.2) !important;
+}
+
+body.dark-mode .pagetalk-function-window .setting-group label,
+.pagetalk-function-window.dark-mode .setting-group label {
+    color: var(--text-color) !important;
+}
+
+/* 深色模式选项按钮 */
+body.dark-mode .pagetalk-response-actions button,
+.pagetalk-function-window.dark-mode .pagetalk-response-actions button {
+    background: var(--card-background) !important;
+    color: var(--text-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .pagetalk-response-actions button:hover,
+.pagetalk-function-window.dark-mode .pagetalk-response-actions button:hover {
+    background: var(--button-hover-bg) !important;
+    color: var(--text-color) !important;
+}
 
 /* 划词助手设置界面深色模式 */
 body.dark-mode #settings-text-selection-helper .setting-card {

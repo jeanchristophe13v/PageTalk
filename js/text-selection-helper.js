@@ -523,6 +523,43 @@ function handleTextSelection(event) {
 }
 
 /**
+ * 检测当前页面是否为深色模式
+ */
+function isDarkModeDetected() {
+    // 1. 检查 HTML data-color-mode 属性 (GitHub等方式)
+    const dataColorMode = document.documentElement.getAttribute('data-color-mode');
+    if (dataColorMode && dataColorMode.toLowerCase().includes('dark')) {
+        return true;
+    }
+
+    // 2. 检查 HTML data-theme 属性
+    const dataTheme = document.documentElement.getAttribute('data-theme');
+    if (dataTheme && dataTheme.toLowerCase().includes('dark')) {
+        return true;
+    }
+
+    // 3. 检查 body class
+    const bodyClasses = document.body.classList;
+    if (bodyClasses.contains('dark-mode') || bodyClasses.contains('theme-dark') || bodyClasses.contains('dark')) {
+        return true;
+    }
+
+    // 4. 最后回退到 prefers-color-scheme
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/**
+ * 为元素应用深色模式
+ */
+function applyDarkMode(element) {
+    if (isDarkModeDetected()) {
+        element.classList.add('pagetalk-dark-mode');
+        return true;
+    }
+    return false;
+}
+
+/**
  * 检查是否应该排除显示划词助手 - 逻辑已放宽
  */
 function shouldExcludeSelection(selection) {
@@ -975,6 +1012,9 @@ function showMiniIcon() {
     miniIcon.className = 'pagetalk-selection-helper pagetalk-mini-icon';
     miniIcon.innerHTML = `<img src="${chrome.runtime.getURL('magic.png')}" alt="PageTalk" width="20" height="20">`;
 
+    // 应用深色模式到mini icon
+    applyDarkMode(miniIcon);
+
     // 使用改进的定位算法
     const position = getAbsolutePosition(rect);
 
@@ -1092,6 +1132,9 @@ async function showOptionsBar(triggerElement) {
         // 创建选项栏
         const optionsBar = document.createElement('div');
         optionsBar.className = 'pagetalk-selection-helper pagetalk-options-bar';
+
+        // 应用深色模式到options bar
+        applyDarkMode(optionsBar);
     
         // 构建选项栏内容 - icon在左侧，选项在右侧
         let optionsHTML = `
@@ -1314,6 +1357,13 @@ async function showFunctionWindow(optionId) {
     // 创建功能窗口
     const functionWindow = document.createElement('div');
     functionWindow.className = 'pagetalk-selection-helper pagetalk-function-window';
+
+    const isDarkMode = isDarkModeDetected();
+
+if (isDarkMode) {
+    functionWindow.classList.add('dark-mode');
+}
+
     functionWindow.dataset.option = optionId;
 
     // 修改：根据是否为对话窗口来设置初始宽度和高度
