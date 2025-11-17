@@ -234,6 +234,40 @@
 .pagetalk-function-window .markdown-rendered ol {
     margin: 0.6em 0;
     padding-left: 1.8em;
+    list-style: initial; /* 确保列表符号显示 */
+}
+
+/* 确保无序列表显示圆点 - 使用更高特异性避免重置样式影响 */
+html body .pagetalk-function-window .markdown-rendered ul,
+html body .pagetalk-function-window .markdown-rendered ul li {
+    list-style-type: disc;
+    list-style-position: outside;
+}
+
+/* 确保有序列表显示数字 */
+html body .pagetalk-function-window .markdown-rendered ol,
+html body .pagetalk-function-window .markdown-rendered ol li {
+    list-style-type: decimal;
+    list-style-position: outside;
+}
+
+/* 深色模式下的列表样式 - 使用更高特异性 */
+html body.dark-mode .pagetalk-function-window .markdown-rendered ul,
+html body .pagetalk-function-window.dark-mode .markdown-rendered ul,
+html body.dark-mode .pagetalk-function-window .markdown-rendered ul li,
+html body .pagetalk-function-window.dark-mode .markdown-rendered ul li {
+    list-style-type: disc;
+    list-style-position: outside;
+    color: var(--text-color);
+}
+
+html body.dark-mode .pagetalk-function-window .markdown-rendered ol,
+html body .pagetalk-function-window.dark-mode .markdown-rendered ol,
+html body.dark-mode .pagetalk-function-window .markdown-rendered ol li,
+html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
+    list-style-type: decimal;
+    list-style-position: outside;
+    color: var(--text-color);
 }
 
 .pagetalk-function-window .markdown-rendered li {
