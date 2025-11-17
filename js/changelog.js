@@ -5,6 +5,26 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.8.4',
+        date: '2025-11-17',
+        changes: {
+            'zh-CN': [
+                '新增 Groq、Cerebras 和 Vercel AI Gateway 提供商支持',
+                '划词助手支持暗色模式，提供更好的视觉体验',
+                '修复划词助手的 markdown 渲染问题',
+                '聊天历史现在会包含选中的标签页内容',
+                '修复删除自定义提供商后卡片消失的问题'
+            ],
+            'en': [
+                'Added Groq, Cerebras and Vercel AI Gateway provider support',
+                'Text Selection Helper now supports dark mode for better visual experience',
+                'Fixed markdown rendering issues in Text Selection Helper',
+                'Chat history now includes content from selected tabs',
+                'Fixed provider card disappearing after deleting custom provider'
+            ]
+        }
+    },
+    {
         version: '3.8.3',
         date: '2025-09-23',
         changes: {
