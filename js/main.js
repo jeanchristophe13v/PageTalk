@@ -224,7 +224,12 @@ async function init() {
         state, elements,
         () => updateConnectionIndicator(state.isConnected, elements, currentTranslations), // Pass updateConnectionIndicator directly
         loadAndApplyTranslations, // Pass translation loader
-        (isDark) => applyTheme(isDark, elements) // Pass applyTheme
+        (isDark) => applyTheme(isDark, elements), // Pass applyTheme
+        () => {
+            // Settings loaded callback
+            console.log('[main.js] Settings loaded, updating current model display');
+            updateCurrentModelDisplay();
+        }
     );
     loadAgents(
         state,

@@ -40,7 +40,7 @@ function detectUserLanguage() {
  * @param {function} loadAndApplyTranslationsCallback - Callback
  * @param {function} applyThemeCallback - Callback
  */
-export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback) {
+export function loadSettings(state, elements, updateConnectionIndicatorCallback, loadAndApplyTranslationsCallback, applyThemeCallback, onSettingsLoadedCallback) {
     // 设置全局变量以便动态创建的按钮可以访问
     window.settingsState = state;
     window.settingsElements = elements;
@@ -128,6 +128,11 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         // Connection Status (检查是否有任何供应商配置了 API Key)
         state.isConnected = await checkAnyProviderConnected();
         updateConnectionIndicatorCallback(); // Update footer indicator
+
+        // Execute callback after settings are fully loaded
+        if (typeof onSettingsLoadedCallback === 'function') {
+            onSettingsLoadedCallback();
+        }
     });
 }
 
