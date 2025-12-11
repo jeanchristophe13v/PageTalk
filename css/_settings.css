@@ -1227,23 +1227,68 @@ body.dark-mode .provider-selection-container .provider-select {
 
 .selected-models-container {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--spacing-sm);
     min-height: 50px;
-    padding: var(--spacing-sm);
-    border: 2px dashed var(--border-color);
-    border-radius: var(--radius-lg);
-    background-color: var(--background-color);
+    padding: 0;
+    border: none;
+    background-color: transparent;
     transition: all 0.25s ease;
 }
 
-/* 移除空状态显示，因为现在总是有手动添加按钮 */
-
-.selected-models-container:not(:empty) {
-    border-style: solid;
-    border-color: rgba(76, 110, 245, 0.3);
-    background-color: rgba(76, 110, 245, 0.04);
+.selected-models-container.empty {
+    padding: var(--spacing-lg);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--background-color);
+    align-items: center;
+    justify-content: center;
 }
+
+.selected-models-container .empty-message {
+    color: var(--text-secondary);
+    font-size: 13px;
+    text-align: center;
+}
+
+.provider-models-group {
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--background-color);
+    transition: all 0.2s ease;
+}
+
+.provider-models-group:hover {
+    border-color: rgba(76, 110, 245, 0.2);
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.05);
+}
+
+.provider-models-group-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px dashed var(--border-color);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.provider-icon-small {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+.provider-models-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+/* 移除旧的空状态显示逻辑，现在由 JS 控制 .empty 类 */
 
 .model-card {
     display: flex;

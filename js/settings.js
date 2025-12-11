@@ -11,11 +11,11 @@ import { tr as _, getCurrentTranslations } from './utils/i18n.js';
  * @returns {string} 浏览器语言代码
  */
 function getBrowserLanguage() {
-    return navigator.language || 
-           navigator.userLanguage || 
-           navigator.browserLanguage || 
-           navigator.systemLanguage || 
-           'en';
+    return navigator.language ||
+        navigator.userLanguage ||
+        navigator.browserLanguage ||
+        navigator.systemLanguage ||
+        'en';
 }
 
 /**
@@ -27,7 +27,7 @@ function detectUserLanguage() {
     // 如果浏览器语言是中文（简体、繁体等任何中文变种），返回简体中文
     if (browserLang === 'zh-CN' || browserLang.startsWith('zh')) {
         return 'zh-CN';
-    } 
+    }
     // 否则默认返回英文
     return 'en';
 }
@@ -179,7 +179,7 @@ export async function saveModelSettings(showToastNotification = true, state, ele
                         elements.chatModelSelection.value = state.model;
                     }
 
-                                        state.hasDeterminedConnection = true;
+                    state.hasDeterminedConnection = true;
                 }
                 updateConnectionIndicatorCallback(); // Update footer indicator
             });
@@ -624,12 +624,79 @@ export async function updateModelCardsDisplay() {
 
     // 清空容器
     container.innerHTML = '';
+    container.classList.remove('empty');
 
-    // 创建模型卡片
-    activeModels.forEach(model => {
-        const card = createModelCard(model, currentTranslations);
-        container.appendChild(card);
-    });
+    if (activeModels.length === 0) {
+        container.classList.add('empty');
+        const emptyText = container.getAttribute('data-empty-text') || '暂无已选择的模型';
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'empty-message';
+        emptyDiv.textContent = emptyText;
+        container.appendChild(emptyDiv);
+    } else {
+        // 按提供商分组
+        const modelsByProvider = {};
+        activeModels.forEach(model => {
+            const providerId = model.providerId || 'unknown';
+            if (!modelsByProvider[providerId]) {
+                modelsByProvider[providerId] = [];
+            }
+            modelsByProvider[providerId].push(model);
+        });
+
+        const providerManager = window.ProviderManager;
+
+        // 排序提供商
+        const sortedProviderIds = Object.keys(modelsByProvider).sort((a, b) => {
+            const nameA = providerManager?.getProvider(a)?.name || a;
+            const nameB = providerManager?.getProvider(b)?.name || b;
+            return nameA.localeCompare(nameB);
+        });
+
+        sortedProviderIds.forEach(providerId => {
+            const providerModels = modelsByProvider[providerId];
+            const providerInfo = providerManager ? providerManager.getProvider(providerId) : null;
+            const providerName = providerInfo ? providerInfo.name : providerId;
+            const providerIcon = providerManager ? providerManager.getProviderIconPath(providerId) : null;
+
+            // 创建提供商分组容器
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'provider-models-group';
+
+            // 创建头部
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'provider-models-group-header';
+
+            if (providerIcon) {
+                const iconImg = document.createElement('img');
+                iconImg.src = providerIcon;
+                iconImg.className = 'provider-icon-small';
+                iconImg.alt = providerName;
+                headerDiv.appendChild(iconImg);
+            }
+
+            const titleSpan = document.createElement('span');
+            titleSpan.textContent = providerName;
+            headerDiv.appendChild(titleSpan);
+
+            groupDiv.appendChild(headerDiv);
+
+            // 创建模型列表容器
+            const listDiv = document.createElement('div');
+            listDiv.className = 'provider-models-list';
+
+            // 按模型名称排序
+            providerModels.sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+            providerModels.forEach(model => {
+                const card = createModelCard(model, currentTranslations);
+                listDiv.appendChild(card);
+            });
+
+            groupDiv.appendChild(listDiv);
+            container.appendChild(groupDiv);
+        });
+    }
 
     // 添加或更新手动添加按钮到header区域
     updateManualAddButton(currentTranslations);
@@ -799,7 +866,7 @@ function createDiscoverHeaderButton(currentTranslations) {
             modelSelection: document.getElementById('model-selection'),
             chatModelSelection: document.getElementById('chat-model-selection')
         };
-        await handleDiscoverModelsForProvider(providerId, state, elements, window.showToastUI || (()=>{}), button);
+        await handleDiscoverModelsForProvider(providerId, state, elements, window.showToastUI || (() => { }), button);
     });
 
     return button;
@@ -1740,7 +1807,7 @@ export function setupProviderEventListeners(state, elements, showToastCallback, 
                 }
             }
         }
-        
+
         // Base URL 覆盖输入事件
         if (e.target.matches('[id$="-api-host"]')) {
             const input = e.target;
@@ -1836,7 +1903,7 @@ async function handleTestApiKey(providerId, showToastCallback) {
         if (result.success) {
             showToastCallback(result.message, 'success');
 
-                    } else {
+        } else {
             showToastCallback(result.message, 'error');
         }
     } catch (error) {
@@ -2169,7 +2236,7 @@ async function handleManualAddModel(modelName, modelId, providerId, currentTrans
     }
 
     const modelManager = window.ModelManager.instance;
-    try { await modelManager.initialize(); } catch (_) {}
+    try { await modelManager.initialize(); } catch (_) { }
 
     try {
         // 检查模型是否已存在于管理列表（按供应商+ID）
@@ -2795,7 +2862,7 @@ function showDeleteCustomProviderModal(providerId) {
 
     const currentTranslations = getCurrentTranslations();
     const confirmMessage = currentTranslations.customProviderDeleteConfirm?.replace('{name}', provider.name) ||
-                          `确定要删除提供商 "${provider.name}" 吗？`;
+        `确定要删除提供商 "${provider.name}" 吗？`;
 
     if (confirm(confirmMessage)) {
         removeCustomProvider(providerId);
@@ -3274,7 +3341,7 @@ function handleQuickActionsImport(event, translations) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             const importData = JSON.parse(e.target.result);
 
