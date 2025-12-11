@@ -20,7 +20,6 @@ body.dark-mode .chat-agent-selector select {
 body.dark-mode .setting-group input:focus,
 body.dark-mode .setting-group textarea:focus,
 body.dark-mode .setting-group select:focus,
-body.dark-mode .chat-input textarea:focus,
 body.dark-mode .chat-model-selector select:focus,
 body.dark-mode .chat-agent-selector select:focus {
     background-color: var(--card-background);
