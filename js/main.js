@@ -112,6 +112,12 @@ const elements = {
     chatAgentSelection: document.getElementById('chat-agent-selection'),
     clearContextBtn: document.getElementById('clear-context'),
     closePanelBtnChat: document.getElementById('close-panel'),
+    // 新增：加号菜单和模型选择器元素
+    attachmentMenuBtn: document.getElementById('attachment-menu-btn'),
+    attachmentMenu: document.getElementById('attachment-menu'),
+    inlineModelSelector: document.getElementById('inline-model-selector'),
+    currentModelDisplay: document.getElementById('current-model-display'),
+    modelSelectorMenu: document.getElementById('model-selector-menu'),
     uploadImage: document.getElementById('upload-image'),
     fileInput: document.getElementById('file-input'),
     addYoutubeUrl: document.getElementById('add-youtube-url'),
@@ -238,6 +244,7 @@ async function init() {
 
     // Setup core features
     await initModelSelection(state, elements); // Populate model dropdowns (now async)
+    updateCurrentModelDisplay(); // 初始化内联模型显示
 
     // 确保翻译已加载后再初始化划词助手设置和快捷操作设置
     setTimeout(async () => {
@@ -396,14 +403,63 @@ function setupEventListeners() {
         }
     });
 
+    // 新增：加号菜单交互
+    if (elements.attachmentMenuBtn && elements.attachmentMenu) {
+        elements.attachmentMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            elements.attachmentMenu.classList.toggle('show');
+            // 同时关闭模型选择菜单
+            if (elements.modelSelectorMenu) elements.modelSelectorMenu.classList.remove('show');
+            if (elements.inlineModelSelector) elements.inlineModelSelector.classList.remove('active');
+        });
+    }
+
+    // 新增：模型选择器交互
+    if (elements.inlineModelSelector && elements.modelSelectorMenu) {
+        elements.inlineModelSelector.addEventListener('click', (e) => {
+            e.stopPropagation();
+            elements.inlineModelSelector.classList.toggle('active');
+            elements.modelSelectorMenu.classList.toggle('show');
+            // 同时关闭加号菜单
+            if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
+            // 渲染模型菜单内容
+            if (elements.modelSelectorMenu.classList.contains('show')) {
+                renderModelSelectorMenu();
+            }
+        });
+    }
+
+    // 点击外部关闭菜单
+    document.addEventListener('click', (e) => {
+        // 关闭加号菜单
+        if (elements.attachmentMenu && !elements.attachmentMenu.contains(e.target) && e.target !== elements.attachmentMenuBtn) {
+            elements.attachmentMenu.classList.remove('show');
+        }
+        // 关闭模型选择菜单
+        if (elements.modelSelectorMenu && !elements.modelSelectorMenu.contains(e.target) && !elements.inlineModelSelector?.contains(e.target)) {
+            elements.modelSelectorMenu.classList.remove('show');
+            if (elements.inlineModelSelector) elements.inlineModelSelector.classList.remove('active');
+        }
+    });
+
     // Image Handling
-    elements.uploadImage.addEventListener('click', () => elements.fileInput.click());
+    elements.uploadImage.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elements.fileInput.click();
+        // 点击上传后关闭加号菜单
+        if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
+    });
     elements.fileInput.addEventListener('change', (e) => handleImageSelect(e, (file) => handleImageFile(file, state, updateImagesPreviewUI), elements));
     elements.closeModal.addEventListener('click', () => hideImageModal(elements));
     window.addEventListener('click', (e) => { if (e.target === elements.imageModal) hideImageModal(elements); }); // Close modal on overlay click
 
     // YouTube Video Handling
-    elements.addYoutubeUrl.addEventListener('click', () => showYouTubeDialog(elements));
+    elements.addYoutubeUrl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showYouTubeDialog(elements);
+        // 点击后关闭加号菜单
+        if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
+    });
     elements.cancelYoutube.addEventListener('click', () => hideYouTubeDialog(elements));
     elements.confirmYoutube.addEventListener('click', () => {
         const url = elements.youtubeUrlInput.value.trim();
@@ -578,7 +634,7 @@ function handleUserInputForTabSelection(e) {
 
 // 新增：获取并显示标签页以供选择
 async function fetchAndShowTabsForSelection() {
-    if (state.isStreaming) return; 
+    if (state.isStreaming) return;
 
     try {
         const tabs = await chrome.tabs.query({});
@@ -586,9 +642,9 @@ async function fetchAndShowTabsForSelection() {
         const activeTabId = activeTabs && activeTabs.length > 0 ? activeTabs[0].id : null;
         if (tabs && tabs.length > 0) {
             const currentExtensionId = chrome.runtime.id;
-            state.availableTabsForSelection = tabs.filter(tab => 
-                tab.id && 
-                tab.url && 
+            state.availableTabsForSelection = tabs.filter(tab =>
+                tab.id &&
+                tab.url &&
                 !tab.url.startsWith(`chrome-extension://${currentExtensionId}`) &&
                 !tab.url.startsWith('chrome://') &&
                 !tab.url.startsWith('about:') &&
@@ -598,7 +654,7 @@ async function fetchAndShowTabsForSelection() {
                 id: tab.id,
                 title: tab.title || 'Untitled Tab',
                 url: tab.url,
-                favIconUrl: tab.favIconUrl || '../magic.png' 
+                favIconUrl: tab.favIconUrl || '../magic.png'
             }));
 
             if (state.availableTabsForSelection.length > 0) {
@@ -632,27 +688,27 @@ function handleTabSelectedFromPopup(selectedTab) {
     console.log('Tab selected:', selectedTab);
     // state.isTabSelectionPopupOpen = false; // closeTabSelectionPopupUIFromMain 会处理
     closeTabSelectionPopupUIFromMain(); // <--- MODIFIED HERE (called by ui.js click handler, but ensure state sync)
-    
+
     const currentText = elements.userInput.value;
     const cursorPos = elements.userInput.selectionStart;
-    const atCharIndex = currentText.lastIndexOf('@', cursorPos -1);
+    const atCharIndex = currentText.lastIndexOf('@', cursorPos - 1);
     if (atCharIndex !== -1) {
-        elements.userInput.value = currentText.substring(0, atCharIndex); 
+        elements.userInput.value = currentText.substring(0, atCharIndex);
     }
-    elements.userInput.focus(); 
-    
+    elements.userInput.focus();
+
     const isAlreadySelected = state.selectedContextTabs.some(tab => tab.id === selectedTab.id);
     if (isAlreadySelected) {
-        if (showToastUI) showToastUI(`标签页 "${selectedTab.title.substring(0,20)}..." 已添加`, 'info');
+        if (showToastUI) showToastUI(`标签页 "${selectedTab.title.substring(0, 20)}..." 已添加`, 'info');
         return;
     }
 
-    const newSelectedTabEntry = { 
-        id: selectedTab.id, 
-        title: selectedTab.title, 
-        url: selectedTab.url, 
+    const newSelectedTabEntry = {
+        id: selectedTab.id,
+        title: selectedTab.title,
+        url: selectedTab.url,
         favIconUrl: selectedTab.favIconUrl,
-        content: null, 
+        content: null,
         isLoading: true,
         isContextSent: false
     };
@@ -765,6 +821,8 @@ function handleChatModelChange() {
     if (elements.modelSelection) {
         elements.modelSelection.value = state.model;
     }
+    // 更新内联模型显示
+    updateCurrentModelDisplay();
 
     // 在多供应商模式下，只需要保存模型选择，不需要测试API Key
     chrome.storage.sync.set({ model: state.model }, () => {
@@ -776,6 +834,135 @@ function handleChatModelChange() {
         }
     });
 }
+
+// 渲染自定义模型选择菜单
+function renderModelSelectorMenu() {
+    const menu = elements.modelSelectorMenu;
+    const select = elements.chatModelSelection;
+    if (!menu || !select) return;
+
+    menu.innerHTML = '';
+
+    // 供应商图标映射 (使用 icons 文件夹中的 SVG)
+    const providerIconMap = {
+        'Google': 'Gemini.svg',
+        'Anthropic': 'Claude.svg',
+        'OpenAI': 'OpenAI.svg',
+        'DeepSeek': 'DeepSeek.svg',
+        'OpenRouter': 'OpenRouter.svg',
+        'SiliconFlow': 'SiliconFlow.svg',
+        'Groq': 'groq.svg',
+        'Cerebras': 'cerebras.svg',
+        'Ollama': 'ollama.svg',
+        'LMStudio': 'lmstudio.svg',
+        'ChatGLM': 'ChatGLM.svg',
+        'ModelScope': 'modelscope.svg',
+        'Vercel': 'vercel.svg'
+    };
+
+    // 获取图标路径
+    function getProviderIcon(providerName) {
+        const iconFile = providerIconMap[providerName];
+        if (iconFile) {
+            return `<img src="../icons/${iconFile}" alt="${providerName}" class="provider-icon-img">`;
+        }
+        // 默认图标
+        return '<svg class="provider-icon-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+    }
+
+
+    // 获取 optgroup 结构
+    const optgroups = select.querySelectorAll('optgroup');
+    if (optgroups.length > 0) {
+        optgroups.forEach(optgroup => {
+            const group = document.createElement('div');
+            group.className = 'model-group';
+
+            const label = document.createElement('div');
+            label.className = 'model-group-label';
+
+            // 添加供应商图标
+            const providerName = optgroup.label;
+            label.innerHTML = `<span class="provider-icon">${getProviderIcon(providerName)}</span>${providerName}`;
+            group.appendChild(label);
+
+            optgroup.querySelectorAll('option').forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'model-option';
+                btn.textContent = option.textContent;
+                btn.dataset.value = option.value;
+                if (option.value === state.model) {
+                    btn.classList.add('selected');
+                }
+                btn.addEventListener('click', () => selectModelFromMenu(option.value));
+                group.appendChild(btn);
+            });
+
+            menu.appendChild(group);
+        });
+    } else {
+        // 没有分组，直接渲染 options
+        select.querySelectorAll('option').forEach(option => {
+            const btn = document.createElement('button');
+            btn.className = 'model-option';
+            btn.textContent = option.textContent;
+            btn.dataset.value = option.value;
+            if (option.value === state.model) {
+                btn.classList.add('selected');
+            }
+            btn.addEventListener('click', () => selectModelFromMenu(option.value));
+            menu.appendChild(btn);
+        });
+    }
+}
+
+
+// 从自定义菜单选择模型
+function selectModelFromMenu(value) {
+    elements.chatModelSelection.value = value;
+    handleChatModelChange();
+    // 关闭菜单
+    elements.modelSelectorMenu.classList.remove('show');
+    elements.inlineModelSelector.classList.remove('active');
+}
+
+// 更新当前模型显示（包含供应商图标）
+function updateCurrentModelDisplay() {
+    if (!elements.currentModelDisplay || !elements.chatModelSelection) return;
+    const selectedOption = elements.chatModelSelection.selectedOptions[0];
+    if (selectedOption) {
+        // 获取供应商名称（从 optgroup 获取）
+        const optgroup = selectedOption.parentElement;
+        let providerName = optgroup && optgroup.tagName === 'OPTGROUP' ? optgroup.label : '';
+
+        // 供应商图标映射
+        const providerIconMap = {
+            'Google': 'Gemini.svg',
+            'Anthropic': 'Claude.svg',
+            'OpenAI': 'OpenAI.svg',
+            'DeepSeek': 'DeepSeek.svg',
+            'OpenRouter': 'OpenRouter.svg',
+            'SiliconFlow': 'SiliconFlow.svg',
+            'Groq': 'groq.svg',
+            'Cerebras': 'cerebras.svg',
+            'Ollama': 'ollama.svg',
+            'LMStudio': 'lmstudio.svg',
+            'ChatGLM': 'ChatGLM.svg',
+            'ModelScope': 'modelscope.svg',
+            'Vercel': 'vercel.svg'
+        };
+
+        const iconFile = providerIconMap[providerName];
+        const displayName = selectedOption.textContent;
+
+        if (iconFile) {
+            elements.currentModelDisplay.innerHTML = `<img src="../icons/${iconFile}" alt="${providerName}" class="model-display-icon">${displayName}`;
+        } else {
+            elements.currentModelDisplay.textContent = displayName;
+        }
+    }
+}
+
 
 function handleChatAgentChange() {
     switchAgentAndUpdateState(elements.chatAgentSelection.value);
@@ -821,7 +1008,7 @@ function sendUserMessageTrigger() {
             }
         }, 600);
     }
-    
+
     // 准备 sentContextTabs 数据 (只包含必要信息)
     const tabsForMessageBubble = state.selectedContextTabs.map(tab => ({
         title: tab.title,
@@ -833,19 +1020,19 @@ function sendUserMessageTrigger() {
         state, elements, currentTranslations,
         (msg, type) => showConnectionStatus(msg, type, elements), // showConnectionStatusCallback
         (content, sender, options) => { // Modified addMessageToChatCallback wrapper
-            let messageOptions = {...options};
+            let messageOptions = { ...options };
             if (sender === 'user' && tabsForMessageBubble.length > 0) {
                 // tabsForBubbleDisplay should now include id, title, favIconUrl
                 messageOptions.sentContextTabs = tabsForMessageBubble;
             }
             return addMessageToChatUI(content, sender, messageOptions);
         },
-        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom), 
-        () => resizeTextarea(elements), 
-        clearImagesUI, 
-        clearVideosUI, 
-        showToastUI, 
-        restoreSendButtonAndInputUI, 
+        (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom),
+        () => resizeTextarea(elements),
+        clearImagesUI,
+        clearVideosUI,
+        showToastUI,
+        restoreSendButtonAndInputUI,
         abortStreamingUI,
         updateSelectedTabsBarFromMain
     );
@@ -1706,7 +1893,7 @@ async function handleUnifiedImport(event, showToastUI, currentTranslations) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             console.log('[main.js] Starting unified import...');
 

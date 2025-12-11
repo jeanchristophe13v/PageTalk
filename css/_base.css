@@ -1,19 +1,26 @@
 /* 包含 Pagetalk 插件的基础样式、全局布局（如 body, header, footer）、通用组件（如按钮、模态框）和滚动条样式。 */
 
 /* 基本样式重置 */
-   * {
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
+
 /* 列表缩进 */
-ul, ol {
-    padding-left: 20px; /* 默认缩进 */
+ul,
+ol {
+    padding-left: 20px;
+    /* 默认缩进 */
 }
 
-ul ul, ol ol, ul ol, ol ul {
-    padding-left: 20px; /* 嵌套列表增加缩进 */
+ul ul,
+ol ol,
+ul ol,
+ol ul {
+    padding-left: 20px;
+    /* 嵌套列表增加缩进 */
 }
 
 body {
@@ -46,7 +53,8 @@ header {
 }
 
 header h1 {
-    font-size: clamp(16px, 4vw, 18px); /* 响应式字体大小 */
+    font-size: clamp(16px, 4vw, 18px);
+    /* 响应式字体大小 */
     margin-bottom: var(--spacing-xs);
     font-weight: 600;
     letter-spacing: -0.5px;
@@ -59,31 +67,36 @@ header h1 {
 /* 主要内容区域 */
 main {
     flex: 1;
-    overflow: hidden; /* Prevent main itself from scrolling */
+    overflow: hidden;
+    /* Prevent main itself from scrolling */
     position: relative;
-    min-height: 0; /* 确保内容区域可以缩小 */
+    min-height: 0;
+    /* 确保内容区域可以缩小 */
 }
 
 /* 标签页内容区域 */
 .tab-content {
     display: none;
-    height: 100%; 
+    height: 100%;
     width: 100%;
     overflow-x: hidden;
 }
 
 .tab-content.active {
-    display: flex; /* Use flex for layout */
-    flex-direction: column; /* Stack content vertically */
-    height: 100%; /* Ensure it takes full height of main */
-    overflow: hidden; /* Prevent the section itself from scrolling */
+    display: flex;
+    /* Use flex for layout */
+    flex-direction: column;
+    /* Stack content vertically */
+    height: 100%;
+    /* Ensure it takes full height of main */
+    overflow: hidden;
+    /* Prevent the section itself from scrolling */
 }
 
 
 /* 页脚样式 - 添加顶部导航 */
 footer {
-    background-color: var(--card-background);
-    border-top: 1px solid var(--border-color);
+    background-color: #F8F9FA;
     padding: var(--spacing-xs) var(--spacing-md);
     font-size: 11px;
     display: flex;
@@ -103,33 +116,41 @@ footer {
 .footer-tabs {
     display: flex;
     list-style: none;
-    gap: var(--spacing-md); /* Reduced gap */
+    gap: var(--spacing-md);
+    /* Reduced gap */
     margin-left: auto;
 }
 
 .footer-tab {
-    padding: var(--spacing-xs) var(--spacing-sm); /* Adjusted padding */
+    padding: var(--spacing-xs) var(--spacing-sm);
+    /* Adjusted padding */
     cursor: pointer;
     position: relative;
     color: var(--text-secondary);
-    transition: all 0.2s ease; /* Faster transition */
+    transition: all 0.2s ease;
+    /* Faster transition */
     font-weight: 500;
     font-size: 11px;
     border-radius: var(--radius-lg);
-    background-color: transparent; /* Default transparent */
-    border: 1px solid transparent; /* Add transparent border for layout consistency */
+    background-color: transparent;
+    /* Default transparent */
+    border: 1px solid transparent;
+    /* Add transparent border for layout consistency */
 }
 
 .footer-tab:hover {
     color: var(--primary-color);
-    background-color: var(--button-hover-bg); /* Use standard hover */
+    background-color: var(--button-hover-bg);
+    /* Use standard hover */
 }
 
 .footer-tab.active {
     color: var(--primary-color);
     font-weight: 600;
-    background-color: rgba(76, 110, 245, 0.15); /* Use slightly darker active background */
-    border-color: rgba(76, 110, 245, 0.2); /* Add subtle border when active */
+    background-color: rgba(76, 110, 245, 0.15);
+    /* Use slightly darker active background */
+    border-color: rgba(76, 110, 245, 0.2);
+    /* Add subtle border when active */
 }
 
 /* 连接指示器 */
@@ -185,9 +206,17 @@ footer {
 }
 
 @keyframes loading {
-    0% { transform: scale(0); }
-    50% { transform: scale(1); }
-    100% { transform: scale(0); }
+    0% {
+        transform: scale(0);
+    }
+
+    50% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(0);
+    }
 }
 
 /* 通用操作按钮 (例如聊天头部的清除按钮，设置页的关闭按钮) */
@@ -197,54 +226,64 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: clamp(24px, 7vw, 28px); 
-    height: clamp(24px, 7vw, 28px); 
+    width: clamp(24px, 7vw, 28px);
+    height: clamp(24px, 7vw, 28px);
     border-radius: var(--radius-full);
     cursor: pointer;
     color: var(--text-secondary);
     transition: all 0.2s ease;
     padding: 0;
-    flex-shrink: 0; /* 防止按钮被压缩 */
+    flex-shrink: 0;
+    /* 防止按钮被压缩 */
 }
 
 .action-button:hover {
-    color: var(--error-color); /* 默认悬停为错误色，特定按钮可覆盖 */
+    color: var(--error-color);
+    /* 默认悬停为错误色，特定按钮可覆盖 */
     background-color: rgba(234, 67, 53, 0.1);
 }
 
 .action-button svg {
-    width: 16px; 
-    height: 16px; 
+    width: 16px;
+    height: 16px;
 }
 
 /* 关闭面板按钮特定样式 */
 .close-panel-btn {
-  color: var(--text-secondary);
+    color: var(--text-secondary);
 }
 
 .close-panel-btn:hover {
-  color: var(--error-color);
-  background-color: rgba(234, 67, 53, 0.1);
+    color: var(--error-color);
+    background-color: rgba(234, 67, 53, 0.1);
 }
 
 /* 单独增大关闭按钮尺寸 */
 .close-panel-btn {
-    width: clamp(28px, 8vw, 32px);  /* 增大按钮尺寸 */
-    height: clamp(28px, 8vw, 32px); /* 增大按钮尺寸 */
+    width: clamp(28px, 8vw, 32px);
+    /* 增大按钮尺寸 */
+    height: clamp(28px, 8vw, 32px);
+    /* 增大按钮尺寸 */
 }
 
 /* 单独增大并加粗关闭按钮图标 */
 .close-panel-btn svg {
-    width: clamp(18px, 5vw, 20px); /* 增大图标尺寸 */
-    height: clamp(18px, 5vw, 20px); /* 增大图标尺寸 */
-    stroke-width: 2; /* 加粗线条 */
-    transition: all 0.2s ease; /* 添加过渡效果 */
+    width: clamp(18px, 5vw, 20px);
+    /* 增大图标尺寸 */
+    height: clamp(18px, 5vw, 20px);
+    /* 增大图标尺寸 */
+    stroke-width: 2;
+    /* 加粗线条 */
+    transition: all 0.2s ease;
+    /* 添加过渡效果 */
 }
 
 /* 通用图标按钮 (例如 Agent 设置中的导入/导出/添加按钮) */
 .icon-btn {
-    width: clamp(28px, 8vw, 32px);  /* 增大按钮尺寸 */
-    height: clamp(28px, 8vw, 32px); /* 增大按钮尺寸 */
+    width: clamp(28px, 8vw, 32px);
+    /* 增大按钮尺寸 */
+    height: clamp(28px, 8vw, 32px);
+    /* 增大按钮尺寸 */
     border-radius: var(--radius-full);
     border: none;
     background-color: transparent;
@@ -258,14 +297,18 @@ footer {
 }
 
 .icon-btn:hover {
-    background-color: var(--button-hover-bg); /* 使用标准悬停背景 */
+    background-color: var(--button-hover-bg);
+    /* 使用标准悬停背景 */
     color: var(--primary-color);
 }
 
 .icon-btn svg {
-    width: clamp(16px, 4.5vw, 18px); /* 增大图标尺寸 */
-    height: clamp(16px, 4.5vw, 18px); /* 增大图标尺寸 */
-    transition: all 0.2s ease; /* 添加过渡效果 */
+    width: clamp(16px, 4.5vw, 18px);
+    /* 增大图标尺寸 */
+    height: clamp(16px, 4.5vw, 18px);
+    /* 增大图标尺寸 */
+    transition: all 0.2s ease;
+    /* 添加过渡效果 */
 }
 
 
@@ -282,7 +325,8 @@ footer {
 ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: var(--radius-full);
-    border: 2px solid var(--background-color); /* Add a border to make it look slightly thinner but easier to grab */
+    border: 2px solid var(--background-color);
+    /* Add a border to make it look slightly thinner but easier to grab */
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -306,8 +350,10 @@ footer {
 .changelog-content {
     position: relative;
     background-color: var(--card-background);
-    margin: 12% auto; /* 位置再向上移 */
-    padding: var(--spacing-lg); /* 增大内边距 */
+    margin: 12% auto;
+    /* 位置再向上移 */
+    padding: var(--spacing-lg);
+    /* 增大内边距 */
     width: 85%;
     max-width: 400px;
     border-radius: var(--radius-lg);
@@ -316,34 +362,53 @@ footer {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes slideInUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .changelog-header {
-    margin-bottom: var(--spacing-md); /* 增大头部下边距 */
+    margin-bottom: var(--spacing-md);
+    /* 增大头部下边距 */
     text-align: center;
 }
 
 .changelog-header h2 {
-    font-size: 1.4rem; /* 增大标题字体 */
+    font-size: 1.4rem;
+    /* 增大标题字体 */
     color: var(--primary-color);
     margin-bottom: var(--spacing-sm);
 }
 
 .changelog-list {
-    max-height: 220px; /* 略微增大最大高度 */
+    max-height: 220px;
+    /* 略微增大最大高度 */
     overflow-y: auto;
-    margin-bottom: var(--spacing-md); /* 增大底部边距 */
+    margin-bottom: var(--spacing-md);
+    /* 增大底部边距 */
 }
 
 .changelog-item {
-    margin-bottom: var(--spacing-md); /* 增大项目间距 */
+    margin-bottom: var(--spacing-md);
+    /* 增大项目间距 */
     padding-bottom: var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
 }
@@ -357,13 +422,15 @@ footer {
 .changelog-version {
     display: flex;
     justify-content: space-between;
-    margin-bottom: var(--spacing-md); /* 增大版本信息与内容的间距 */
+    margin-bottom: var(--spacing-md);
+    /* 增大版本信息与内容的间距 */
 }
 
 .changelog-version-number {
     font-weight: 600;
     color: var(--primary-color);
-    font-size: 1.1rem; /* 增大版本号字体 */
+    font-size: 1.1rem;
+    /* 增大版本号字体 */
 }
 
 .changelog-version-date {
@@ -373,38 +440,47 @@ footer {
 
 .changelog-changes {
     margin-left: var(--spacing-md);
-    font-size: 0.95rem; /* 略微增大更新内容字体 */
+    font-size: 0.95rem;
+    /* 略微增大更新内容字体 */
 }
 
 .changelog-changes li {
-    margin-bottom: var(--spacing-md); /* 增大列表项间距 */
-    line-height: 1.5; /* 增大行高 */
+    margin-bottom: var(--spacing-md);
+    /* 增大列表项间距 */
+    line-height: 1.5;
+    /* 增大行高 */
 }
 
 .changelog-changes li:last-child {
-    margin-bottom: 0; /* 移除最后一项的底部边距 */
+    margin-bottom: 0;
+    /* 移除最后一项的底部边距 */
 }
 
 .changelog-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: var(--spacing-lg); /* 增大页脚上边距 */
-    padding-top: var(--spacing-md); /* 添加顶部内边距 */
-    border-top: 1px solid var(--border-color); /* 添加顶部边框 */
+    margin-top: var(--spacing-lg);
+    /* 增大页脚上边距 */
+    padding-top: var(--spacing-md);
+    /* 添加顶部内边距 */
+    border-top: 1px solid var(--border-color);
+    /* 添加顶部边框 */
 }
 
 .changelog-checkbox {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm); /* 增大复选框与文本的间距 */
+    gap: var(--spacing-sm);
+    /* 增大复选框与文本的间距 */
     color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
 .changelog-checkbox input[type="checkbox"] {
     accent-color: var(--primary-color);
-    width: 16px; /* 增大复选框尺寸 */
+    width: 16px;
+    /* 增大复选框尺寸 */
     height: 16px;
 }
 
@@ -413,11 +489,13 @@ footer {
     color: white;
     border: none;
     border-radius: var(--radius-md);
-    padding: var(--spacing-sm) var(--spacing-lg); /* 增大按钮内边距 */
+    padding: var(--spacing-sm) var(--spacing-lg);
+    /* 增大按钮内边距 */
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
-    min-width: 80px; /* 设置最小宽度 */
+    min-width: 80px;
+    /* 设置最小宽度 */
     text-align: center;
 }
 
@@ -432,7 +510,8 @@ footer {
 main {
     max-width: 100%;
     box-sizing: border-box;
-    overflow-x: hidden; /* 通常 x 轴不应该滚动 */
+    overflow-x: hidden;
+    /* 通常 x 轴不应该滚动 */
 }
 
 /* 确保图片不会溢出容器 */

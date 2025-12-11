@@ -6,8 +6,10 @@
     flex-direction: column;
     height: 100%;
     width: 100%;
-    overflow: hidden; /* 确保聊天容器本身不溢出 */
-    padding-bottom: 0; /* 移除原有的，由 chat-input 和 selected-tabs-bar 控制 */
+    overflow: hidden;
+    /* 确保聊天容器本身不溢出 */
+    padding-bottom: 0;
+    /* 移除原有的，由 chat-input 和 selected-tabs-bar 控制 */
 }
 
 /* 聊天消息区域 */
@@ -17,18 +19,23 @@
     padding: var(--spacing-md);
     display: flex;
     flex-direction: column;
-    gap: calc(var(--spacing-md) + 8px); /* 进一步增大间距 */
+    gap: calc(var(--spacing-md) + 8px);
+    /* 进一步增大间距 */
     width: 100%;
-    min-height: 0; /* 确保可以缩小 */
+    min-height: 0;
+    /* 确保可以缩小 */
 }
 
 /* 欢迎消息 */
 .welcome-message {
     background-color: var(--card-background);
     border-radius: var(--radius-lg);
-    padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md)); /* 缩小内边距 */
-    margin: var(--spacing-md) auto; /* 缩小外边距 */
-    width: clamp(200px, 90%, 45%); /* 稍微增加宽度 */
+    padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
+    /* 缩小内边距 */
+    margin: var(--spacing-md) auto;
+    /* 缩小外边距 */
+    width: clamp(200px, 90%, 45%);
+    /* 稍微增加宽度 */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     text-align: center;
     border: 1px solid var(--border-color);
@@ -43,6 +50,7 @@
         opacity: 0;
         transform: translateY(20px) scale(0.95);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -51,16 +59,21 @@
 
 .welcome-message h2 {
     color: var(--primary-color);
-    margin-bottom: var(--spacing-xs); /* 缩小边距 */
-    font-size: clamp(14px, 3.5vw, 16px); /* 缩小字体 */
+    margin-bottom: var(--spacing-xs);
+    /* 缩小边距 */
+    font-size: clamp(14px, 3.5vw, 16px);
+    /* 缩小字体 */
     font-weight: 600;
     letter-spacing: -0.5px;
 }
 
 .welcome-message p {
-    margin-bottom: var(--spacing-xs); /* 缩小边距 */
-    font-size: clamp(11px, 3vw, 13px); /* 缩小字体 */
-    line-height: 1.5; /* 稍微减小行高 */
+    margin-bottom: var(--spacing-xs);
+    /* 缩小边距 */
+    font-size: clamp(11px, 3vw, 13px);
+    /* 缩小字体 */
+    line-height: 1.5;
+    /* 稍微减小行高 */
     color: var(--text-secondary);
 }
 
@@ -121,15 +134,19 @@
 
 /* 消息气泡样式优化 */
 .message {
-    padding: 0; /* Base padding is 0, content inside will have its own */
+    padding: 0;
+    /* Base padding is 0, content inside will have its own */
     border-radius: var(--radius-lg);
-    margin-bottom: var(--spacing-md); /* Standard bottom margin */
+    margin-bottom: var(--spacing-md);
+    /* Standard bottom margin */
     word-wrap: break-word;
     overflow-wrap: break-word;
     position: relative;
     max-width: 90%;
-    width: fit-content; /* Allows bubble to shrink to content width */
-    box-sizing: border-box; /* Important for max-width and padding */
+    width: fit-content;
+    /* Allows bubble to shrink to content width */
+    box-sizing: border-box;
+    /* Important for max-width and padding */
     /* 默认状态 - 为动画做准备 */
     opacity: 0;
     transform: translateY(8px) scale(0.98);
@@ -142,10 +159,12 @@
         opacity: 0;
         transform: translateY(8px) scale(0.98);
     }
+
     60% {
         opacity: 0.8;
         transform: translateY(-1px) scale(1.01);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -162,6 +181,7 @@
         opacity: 0;
         transform: translateX(12px) translateY(4px) scale(0.95);
     }
+
     100% {
         opacity: 1;
         transform: translateX(0) translateY(0) scale(1);
@@ -178,6 +198,7 @@
         opacity: 0;
         transform: translateX(-8px) translateY(6px) scale(0.96);
     }
+
     100% {
         opacity: 1;
         transform: translateX(0) translateY(0) scale(1);
@@ -190,13 +211,19 @@
     background-color: var(--primary-color);
     color: white;
     /* border-radius already set by .message */
-    display: inline-block; /* For width: auto to work with align-self */
-    max-width: 95%; /* Can be slightly wider than bot messages */
-    width: auto; /* Content dictates width, up to max-width */
-    overflow: visible; /* Ensure internal content like images can layout */
-    padding: var(--spacing-sm) var(--spacing-md); /* Standard internal padding */
+    display: inline-block;
+    /* For width: auto to work with align-self */
+    max-width: 95%;
+    /* Can be slightly wider than bot messages */
+    width: auto;
+    /* Content dictates width, up to max-width */
+    overflow: visible;
+    /* Ensure internal content like images can layout */
+    padding: var(--spacing-sm) var(--spacing-md);
+    /* Standard internal padding */
     text-align: left;
-    position: relative; /* For message actions */
+    position: relative;
+    /* For message actions */
     /* 微妙的悬停效果 */
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
     /* 新增：为 sent-tabs-container 腾出空间，如果它直接在此元素上方的话 */
@@ -218,64 +245,87 @@
 .sent-images-container {
     display: flex;
     flex-direction: column;
-    align-self: flex-end; /* 与用户消息气泡对齐 */
+    align-self: flex-end;
+    /* 与用户消息气泡对齐 */
     gap: calc(var(--spacing-xs) / 2);
-    margin-bottom: calc(var(--spacing-xs) / 2); /* 与下方用户消息气泡的间距 */
-    width: fit-content; /* 根据内容调整宽度 */
-    max-width: 90%; /* 与用户消息气泡最大宽度相似或略小 */
-    margin-right: 0; /* 确保与 flex-end 对齐 */
+    margin-bottom: calc(var(--spacing-xs) / 2);
+    /* 与下方用户消息气泡的间距 */
+    width: fit-content;
+    /* 根据内容调整宽度 */
+    max-width: 90%;
+    /* 与用户消息气泡最大宽度相似或略小 */
+    margin-right: 0;
+    /* 确保与 flex-end 对齐 */
 }
 
 /* 为图片容器添加特定的内边距和背景，使其看起来更像一个整体 */
 .sent-images-container {
-    background-color: rgba(0,0,0,0.03); /* 非常淡的背景 */
+    background-color: rgba(0, 0, 0, 0.03);
+    /* 非常淡的背景 */
     padding: var(--spacing-xs);
     border-radius: var(--radius-md);
     box-sizing: border-box;
 }
 
 body.dark-mode .sent-images-container {
-    background-color: rgba(255,255,255,0.03);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 .sent-tab-item {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm); /* 增加间距 */
-    padding: var(--spacing-sm) var(--spacing-md); /* 增加内边距，让标签更宽敞 */
-    border-radius: 16px; /* 使用16px圆角 */
-    background-color: rgba(255, 255, 255, 0.85); /* 增加透明度 */
-    border: 1px solid rgba(233, 236, 239, 0.6); /* 边框也增加透明度 */
+    gap: var(--spacing-sm);
+    /* 增加间距 */
+    padding: var(--spacing-sm) var(--spacing-md);
+    /* 增加内边距，让标签更宽敞 */
+    border-radius: 16px;
+    /* 使用16px圆角 */
+    background-color: rgba(255, 255, 255, 0.85);
+    /* 增加透明度 */
+    border: 1px solid rgba(233, 236, 239, 0.6);
+    /* 边框也增加透明度 */
     max-width: 100%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06); /* 更精致的阴影 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    /* 更精致的阴影 */
     color: var(--text-color);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: 32px; /* 确保最小高度 */
-    backdrop-filter: blur(8px); /* 添加毛玻璃效果 */
-    -webkit-backdrop-filter: blur(8px); /* Safari兼容性 */
+    min-height: 32px;
+    /* 确保最小高度 */
+    backdrop-filter: blur(8px);
+    /* 添加毛玻璃效果 */
+    -webkit-backdrop-filter: blur(8px);
+    /* Safari兼容性 */
 }
 
 .sent-tab-item:hover {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
-    border-color: rgba(70, 116, 255, 0.6); /* 悬停时边框颜色也带透明度 */
-    background-color: rgba(255, 255, 255, 0.95); /* 悬停时稍微减少透明度 */
+    border-color: rgba(70, 116, 255, 0.6);
+    /* 悬停时边框颜色也带透明度 */
+    background-color: rgba(255, 255, 255, 0.95);
+    /* 悬停时稍微减少透明度 */
 }
 
 /* 深色模式下的透明度调整 */
 body.dark-mode .sent-tab-item {
-    background-color: rgba(44, 46, 51, 0.85); /* 深色模式下的透明背景 */
-    border-color: rgba(52, 58, 64, 0.6); /* 深色模式下的透明边框 */
+    background-color: rgba(44, 46, 51, 0.85);
+    /* 深色模式下的透明背景 */
+    border-color: rgba(52, 58, 64, 0.6);
+    /* 深色模式下的透明边框 */
 }
 
 body.dark-mode .sent-tab-item:hover {
-    background-color: rgba(44, 46, 51, 0.95); /* 深色模式悬停时稍微减少透明度 */
-    border-color: rgba(116, 143, 252, 0.6); /* 深色模式悬停边框 */
+    background-color: rgba(44, 46, 51, 0.95);
+    /* 深色模式悬停时稍微减少透明度 */
+    border-color: rgba(116, 143, 252, 0.6);
+    /* 深色模式悬停边框 */
 }
 
 .sent-tab-favicon {
-    width: 18px; /* 稍微增加图标大小 */
-    height: 18px; /* 稍微增加图标大小 */
+    width: 18px;
+    /* 稍微增加图标大小 */
+    height: 18px;
+    /* 稍微增加图标大小 */
     object-fit: contain;
     flex-shrink: 0;
     border-radius: 3px;
@@ -289,13 +339,17 @@ body.dark-mode .sent-tab-item:hover {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex-grow: 1; /* Allow title to take available space */
-    flex-shrink: 1; /* Allow title to shrink */
-    min-width: 0; /* Critical for ellipsis to work in flex item */
+    flex-grow: 1;
+    /* Allow title to take available space */
+    flex-shrink: 1;
+    /* Allow title to shrink */
+    min-width: 0;
+    /* Critical for ellipsis to work in flex item */
     position: relative;
     line-height: 1.4;
     color: var(--text-color);
-    padding: 2px 0; /* 增加垂直内边距，让文字区域更高 */
+    padding: 2px 0;
+    /* 增加垂直内边距，让文字区域更高 */
 }
 
 /* "Remove Sent Tab" button in user message bubble */
@@ -309,9 +363,12 @@ body.dark-mode .sent-tab-item:hover {
     line-height: 1;
     opacity: 0.6;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    align-self: center; /* Vertically center if tab item is taller */
-    flex-shrink: 0; /* Ensure the button does not shrink */
-    border-radius: 8px; /* 使用8px圆角，与整体风格协调 */
+    align-self: center;
+    /* Vertically center if tab item is taller */
+    flex-shrink: 0;
+    /* Ensure the button does not shrink */
+    border-radius: 8px;
+    /* 使用8px圆角，与整体风格协调 */
     width: 20px;
     height: 20px;
     display: flex;
@@ -324,7 +381,8 @@ body.dark-mode .sent-tab-item:hover {
     color: var(--error-color);
     opacity: 1;
     transform: scale(1.05);
-    background-color: rgba(201, 42, 42, 0.15); /* 稍微增加透明度 */
+    background-color: rgba(201, 42, 42, 0.15);
+    /* 稍微增加透明度 */
 }
 
 .remove-sent-tab-btn:active {
@@ -366,12 +424,16 @@ body.dark-mode .sent-tab-item:hover {
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     /* border-radius already set by .message */
-    padding: var(--spacing-md); /* Standard internal padding */
-    padding-bottom: 30px; /* Space for actions at the bottom */
+    padding: var(--spacing-md);
+    /* Standard internal padding */
+    padding-bottom: 30px;
+    /* Space for actions at the bottom */
     max-width: 95%;
-    overflow: visible; /* Ensure markdown content can layout (e.g. tables) */
+    overflow: visible;
+    /* Ensure markdown content can layout (e.g. tables) */
     line-height: 1.4;
-    position: relative; /* For message actions */
+    position: relative;
+    /* For message actions */
     /* 微妙的悬停效果 */
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -384,7 +446,8 @@ body.dark-mode .sent-tab-item:hover {
 
 .bot-message p {
     margin-top: 0;
-    margin-bottom: 0.6em; /* Spacing between paragraphs in bot message */
+    margin-bottom: 0.6em;
+    /* Spacing between paragraphs in bot message */
     line-height: 1.4;
 }
 
@@ -392,7 +455,8 @@ body.dark-mode .sent-tab-item:hover {
     margin-bottom: 0;
 }
 
-.bot-message p + p::before { /* Remove extra space if any was added by browser */
+.bot-message p+p::before {
+    /* Remove extra space if any was added by browser */
     content: none;
     display: none;
     height: 0;
@@ -402,8 +466,10 @@ body.dark-mode .sent-tab-item:hover {
 .message-actions {
     position: absolute;
     display: flex;
-    gap: 4px; /* Reduced gap */
-    opacity: 0; /* Default hidden */
+    gap: 4px;
+    /* Reduced gap */
+    opacity: 0;
+    /* Default hidden */
     transform: translateY(2px) scale(0.9);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 5;
@@ -423,9 +489,11 @@ body.dark-mode .sent-tab-item:hover {
 
 /* 消息悬停时显示操作按钮 */
 .message:hover .message-actions,
-.message-actions:hover { /* 保持原有样式 */
+.message-actions:hover {
+    /* 保持原有样式 */
     opacity: 1;
-    transform: translateY(2px) scale(1); /* Modified to remove upward lift */
+    transform: translateY(2px) scale(1);
+    /* Modified to remove upward lift */
 }
 
 /* 通用消息操作按钮样式 (复制、删除、重新生成) */
@@ -433,23 +501,29 @@ body.dark-mode .sent-tab-item:hover {
     width: 24px;
     height: 24px;
     border-radius: var(--radius-full);
-    background-color: rgba(255, 255, 255, 0.9); /* 浅色模式背景 */
-    border: none; /* 确保无边框 */
+    background-color: rgba(255, 255, 255, 0.9);
+    /* 浅色模式背景 */
+    border: none;
+    /* 确保无边框 */
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0;
-    color: #888; /* 默认灰色 */
+    color: #888;
+    /* 默认灰色 */
     backdrop-filter: blur(8px);
 }
+
 .message-action-btn:hover {
     transform: scale(1.1);
-    color: var(--primary-color); /* Default hover to primary color */
+    color: var(--primary-color);
+    /* Default hover to primary color */
     background-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 .message-action-btn:active {
     transform: scale(0.95);
 }
@@ -459,15 +533,19 @@ body.dark-mode .sent-tab-item:hover {
     background-color: rgba(255, 255, 255, 0.3);
     color: rgba(104, 103, 103, 0.8);
 }
+
 .user-message .message-action-btn:hover {
     background-color: rgba(255, 255, 255, 0.6);
-    color: var(--primary-color); /* User message action buttons also hover to primary */
+    color: var(--primary-color);
+    /* User message action buttons also hover to primary */
 }
 
 /* 聊天消息中删除操作按钮的特定悬停样式 (现在与用户消息操作按钮悬停一致) */
 .message-action-btn.delete-message-action:hover {
-    background-color: rgba(255, 255, 255, 0.6); /* 白色背景，与用户消息按钮悬停一致 */
-    color: var(--primary-color); /* 主题色图标，与用户消息按钮悬停一致 */
+    background-color: rgba(255, 255, 255, 0.6);
+    /* 白色背景，与用户消息按钮悬停一致 */
+    color: var(--primary-color);
+    /* 主题色图标，与用户消息按钮悬停一致 */
 }
 
 /* 复制按钮基础样式 - 使 message-action-btn 行为一致 */
@@ -475,38 +553,49 @@ body.dark-mode .sent-tab-item:hover {
     width: 24px;
     height: 24px;
     border-radius: var(--radius-full);
-    background-color: rgba(255, 255, 255, 0.9); /* 浅色模式背景 (与 message-action-btn 一致) */
-    border: none; /* 非常重要：移除浏览器默认边框 */
+    background-color: rgba(255, 255, 255, 0.9);
+    /* 浅色模式背景 (与 message-action-btn 一致) */
+    border: none;
+    /* 非常重要：移除浏览器默认边框 */
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
     padding: 0;
-    color: #888; /* 默认灰色 (与 message-action-btn 一致) */
+    color: #888;
+    /* 默认灰色 (与 message-action-btn 一致) */
 }
-.copy-button:hover { /* 通用复制按钮悬停效果 */
+
+.copy-button:hover {
+    /* 通用复制按钮悬停效果 */
     transform: scale(1.05);
     color: var(--primary-color);
-    background-color: white; /* 稍微变亮一点的背景以示区别 */
+    background-color: white;
+    /* 稍微变亮一点的背景以示区别 */
 }
 
 /* Ensure copy button inside message actions is part of flex layout */
 .message-actions .copy-button {
-    position: static !important; 
-    bottom: auto;     
-    right: auto;      
+    position: static !important;
+    bottom: auto;
+    right: auto;
     /* 继承上述 .copy-button 的基础样式 */
 }
 
 /* 用户消息中的复制按钮特定样式 (覆盖基础 .copy-button 样式) */
 .user-message .copy-button {
-    background-color: rgba(255, 255, 255, 0.3); /* 用户消息气泡中的按钮背景 */
-    color: rgba(104, 103, 103, 0.8); /* 用户消息气泡中的按钮颜色 */
+    background-color: rgba(255, 255, 255, 0.3);
+    /* 用户消息气泡中的按钮背景 */
+    color: rgba(104, 103, 103, 0.8);
+    /* 用户消息气泡中的按钮颜色 */
 }
+
 .user-message .copy-button:hover {
-    background-color: rgba(255, 255, 255, 0.6); /* 用户消息气泡中按钮悬停背景 */
-    color: var(--primary-color); /* 保持悬停颜色一致 */
+    background-color: rgba(255, 255, 255, 0.6);
+    /* 用户消息气泡中按钮悬停背景 */
+    color: var(--primary-color);
+    /* 保持悬停颜色一致 */
 }
 
 
@@ -523,10 +612,13 @@ body.dark-mode .sent-tab-item:hover {
 }
 
 @keyframes streamingPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
         transform: scaleY(1);
     }
+
     50% {
         opacity: 0.4;
         transform: scaleY(0.8);
@@ -554,6 +646,7 @@ body.dark-mode .sent-tab-item:hover {
         opacity: 0;
         transform: translateY(8px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -582,10 +675,13 @@ body.dark-mode .sent-tab-item:hover {
 }
 
 @keyframes thinkingGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 0.3;
         transform: translate(-50%, -50%) scale(1);
     }
+
     50% {
         opacity: 0.6;
         transform: translate(-50%, -50%) scale(1.2);
@@ -620,11 +716,15 @@ body.dark-mode .sent-tab-item:hover {
 }
 
 @keyframes thinkingPulseAdvanced {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
         transform: scale(0.8) translateY(0);
         opacity: 0.4;
         box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2);
     }
+
     30% {
         transform: scale(1.3) translateY(-2px);
         opacity: 1;
@@ -664,111 +764,361 @@ body.dark-mode .sent-tab-item:hover {
         transform: translate(-50%, -50%) scale(1);
         opacity: 0.6;
     }
+
     100% {
         transform: translate(-50%, -50%) scale(2.5);
         opacity: 0;
     }
 }
 
-/* 聊天输入区域 */
+/* ============================================
+   聊天输入区域 - 重构版
+   ============================================ */
+
+/* 输入区域包装器 - 与 footer 分离，透明背景 */
+.chat-input-wrapper {
+    padding: var(--spacing-sm) var(--spacing-md);
+    padding-bottom: calc(var(--spacing-md) + 4px);
+    background: transparent;
+}
+
+/* 输入框容器 */
 .chat-input {
     display: flex;
-    align-items: center;
-    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-xs), 2vw, var(--spacing-md));
-    /* background-color: var(--card-background); /* 移动到父级 div.chat-input-area */
-    /* border-top: 1px solid var(--border-color); /* 移动到父级 div.chat-input-area */
-    width: 100%;
-    min-height: fit-content;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: var(--spacing-sm);
     box-sizing: border-box;
-    overflow-x: hidden;
-    background-color: var(--card-background); /* 确保 chat-input 本身有背景 */
-    border-top: 1px solid var(--border-color); /* 如果 selected-tabs-bar 不存在，这个边框会显示 */
-    position: relative; /* 用于确保圆角在 selected-tabs-bar 出现时能正确处理 */
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0; /* 默认顶部圆角，底部直角 */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.chat-input:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1);
+}
+
+/* 输入框 */
 .chat-input textarea {
     flex: 1;
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 2px 14px; /* 减小垂直内边距 */
+    border: none;
+    background: transparent;
+    padding: 4px 8px;
     resize: none;
-    min-height: 20px; /* 减小默认高度 */
-    max-height: 150px; /* 限定最大高度 */
-    font-size: clamp(12px, 3.5vw, 14px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 24px;
+    max-height: 150px;
+    font-size: 14px;
+    line-height: 1.5;
     outline: none;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    min-width: 0;
     overflow-y: auto;
-    line-height: 1.4;
-    /* 添加轻微的变换效果 */
-    transform: translateY(0);
 }
 
-.chat-input textarea:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1), 0 2px 8px rgba(49, 123, 245, 0.05);
-    transform: translateY(-1px);
-}
-
-/* 输入时的微妙反馈 */
 .chat-input textarea::placeholder {
-    color: #999; /* 更浅的灰色 */
-    opacity: 1; /* 确保在所有浏览器中都可见 */
-}
-
-.chat-input textarea:not(:placeholder-shown) {
-    border-color: rgba(49, 123, 245, 0.3);
+    color: #999;
 }
 
 .chat-input textarea::-webkit-scrollbar {
     width: 6px;
 }
+
 .chat-input textarea::-webkit-scrollbar-track {
     background: transparent;
 }
+
 .chat-input textarea::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: var(--radius-full);
 }
-.chat-input textarea::-webkit-scrollbar-thumb:hover {
-    background: var(--scrollbar-thumb-hover);
+
+/* 控件行 */
+.chat-input-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    position: relative;
 }
 
-/* 输入区域按钮 (上传、发送) */
-.chat-input button {
-    width: clamp(30px, 8vw, 34px);
-    height: clamp(30px, 8vw, 34px);
+/* 输入区域通用按钮 */
+.input-action-btn {
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: none;
     background-color: transparent;
-    margin-left: var(--spacing-xs);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-secondary);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
     flex-shrink: 0;
-    transform: scale(1);
-    position: relative;
 }
 
-.chat-input button:not(#send-message):hover { /* Non-send buttons hover */
+.input-action-btn:hover {
     color: var(--primary-color);
     background-color: var(--button-hover-bg);
+}
+
+/* 加号菜单弹出层 */
+.attachment-menu {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    min-width: 160px;
+    z-index: 100;
+    overflow: hidden;
+    padding: 6px 0;
+}
+
+.attachment-menu.show {
+    display: block;
+    animation: menuSlideUp 0.15s ease-out;
+}
+
+@keyframes menuSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.attachment-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    text-align: left;
+}
+
+.attachment-menu-item:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.attachment-menu-item svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.attachment-menu-item:hover svg {
+    color: var(--primary-color);
+}
+
+/* 扁平化模型选择器 */
+.inline-model-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    margin-left: var(--spacing-sm);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.inline-model-selector:hover {
+    background-color: rgba(49, 123, 245, 0.08);
+    color: var(--primary-color);
+}
+
+.inline-model-selector.active {
+    background-color: rgba(49, 123, 245, 0.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+#current-model-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.model-display-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.inline-model-selector svg {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.inline-model-selector.active svg {
+    transform: rotate(180deg);
+}
+
+/* 自定义模型选择菜单 */
+.model-selector-menu {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 36px;
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-height: 280px;
+    min-width: 200px;
+    max-width: 320px;
+    overflow-y: auto;
+    z-index: 100;
+    padding: 6px 0;
+}
+
+.model-selector-menu.show {
+    display: block;
+    animation: menuSlideUp 0.15s ease-out;
+}
+
+/* 模型菜单分组 */
+.model-group {
+    padding: var(--spacing-xs) 0;
+}
+
+.model-group:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.model-group-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.provider-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.9;
+}
+
+.provider-icon-img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+.provider-icon-svg {
+    width: 14px;
+    height: 14px;
+}
+
+
+.model-option {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    text-align: left;
+}
+
+.model-option:hover {
+    background-color: var(--button-hover-bg);
+}
+
+.model-option.selected {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.model-option.selected::before {
+    content: '✓';
+    margin-right: 8px;
+    font-size: 12px;
+}
+
+/* 发送按钮 */
+.chat-input-controls #send-message {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.chat-input-controls #send-message:hover {
+    background-color: var(--secondary-color);
     transform: scale(1.05);
 }
 
-.chat-input button:not(#send-message):active {
+.chat-input-controls #send-message:active {
     transform: scale(0.95);
 }
 
-.chat-input button svg {
-    width: clamp(14px, 4vw, 16px);
-    height: clamp(14px, 4vw, 16px);
+.chat-input-controls #send-message svg {
+    width: 14px;
+    height: 14px;
 }
+
+/* 停止流式输出按钮样式 */
+.chat-input-controls #send-message.stop-streaming:hover {
+    background-color: var(--error-color);
+}
+
+/* 模型菜单滚动条 */
+.model-selector-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.model-selector-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.model-selector-menu::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-full);
+}
+
+
 
 /* 发送按钮 */
 #send-message {
@@ -826,10 +1176,12 @@ body.dark-mode .sent-tab-item:hover {
         transform: scale(1);
         box-shadow: 0 0 0 0 rgba(49, 123, 245, 0.4);
     }
+
     70% {
         transform: scale(1.05);
         box-shadow: 0 0 0 8px rgba(49, 123, 245, 0);
     }
+
     100% {
         transform: scale(1);
         box-shadow: 0 0 0 0 rgba(49, 123, 245, 0);
@@ -843,10 +1195,13 @@ body.dark-mode .sent-tab-item:hover {
 /* 控制流式输出按钮特定样式 */
 #send-message.stop-streaming {
     /* background remains primary, hover changes */
-    transform: none; /* Reset hover transform if any conflicts */
+    transform: none;
+    /* Reset hover transform if any conflicts */
 }
+
 #send-message.stop-streaming:hover {
-    background-color: var(--error-color); /* Hover becomes red */
+    background-color: var(--error-color);
+    /* Hover becomes red */
     color: white;
     transform: scale(1.05);
 }
@@ -879,12 +1234,14 @@ body.dark-mode .sent-tab-item:hover {
     border-radius: var(--radius-sm);
     overflow: hidden;
 }
+
 .image-item img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
+
 .image-item .image-actions {
     position: absolute;
     top: var(--spacing-xs);
@@ -894,6 +1251,7 @@ body.dark-mode .sent-tab-item:hover {
     opacity: 0;
     transition: opacity 0.2s ease;
 }
+
 .image-item:hover .image-actions {
     opacity: 1;
 }
@@ -912,11 +1270,13 @@ body.dark-mode .sent-tab-item:hover {
     cursor: pointer;
     transition: all 0.2s ease;
 }
+
 .image-action-button:hover {
     background-color: white;
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 .image-action-button svg {
     width: 16px;
     height: 16px;
@@ -930,13 +1290,15 @@ body.dark-mode .sent-tab-item:hover {
     gap: var(--spacing-xs);
     /* margin-bottom is now controlled by the container's gap */
 }
+
 .message-image {
     width: 100%;
     height: 80px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     object-fit: cover;
-    display: block; /* 确保图片是块级元素 */
+    display: block;
+    /* 确保图片是块级元素 */
 }
 
 
@@ -955,14 +1317,18 @@ body.dark-mode .sent-tab-item:hover {
     padding: 30px;
     box-sizing: border-box;
 }
-.modal-content { /* For image modal specifically */
+
+.modal-content {
+    /* For image modal specifically */
     margin: auto;
     display: block;
     max-width: 90%;
     max-height: 80vh;
     object-fit: contain;
 }
-.close-modal { /* For image modal close button */
+
+.close-modal {
+    /* For image modal close button */
     position: absolute;
     top: 15px;
     right: 35px;
@@ -971,8 +1337,10 @@ body.dark-mode .sent-tab-item:hover {
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 101; /* Above modal content */
+    z-index: 101;
+    /* Above modal content */
 }
+
 .close-modal:hover {
     color: var(--primary-color);
     text-decoration: none;
@@ -991,116 +1359,107 @@ body.dark-mode .sent-tab-item:hover {
 }
 
 
-/* 聊天界面头部 */
+/* 聊天界面头部 - 简化版 */
 .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-xs), 2vw, var(--spacing-md));
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--card-background);
-    gap: clamp(var(--spacing-xs), 1vw, var(--spacing-sm));
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: #F8F9FA;
+    gap: var(--spacing-sm);
     box-sizing: border-box;
-    overflow-x: hidden;
 }
 
-.chat-model-selector,
+/* Agent 选择器 */
 .chat-agent-selector {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
     min-width: 0;
-    flex: 1 1 auto;
-    max-width: 50%; 
-}
-.chat-model-selector {
-    max-width: 55%; 
-    flex: 3; 
-}
-.chat-agent-selector {
-    max-width: 30%; 
-    flex: 1; 
 }
 
-.chat-model-selector label,
 .chat-agent-selector label {
-    font-size: clamp(11px, 3vw, 12px);
+    font-size: 12px;
     color: var(--text-secondary);
     white-space: nowrap;
     flex-shrink: 0;
 }
 
-.chat-model-selector select,
 .chat-agent-selector select {
-    padding: clamp(2px, 1vw, var(--spacing-xs)) clamp(4px, 1.5vw, var(--spacing-sm));
-    border-radius: var(--radius-lg);
+    max-width: 120px;
+    padding: 4px 8px;
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
-    font-size: clamp(11px, 3vw, 12px);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: normal; /* 确保不是加粗 */
+    font-size: 12px;
+    font-family: inherit;
     background-color: transparent;
     cursor: pointer;
     outline: none;
     transition: all 0.2s ease;
-    min-width: 0;
-    width: 100%;
     text-overflow: ellipsis;
 }
-.chat-model-selector select:hover, .chat-agent-selector select:hover {
+
+.chat-agent-selector select:hover {
     border-color: var(--primary-color);
 }
-.chat-model-selector select:focus, .chat-agent-selector select:focus {
+
+.chat-agent-selector select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(49, 123, 245, 0.1);
 }
 
-/* 聊天首页模型选择器分组样式 - 统一样式 */
-.chat-model-selector select optgroup {
-    font-weight: bold;
-    color: var(--text-color);
+
+/* 操作按钮组 */
+.chat-header-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+    flex-shrink: 0;
+}
+
+.chat-header .action-button {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: none;
     background-color: transparent;
-    padding: 4px 8px;
-    margin: 2px 0;
-    font-size: 11px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
-.chat-model-selector select option {
-    padding: 6px 16px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 12px;
-    color: var(--text-color);
-    background-color: var(--background-color);
-}
-
-
-
-/* Chat header action button (e.g., clear context) specific hover */
 .chat-header .action-button:hover {
-    color: var(--primary-color); /* Override default error color hover */
+    color: var(--primary-color);
     background-color: var(--button-hover-bg);
 }
-/* Chat header close button already handled by .close-panel-btn */
+
 
 
 /* 新增聊天界面状态消息样式 */
 .chat-status {
     padding: var(--spacing-sm) var(--spacing-md);
-    margin: 0 auto var(--spacing-sm) auto; /* 上0 左右auto 下SM */
+    margin: 0 auto var(--spacing-sm) auto;
+    /* 上0 左右auto 下SM */
     border-radius: var(--radius-md);
     font-size: 13px;
     text-align: center;
-    display: none; /* 默认隐藏 */
+    display: none;
+    /* 默认隐藏 */
     opacity: 0;
-    transform: translateY(-20px); /* 向上移动更多 */
+    transform: translateY(-20px);
+    /* 向上移动更多 */
     transition: all 0.3s ease;
-    max-width: 300px; /* 限制气泡最大宽度 */
+    max-width: 300px;
+    /* 限制气泡最大宽度 */
 }
 
 .chat-status.success {
     display: block;
     opacity: 1;
-    transform: translateY(-15px); /* 调整出现时的位置 */
+    transform: translateY(-15px);
+    /* 调整出现时的位置 */
     background-color: rgba(52, 168, 83, 0.1);
     color: var(--success-color);
     border: 1px solid rgba(52, 168, 83, 0.3);
@@ -1109,14 +1468,16 @@ body.dark-mode .sent-tab-item:hover {
 .chat-status.error {
     display: block;
     opacity: 1;
-    transform: translateY(-15px); /* 调整出现时的位置 */
+    transform: translateY(-15px);
+    /* 调整出现时的位置 */
     background-color: rgba(234, 67, 53, 0.1);
     color: var(--error-color);
     border: 1px solid rgba(234, 67, 53, 0.3);
 }
 
 /* 空状态消息 (if used in chat, e.g., for empty agent list, but that's in settings) */
-.empty-state { /* General empty state that might be used in chat for other purposes */
+.empty-state {
+    /* General empty state that might be used in chat for other purposes */
     text-align: center;
     padding: var(--spacing-lg);
     color: var(--text-secondary);
@@ -1320,6 +1681,7 @@ body.dark-mode .sent-tab-item:hover {
         opacity: 0;
         backdrop-filter: blur(0px);
     }
+
     to {
         opacity: 1;
         backdrop-filter: blur(4px);
@@ -1344,6 +1706,7 @@ body.dark-mode .sent-tab-item:hover {
         opacity: 0;
         transform: translateY(20px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -1510,12 +1873,12 @@ body.dark-mode .sent-tab-item:hover {
     position: relative;
 }
 
-.radio-label input[type="radio"]:checked + .radio-mark {
+.radio-label input[type="radio"]:checked+.radio-mark {
     border-color: var(--primary-color);
     background-color: var(--primary-color);
 }
 
-.radio-label input[type="radio"]:checked + .radio-mark::after {
+.radio-label input[type="radio"]:checked+.radio-mark::after {
     content: '';
     width: 6px;
     height: 6px;
@@ -1551,8 +1914,10 @@ body.dark-mode .sent-tab-item:hover {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    padding: calc(var(--spacing-sm) + 2px) var(--spacing-md); /* 增加上下内边距2px */
-    background-color: rgba(255, 255, 255, 0.85); /* 半透明背景，适用于亮色模式 */
+    padding: calc(var(--spacing-sm) + 2px) var(--spacing-md);
+    /* 增加上下内边距2px */
+    background-color: rgba(255, 255, 255, 0.85);
+    /* 半透明背景，适用于亮色模式 */
     border-bottom: 1px solid var(--border-color);
     overflow: hidden;
     max-width: 100%;
@@ -1562,34 +1927,36 @@ body.dark-mode .sent-tab-item:hover {
     border-top: 1px solid var(--border-color);
     white-space: nowrap;
     flex-shrink: 1;
-    
+
     /* 增强磨玻璃效果 */
     backdrop-filter: blur(10px) saturate(130%);
     -webkit-backdrop-filter: blur(10px) saturate(130%);
-    
+
     /* 轻微的阴影效果增强立体感 */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) inset;
-    
+
     /* 添加渐变边框效果 */
     background-image: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.02) 100%);
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0.02) 100%);
 }
 
 /* 深色模式下已选标签栏 */
 body.dark-mode .selected-tabs-bar {
-    background-color: rgba(44, 46, 51, 0.85); /* 深色模式下的半透明背景，与卡片背景协调 */
+    background-color: rgba(44, 46, 51, 0.85);
+    /* 深色模式下的半透明背景，与卡片背景协调 */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) inset;
     border-color: var(--border-color);
     background-image: linear-gradient(135deg,
-        rgba(60, 60, 65, 0.1) 0%,
-        rgba(40, 40, 45, 0.05) 50%,
-        rgba(30, 30, 35, 0.02) 100%);
+            rgba(60, 60, 65, 0.1) 0%,
+            rgba(40, 40, 45, 0.05) 50%,
+            rgba(30, 30, 35, 0.02) 100%);
 }
 
 
-.chat-input-area .chat-input { /* 当标签栏存在时，chat-input 的顶部边框由标签栏提供 */
+.chat-input-area .chat-input {
+    /* 当标签栏存在时，chat-input 的顶部边框由标签栏提供 */
     border-top: none;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -1599,51 +1966,66 @@ body.dark-mode .selected-tabs-bar {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
-    background-color: rgba(255, 255, 255, 0.6); /* 更透明的背景，配合磨玻璃效果 */
-    border: 1px solid rgba(233, 236, 239, 0.8); /* 半透明边框 */
+    background-color: rgba(255, 255, 255, 0.6);
+    /* 更透明的背景，配合磨玻璃效果 */
+    border: 1px solid rgba(233, 236, 239, 0.8);
+    /* 半透明边框 */
     border-radius: var(--radius-full);
-    padding: calc(var(--spacing-xs) + 3px) var(--spacing-sm); /* 上下内边距 */
-    padding-left: calc(var(--spacing-sm) + 2px); /* 增加左侧内边距，让图标不靠近边缘 */
+    padding: calc(var(--spacing-xs) + 3px) var(--spacing-sm);
+    /* 上下内边距 */
+    padding-left: calc(var(--spacing-sm) + 2px);
+    /* 增加左侧内边距，让图标不靠近边缘 */
     font-size: 12px;
     color: var(--text-color);
     cursor: default;
     transition: all 0.2s ease;
-    flex-grow: 1; /* 允许增长 */
-    flex-shrink: 1; /* 允许收缩 */
-    flex-basis: 0; /* 初始大小为0，让flex-grow和flex-shrink平均分配空间 */
-    min-width: 40px; /* 减小最小宽度，允许更多压缩 */
-    max-width: 200px; /* 最大宽度限制 */
+    flex-grow: 1;
+    /* 允许增长 */
+    flex-shrink: 1;
+    /* 允许收缩 */
+    flex-basis: 0;
+    /* 初始大小为0，让flex-grow和flex-shrink平均分配空间 */
+    min-width: 40px;
+    /* 减小最小宽度，允许更多压缩 */
+    max-width: 200px;
+    /* 最大宽度限制 */
     overflow: hidden;
-    
+
     /* 轻微的阴影增强立体感 */
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    
+
     /* 磨玻璃效果 */
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    
+
     /* 空间不足时优化显示 */
     position: relative;
-    margin: 0 1px; /* 添加小间距，提高可区分度 */
+    margin: 0 1px;
+    /* 添加小间距，提高可区分度 */
 }
 
 /* 当标签很多、空间不足时，优先保留图标和关闭按钮，文本优雅压缩 */
-@media (max-width: 600px), (min-width: 601px) and (max-width: 900px) {
+@media (max-width: 600px),
+(min-width: 601px) and (max-width: 900px) {
     .selected-tab-chip {
-        padding: calc(var(--spacing-xs) + 3px) var(--spacing-xs); /* 保持增加的上下内边距 */
-        padding-left: calc(var(--spacing-xs) + 4px); /* 在小屏幕上也增加左侧内边距 */
-        min-width: 32px; /* 进一步减小最小宽度 */
+        padding: calc(var(--spacing-xs) + 3px) var(--spacing-xs);
+        /* 保持增加的上下内边距 */
+        padding-left: calc(var(--spacing-xs) + 4px);
+        /* 在小屏幕上也增加左侧内边距 */
+        min-width: 32px;
+        /* 进一步减小最小宽度 */
     }
-    
+
     /* 当宽度低于特定值时，文本可以完全隐藏，只保留图标和关闭按钮 */
     .selected-tab-chip.micro {
         min-width: 32px;
         width: 32px;
-        padding: calc(var(--spacing-xs) + 3px) calc(var(--spacing-xs) / 2); /* 保持增加的上下内边距 */
+        padding: calc(var(--spacing-xs) + 3px) calc(var(--spacing-xs) / 2);
+        /* 保持增加的上下内边距 */
         /* 微型模式下居中显示，无需特别设置左侧内边距 */
         justify-content: center;
     }
-    
+
     .selected-tab-chip.micro span {
         display: none;
     }
@@ -1651,16 +2033,20 @@ body.dark-mode .selected-tabs-bar {
 
 /* 深色模式下的标签芯片 */
 body.dark-mode .selected-tab-chip {
-    background-color: rgba(52, 58, 64, 0.7); /* 深色模式下的半透明背景 */
-    border-color: rgba(52, 58, 64, 0.9); /* 深色模式下的边框 */
+    background-color: rgba(52, 58, 64, 0.7);
+    /* 深色模式下的半透明背景 */
+    border-color: rgba(52, 58, 64, 0.9);
+    /* 深色模式下的边框 */
     color: var(--text-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .selected-tab-chip:hover,
 .selected-tab-chip.active {
-    border-color: rgba(70, 116, 255, 0.5); /* 半透明主色调边框 */
-    background-color: rgba(70, 116, 255, 0.08); /* 主色调透明背景 */
+    border-color: rgba(70, 116, 255, 0.5);
+    /* 半透明主色调边框 */
+    background-color: rgba(70, 116, 255, 0.08);
+    /* 主色调透明背景 */
     color: var(--primary-color);
     /* 不使用悬浮上抬效果，但稍微增加阴影 */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -1675,8 +2061,10 @@ body.dark-mode .selected-tab-chip.active {
 }
 
 .selected-tab-chip img {
-    width: 16px; /* 增加图标大小 */
-    height: 16px; /* 增加图标大小 */
+    width: 16px;
+    /* 增加图标大小 */
+    height: 16px;
+    /* 增加图标大小 */
     border-radius: 3px;
     object-fit: contain;
     flex-shrink: 0;
@@ -1688,7 +2076,8 @@ body.dark-mode .selected-tab-chip.active {
     white-space: nowrap;
     flex-grow: 1;
     min-width: 0;
-    font-weight: 500; /* 稍微加粗文字 */
+    font-weight: 500;
+    /* 稍微加粗文字 */
 }
 
 .selected-tab-chip button {
@@ -1715,7 +2104,8 @@ body.dark-mode .selected-tab-chip.active {
     color: var(--error-color);
     opacity: 1;
     background-color: rgba(201, 42, 42, 0.1);
-    transform: scale(1.1); /* 稍微放大按钮增强交互感 */
+    transform: scale(1.1);
+    /* 稍微放大按钮增强交互感 */
 }
 
 /* 深色模式下的关闭按钮悬停效果 */
@@ -1766,26 +2156,34 @@ body.dark-mode .selected-tab-chip.error {
 
 /* 标签页选择弹窗 - 增强磨玻璃效果 */
 .tab-selection-popup {
-    position: fixed; /* 使用 fixed 定位 */
-    z-index: 10010; /* 比 sidepanel 内其他元素高，但低于模态框等 */
-    border: 1px solid rgba(233, 236, 239, 0.5); /* 半透明边框，替代 var(--border-color-glass) */
-    border-radius: var(--radius-xl); /* 更大的圆角 */
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 20px 60px rgba(0, 0, 0, 0.15); /* 更深的阴影层次，替代 var(--shadow-glass) */
-    max-height: 320px; /* 稍微增加高度 */
+    position: fixed;
+    /* 使用 fixed 定位 */
+    z-index: 10010;
+    /* 比 sidepanel 内其他元素高，但低于模态框等 */
+    border: 1px solid rgba(233, 236, 239, 0.5);
+    /* 半透明边框，替代 var(--border-color-glass) */
+    border-radius: var(--radius-xl);
+    /* 更大的圆角 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 20px 60px rgba(0, 0, 0, 0.15);
+    /* 更深的阴影层次，替代 var(--shadow-glass) */
+    max-height: 320px;
+    /* 稍微增加高度 */
     overflow-y: auto;
-    padding: 0; /* 移除内边距，避免顶部和底部留白 */
-    
+    padding: 0;
+    /* 移除内边距，避免顶部和底部留白 */
+
     /* 增强的磨玻璃效果 - 使用明确的背景颜色替代 var(--glass-bg-color) */
-    background-color: rgba(255, 255, 255, 0.85); /* 半透明背景 */
+    background-color: rgba(255, 255, 255, 0.85);
+    /* 半透明背景 */
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
-    
+
     /* 渐变边框效果 */
     background-image: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.05) 50%,
-        rgba(255, 255, 255, 0.02) 100%);
-    
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(255, 255, 255, 0.02) 100%);
+
     /* 入场动画 */
     animation: popupSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     transform-origin: center bottom;
@@ -1794,11 +2192,12 @@ body.dark-mode .selected-tab-chip.error {
 /* 深色模式下标签页选择弹窗 */
 body.dark-mode .tab-selection-popup {
     border-color: rgba(52, 58, 64, 0.6);
-    background-color: rgba(44, 46, 51, 0.85); /* 深色模式下的半透明背景 */
+    background-color: rgba(44, 46, 51, 0.85);
+    /* 深色模式下的半透明背景 */
     background-image: linear-gradient(135deg,
-        rgba(70, 70, 70, 0.15) 0%,
-        rgba(40, 40, 40, 0.05) 50%,
-        rgba(20, 20, 20, 0.02) 100%);
+            rgba(70, 70, 70, 0.15) 0%,
+            rgba(40, 40, 40, 0.05) 50%,
+            rgba(20, 20, 20, 0.02) 100%);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
@@ -1810,6 +2209,7 @@ body.dark-mode .tab-selection-popup {
         backdrop-filter: blur(4px) saturate(100%);
         -webkit-backdrop-filter: blur(4px) saturate(100%);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -1826,7 +2226,8 @@ body.dark-mode .tab-selection-popup {
 .tab-selection-popup::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-full);
-    margin: 0; /* 移除上下边距，避免留白 */
+    margin: 0;
+    /* 移除上下边距，避免留白 */
 }
 
 .tab-selection-popup::-webkit-scrollbar-thumb {
@@ -1854,17 +2255,20 @@ body.dark-mode .tab-selection-popup {
     cursor: pointer;
     border-bottom: 1px solid var(--border-color);
     transition: background-color 0.15s ease;
-    margin: 0; /* 确保没有外边距 */
+    margin: 0;
+    /* 确保没有外边距 */
 }
 
 .tab-selection-item:first-child {
-    border-top-left-radius: var(--radius-xl); /* 与弹窗圆角一致 */
+    border-top-left-radius: var(--radius-xl);
+    /* 与弹窗圆角一致 */
     border-top-right-radius: var(--radius-xl);
 }
 
 .tab-selection-item:last-child {
     border-bottom: none;
-    border-bottom-left-radius: var(--radius-xl); /* 与弹窗圆角一致 */
+    border-bottom-left-radius: var(--radius-xl);
+    /* 与弹窗圆角一致 */
     border-bottom-right-radius: var(--radius-xl);
 }
 
@@ -1896,7 +2300,8 @@ body.dark-mode .tab-selection-popup {
     overflow: hidden;
     text-overflow: ellipsis;
     flex-grow: 1;
-    min-width: 0; /* 确保在 flex 容器中可以缩小 */
+    min-width: 0;
+    /* 确保在 flex 容器中可以缩小 */
 }
 
 .tab-item-url {
@@ -1904,9 +2309,12 @@ body.dark-mode .tab-selection-popup {
     color: var(--text-tertiary);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* 使用标准省略，移除渐变效果 */
-    flex-shrink: 1; /* 允许 URL 缩小 */
-    max-width: 40%; /* 限制 URL 最大宽度 */
+    text-overflow: ellipsis;
+    /* 使用标准省略，移除渐变效果 */
+    flex-shrink: 1;
+    /* 允许 URL 缩小 */
+    max-width: 40%;
+    /* 限制 URL 最大宽度 */
     /* 移除 position: relative，不再使用渐变效果 */
 }
 
@@ -1930,7 +2338,8 @@ body.dark-mode .tab-selection-popup {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: transparent; /* 让 svg 使用 currentColor，但未选中时透明 */
+    color: transparent;
+    /* 让 svg 使用 currentColor，但未选中时透明 */
     background: transparent;
     opacity: 0.5;
     transition: all 0.15s ease;
@@ -1994,7 +2403,7 @@ body.dark-mode .tab-selection-item.checked .check-indicator {
     background: var(--button-hover-bg);
     border-color: var(--primary-color);
     color: var(--primary-color);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .tab-selection-actions .tab-action.neutral:hover {

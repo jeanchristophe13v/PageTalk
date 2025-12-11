@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,6 +24,7 @@
     <!-- 添加我们的Markdown渲染器 -->
     <script src="../js/markdown-renderer.js"></script>
 </head>
+
 <body>
     <div class="container">
         <main>
@@ -30,32 +32,36 @@
             <section id="chat" class="tab-content active">
                 <div class="chat-container">
                     <div class="chat-header">
-                        <div class="chat-model-selector">
-                            <label for="chat-model-selection">模型：</label>
-                            <select id="chat-model-selection" aria-label="选择模型">
-                                <!-- 这里的选项会通过 JavaScript 动态填充 -->
-                            </select>
-                        </div>
-                        <!-- 添加助手选择器 -->
+                        <!-- Agent 选择器 -->
                         <div class="chat-agent-selector">
-                            <label for="chat-agent-selection">助手：</label>
+                            <label for="chat-agent-selection" data-i18n="agentLabel">助手：</label>
                             <select id="chat-agent-selection" aria-label="选择助手">
                                 <!-- 这里的选项会通过 JavaScript 动态填充 -->
                             </select>
                         </div>
-                        <button id="clear-context" data-i18n-title="clearContextTitle" title="清除上下文和聊天记录" class="action-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
-                            </svg>
-                        </button>
-                        <!-- 添加关闭面板按钮 -->
-                        <button id="close-panel" data-i18n-title="closePanelTitle" title="关闭面板" class="action-button close-panel-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-                            </svg>
-                        </button>
+                        <!-- 操作按钮组 -->
+                        <div class="chat-header-actions">
+                            <button id="clear-context" data-i18n-title="clearContextTitle" title="清除上下文和聊天记录"
+                                class="action-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+                                    <path fill-rule="evenodd"
+                                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
+                                </svg>
+                            </button>
+                            <button id="close-panel" data-i18n-title="closePanelTitle" title="关闭面板"
+                                class="action-button close-panel-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
+
                     <div class="chat-messages" id="chat-messages">
                         <!-- 欢迎消息将通过JavaScript动态创建 -->
                     </div>
@@ -90,29 +96,75 @@
                     </div>
                     <!-- 新增：聊天界面状态消息区域 -->
                     <div id="chat-status-message" class="chat-status"></div>
-                    <div class="chat-input">
-                        <!-- 添加图片上传按钮 -->
-                        <button id="upload-image" data-i18n-title="uploadImageTitle" title="上传图片" class="upload-image-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                                <path d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v6l-3.775-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12v.54A.505.505 0 0 1 1 12.5v-9a.5.5 0 0 1 .5-.5h13z"/>
-                            </svg>
-                        </button>
-                        <!-- 添加YouTube URL输入按钮 -->
-                        <button id="add-youtube-url" data-i18n-title="addYoutubeLinkTitle" class="youtube-button">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.007 2.007 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.007 2.007 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31.4 31.4 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.007 2.007 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A99.788 99.788 0 0 1 7.858 2h.193zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/>
-                            </svg>
-                        </button>
-                        <!-- 隐藏的文件输入框 -->
-                        <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
-                        <textarea id="user-input" data-i18n-placeholder="userInputPlaceholder" placeholder="..."></textarea>
-                        <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
-                            </svg>
-                        </button>
+                    <!-- 重构后的输入区域 -->
+                    <div class="chat-input-wrapper">
+                        <div class="chat-input">
+                            <textarea id="user-input" data-i18n-placeholder="userInputPlaceholder"
+                                placeholder="..."></textarea>
+                            <div class="chat-input-controls">
+                                <!-- 加号菜单按钮 -->
+                                <button id="attachment-menu-btn" class="input-action-btn"
+                                    data-i18n-title="attachmentMenuTitle" title="添加附件">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                                <!-- 加号菜单弹出层 -->
+                                <div id="attachment-menu" class="attachment-menu">
+                                    <button id="upload-image" class="attachment-menu-item"
+                                        data-i18n-title="uploadImageTitle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+                                            <path
+                                                d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v6l-3.775-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12v.54A.505.505 0 0 1 1 12.5v-9a.5.5 0 0 1 .5-.5h13z" />
+                                        </svg>
+                                        <span data-i18n="uploadImageMenuItem">上传图片</span>
+                                    </button>
+                                    <button id="add-youtube-url" class="attachment-menu-item"
+                                        data-i18n-title="addYoutubeLinkTitle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            fill="currentColor" viewBox="0 0 16 16">
+                                            <path
+                                                d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.007 2.007 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.007 2.007 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31.4 31.4 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.007 2.007 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A99.788 99.788 0 0 1 7.858 2h.193zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z" />
+                                        </svg>
+                                        <span data-i18n="uploadYoutubeMenuItem">上传 YouTube URL</span>
+                                    </button>
+                                </div>
+                                <!-- 隐藏的文件输入框 -->
+                                <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+                                <!-- 模型选择器 (扁平化) -->
+                                <div id="inline-model-selector" class="inline-model-selector">
+                                    <span id="current-model-display">model</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
+                                        viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                                <!-- 自定义模型选择菜单 -->
+                                <div id="model-selector-menu" class="model-selector-menu">
+                                    <!-- 模型选项通过 JavaScript 动态填充 -->
+                                </div>
+                                <!-- 保留原有的 select 用于数据绑定（隐藏） -->
+                                <select id="chat-model-selection" aria-label="选择模型" style="display: none;">
+                                    <!-- 这里的选项会通过 JavaScript 动态填充 -->
+                                </select>
+                                <!-- 发送按钮 -->
+                                <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                        viewBox="0 0 16 16">
+                                        <path
+                                            d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </section>
 
@@ -123,13 +175,19 @@
                     <div class="settings-nav">
                         <button class="settings-nav-btn" data-subtab="agent" data-i18n="agentSettingsNav">助手</button>
                         <button class="settings-nav-btn" data-subtab="model" data-i18n="modelSettingsNav">模型</button>
-                        <button class="settings-nav-btn" data-subtab="text-selection-helper" data-i18n="textSelectionHelper">划词助手</button>
-                        <button class="settings-nav-btn" data-subtab="quick-actions" data-i18n="quickActionsNav">快捷操作</button>
-                        <button class="settings-nav-btn active" data-subtab="general" data-i18n="generalSettingsNav">通用</button>
+                        <button class="settings-nav-btn" data-subtab="text-selection-helper"
+                            data-i18n="textSelectionHelper">划词助手</button>
+                        <button class="settings-nav-btn" data-subtab="quick-actions"
+                            data-i18n="quickActionsNav">快捷操作</button>
+                        <button class="settings-nav-btn active" data-subtab="general"
+                            data-i18n="generalSettingsNav">通用</button>
                         <!-- 添加关闭按钮 -->
-                         <button id="close-panel-settings" data-i18n-title="closePanelTitle" title="关闭面板" class="action-button close-panel-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        <button id="close-panel-settings" data-i18n-title="closePanelTitle" title="关闭面板"
+                            class="action-button close-panel-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                viewBox="0 0 16 16">
+                                <path
+                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
                             </svg>
                         </button>
                     </div>
@@ -143,8 +201,10 @@
                             <div class="setting-card">
                                 <div class="setting-card-header">
                                     <div class="setting-card-icon">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                            <path d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802"/>
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"
+                                            viewBox="0 0 24 24">
+                                            <path
+                                                d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802" />
                                         </svg>
                                     </div>
                                     <h3 class="setting-card-title" data-i18n="languageLabel">语言</h3>
@@ -164,8 +224,10 @@
                             <div class="setting-card">
                                 <div class="setting-card-header">
                                     <div class="setting-card-icon">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                            <path d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h5.25a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75"/>
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"
+                                            viewBox="0 0 24 24">
+                                            <path
+                                                d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m0-3-3-3m0 0-3 3m3-3v11.25m6-2.25h5.25a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" />
                                         </svg>
                                     </div>
                                     <h3 class="setting-card-title" data-i18n="exportChatLabel">导出聊天记录</h3>
@@ -190,19 +252,26 @@
                             <div class="setting-card">
                                 <div class="setting-card-header">
                                     <div class="setting-card-icon">
-                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                            <path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/>
+                                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"
+                                            viewBox="0 0 24 24">
+                                            <path
+                                                d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
                                         </svg>
                                     </div>
                                     <h3 class="setting-card-title" data-i18n="proxyAddressLabel">代理设置</h3>
                                 </div>
-                                <p class="setting-card-description" data-i18n="proxyAddressHint">支持 HTTP 和 SOCKS5 代理，留空则禁用代理</p>
+                                <p class="setting-card-description" data-i18n="proxyAddressHint">支持 HTTP 和 SOCKS5
+                                    代理，留空则禁用代理</p>
                                 <div class="setting-card-content">
                                     <div class="setting-card-actions">
-                                        <input type="text" id="proxy-address-input" class="setting-input" data-i18n-placeholder="proxyAddressPlaceholder" placeholder="例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
+                                        <input type="text" id="proxy-address-input" class="setting-input"
+                                            data-i18n-placeholder="proxyAddressPlaceholder"
+                                            placeholder="例如: http://127.0.0.1:7890 或 socks5://127.0.0.1:1080">
                                         <button id="test-proxy-btn" class="setting-action-btn" data-i18n="testProxy">
-                                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                <path d="M9.75 9.75 4.5 15m0-5.25h5.25m0 0V4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                            <svg width="16" height="16" fill="none" stroke="currentColor"
+                                                stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path
+                                                    d="M9.75 9.75 4.5 15m0-5.25h5.25m0 0V4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                             </svg>
                                             <span data-i18n="testProxy">测试</span>
                                         </button>
@@ -216,29 +285,39 @@
                                 <div class="unified-data-header">
                                     <div class="unified-data-title-section">
                                         <div class="unified-data-icon">
-                                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                <path d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375"/>
+                                            <svg width="18" height="18" fill="none" stroke="currentColor"
+                                                stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path
+                                                    d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" />
                                             </svg>
                                         </div>
                                         <h3 class="unified-data-title" data-i18n="unifiedImportExportLabel">统一数据管理</h3>
                                     </div>
                                     <div class="unified-data-actions">
-                                        <button id="export-all-settings" class="unified-action-btn export-btn" data-i18n="exportAllButton">
-                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                                        <button id="export-all-settings" class="unified-action-btn export-btn"
+                                            data-i18n="exportAllButton">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor"
+                                                stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path
+                                                    d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                             </svg>
                                             <span data-i18n="exportAllButton">导出</span>
                                         </button>
-                                        <button id="import-all-settings" class="unified-action-btn import-btn" data-i18n="importAllButton">
-                                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                                <path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-10.5-4.5L12 7.5m0 0 1.5 1.5M12 7.5v9"/>
+                                        <button id="import-all-settings" class="unified-action-btn import-btn"
+                                            data-i18n="importAllButton">
+                                            <svg width="14" height="14" fill="none" stroke="currentColor"
+                                                stroke-width="1.5" viewBox="0 0 24 24">
+                                                <path
+                                                    d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-10.5-4.5L12 7.5m0 0 1.5 1.5M12 7.5v9" />
                                             </svg>
                                             <span data-i18n="importAllButton">导入</span>
                                         </button>
-                                        <input type="file" id="unified-import-input" accept=".json" style="display: none;">
+                                        <input type="file" id="unified-import-input" accept=".json"
+                                            style="display: none;">
                                     </div>
                                 </div>
-                                <p class="unified-data-description" data-i18n="unifiedImportExportHint">导出或导入所有助手、划词助手、快捷操作及API Key配置。</p>
+                                <p class="unified-data-description" data-i18n="unifiedImportExportHint">
+                                    导出或导入所有助手、划词助手、快捷操作及API Key配置。</p>
                             </div>
                         </div>
                     </div>
@@ -257,11 +336,15 @@
                             <!-- 新增: Agent 操作按钮栏 -->
                             <div class="agent-actions-bar">
                                 <div class="agent-actions-left">
-                                <button id="import-agents" class="action-button agent-action-button" data-i18n="importAgentsButton"></button>
-                                <button id="export-agents" class="action-button agent-action-button" data-i18n="exportAgentsButton"></button>
+                                    <button id="import-agents" class="action-button agent-action-button"
+                                        data-i18n="importAgentsButton"></button>
+                                    <button id="export-agents" class="action-button agent-action-button"
+                                        data-i18n="exportAgentsButton"></button>
                                 </div>
                                 <div class="agent-actions-right">
-                                    <button id="add-new-agent" class="action-button agent-action-button add-agent-button" data-i18n="addNewAgentButton"></button>
+                                    <button id="add-new-agent"
+                                        class="action-button agent-action-button add-agent-button"
+                                        data-i18n="addNewAgentButton"></button>
                                 </div>
                             </div>
                             <!-- 助手列表 -->
@@ -288,15 +371,17 @@
                         <div class="setting-card">
                             <div class="setting-card-header">
                                 <h3>
-                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle cx="12" cy="12" r="3"/>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
                                     </svg>
                                     <span data-i18n="interpretSettings">解读设置</span>
                                 </h3>
                                 <button class="setting-card-toggle" type="button">
                                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                        <path fill-rule="evenodd"
+                                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
                                     </svg>
                                 </button>
                             </div>
@@ -309,38 +394,48 @@
                                 </div>
                                 <div class="setting-group">
                                     <label for="interpret-system-prompt" data-i18n="systemPrompt">系统提示词：</label>
-                                    <textarea id="interpret-system-prompt" rows="3" data-i18n-placeholder="interpretSystemPrompt" placeholder="解读一下"></textarea>
+                                    <textarea id="interpret-system-prompt" rows="3"
+                                        data-i18n-placeholder="interpretSystemPrompt" placeholder="解读一下"></textarea>
                                 </div>
                                 <div class="setting-group">
                                     <label for="interpret-temperature" data-i18n="temperature">温度：</label>
                                     <div class="temperature-control">
-                                        <input type="range" id="interpret-temperature" min="0" max="1" step="0.1" value="0.7">
+                                        <input type="range" id="interpret-temperature" min="0" max="1" step="0.1"
+                                            value="0.7">
                                         <span class="temperature-value">0.7</span>
                                     </div>
                                 </div>
                                 <div class="setting-group">
                                     <label for="interpret-max-output" data-i18n="maxOutputLength">最大输出长度：</label>
-                                    <input type="number" id="interpret-max-output" min="1" max="200000" value="65536" placeholder="65536">
+                                    <input type="number" id="interpret-max-output" min="1" max="200000" value="65536"
+                                        placeholder="65536">
                                 </div>
                                 <div class="setting-group">
                                     <label data-i18n="contextSettings">上下文设置：</label>
                                     <div class="context-settings">
                                         <div class="context-option">
-                                            <input type="radio" id="interpret-context-custom" name="interpret-context-mode" value="custom" checked>
-                                            <label for="interpret-context-custom" data-i18n="customContext">自定义上下文</label>
+                                            <input type="radio" id="interpret-context-custom"
+                                                name="interpret-context-mode" value="custom" checked>
+                                            <label for="interpret-context-custom"
+                                                data-i18n="customContext">自定义上下文</label>
                                         </div>
                                         <div class="context-inputs" id="interpret-context-inputs">
                                             <div class="context-input-group">
-                                                <label for="interpret-context-before" data-i18n="contextBefore">前置上下文token数：</label>
-                                                <input type="number" id="interpret-context-before" min="0" max="2000" value="500" placeholder="500">
+                                                <label for="interpret-context-before"
+                                                    data-i18n="contextBefore">前置上下文token数：</label>
+                                                <input type="number" id="interpret-context-before" min="0" max="2000"
+                                                    value="500" placeholder="500">
                                             </div>
                                             <div class="context-input-group">
-                                                <label for="interpret-context-after" data-i18n="contextAfter">后置上下文token数：</label>
-                                                <input type="number" id="interpret-context-after" min="0" max="2000" value="500" placeholder="500">
+                                                <label for="interpret-context-after"
+                                                    data-i18n="contextAfter">后置上下文token数：</label>
+                                                <input type="number" id="interpret-context-after" min="0" max="2000"
+                                                    value="500" placeholder="500">
                                             </div>
                                         </div>
                                         <div class="context-option">
-                                            <input type="radio" id="interpret-context-full" name="interpret-context-mode" value="full">
+                                            <input type="radio" id="interpret-context-full"
+                                                name="interpret-context-mode" value="full">
                                             <label for="interpret-context-full" data-i18n="fullContext">读取全部上下文</label>
                                         </div>
                                     </div>
@@ -352,19 +447,21 @@
                         <div class="setting-card">
                             <div class="setting-card-header">
                                 <h3>
-                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path d="M5 8l6 6"/>
-                                        <path d="M4 14l6-6 2-3"/>
-                                        <path d="M2 5h12"/>
-                                        <path d="M7 2h1"/>
-                                        <path d="M22 22l-5-10-5 10"/>
-                                        <path d="M14 18h6"/>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M5 8l6 6" />
+                                        <path d="M4 14l6-6 2-3" />
+                                        <path d="M2 5h12" />
+                                        <path d="M7 2h1" />
+                                        <path d="M22 22l-5-10-5 10" />
+                                        <path d="M14 18h6" />
                                     </svg>
                                     <span data-i18n="translateSettings">翻译设置</span>
                                 </h3>
                                 <button class="setting-card-toggle" type="button">
                                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                        <path fill-rule="evenodd"
+                                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
                                     </svg>
                                 </button>
                             </div>
@@ -377,38 +474,48 @@
                                 </div>
                                 <div class="setting-group">
                                     <label for="translate-system-prompt" data-i18n="systemPrompt">系统提示词：</label>
-                                    <textarea id="translate-system-prompt" rows="3" data-i18n-placeholder="translateSystemPrompt" placeholder="翻译一下"></textarea>
+                                    <textarea id="translate-system-prompt" rows="3"
+                                        data-i18n-placeholder="translateSystemPrompt" placeholder="翻译一下"></textarea>
                                 </div>
                                 <div class="setting-group">
                                     <label for="translate-temperature" data-i18n="temperature">温度：</label>
                                     <div class="temperature-control">
-                                        <input type="range" id="translate-temperature" min="0" max="1" step="0.1" value="0.2">
+                                        <input type="range" id="translate-temperature" min="0" max="1" step="0.1"
+                                            value="0.2">
                                         <span class="temperature-value">0.2</span>
                                     </div>
                                 </div>
                                 <div class="setting-group">
                                     <label for="translate-max-output" data-i18n="maxOutputLength">最大输出长度：</label>
-                                    <input type="number" id="translate-max-output" min="1" max="200000" value="65536" placeholder="65536">
+                                    <input type="number" id="translate-max-output" min="1" max="200000" value="65536"
+                                        placeholder="65536">
                                 </div>
                                 <div class="setting-group">
                                     <label data-i18n="contextSettings">上下文设置：</label>
                                     <div class="context-settings">
                                         <div class="context-option">
-                                            <input type="radio" id="translate-context-custom" name="translate-context-mode" value="custom" checked>
-                                            <label for="translate-context-custom" data-i18n="customContext">自定义上下文</label>
+                                            <input type="radio" id="translate-context-custom"
+                                                name="translate-context-mode" value="custom" checked>
+                                            <label for="translate-context-custom"
+                                                data-i18n="customContext">自定义上下文</label>
                                         </div>
                                         <div class="context-inputs" id="translate-context-inputs">
                                             <div class="context-input-group">
-                                                <label for="translate-context-before" data-i18n="contextBefore">前置上下文token数：</label>
-                                                <input type="number" id="translate-context-before" min="0" max="2000" value="500" placeholder="500">
+                                                <label for="translate-context-before"
+                                                    data-i18n="contextBefore">前置上下文token数：</label>
+                                                <input type="number" id="translate-context-before" min="0" max="2000"
+                                                    value="500" placeholder="500">
                                             </div>
                                             <div class="context-input-group">
-                                                <label for="translate-context-after" data-i18n="contextAfter">后置上下文token数：</label>
-                                                <input type="number" id="translate-context-after" min="0" max="2000" value="500" placeholder="500">
+                                                <label for="translate-context-after"
+                                                    data-i18n="contextAfter">后置上下文token数：</label>
+                                                <input type="number" id="translate-context-after" min="0" max="2000"
+                                                    value="500" placeholder="500">
                                             </div>
                                         </div>
                                         <div class="context-option">
-                                            <input type="radio" id="translate-context-full" name="translate-context-mode" value="full">
+                                            <input type="radio" id="translate-context-full"
+                                                name="translate-context-mode" value="full">
                                             <label for="translate-context-full" data-i18n="fullContext">读取全部上下文</label>
                                         </div>
                                     </div>
@@ -420,14 +527,16 @@
                         <div class="setting-card">
                             <div class="setting-card-header">
                                 <h3>
-                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                     </svg>
                                     <span data-i18n="chatSettings">对话设置</span>
                                 </h3>
                                 <button class="setting-card-toggle" type="button">
                                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                        <path fill-rule="evenodd"
+                                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
                                     </svg>
                                 </button>
                             </div>
@@ -436,21 +545,27 @@
                                     <label data-i18n="contextSettings">上下文设置：</label>
                                     <div class="context-settings">
                                         <div class="context-option">
-                                            <input type="radio" id="chat-context-custom" name="chat-context-mode" value="custom" checked>
+                                            <input type="radio" id="chat-context-custom" name="chat-context-mode"
+                                                value="custom" checked>
                                             <label for="chat-context-custom" data-i18n="customContext">自定义上下文</label>
                                         </div>
                                         <div class="context-inputs" id="chat-context-inputs">
                                             <div class="context-input-group">
-                                                <label for="chat-context-before" data-i18n="contextBefore">前置上下文token数：</label>
-                                                <input type="number" id="chat-context-before" min="0" max="2000" value="500" placeholder="500">
+                                                <label for="chat-context-before"
+                                                    data-i18n="contextBefore">前置上下文token数：</label>
+                                                <input type="number" id="chat-context-before" min="0" max="2000"
+                                                    value="500" placeholder="500">
                                             </div>
                                             <div class="context-input-group">
-                                                <label for="chat-context-after" data-i18n="contextAfter">后置上下文token数：</label>
-                                                <input type="number" id="chat-context-after" min="0" max="2000" value="500" placeholder="500">
+                                                <label for="chat-context-after"
+                                                    data-i18n="contextAfter">后置上下文token数：</label>
+                                                <input type="number" id="chat-context-after" min="0" max="2000"
+                                                    value="500" placeholder="500">
                                             </div>
                                         </div>
                                         <div class="context-option">
-                                            <input type="radio" id="chat-context-full" name="chat-context-mode" value="full">
+                                            <input type="radio" id="chat-context-full" name="chat-context-mode"
+                                                value="full">
                                             <label for="chat-context-full" data-i18n="fullContext">读取全部上下文</label>
                                         </div>
                                     </div>
@@ -462,14 +577,17 @@
                         <div class="setting-card">
                             <div class="setting-card-header">
                                 <h3>
-                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path
+                                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                                     </svg>
                                     <span data-i18n="customOptions">自定义选项</span>
                                 </h3>
                                 <button class="setting-card-toggle">
                                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+                                        <path fill-rule="evenodd"
+                                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
                                     </svg>
                                 </button>
                             </div>
@@ -477,10 +595,12 @@
                                 <!-- 自定义选项操作栏 -->
                                 <div class="custom-options-actions-bar">
                                     <div class="custom-options-actions-left">
-                                        <button class="action-button agent-action-button" id="import-custom-options-btn">
+                                        <button class="action-button agent-action-button"
+                                            id="import-custom-options-btn">
                                             <span data-i18n="importCustomOptions">导入</span>
                                         </button>
-                                        <button class="action-button agent-action-button" id="export-custom-options-btn">
+                                        <button class="action-button agent-action-button"
+                                            id="export-custom-options-btn">
                                             <span data-i18n="exportCustomOptions">导出</span>
                                         </button>
                                     </div>
@@ -494,7 +614,8 @@
                                     <!-- 自定义选项将通过 JavaScript 动态添加 -->
                                 </div>
                                 <!-- 隐藏的文件输入框 -->
-                                <input type="file" id="import-custom-options-input" accept=".json" style="display: none;">
+                                <input type="file" id="import-custom-options-input" accept=".json"
+                                    style="display: none;">
                             </div>
                         </div>
 
@@ -502,10 +623,11 @@
                         <div class="setting-card">
                             <div class="setting-card-header">
                                 <h3>
-                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path d="M3 6h18"/>
-                                        <path d="M3 12h18"/>
-                                        <path d="M3 18h18"/>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M3 6h18" />
+                                        <path d="M3 12h18" />
+                                        <path d="M3 18h18" />
                                     </svg>
                                     <span data-i18n="optionOrder">选项顺序</span>
                                 </h3>
@@ -532,8 +654,9 @@
                         <div class="setting-card expanded">
                             <div class="setting-card-header">
                                 <h3>
-                                    <svg class="setting-card-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                    <svg class="setting-card-icon" width="16" height="16" fill="none"
+                                        stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
                                     </svg>
                                     <span data-i18n="quickActionsManagement">快捷操作管理</span>
                                 </h3>
@@ -559,7 +682,8 @@
                                     <!-- 快捷操作将通过 JavaScript 动态添加 -->
                                 </div>
                                 <!-- 隐藏的文件输入框 -->
-                                <input type="file" id="import-quick-actions-input" accept=".json" style="display: none;">
+                                <input type="file" id="import-quick-actions-input" accept=".json"
+                                    style="display: none;">
                             </div>
                         </div>
                     </div>
@@ -579,7 +703,8 @@
                             <div class="model-management-header">
                                 <h4 data-i18n="selectedModelsTitle">已选择的模型</h4>
                             </div>
-                            <div id="selected-models-container" class="selected-models-container" data-empty-text="暂无已选择的模型，点击“获取所有模型”或“手动添加”">
+                            <div id="selected-models-container" class="selected-models-container"
+                                data-empty-text="暂无已选择的模型，点击“获取所有模型”或“手动添加”">
                                 <!-- 模型卡片将通过JavaScript动态生成 -->
                             </div>
                         </div>
@@ -590,14 +715,19 @@
                     </div>
                 </div>
                 <!-- Moved Theme Toggle Button -->
-                <button id="theme-toggle-btn" class="icon-btn theme-toggle-btn" data-i18n-title="themeToggleTitle" title="切换深色/浅色模式">
+                <button id="theme-toggle-btn" class="icon-btn theme-toggle-btn" data-i18n-title="themeToggleTitle"
+                    title="切换深色/浅色模式">
                     <!-- Moon Icon (Default) -->
-                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162h1.212a.217.217 0 0 1 .154.371l-.98.752.387 1.162a.217.217 0 0 1-.316.228l-.98-.752-.98.752a.217.217 0 0 1-.316-.228l.387-1.162-.98-.752a.217.217 0 0 1 .154-.371h1.212l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+                    <svg id="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        viewBox="0 0 16 16">
+                        <path
+                            d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162h1.212a.217.217 0 0 1 .154.371l-.98.752.387 1.162a.217.217 0 0 1-.316.228l-.98-.752-.98.752a.217.217 0 0 1-.316-.228l.387-1.162-.98-.752a.217.217 0 0 1 .154-.371h1.212l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z" />
                     </svg>
                     <!-- Sun Icon (Hidden initially) -->
-                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" style="display: none;">
-                        <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z"/>
+                    <svg id="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                        viewBox="0 0 16 16" style="display: none;">
+                        <path
+                            d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707z" />
                     </svg>
                 </button>
             </section>
@@ -606,7 +736,8 @@
         <footer>
             <div class="status-bar">
                 <span id="context-status" data-i18n="contextStatusPrefix">上下文：</span>
-                <span id="connection-indicator" class="disconnected" data-i18n="connectionIndicatorDisconnected">未连接</span>
+                <span id="connection-indicator" class="disconnected"
+                    data-i18n="connectionIndicatorDisconnected">未连接</span>
             </div>
             <!-- 更新后的底部导航栏 -->
             <ul class="footer-tabs">
@@ -615,7 +746,7 @@
             </ul>
         </footer>
     </div>
-    
+
     <!-- 新增：更新通告模态框 -->
     <div id="changelog-modal" class="changelog-modal">
         <div class="changelog-content">
@@ -629,13 +760,14 @@
             <div class="changelog-footer">
                 <div class="changelog-checkbox">
                     <input type="checkbox" id="never-show-checkbox">
-                    <label for="never-show-checkbox" id="never-show-label" data-i18n="changelogNeverShow">不再显示本版本更新</label>
+                    <label for="never-show-checkbox" id="never-show-label"
+                        data-i18n="changelogNeverShow">不再显示本版本更新</label>
                 </div>
                 <button id="changelog-ok-btn" class="changelog-ok-btn" data-i18n="changelogOK">OK</button>
             </div>
         </div>
     </div>
-    
+
     <!-- 新增：Mermaid 图表放大预览模态框 -->
     <div id="mermaid-modal" class="mermaid-modal">
         <span class="close-modal mermaid-close-modal">&times;</span>
@@ -655,19 +787,25 @@
             <div class="custom-provider-form">
                 <div class="form-group">
                     <label for="custom-provider-id" data-i18n="customProviderIdLabel">Provider ID:</label>
-                    <input type="text" id="custom-provider-id" data-i18n-placeholder="customProviderIdPlaceholder" placeholder="输入提供商ID（可选）">
+                    <input type="text" id="custom-provider-id" data-i18n-placeholder="customProviderIdPlaceholder"
+                        placeholder="输入提供商ID（可选）">
                 </div>
                 <div class="form-group">
                     <label for="custom-provider-baseurl" data-i18n="customProviderBaseUrlLabel">Base URL:</label>
-                    <input type="url" id="custom-provider-baseurl" data-i18n-placeholder="customProviderBaseUrlPlaceholder" placeholder="https://api.example.com" required>
+                    <input type="url" id="custom-provider-baseurl"
+                        data-i18n-placeholder="customProviderBaseUrlPlaceholder" placeholder="https://api.example.com"
+                        required>
                 </div>
                 <div class="form-group">
                     <label for="custom-provider-apikey" data-i18n="customProviderApiKeyLabel">API Key:</label>
-                    <input type="text" id="custom-provider-apikey" data-i18n-placeholder="customProviderApiKeyPlaceholder" placeholder="输入您的API Key" required>
+                    <input type="text" id="custom-provider-apikey"
+                        data-i18n-placeholder="customProviderApiKeyPlaceholder" placeholder="输入您的API Key" required>
                 </div>
                 <div class="custom-provider-actions">
-                    <button type="button" id="custom-provider-cancel" class="btn-secondary" data-i18n="cancel">取消</button>
-                    <button type="button" id="custom-provider-save" class="btn-primary" data-i18n="customProviderSave">添加</button>
+                    <button type="button" id="custom-provider-cancel" class="btn-secondary"
+                        data-i18n="cancel">取消</button>
+                    <button type="button" id="custom-provider-save" class="btn-primary"
+                        data-i18n="customProviderSave">添加</button>
                 </div>
             </div>
         </div>
@@ -706,9 +844,11 @@
             <p>您确定要删除助手 "<span id="delete-agent-name"></span>" 吗？此操作无法撤销。</p>
             <div class="dialog-actions">
                 <button id="cancel-delete" class="cancel-btn">取消</button>
-                <button id="confirm-delete" class="delete-btn" style="background-color: var(--error-color); color: white;">删除</button>
+                <button id="confirm-delete" class="delete-btn"
+                    style="background-color: var(--error-color); color: white;">删除</button>
             </div>
         </div>
     </div>
 </body>
+
 </html>
