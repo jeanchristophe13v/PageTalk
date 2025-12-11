@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PageTalk - Your Browser Q&A Assistant",
-  "version": "3.8.4",
+  "version": "3.8.6",
   "description": "A browser extension that can read page content and use AI for Q&A",
   "permissions": [
     "activeTab",
@@ -26,42 +26,52 @@
     "type": "module"
   },
   "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": [
-          "js/lib/Readability.js",
-          "js/lib/turndown.min.js",
-          "js/lib/markdown-it.min.js",
-          "js/lib/highlight.min.js",
-          "js/lib/python.min.js",
-          "js/lib/r.min.js",
-          "js/lib/sql.min.js",
-          "js/lib/json.min.js",
-          "js/lib/katex.min.js",
-          "js/lib/auto-render.min.js",
-          "js/lib/mhchem.min.js",
-          "js/lib/mermaid.min.js",
-          "js/lib/panzoom.min.js",
-          "js/lib/lucide.js",
-          "js/translations.js",
-          "js/markdown-renderer.js",
-          "js/text-selection-helper.js",
-          "js/content.js"
-        ],
-        "css": [
-          "css/content-panel.css",
-          "css/text-selection-helper.css",
-          "css/github.min.css",
-          "css/github-dark-dimmed.min.css",
-          "css/katex.min.css"
-        ],
-        "run_at": "document_start"
-      }
-    ],
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "js/lib/Readability.js",
+        "js/lib/turndown.min.js",
+        "js/lib/markdown-it.min.js",
+        "js/lib/highlight.min.js",
+        "js/lib/python.min.js",
+        "js/lib/r.min.js",
+        "js/lib/sql.min.js",
+        "js/lib/json.min.js",
+        "js/lib/katex.min.js",
+        "js/lib/auto-render.min.js",
+        "js/lib/mhchem.min.js",
+        "js/lib/mermaid.min.js",
+        "js/lib/panzoom.min.js",
+        "js/lib/lucide.js",
+        "js/translations.js",
+        "js/markdown-renderer.js",
+        "js/text-selection-helper.js",
+        "js/content.js"
+      ],
+      "css": [
+        "css/content-panel.css",
+        "css/text-selection-helper.css",
+        "css/github.min.css",
+        "css/github-dark-dimmed.min.css",
+        "css/katex.min.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
   "web_accessible_resources": [
     {
-      "resources": ["html/*", "css/*", "js/*", "js/lib/*", "magic.png"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "html/*",
+        "css/*",
+        "js/*",
+        "js/lib/*",
+        "magic.png"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "commands": {
@@ -74,6 +84,6 @@
     }
   },
   "content_security_policy": {
-      "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

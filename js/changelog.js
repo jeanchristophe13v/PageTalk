@@ -5,6 +5,20 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.8.6',
+        date: '2025-12-11',
+        changes: {
+            'zh-CN': [
+                '重构主面板样式',
+                '重构模型设置界面样式'
+            ],
+            'en': [
+                'Refactored main panel styles',
+                'Refactored model settings interface styles'
+            ]
+        }
+    },
+    {
         version: '3.8.4',
         date: '2025-11-17',
         changes: {
@@ -397,30 +411,30 @@ function initChangelog() {
         const okButton = document.getElementById('changelog-ok-btn');
         const neverShowCheckbox = document.getElementById('never-show-checkbox');
         const changelogList = document.getElementById('changelog-list');
-        
+
         // 为 OK 按钮添加事件监听
         okButton.addEventListener('click', () => {
             closeChangelogModal(neverShowCheckbox.checked);
         });
-        
+
         // 从本地存储中获取最后查看的版本
         const lastViewedVersion = localStorage.getItem('lastViewedVersion');
-        
+
         // 确保元素存在，否则可能会导致错误
         if (modal && changelogList) {
             // 如果有新版本且用户没有选择不再显示该版本的更新
             const shouldShowChangelog = shouldShowChangelogModal(lastViewedVersion);
-            
+
             if (shouldShowChangelog) {
                 // 设置语言（在填充内容之前）
                 setupLanguage();
-                
+
                 // 填充更新日志内容
                 populateChangelogContent(changelogList);
-                
+
                 // 设置多语言支持
                 setupChangelogTranslations();
-                
+
                 // 显示模态框
                 modal.style.display = 'block';
             }
@@ -437,7 +451,7 @@ function setupLanguage() {
     if (localStorage.getItem('language')) {
         return;
     }
-    
+
     // 否则尝试检测浏览器语言并设置
     const browserLang = getBrowserLanguage();
     if (browserLang === 'zh-CN' || browserLang.startsWith('zh')) {
@@ -452,11 +466,11 @@ function setupLanguage() {
  * @returns {string} 浏览器语言代码
  */
 function getBrowserLanguage() {
-    return navigator.language || 
-           navigator.userLanguage || 
-           navigator.browserLanguage || 
-           navigator.systemLanguage || 
-           'en';
+    return navigator.language ||
+        navigator.userLanguage ||
+        navigator.browserLanguage ||
+        navigator.systemLanguage ||
+        'en';
 }
 
 /**
@@ -469,7 +483,7 @@ function shouldShowChangelogModal(lastViewedVersion) {
     if (localStorage.getItem(`hideChangelog_${currentVersion}`) === 'true') {
         return false;
     }
-    
+
     // 修改逻辑：只有当上次查看的版本不是当前版本时才显示更新通告
     // 这样即使用户刷新页面，也会继续显示更新通告，除非明确关闭
     return lastViewedVersion !== currentVersion;
@@ -481,48 +495,48 @@ function shouldShowChangelogModal(lastViewedVersion) {
  */
 function populateChangelogContent(container) {
     container.innerHTML = '';
-    
+
     // 获取当前语言
     const currentLang = localStorage.getItem('language') || 'zh-CN';
     // 如果当前语言不是支持的语言，则使用英文作为后备
     const lang = (currentLang === 'zh-CN') ? 'zh-CN' : 'en';
-    
+
     // 只显示最新版本的更新日志
     const latestVersion = changelog[0];
-    
+
     const versionEl = document.createElement('div');
     versionEl.className = 'changelog-item';
-    
+
     const versionHeader = document.createElement('div');
     versionHeader.className = 'changelog-version';
-    
+
     const versionNumber = document.createElement('span');
     versionNumber.className = 'changelog-version-number';
     // 直接显示版本号，不添加前缀
     versionNumber.textContent = latestVersion.version;
-    
+
     const versionDate = document.createElement('span');
     versionDate.className = 'changelog-version-date';
     versionDate.textContent = latestVersion.date;
-    
+
     versionHeader.appendChild(versionNumber);
     versionHeader.appendChild(versionDate);
-    
+
     const changesList = document.createElement('ul');
     changesList.className = 'changelog-changes';
-    
+
     // 根据当前语言选择相应的更新内容
     const changes = latestVersion.changes[lang] || latestVersion.changes['en'];
-    
+
     changes.forEach(change => {
         const changeItem = document.createElement('li');
         changeItem.textContent = change;
         changesList.appendChild(changeItem);
     });
-    
+
     versionEl.appendChild(versionHeader);
     versionEl.appendChild(changesList);
-    
+
     container.appendChild(versionEl);
 }
 
@@ -532,10 +546,10 @@ function populateChangelogContent(container) {
 function setupChangelogTranslations() {
     // 获取当前语言
     const currentLang = localStorage.getItem('language') || 'zh-CN';
-    
+
     // 设置标题和副标题
     document.getElementById('changelog-title').textContent = _('changelogTitle');
-    
+
     // 设置按钮和复选框文本
     document.getElementById('changelog-ok-btn').textContent = _('changelogOK');
     document.getElementById('never-show-label').textContent = _('changelogNeverShow');
@@ -587,8 +601,8 @@ function _(key) {
     // 退回到 translations.js 提供的全局对象
     if (typeof window.translations !== 'undefined') {
         return window.translations[currentLang]?.[key] ||
-               window.translations['zh-CN']?.[key] ||
-               key;
+            window.translations['zh-CN']?.[key] ||
+            key;
     }
     return key;
 }
