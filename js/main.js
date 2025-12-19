@@ -49,11 +49,11 @@ import {
     addMessageActionButtons,
     showCopyCodeFeedback,
     showCopyMessageFeedback,
-    // 新增导入 for Tab Selection and Bar
     showTabSelectionPopupUI,
     closeTabSelectionPopupUI as uiCloseTabSelectionPopupUI, // Alias to avoid naming conflict if any future local var
     updateSelectedTabsBarUI
 } from './ui.js';
+import { initCometCaret } from './comet-caret.js';
 
 // --- State Management ---
 const state = {
@@ -277,6 +277,12 @@ async function init() {
     setupEventListeners(); // Setup all event listeners
     setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
     setupAutoresizeTextarea(elements); // Setup textarea resize
+
+    // Initialize comet caret animation for chat input
+    if (elements.userInput) {
+        initCometCaret(elements.userInput);
+        console.log('[main.js] Comet caret initialized for user input');
+    }
 
     // Initial UI updates
     // 避免尚未判定连接状态时显示“未连接”造成闪烁

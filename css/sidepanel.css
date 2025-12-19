@@ -16,5 +16,7 @@
 @import url("_dark-mode.css");
 /* 导入响应式布局样式 */
 @import url("_responsive.css");
+/* 导入彗星光标效果样式 */
+@import url("_comet-caret.css");
 
 /* 如果有非常少量的全局覆盖或工具类可以在此定义，但优先使用模块。 */

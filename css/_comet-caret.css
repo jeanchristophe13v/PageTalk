@@ -1,0 +1,169 @@
+/* ============================================
+   彗星光标动画效果 (Comet Caret)
+   为 textarea 添加自定义光标和彗星尾巴效果
+   ============================================ */
+
+/* 隐藏原生 textarea 光标 */
+.chat-input textarea.comet-caret-enabled {
+    caret-color: transparent;
+}
+
+/* 光标容器定位 */
+.comet-caret-container {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+    overflow: hidden;
+}
+
+/* 自定义光标主体 */
+.comet-caret {
+    position: absolute;
+    width: 2px;
+    height: 1.2em;
+    background: linear-gradient(
+        180deg,
+        var(--primary-color) 0%,
+        rgba(116, 143, 252, 0.8) 50%,
+        rgba(116, 143, 252, 0.4) 100%
+    );
+    border-radius: 1px;
+    opacity: 0;
+    transition: 
+        left 0.12s cubic-bezier(0.2, 0.6, 0.2, 1), /* 稍慢一点，增加粘滞感 */
+        top 0.12s cubic-bezier(0.2, 0.6, 0.2, 1),
+        height 0.1s ease,
+        opacity 0.15s ease;
+    box-shadow: 
+        0 0 8px rgba(116, 143, 252, 0.6),
+        0 0 16px rgba(116, 143, 252, 0.3);
+    transform-origin: center top;
+}
+
+/* 光标可见状态 */
+.comet-caret.visible {
+    opacity: 1;
+    animation: caretBlink 1.2s infinite ease-in-out;
+}
+
+/* 光标移动中状态 - 暂停闪烁 */
+.comet-caret.moving {
+    animation: none;
+    opacity: 1;
+}
+
+/* 光标闪烁动画 */
+@keyframes caretBlink {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* 彗星尾巴粒子 */
+.comet-trail {
+    position: absolute;
+    width: 4px; /* 增大一点 */
+    height: 4px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(102, 131, 253, 0.8) 0%, /* 稍微加深颜色 */
+        rgba(116, 143, 252, 0.5) 60%,
+        transparent 100%
+    );
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0);
+    transition: none;
+    z-index: 9; /* 确保在光标下面 */
+}
+
+/* 粒子动画 - 淡出并缩小 */
+.comet-trail.active {
+    animation: trailFade 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; /* 延长寿命，调整曲线 */
+}
+
+@keyframes trailFade {
+    0% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    60% {
+        opacity: 0.4; /* 保持可见更久 */
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+
+/* 光标发光脉冲效果 */
+.comet-caret::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -3px;
+    right: -3px;
+    bottom: -2px;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(116, 143, 252, 0.3) 0%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    opacity: 0;
+    animation: caretGlow 2s infinite ease-in-out;
+}
+
+.comet-caret.visible::before {
+    opacity: 1;
+}
+
+@keyframes caretGlow {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.8;
+    }
+}
+
+/* ============================================
+   深色模式适配
+   ============================================ */
+
+body.dark-mode .comet-caret {
+    background: linear-gradient(
+        180deg,
+        #748ffc 0%,
+        rgba(116, 143, 252, 0.9) 50%,
+        rgba(116, 143, 252, 0.5) 100%
+    );
+    box-shadow: 
+        0 0 10px rgba(116, 143, 252, 0.7),
+        0 0 20px rgba(116, 143, 252, 0.4),
+        0 0 30px rgba(116, 143, 252, 0.2);
+}
+
+body.dark-mode .comet-trail {
+    background: radial-gradient(
+        circle,
+        rgba(116, 143, 252, 1) 0%,
+        rgba(116, 143, 252, 0.6) 50%,
+        transparent 100%
+    );
+}
+
+body.dark-mode .comet-caret::before {
+    background: radial-gradient(
+        ellipse at center,
+        rgba(116, 143, 252, 0.4) 0%,
+        transparent 70%
+    );
+}
