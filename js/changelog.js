@@ -5,6 +5,18 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.9.0',
+        date: '2025-12-19',
+        changes: {
+            'zh-CN': [
+                '聊天界面重构（感谢 @yetone 给出的输入框光标拖尾效果指导，Alma是个很棒的产品，请大家支持一下）'
+            ],
+            'en': [
+                'Chat interface refactoring (Special thanks to @yetone for guiding the input box cursor trail effect. Alma is an amazing product, please check it out!)'
+            ]
+        }
+    },
+    {
         version: '3.8.7',
         date: '2025-12-11',
         changes: {
