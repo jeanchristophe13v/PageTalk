@@ -96,7 +96,7 @@ main {
 
 /* 页脚样式 - 添加顶部导航 */
 footer {
-    background-color: #F8F9FA;
+    background-color: var(--panel-background);
     padding: var(--spacing-xs) var(--spacing-md);
     font-size: 11px;
     display: flex;

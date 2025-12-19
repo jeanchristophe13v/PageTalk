@@ -244,8 +244,8 @@ body.dark-mode .welcome-message:hover {
     align-self: flex-end;
     background-color: var(--primary-color);
     color: white;
-    /* 精致的圆角设计 - 对话气泡风格 */
-    border-radius: 18px 18px 4px 18px;
+    /* 精致的圆角设计 - 四等圆角 */
+    border-radius: 18px;
     display: inline-block;
     max-width: 85%;
     width: auto;
@@ -481,8 +481,8 @@ body.dark-mode .sent-tab-item:hover {
     background-color: var(--card-background);
     /* 精致的边框处理 */
     border: 1px solid var(--border-color);
-    /* 精致的圆角设计 - 对话气泡风格（与用户消息对称） */
-    border-radius: 18px 18px 18px 4px;
+    /* 精致的圆角设计 - 四等圆角 */
+    border-radius: 18px;
     /* 更宽敞的内边距 */
     padding: 14px 16px;
     padding-bottom: 36px;
@@ -1519,7 +1519,7 @@ body.dark-mode #send-message.stop-streaming {
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-sm) var(--spacing-md);
-    background-color: #F8F9FA;
+    background-color: var(--panel-background);
     gap: var(--spacing-sm);
     box-sizing: border-box;
 }

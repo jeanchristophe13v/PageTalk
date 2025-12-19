@@ -663,13 +663,13 @@ body.dark-mode .input-action-btn:hover {
     background-color: var(--button-hover-bg);
 }
 
-/* 深色模式下 header 和 footer 使用背景色 */
+/* 深色模式下 header 和 footer 使用统一面板背景 */
 body.dark-mode .chat-header {
-    background-color: var(--background-color);
+    background-color: var(--panel-background);
 }
 
 body.dark-mode footer {
-    background-color: var(--background-color);
+    background-color: var(--panel-background);
 }
 
 /* 深色模式下模型选择器适配 */

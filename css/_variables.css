@@ -5,11 +5,12 @@
     --primary-color: #4674ff;       /* 主色调 - 靛蓝 5 */
     --primary-hover: #3b5bff;       /* 主色调悬浮 - 更深的靛蓝 */
     --secondary-color: #748FFC;      /* 辅助色 - 靛蓝 3 */
-    --background-color: #F8F9FA;    /* 背景色 - 灰色 0 */
+    --background-color: #F8F9FB;    /* 背景色 - 带极淡靛蓝调的灰白 */
+    --panel-background: #F8F9FB;    /* 面板背景 - 统一 header/body/footer */
     --card-background: #FFFFFF;     /* 卡片背景 - 白色 */
     --text-color: #343a40e5;          /* 主要文字 - 灰色 8 */
     --text-secondary: #868E96;      /* 次要文字 - 灰色 6 */
-    --border-color: #E9ECEF;        /* 边框色 - 灰色 2 (淡化) */
+    --border-color: #E5E9F0;        /* 边框色 - 带靛蓝调的淡灰 */
     --success-color: #1b9d33b0;       /* 成功色 - 绿色 7 */
     --success-color-dark: #178a2e;    /* 成功色 - 绿色 7 的深色变体 */
     --error-color: #c92a2a9c;         /* 错误色 - 红色 8 */
@@ -21,13 +22,13 @@
     --code-text-color: #343A40;     /* 代码文字 - 灰色 8 */
     --code-border: #DEE2E6;         /* 代码块边框 - 灰色 3 */
     --table-header-bg: #F1F3F5;     /* 表头背景 - 灰色 1 */
-    --table-even-row-bg: #F8F9FA;   /* 表格偶数行背景 - 灰色 0 */
-    --button-hover-bg: rgba(76, 110, 245, 0.1); /* 主色调透明悬停 */
-    --button-secondary-bg: #E9ECEF; /* 次要按钮背景 */
+    --table-even-row-bg: #F8F9FB;   /* 表格偶数行背景 */
+    --button-hover-bg: rgba(70, 116, 255, 0.08); /* 主色调透明悬停 - 更细腻 */
+    --button-secondary-bg: #EEF1F5; /* 次要按钮背景 - 带靛蓝调 */
     --button-secondary-text: #868E96; /* 次要按钮文字 */
-    --button-secondary-hover: #e0e0e0; /* 次要按钮悬停 */
-    --scrollbar-thumb: rgba(0, 0, 0, 0.15); /* 滚动条滑块 */
-    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25); /* 滚动条滑块悬停 */
+    --button-secondary-hover: #E5E9F0; /* 次要按钮悬停 - 带靛蓝调 */
+    --scrollbar-thumb: rgba(70, 116, 255, 0.12); /* 滚动条滑块 - 主题色调染 */
+    --scrollbar-thumb-hover: rgba(70, 116, 255, 0.22); /* 滚动条滑块悬停 */
 
     /* 间距变量 - 缩小整体缩放 */
     --spacing-xs: 3px;
@@ -49,26 +50,27 @@ body.dark-mode {
     --primary-color: #748FFC;       /* 主色调 - 靛蓝 3 */
     --primary-hover: #91A7FF;       /* 主色调悬浮 - 更亮的靛蓝 */
     --secondary-color: #91A7FF;      /* 辅助色 - 靛蓝 2 */
-    --background-color: #212529;    /* 背景色 - 灰色 9 */
-    --card-background: #2C2E33;     /* 卡片背景 - 稍亮深灰 */
+    --background-color: #1A1C20;    /* 背景色 - 带靛蓝调的深灰 */
+    --panel-background: #1A1C20;    /* 面板背景 - 统一 header/body/footer */
+    --card-background: #252830;     /* 卡片背景 - 带靛蓝调的深灰 */
     --text-color: #e9ecefdb;          /* 主要文字 - 灰色 1 */
     --text-secondary: #ADB5BD;      /* 次要文字 - 灰色 5 */
-    --border-color: #343A40;        /* 边框色 - 灰色 8 (淡化) */
+    --border-color: #2D3139;        /* 边框色 - 带靛蓝调的深灰 */
     --success-color: #1b9d33;       /* 成功色 - 绿色 4 */
     --error-color: #FF8787;         /* 错误色 - 红色 3 */
     --danger-color: #fa5252;        /* 危险色 - 红色 6 (用于按钮背景等) */
     --danger-hover: #f03e3e;        /* 危险色悬浮 - 红色 7 */
     --warning-color: #FFD43B;       /* 警告色 - 黄色 4 */
-    --input-background: #2C2E33;    /* 输入框背景 - 卡片背景色 */
-    --code-background: #343A40;     /* 代码块背景 - 灰色 8 */
+    --input-background: #252830;    /* 输入框背景 - 卡片背景色 */
+    --code-background: #2D3139;     /* 代码块背景 */
     --code-text-color: #e9ecefdb;     /* 代码文字 - 灰色 1 */
-    --code-border: #495057;         /* 代码块边框 - 灰色 7 */
+    --code-border: #3D4450;         /* 代码块边框 */
     --table-header-bg: var(--primary-color);     /* 深色表格头背景 - 主题色 */
-    --table-even-row-bg: rgba(255, 255, 255, 0.04); /* 深色表格偶数行背景 (保持) */
-    --button-hover-bg: rgba(116, 143, 252, 0.15); /* 主色调透明悬停 */
-    --button-secondary-bg: #343A40; /* 次要按钮背景 */
+    --table-even-row-bg: rgba(116, 143, 252, 0.04); /* 深色表格偶数行 - 带主题色调染 */
+    --button-hover-bg: rgba(116, 143, 252, 0.12); /* 主色调透明悬停 */
+    --button-secondary-bg: #2D3139; /* 次要按钮背景 */
     --button-secondary-text: #ADB5BD; /* 次要按钮文字 */
-    --button-secondary-hover: #495057; /* 次要按钮悬停 */
-    --scrollbar-thumb: rgba(255, 255, 255, 0.2); /* 滚动条滑块 */
-    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3); /* 滚动条滑块悬停 */
+    --button-secondary-hover: #3D4450; /* 次要按钮悬停 */
+    --scrollbar-thumb: rgba(116, 143, 252, 0.18); /* 滚动条滑块 - 主题色调染 */
+    --scrollbar-thumb-hover: rgba(116, 143, 252, 0.28); /* 滚动条滑块悬停 */
 }
