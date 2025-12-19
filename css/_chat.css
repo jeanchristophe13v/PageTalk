@@ -1069,39 +1069,194 @@ body.dark-mode .sent-tab-item:hover {
 }
 
 /* 发送按钮 */
-.chat-input-controls #send-message {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background-color: var(--primary-color);
-    color: white;
-    cursor: pointer;
+#send-message {
+    --send-btn-size: 32px;
+    --send-accent: var(--primary-color);
+    --send-ring-color: rgba(70, 116, 255, 0.28);
+    --send-bg: rgba(70, 116, 255, 0.18);
+    --send-bg-hover: rgba(70, 116, 255, 0.24);
+    --send-bg-active: rgba(70, 116, 255, 0.16);
+    --send-border: rgba(70, 116, 255, 0.30);
+    --send-border-hover: rgba(70, 116, 255, 0.40);
+    --send-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
+    --send-shadow: 0 8px 18px rgba(0, 0, 0, 0.10);
+    --send-shadow-hover: 0 12px 26px rgba(0, 0, 0, 0.12);
+    --send-shadow-active: 0 6px 14px rgba(0, 0, 0, 0.10);
+
+    width: var(--send-btn-size);
+    height: var(--send-btn-size);
+    margin-left: auto;
+    flex-shrink: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-left: auto;
+
+    border: 1px solid var(--send-border);
+    border-radius: var(--radius-full);
+    background-color: var(--send-bg);
+    background-image: var(--send-highlight);
+    color: var(--send-accent);
+
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+
+    box-shadow: var(--send-shadow);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
-.chat-input-controls #send-message:hover {
-    background-color: var(--secondary-color);
-    transform: scale(1.05);
+#send-message:hover {
+    transform: translateY(-1px);
+    background-color: var(--send-bg-hover);
+    border-color: var(--send-border-hover);
+    box-shadow: var(--send-shadow-hover);
 }
 
-.chat-input-controls #send-message:active {
-    transform: scale(0.95);
+#send-message:hover:not(.stop-streaming) {
+    --send-accent: var(--primary-hover);
 }
 
-.chat-input-controls #send-message svg {
-    width: 14px;
-    height: 14px;
+#send-message:active {
+    transform: translateY(0);
+    background-color: var(--send-bg-active);
+    box-shadow: var(--send-shadow-active);
 }
 
-/* 停止流式输出按钮样式 */
-.chat-input-controls #send-message.stop-streaming:hover {
-    background-color: var(--error-color);
+#send-message:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--send-ring-color), var(--send-shadow-hover);
+}
+
+#send-message:disabled {
+    background-color: var(--button-secondary-bg);
+    background-image: none;
+    border-color: var(--border-color);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    cursor: not-allowed;
+    transform: none;
+    color: var(--button-secondary-text);
+}
+
+#send-message .send-icon {
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    z-index: 1;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+#send-message .send-icon--send {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+#send-message:hover .send-icon--send {
+    transform: translateX(0.6px) scale(1);
+}
+
+#send-message .send-icon--stop {
+    opacity: 0;
+    transform: scale(0.92);
+}
+
+#send-message.stop-streaming {
+    --send-accent: var(--danger-color);
+    --send-ring-color: rgba(250, 82, 82, 0.24);
+    --send-bg: rgba(250, 82, 82, 0.14);
+    --send-bg-hover: rgba(250, 82, 82, 0.18);
+    --send-bg-active: rgba(250, 82, 82, 0.12);
+    --send-border: rgba(250, 82, 82, 0.30);
+    --send-border-hover: rgba(250, 82, 82, 0.42);
+}
+
+#send-message.stop-streaming:hover {
+    --send-accent: var(--danger-hover);
+}
+
+#send-message.stop-streaming .send-icon--send {
+    opacity: 0;
+    transform: scale(0.92);
+}
+
+#send-message.stop-streaming .send-icon--stop {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#send-message.stop-streaming:focus-visible {
+    box-shadow: 0 0 0 3px var(--send-ring-color), var(--send-shadow-hover);
+}
+
+body.dark-mode #send-message {
+    --send-ring-color: rgba(116, 143, 252, 0.30);
+    --send-bg: rgba(116, 143, 252, 0.22);
+    --send-bg-hover: rgba(116, 143, 252, 0.28);
+    --send-bg-active: rgba(116, 143, 252, 0.18);
+    --send-border: rgba(116, 143, 252, 0.34);
+    --send-border-hover: rgba(116, 143, 252, 0.44);
+    --send-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0));
+    --send-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+    --send-shadow-hover: 0 14px 28px rgba(0, 0, 0, 0.32);
+    --send-shadow-active: 0 8px 18px rgba(0, 0, 0, 0.26);
+}
+
+body.dark-mode #send-message.stop-streaming {
+    --send-ring-color: rgba(250, 82, 82, 0.26);
+    --send-bg: rgba(250, 82, 82, 0.14);
+    --send-bg-hover: rgba(250, 82, 82, 0.18);
+    --send-bg-active: rgba(250, 82, 82, 0.12);
+    --send-border: rgba(250, 82, 82, 0.30);
+    --send-border-hover: rgba(250, 82, 82, 0.42);
+}
+
+/* 发送按钮点击时的脉冲效果 */
+@keyframes sendPulse {
+    0% {
+        box-shadow: 0 0 0 0 var(--send-ring-color), var(--send-shadow);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 0, 0, 0), var(--send-shadow);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0), var(--send-shadow);
+    }
+}
+
+#send-message.sending {
+    animation: sendPulse 0.55s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #send-message {
+        transition: none;
+    }
+
+    #send-message .send-icon {
+        transition: none;
+    }
+
+    #send-message:hover,
+    #send-message:active {
+        transform: none;
+    }
+
+    #send-message:hover .send-icon--send {
+        transform: translateX(0) scale(1);
+    }
+
+    #send-message.sending {
+        animation: none;
+    }
 }
 
 /* 模型菜单滚动条 */
@@ -1116,94 +1271,6 @@ body.dark-mode .sent-tab-item:hover {
 .model-selector-menu::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: var(--radius-full);
-}
-
-
-
-/* 发送按钮 */
-#send-message {
-    background-color: var(--primary-color);
-    color: white;
-    width: clamp(26px, 6.5vw, 30px);
-    height: clamp(26px, 6.5vw, 30px);
-    position: relative;
-    overflow: hidden;
-}
-
-#send-message::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background-color: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.3s ease, height 0.3s ease;
-}
-
-#send-message:hover::before {
-    width: 100%;
-    height: 100%;
-}
-
-#send-message svg {
-    width: clamp(13px, 3.5vw, 15px);
-    height: clamp(13px, 3.5vw, 15px);
-    position: relative;
-    z-index: 1;
-    transition: transform 0.2s ease;
-}
-
-#send-message:hover {
-    background-color: var(--secondary-color);
-    transform: scale(1.08);
-    box-shadow: 0 2px 12px rgba(49, 123, 245, 0.3);
-}
-
-#send-message:hover svg {
-    transform: translateX(1px);
-}
-
-#send-message:active {
-    transform: scale(0.95);
-}
-
-/* 发送按钮点击时的脉冲效果 */
-@keyframes sendPulse {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(49, 123, 245, 0.4);
-    }
-
-    70% {
-        transform: scale(1.05);
-        box-shadow: 0 0 0 8px rgba(49, 123, 245, 0);
-    }
-
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(49, 123, 245, 0);
-    }
-}
-
-#send-message.sending {
-    animation: sendPulse 0.6s ease-out;
-}
-
-/* 控制流式输出按钮特定样式 */
-#send-message.stop-streaming {
-    /* background remains primary, hover changes */
-    transform: none;
-    /* Reset hover transform if any conflicts */
-}
-
-#send-message.stop-streaming:hover {
-    background-color: var(--error-color);
-    /* Hover becomes red */
-    color: white;
-    transform: scale(1.05);
 }
 
 

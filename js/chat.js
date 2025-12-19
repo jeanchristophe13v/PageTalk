@@ -19,10 +19,9 @@ import { tr as _ } from './utils/i18n.js';
  * @param {function} clearVideosCallback - Callback
  * @param {function} showToastCallback - Callback
  * @param {function} restoreSendButtonAndInputCallback - Callback
- * @param {function} abortStreamingCallback - Callback
  * @param {function} [updateSelectedTabsBarCallback] - Optional callback to update selected tabs bar UI
  */
-export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, clearVideosCallback, showToastCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, updateSelectedTabsBarCallback) {
+export async function sendUserMessage(state, elements, currentTranslations, showConnectionStatusCallback, addMessageToChatCallback, addThinkingAnimationCallback, resizeTextareaCallback, clearImagesCallback, clearVideosCallback, showToastCallback, restoreSendButtonAndInputCallback, updateSelectedTabsBarCallback) {
     const userMessage = elements.userInput.value.trim();
 
     if (state.isStreaming) {
@@ -55,14 +54,9 @@ export async function sendUserMessage(state, elements, currentTranslations, show
     state.isStreaming = true;
     state.userScrolledUpDuringStream = false; // 重置滚动标记
     elements.sendMessage.classList.add('stop-streaming');
-    elements.sendMessage.title = _('stopStreamingTitle', {}, currentTranslations);
-    elements.sendMessage.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
-        </svg>
-    `;
-    elements.sendMessage.removeEventListener('click', sendUserMessage); // Remove default listener
-    elements.sendMessage.addEventListener('click', abortStreamingCallback); // Add abort listener
+    const stopTitle = _('stopStreamingTitle', {}, currentTranslations);
+    elements.sendMessage.title = stopTitle;
+    elements.sendMessage.setAttribute('aria-label', stopTitle);
     // --- End Streaming State ---
 
     const currentImages = [...state.images]; // Copy images for this message
@@ -284,11 +278,10 @@ export function deleteMessage(messageId, state) {
  * @param {function} addMessageToChatCallback - Callback (main.js#addMessageToChatUI)
  * @param {function} addThinkingAnimationCallback - Callback (lambda from main.js for ui.js#addThinkingAnimation)
  * @param {function} restoreSendButtonAndInputCallback - Callback
- * @param {function} abortStreamingCallback - Callback
  * @param {function} showToastCallback - Callback to show toast notifications
  * @param {function} [updateSelectedTabsBarCallback] - Optional callback to update selected tabs bar UI
  */
-export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, abortStreamingCallback, showToastCallback, updateSelectedTabsBarCallback) {
+export async function regenerateMessage(messageId, state, elements, currentTranslations, addMessageToChatCallback, addThinkingAnimationCallback, restoreSendButtonAndInputCallback, showToastCallback, updateSelectedTabsBarCallback) {
     if (state.isStreaming) {
         console.warn("Cannot regenerate while streaming.");
         // if (showToastCallback) showToastCallback(_('streamingInProgress', {}, currentTranslations), 'warning'); // Commented out as per task
@@ -398,14 +391,9 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
     state.isStreaming = true;
     state.userScrolledUpDuringStream = false; // 重置滚动标记
     elements.sendMessage.classList.add('stop-streaming');
-    elements.sendMessage.title = _('stopStreamingTitle', {}, currentTranslations);
-    elements.sendMessage.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
-        </svg>
-    `;
-    elements.sendMessage.removeEventListener('click', sendUserMessage); // Remove default listener
-    elements.sendMessage.addEventListener('click', abortStreamingCallback); // Add abort listener
+    const stopTitle = _('stopStreamingTitle', {}, currentTranslations);
+    elements.sendMessage.title = stopTitle;
+    elements.sendMessage.setAttribute('aria-label', stopTitle);
     // --- End Streaming State ---
 
     // Add thinking animation after the user message

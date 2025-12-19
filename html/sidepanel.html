@@ -154,11 +154,20 @@
                                     <!-- 这里的选项会通过 JavaScript 动态填充 -->
                                 </select>
                                 <!-- 发送按钮 -->
-                                <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                                        viewBox="0 0 16 16">
-                                        <path
-                                            d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z" />
+                                <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息"
+                                    aria-label="发送消息">
+                                    <svg class="send-icon send-icon--send" xmlns="http://www.w3.org/2000/svg"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+                                        focusable="false" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                        <path d="M22 2 11 13"></path>
+                                    </svg>
+                                    <svg class="send-icon send-icon--stop" xmlns="http://www.w3.org/2000/svg"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+                                        focusable="false" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="7" y="7" width="10" height="10" rx="2"></rect>
                                     </svg>
                                 </button>
                             </div>

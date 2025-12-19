@@ -13,6 +13,8 @@
     --success-color: #1b9d33b0;       /* 成功色 - 绿色 7 */
     --success-color-dark: #178a2e;    /* 成功色 - 绿色 7 的深色变体 */
     --error-color: #c92a2a9c;         /* 错误色 - 红色 8 */
+    --danger-color: #fa5252;        /* 危险色 - 红色 6 (用于按钮背景等) */
+    --danger-hover: #f03e3e;        /* 危险色悬浮 - 红色 7 */
     --warning-color: #E67700;       /* 警告色 - 橙色 8 */
     --input-background: #FFFFFF;    /* 输入框背景 - 白色 */
     --code-background: #F1F3F5;     /* 代码块背景 - 灰色 1 */
@@ -54,6 +56,8 @@ body.dark-mode {
     --border-color: #343A40;        /* 边框色 - 灰色 8 (淡化) */
     --success-color: #1b9d33;       /* 成功色 - 绿色 4 */
     --error-color: #FF8787;         /* 错误色 - 红色 3 */
+    --danger-color: #fa5252;        /* 危险色 - 红色 6 (用于按钮背景等) */
+    --danger-hover: #f03e3e;        /* 危险色悬浮 - 红色 7 */
     --warning-color: #FFD43B;       /* 警告色 - 黄色 4 */
     --input-background: #2C2E33;    /* 输入框背景 - 卡片背景色 */
     --code-background: #343A40;     /* 代码块背景 - 灰色 8 */

@@ -556,7 +556,12 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     setAttr('#modal-image', 'alt', 'imagePreviewAltTranslated');
     setTitle('#upload-image', 'uploadImageTitle');
     setPlaceholder('#user-input', 'userInputPlaceholder');
-    setTitle('#send-message', 'sendMessageTitle'); // Default title
+    const sendMessageBtn = document.querySelector('#send-message');
+    if (sendMessageBtn) {
+        const key = sendMessageBtn.classList.contains('stop-streaming') ? 'stopStreamingTitle' : 'sendMessageTitle';
+        sendMessageBtn.setAttribute('title', _tr(key));
+        sendMessageBtn.setAttribute('aria-label', _tr(key));
+    }
     // New: ensure settings close button has translated title
     setTitle('#close-panel-settings', 'closePanelTitle');
     // New: ensure add-provider has title (supports multiple in-card buttons)
@@ -603,7 +608,12 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     // Generic: apply data-i18n-title and data-i18n-placeholder
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
-        if (key) el.setAttribute('title', _tr(key));
+        if (!key) return;
+        if (el.id === 'send-message' && el.classList.contains('stop-streaming')) {
+            el.setAttribute('title', _tr('stopStreamingTitle'));
+            return;
+        }
+        el.setAttribute('title', _tr(key));
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
@@ -655,9 +665,12 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     // Handle all elements with data-i18n-title attribute
     document.querySelectorAll('[data-i18n-title]').forEach(element => {
         const key = element.dataset.i18nTitle;
-        if (key) {
-            element.title = _tr(key);
+        if (!key) return;
+        if (element.id === 'send-message' && element.classList.contains('stop-streaming')) {
+            element.title = _tr('stopStreamingTitle');
+            return;
         }
+        element.title = _tr(key);
     });
 
     // Update model container empty state text
@@ -676,10 +689,10 @@ export function updateUIElementsWithTranslations(currentTranslations) {
  * @param {object} state - Global state reference
  * @param {object} elements - DOM elements reference
  * @param {object} currentTranslations - Translations object
- * @param {function} sendUserMessageCallback - Callback to re-attach send listener
- * @param {function} abortStreamingCallback - Callback to remove abort listener
  */
-export function restoreSendButtonAndInput(state, elements, currentTranslations, sendUserMessageCallback, abortStreamingCallback) {
+export function restoreSendButtonAndInput(state, elements, currentTranslations) {
+    if (!elements.sendMessage) return;
+
     // 强制彻底重置按钮状态，无论流式状态
     if (state.isStreaming) state.isStreaming = false;
     if (state.userScrolledUpDuringStream) state.userScrolledUpDuringStream = false;
@@ -687,18 +700,9 @@ export function restoreSendButtonAndInput(state, elements, currentTranslations, 
     // 移除所有可能的 loading/sending/stop-streaming 样式
     elements.sendMessage.classList.remove('stop-streaming', 'sending', 'loading');
     elements.sendMessage.disabled = false;
-    elements.sendMessage.title = _('sendMessageTitle', {}, currentTranslations);
-    elements.sendMessage.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11v-.001ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
-        </svg>
-    `;
-
-    // 彻底解绑所有点击事件再重新绑定，防止多次绑定
-    const newSendButton = elements.sendMessage.cloneNode(true);
-    elements.sendMessage.parentNode.replaceChild(newSendButton, elements.sendMessage);
-    elements.sendMessage = newSendButton;
-    elements.sendMessage.addEventListener('click', sendUserMessageCallback);
+    const sendTitle = _('sendMessageTitle', {}, currentTranslations);
+    elements.sendMessage.title = sendTitle;
+    elements.sendMessage.setAttribute('aria-label', sendTitle);
 
     // 清理所有可能的 AbortController
     if (window.GeminiAPI && window.GeminiAPI.currentAbortController) {

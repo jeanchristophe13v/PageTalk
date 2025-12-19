@@ -392,7 +392,7 @@ function setupEventListeners() {
     });
 
     // Chat Actions
-    elements.sendMessage.addEventListener('click', sendUserMessageTrigger); // Initial listener
+    elements.sendMessage.addEventListener('click', handleSendButtonClick); // Initial listener
     elements.userInput.addEventListener('keydown', handleUserInputKeydown);
     // 新增：监听用户输入框的 input 事件，用于检测 "@"
     elements.userInput.addEventListener('input', handleUserInputForTabSelection);
@@ -999,6 +999,8 @@ function handleChatScroll() {
 
 // Wrapper function to trigger sendUserMessage with all dependencies
 function sendUserMessageTrigger() {
+    if (state.isStreaming) return;
+
     // 若存在欢迎消息，先移除，避免占用顶部空间
     try {
         const welcome = elements.chatMessages && elements.chatMessages.querySelector('.welcome-message');
@@ -1044,9 +1046,17 @@ function sendUserMessageTrigger() {
         clearVideosUI,
         showToastUI,
         restoreSendButtonAndInputUI,
-        abortStreamingUI,
         updateSelectedTabsBarFromMain
     );
+}
+
+function handleSendButtonClick() {
+    if (state.isStreaming) {
+        abortStreamingUI();
+        return;
+    }
+
+    sendUserMessageTrigger();
 }
 
 // Wrapper function to trigger abortStreaming
@@ -1056,7 +1066,7 @@ function abortStreamingUI() {
 
 // Wrapper function to restore send button UI
 function restoreSendButtonAndInputUI() {
-    restoreSendButtonAndInput(state, elements, currentTranslations, sendUserMessageTrigger, abortStreamingUI);
+    restoreSendButtonAndInput(state, elements, currentTranslations);
 }
 
 // Wrapper function for toggleTheme used by draggable button
@@ -1146,7 +1156,6 @@ function regenerateMessageUI(messageId) {
         addMessageToChatUI,
         (afterEl) => uiAddThinkingAnimation(afterEl, elements, isUserNearBottom),
         restoreSendButtonAndInputUI,
-        abortStreamingUI,
         showToastUI,
         updateSelectedTabsBarFromMain
     );
