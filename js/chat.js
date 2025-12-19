@@ -78,6 +78,9 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     elements.userInput.value = '';
     resizeTextareaCallback(); // Adjust textarea height
+    
+    // Update custom caret position after programmatic value change
+    if (window.updateCometCaret) window.updateCometCaret();
 
     // --- 立即标记已选标签页为已发送并更新UI ---
     let contextTabsForApi = [];

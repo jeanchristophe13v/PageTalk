@@ -235,10 +235,12 @@ export function initCometCaret(textarea) {
 
     /**
      * 更新光标位置
+     * @param {boolean} createTrail - 是否创建拖尾粒子
+     * @param {boolean} forceUpdate - 是否强制更新（绕过节流）
      */
-    function updateCaretPosition(createTrail = true) {
+    function updateCaretPosition(createTrail = true, forceUpdate = false) {
         const now = Date.now();
-        if (now - lastUpdateTime < THROTTLE_MS) return;
+        if (!forceUpdate && now - lastUpdateTime < THROTTLE_MS) return;
         lastUpdateTime = now;
 
         const pos = getCaretPosition(textarea, mirror);
@@ -380,7 +382,8 @@ export function initCometCaret(textarea) {
             caretInstances.delete(textarea);
         },
         update() {
-            updateCaretPosition(false);
+            // Force update to bypass throttling (for programmatic value changes)
+            updateCaretPosition(false, true);
         }
     };
 

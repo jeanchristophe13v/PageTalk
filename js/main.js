@@ -279,10 +279,19 @@ async function init() {
     setupAutoresizeTextarea(elements); // Setup textarea resize
 
     // Initialize comet caret animation for chat input
+    let cometCaretInstance = null;
     if (elements.userInput) {
-        initCometCaret(elements.userInput);
+        cometCaretInstance = initCometCaret(elements.userInput);
         console.log('[main.js] Comet caret initialized for user input');
     }
+    
+    // Expose global function to update comet caret position
+    // Used when textarea value is programmatically changed (e.g., quick actions, send message)
+    window.updateCometCaret = () => {
+        if (cometCaretInstance) {
+            cometCaretInstance.update();
+        }
+    };
 
     // Initial UI updates
     // 避免尚未判定连接状态时显示“未连接”造成闪烁
@@ -707,6 +716,9 @@ function handleTabSelectedFromPopup(selectedTab) {
         elements.userInput.value = currentText.substring(0, atCharIndex);
     }
     elements.userInput.focus();
+    
+    // Update custom caret position after programmatic value change
+    if (window.updateCometCaret) window.updateCometCaret();
 
     const isAlreadySelected = state.selectedContextTabs.some(tab => tab.id === selectedTab.id);
     if (isAlreadySelected) {
@@ -768,6 +780,9 @@ function handleTabsSelectedFromPopup(selectedTabs) {
         elements.userInput.value = currentText.substring(0, atCharIndex);
     }
     elements.userInput.focus();
+    
+    // Update custom caret position after programmatic value change
+    if (window.updateCometCaret) window.updateCometCaret();
 
     // 逐个加入到选中列表
     const suppressPerTabSuccessToast = selectedTabs.length > 1; // 多选时仅显示汇总提示，抑制单条成功提示
@@ -1809,6 +1824,9 @@ async function triggerQuickAction(actionId, prompt, ignoreAssistant) {
     // 设置输入框内容
     elements.userInput.value = prompt.trim();
     elements.userInput.focus();
+    
+    // Update custom caret position after programmatic value change
+    if (window.updateCometCaret) window.updateCometCaret();
 
     // 如果需要忽略助手，设置全局标记
     if (ignoreAssistant) {
