@@ -26,23 +26,62 @@
     /* 确保可以缩小 */
 }
 
-/* 欢迎消息 */
+/* 欢迎消息 - 高级精致设计 */
 .welcome-message {
     background-color: var(--card-background);
-    border-radius: var(--radius-lg);
-    padding: clamp(var(--spacing-sm), 2vw, var(--spacing-md));
-    /* 缩小内边距 */
-    margin: var(--spacing-md) auto;
-    /* 缩小外边距 */
-    width: clamp(200px, 90%, 45%);
-    /* 稍微增加宽度 */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    /* 精致的圆角设计 */
+    border-radius: 20px;
+    /* 更宽敞的内边距 */
+    padding: clamp(16px, 3vw, 24px);
+    margin: var(--spacing-lg) auto;
+    width: clamp(220px, 85%, 50%);
+    /* 多层阴影营造深度感 */
+    box-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.03),
+        0 8px 16px rgba(0, 0, 0, 0.02);
     text-align: center;
+    /* 精致的边框 */
     border: 1px solid var(--border-color);
-    /* 添加入场动画 */
+    /* 入场动画 */
     animation: welcomeSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     opacity: 0;
     transform: translateY(20px) scale(0.95);
+    /* 平滑过渡 */
+    transition: 
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.25s ease;
+}
+
+.welcome-message:hover {
+    transform: translateY(-2px);
+    border-color: rgba(70, 116, 255, 0.2);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.05),
+        0 4px 8px rgba(0, 0, 0, 0.05),
+        0 8px 16px rgba(0, 0, 0, 0.04),
+        0 16px 32px rgba(0, 0, 0, 0.03);
+}
+
+/* 深色模式下欢迎消息的微调 */
+body.dark-mode .welcome-message {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        0 4px 8px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+body.dark-mode .welcome-message:hover {
+    border-color: rgba(116, 143, 252, 0.25);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(0, 0, 0, 0.12),
+        0 8px 16px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(116, 143, 252, 0.1);
 }
 
 @keyframes welcomeSlideIn {
@@ -59,21 +98,16 @@
 
 .welcome-message h2 {
     color: var(--primary-color);
-    margin-bottom: var(--spacing-xs);
-    /* 缩小边距 */
-    font-size: clamp(14px, 3.5vw, 16px);
-    /* 缩小字体 */
+    margin-bottom: var(--spacing-sm);
+    font-size: clamp(15px, 3.5vw, 18px);
     font-weight: 600;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
 }
 
 .welcome-message p {
-    margin-bottom: var(--spacing-xs);
-    /* 缩小边距 */
-    font-size: clamp(11px, 3vw, 13px);
-    /* 缩小字体 */
-    line-height: 1.5;
-    /* 稍微减小行高 */
+    margin-bottom: var(--spacing-sm);
+    font-size: clamp(12px, 3vw, 14px);
+    line-height: 1.6;
     color: var(--text-secondary);
 }
 
@@ -205,34 +239,57 @@
     }
 }
 
-/* 用户消息气泡样式 */
+/* 用户消息气泡样式 - 高级精致设计 */
 .user-message {
     align-self: flex-end;
     background-color: var(--primary-color);
     color: white;
-    /* border-radius already set by .message */
+    /* 精致的圆角设计 - 对话气泡风格 */
+    border-radius: 18px 18px 4px 18px;
     display: inline-block;
-    /* For width: auto to work with align-self */
-    max-width: 95%;
-    /* Can be slightly wider than bot messages */
+    max-width: 85%;
     width: auto;
-    /* Content dictates width, up to max-width */
     overflow: visible;
-    /* Ensure internal content like images can layout */
-    padding: var(--spacing-sm) var(--spacing-md);
-    /* Standard internal padding */
+    /* 更宽敞的内边距，提升阅读体验 */
+    padding: 12px 16px;
     text-align: left;
     position: relative;
-    /* For message actions */
-    /* 微妙的悬停效果 */
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
-    /* 新增：为 sent-tabs-container 腾出空间，如果它直接在此元素上方的话 */
-    /* 但由于它们是兄弟元素，间距由 .chat-messages 的 gap 或 .sent-tabs-container 的 margin-bottom 控制 */
+    /* 多层阴影营造深度感 */
+    box-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.07),
+        0 2px 4px rgba(0, 0, 0, 0.07),
+        0 4px 8px rgba(0, 0, 0, 0.07),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    /* 平滑的过渡效果 */
+    transition: 
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .user-message:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(49, 123, 245, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        0 8px 16px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* 深色模式下用户消息的微调 */
+body.dark-mode .user-message {
+    box-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.12),
+        0 4px 8px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+body.dark-mode .user-message:hover {
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        0 4px 8px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 
 /* 隐藏没有内容的用户消息气泡 */
@@ -418,30 +475,60 @@ body.dark-mode .sent-tab-item:hover {
     line-height: 1.4;
 }
 
-/* 机器人消息气泡样式 */
+/* 机器人消息气泡样式 - 高级精致设计 */
 .bot-message {
     align-self: flex-start;
     background-color: var(--card-background);
+    /* 精致的边框处理 */
     border: 1px solid var(--border-color);
-    /* border-radius already set by .message */
-    padding: var(--spacing-md);
-    /* Standard internal padding */
-    padding-bottom: 30px;
-    /* Space for actions at the bottom */
-    max-width: 95%;
+    /* 精致的圆角设计 - 对话气泡风格（与用户消息对称） */
+    border-radius: 18px 18px 18px 4px;
+    /* 更宽敞的内边距 */
+    padding: 14px 16px;
+    padding-bottom: 36px;
+    max-width: 90%;
     overflow: visible;
-    /* Ensure markdown content can layout (e.g. tables) */
-    line-height: 1.4;
+    line-height: 1.5;
     position: relative;
-    /* For message actions */
-    /* 微妙的悬停效果 */
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    /* 多层阴影营造深度感 */
+    box-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.04),
+        0 4px 8px rgba(0, 0, 0, 0.02);
+    /* 平滑的过渡效果 */
+    transition: 
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+        border-color 0.25s ease;
 }
 
 .bot-message:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    border-color: rgba(49, 123, 245, 0.2);
+    transform: translateY(-2px);
+    border-color: rgba(70, 116, 255, 0.25);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.06),
+        0 4px 8px rgba(0, 0, 0, 0.06),
+        0 8px 16px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(70, 116, 255, 0.08);
+}
+
+/* 深色模式下机器人消息的微调 */
+body.dark-mode .bot-message {
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 
+        0 1px 2px rgba(0, 0, 0, 0.12),
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        0 4px 8px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+body.dark-mode .bot-message:hover {
+    border-color: rgba(116, 143, 252, 0.3);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(0, 0, 0, 0.12),
+        0 8px 16px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(116, 143, 252, 0.15);
 }
 
 .bot-message p {
