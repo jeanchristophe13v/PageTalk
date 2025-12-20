@@ -139,6 +139,13 @@ function renderMarkdown(content) {
     return html;
 }
 
+// 临时存储数学公式的映射表
+let mathFormulasMap = new Map();
+let mathFormulaCounter = 0;
+// 临时存储代码块的映射表
+let codeBlocksMap = new Map();
+let codeBlockCounter = 0;
+
 // 对内容进行预处理，处理特殊情况
 function preprocessContent(content) {
     // 规范化换行符
@@ -147,11 +154,67 @@ function preprocessContent(content) {
     // 处理连续的三个或更多换行符，避免过多空白
     processedContent = processedContent.replace(/\n{3,}/g, '\n\n');
     
+    // 第一步：先保护代码块，防止其中的 $ 被误匹配为数学公式
+    // 保护围栏代码块 ```...```
+    processedContent = processedContent.replace(/```[\s\S]*?```/g, (match) => {
+        const placeholder = `%%CODE_FENCE_${codeBlockCounter}%%`;
+        codeBlocksMap.set(placeholder, match);
+        codeBlockCounter++;
+        return placeholder;
+    });
+    // 保护行内代码 `...`
+    processedContent = processedContent.replace(/`[^`\n]+`/g, (match) => {
+        const placeholder = `%%CODE_INLINE_${codeBlockCounter}%%`;
+        codeBlocksMap.set(placeholder, match);
+        codeBlockCounter++;
+        return placeholder;
+    });
+    
+    // 第二步：保护数学公式，防止 markdown-it 的 breaks:true 插入 <br> 破坏公式结构
+    // 先处理块级公式 $$...$$（可能跨多行）
+    processedContent = processedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
+        const placeholder = `%%MATH_BLOCK_${mathFormulaCounter}%%`;
+        mathFormulasMap.set(placeholder, match);
+        mathFormulaCounter++;
+        return placeholder;
+    });
+    
+    // 再处理行内公式 $...$（不跨行）
+    processedContent = processedContent.replace(/\$([^\$\n]+?)\$/g, (match) => {
+        const placeholder = `%%MATH_INLINE_${mathFormulaCounter}%%`;
+        mathFormulasMap.set(placeholder, match);
+        mathFormulaCounter++;
+        return placeholder;
+    });
+    
+    // 第三步：恢复代码块（在 markdown-it 处理之前恢复，让 markdown-it 正常处理代码块）
+    codeBlocksMap.forEach((code, placeholder) => {
+        processedContent = processedContent.split(placeholder).join(code);
+    });
+    codeBlocksMap.clear();
+    codeBlockCounter = 0;
+    
     return processedContent;
+}
+
+// 恢复被保护的数学公式
+function restoreMathFormulas(html) {
+    let result = html;
+    mathFormulasMap.forEach((formula, placeholder) => {
+        // 使用全局替换确保所有占位符都被替换
+        result = result.split(placeholder).join(formula);
+    });
+    // 清空映射表准备下次使用
+    mathFormulasMap.clear();
+    mathFormulaCounter = 0;
+    return result;
 }
 
 // 对渲染后的HTML进行后处理
 function postprocessHtml(html) {
+    // 恢复被保护的数学公式
+    html = restoreMathFormulas(html);
+    
     // 为代码块添加复制按钮的位置
     html = html.replace(/<pre class="code-block/g, 
                          '<pre class="code-block code-block-with-copy');
