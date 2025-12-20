@@ -685,30 +685,54 @@ body.dark-mode .bot-message:hover {
     /* 保持悬停颜色一致 */
 }
 
-
-/* 流式输出光标样式调整 */
-.streaming-cursor {
-    display: inline-block;
-    width: 2px;
-    height: 1em;
-    background-color: var(--primary-color);
-    margin-left: 2px;
-    animation: streamingPulse 1.2s infinite cubic-bezier(0.4, 0, 0.6, 1);
-    vertical-align: text-bottom;
-    border-radius: 1px;
+/* 打字机效果 - 多层递进式渐变，更加丝滑 */
+.streaming-text-fade {
+    display: inline;
 }
 
-@keyframes streamingPulse {
+/* 第一段：最早出现的字符，已接近完全显示 */
+.streaming-text-fade-1 {
+    animation: streamingFade1 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 
-    0%,
-    100% {
-        opacity: 1;
-        transform: scaleY(1);
+/* 第二段：中间字符，中等透明度 */
+.streaming-text-fade-2 {
+    animation: streamingFade2 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 第三段：最新字符，从很低透明度开始 */
+.streaming-text-fade-3 {
+    animation: streamingFade3 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes streamingFade1 {
+    from {
+        opacity: 0.7;
     }
+    to {
+        opacity: 1;
+    }
+}
 
-    50% {
+@keyframes streamingFade2 {
+    from {
         opacity: 0.4;
-        transform: scaleY(0.8);
+        filter: blur(0.3px);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+    }
+}
+
+@keyframes streamingFade3 {
+    from {
+        opacity: 0.1;
+        filter: blur(0.8px);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
     }
 }
 

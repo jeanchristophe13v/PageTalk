@@ -279,30 +279,89 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
 
 /**
- * 更新流式消息 - 使用markdown-it渲染
+ * 更新流式消息 - 使用markdown-it渲染，并添加打字机效果
  * @param {HTMLElement} messageElement - 消息元素
  * @param {string} content - 当前累积的内容
  * @param {boolean} shouldScroll - Whether to scroll to bottom
  * @param {object} elements - DOM elements reference
  */
 export function updateStreamingMessage(messageElement, content, shouldScroll, elements) {
-    let formattedContent = window.MarkdownRenderer.render(content);
+    const formattedContent = window.MarkdownRenderer.render(content);
 
-    const streamingCursor = document.createElement('span');
-    streamingCursor.className = 'streaming-cursor';
-
+    // 保存 messageActions
     const messageActions = messageElement.querySelector('.message-actions');
+
+    // 更新 DOM
     messageElement.innerHTML = formattedContent;
+
+    // 恢复 messageActions
     if (messageActions) {
         messageElement.appendChild(messageActions);
     }
 
-    // Temporarily disable dynamic rendering during streaming to avoid errors/performance issues
-    // renderDynamicContent(messageElement, elements);
+    // 找到最后一个文本节点，为最后几个字符添加渐变效果
+    const applyFadeEffect = (container) => {
+        // 获取所有文本节点
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+        let lastTextNode = null;
+        let node;
+        while (node = walker.nextNode()) {
+            // 跳过空白节点
+            if (node.textContent.trim()) {
+                lastTextNode = node;
+            }
+        }
 
-    messageElement.appendChild(streamingCursor);
+        if (lastTextNode && lastTextNode.parentNode) {
+            const text = lastTextNode.textContent;
+            if (text.length > 0) {
+                // 使用多层渐变实现更丝滑的效果
+                // 最后8个字符分成3段，每段有不同的透明度起点
+                const totalFadeLength = Math.min(8, text.length);
+                const stableText = text.slice(0, -totalFadeLength);
+                const fadeText = text.slice(-totalFadeLength);
+                
+                // 将渐变文字分成3段
+                const segment1Len = Math.ceil(fadeText.length / 3);
+                const segment2Len = Math.ceil(fadeText.length / 3);
+                const segment3Len = fadeText.length - segment1Len - segment2Len;
+                
+                const segment1 = fadeText.slice(0, segment1Len);
+                const segment2 = fadeText.slice(segment1Len, segment1Len + segment2Len);
+                const segment3 = fadeText.slice(segment1Len + segment2Len);
+                
+                // 创建包含渐变文字的 span（3段不同透明度）
+                const fadeContainer = document.createDocumentFragment();
+                
+                if (segment1) {
+                    const span1 = document.createElement('span');
+                    span1.className = 'streaming-text-fade streaming-text-fade-1';
+                    span1.textContent = segment1;
+                    fadeContainer.appendChild(span1);
+                }
+                if (segment2) {
+                    const span2 = document.createElement('span');
+                    span2.className = 'streaming-text-fade streaming-text-fade-2';
+                    span2.textContent = segment2;
+                    fadeContainer.appendChild(span2);
+                }
+                if (segment3) {
+                    const span3 = document.createElement('span');
+                    span3.className = 'streaming-text-fade streaming-text-fade-3';
+                    span3.textContent = segment3;
+                    fadeContainer.appendChild(span3);
+                }
+                
+                // 替换原文本节点
+                lastTextNode.textContent = stableText;
+                lastTextNode.parentNode.insertBefore(fadeContainer, lastTextNode.nextSibling);
+            }
+        }
+    };
 
-    if (shouldScroll) { // 使用 shouldScroll 决策
+    applyFadeEffect(messageElement);
+
+    if (shouldScroll) {
         setTimeout(() => {
             elements.chatMessages.scrollTo({
                 top: elements.chatMessages.scrollHeight,
@@ -323,10 +382,9 @@ export function updateStreamingMessage(messageElement, content, shouldScroll, el
  * @param {object} elements - DOM elements reference
  */
 export function finalizeBotMessage(messageElement, finalContent, addCopyButtonToCodeBlock, addMessageActionButtons, restoreSendButtonAndInput, shouldScroll, elements) {
-    const streamingCursor = messageElement.querySelector('.streaming-cursor');
-    if (streamingCursor) {
-        streamingCursor.remove();
-    }
+    // 清理渐变效果的临时 span 元素（如果还有残留）
+    const fadeSpans = messageElement.querySelectorAll('.streaming-text-fade');
+    fadeSpans.forEach(span => span.remove());
 
     messageElement.innerHTML = window.MarkdownRenderer.render(finalContent);
 
