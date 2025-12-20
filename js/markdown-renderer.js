@@ -197,12 +197,47 @@ function preprocessContent(content) {
     return processedContent;
 }
 
-// 恢复被保护的数学公式
+// 恢复被保护的数学公式，同时尝试直接渲染成 KaTeX HTML
 function restoreMathFormulas(html) {
     let result = html;
     mathFormulasMap.forEach((formula, placeholder) => {
-        // 使用全局替换确保所有占位符都被替换
-        result = result.split(placeholder).join(formula);
+        let replacement = formula; // 默认恢复原始公式
+        
+        // 尝试直接渲染 LaTeX
+        if (typeof window.katex !== 'undefined') {
+            try {
+                // 提取公式内容和类型
+                let latex = '';
+                let displayMode = false;
+                
+                if (formula.startsWith('$$') && formula.endsWith('$$')) {
+                    // 块级公式
+                    latex = formula.slice(2, -2).trim();
+                    displayMode = true;
+                } else if (formula.startsWith('$') && formula.endsWith('$')) {
+                    // 行内公式
+                    latex = formula.slice(1, -1).trim();
+                    displayMode = false;
+                }
+                
+                if (latex) {
+                    // 使用 KaTeX 渲染
+                    const rendered = window.katex.renderToString(latex, {
+                        displayMode: displayMode,
+                        throwOnError: false,
+                        output: 'html'
+                    });
+                    // 包装在 span 中，添加适当的类
+                    const wrapperClass = displayMode ? 'katex-display' : 'katex-inline';
+                    replacement = `<span class="${wrapperClass}">${rendered}</span>`;
+                }
+            } catch (e) {
+                // 渲染失败时保留原始公式，让后续的 renderMathInElement 处理
+                replacement = formula;
+            }
+        }
+        
+        result = result.split(placeholder).join(replacement);
     });
     // 清空映射表准备下次使用
     mathFormulasMap.clear();
