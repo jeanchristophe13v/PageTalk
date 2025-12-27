@@ -2,7 +2,7 @@
  * Pagetalk - UI Update and DOM Manipulation Functions
  */
 import { generateUniqueId, escapeHtml } from './utils.js';
-import { renderDynamicContent } from './render.js';
+import { renderDynamicContent, preProcessMermaidHTML } from './render.js';
 import { showFullSizeImage } from './image.js'; // Assuming image modal logic is in image.js
 import { tr as _ } from './utils/i18n.js';
 
@@ -262,7 +262,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
 
     addMessageActionButtons(messageDiv, content || ''); // Use callback
 
-    renderDynamicContent(messageDiv, elements); // Render KaTeX/Mermaid
+    renderDynamicContent(messageDiv, elements, messageId); // Render KaTeX/Mermaid with messageId for caching
 
     // Scroll only if forced or user is near bottom
     if (forceScroll || isUserNearBottom) {
@@ -291,8 +291,18 @@ export function updateStreamingMessage(messageElement, content, shouldScroll, el
     // 保存 messageActions
     const messageActions = messageElement.querySelector('.message-actions');
 
+    // --- Pre-process HTML to inject cached Mermaid SVGs ---
+    // This prevents the "flash" of raw text before the async render kicks in
+    const messageId = messageElement.dataset.messageId;
+    const processedContent = preProcessMermaidHTML(formattedContent, messageId);
+
     // 更新 DOM
-    messageElement.innerHTML = formattedContent;
+    messageElement.classList.add('streaming'); // Add streaming class to prevent hover interactions
+    messageElement.innerHTML = processedContent;
+
+    // Trigger async render (will use cache if available or render new content)
+    // We pass messageId so renderDynamicContent knows where to look/store in cache
+    renderDynamicContent(messageElement, elements, messageId);
 
     // 恢复 messageActions
     if (messageActions) {
@@ -386,22 +396,35 @@ export function finalizeBotMessage(messageElement, finalContent, addCopyButtonTo
     const fadeSpans = messageElement.querySelectorAll('.streaming-text-fade');
     fadeSpans.forEach(span => span.remove());
 
-    messageElement.innerHTML = window.MarkdownRenderer.render(finalContent);
+    messageElement.classList.remove('streaming'); // Remove streaming class
+
+    // messageId is already available from the finalizeBotMessage scope if passed or we can just access dataset
+    // Actually, finalizeBotMessage doesn't take messageId as arg, but let's see where it comes from.
+    // Wait, the error said "redeclare block-scoped variable".
+    // Let's just use the dataset one but not redeclare `const messageId`.
+    const msgId = messageElement.dataset.messageId;
+    // IMPORTANT: Render markdown FIRST, then preprocess the resulting HTML
+    const renderedHtml = window.MarkdownRenderer.render(finalContent);
+    const processedHtml = preProcessMermaidHTML(renderedHtml, msgId);
+    messageElement.innerHTML = processedHtml;
 
     const codeBlocks = messageElement.querySelectorAll('.code-block');
     codeBlocks.forEach(addCopyButtonToCodeBlock);
 
     addMessageActionButtons(messageElement, finalContent);
 
-    renderDynamicContent(messageElement, elements); // Final render
+    // Final render, ensure messageId is passed
+    renderDynamicContent(messageElement, elements, msgId);
 
-    if (shouldScroll) { // 使用 shouldScroll 决策
-        setTimeout(() => {
+    // Scroll to bottom if user was following the stream
+    // Use requestAnimationFrame to wait for layout to settle
+    if (shouldScroll) {
+        requestAnimationFrame(() => {
             elements.chatMessages.scrollTo({
                 top: elements.chatMessages.scrollHeight,
-                behavior: 'smooth'
+                behavior: 'instant' // Use 'instant' to avoid delayed animation conflicts
             });
-        }, 100);
+        });
     }
 
     restoreSendButtonAndInput(); // Restore button state

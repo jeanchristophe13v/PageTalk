@@ -7,12 +7,20 @@ import { escapeHtml } from './utils.js';
 let currentPanzoomInstance = null; // Store Panzoom instance for Mermaid modal
 let mermaidWheelListener = null; // Store wheel listener for Mermaid modal
 
+// --- Cache for Mermaid SVGs to support smooth streaming ---
+// Key: `${messageId}-${index}`
+// Value: { definition: string, svg: string, timestamp: number }
+const mermaidCache = new Map();
+
+
 /**
  * Renders KaTeX and Mermaid content within a given DOM element.
  * @param {HTMLElement} element - The container element to render within.
  * @param {object} elements - Reference to the main elements object (for modal access).
+ * @param {string} [messageId=null] - Optional message ID for caching purposes (required for streaming stability).
  */
-export function renderDynamicContent(element, elements) {
+export function renderDynamicContent(element, elements, messageId = null) {
+
     // --- Render KaTeX ---
     if (typeof window.renderMathInElement === 'function') {
         try {
@@ -34,46 +42,92 @@ export function renderDynamicContent(element, elements) {
 
     // --- Render Mermaid (Manual Iteration) ---
     if (typeof mermaid !== 'undefined') {
-        const mermaidPreElements = element.querySelectorAll('pre.mermaid');
+        const mermaidPreElements = element.querySelectorAll('pre.mermaid, div.mermaid[data-rendered="true"]');
+        
         if (mermaidPreElements.length > 0) {
-            console.log(`Found ${mermaidPreElements.length} Mermaid <pre> elements to render.`);
-            mermaidPreElements.forEach(async (preElement, index) => {
-                const definition = preElement.textContent || '';
-                if (!definition.trim()) {
-                    console.warn(`Skipping empty Mermaid <pre> element at index ${index}.`);
-                    return; // Skip empty definitions
-                }
+            // console.log(`Found ${mermaidPreElements.length} Mermaid elements to render.`);
+            mermaidPreElements.forEach(async (el, index) => {
+                // If it's already a div with data-rendered="true" (injected from cache), 
+                // we might still want to re-verify or just attach listeners. 
+                // For now, let's treat pre.mermaid as "needs render" and div.mermaid as "already rendered but maybe outdated".
 
-                const renderId = `mermaid-render-${Date.now()}-${index}`;
-                const container = document.createElement('div');
-                container.className = 'mermaid';
-                container.id = `${renderId}-container`;
-                container.dataset.mermaidDefinition = definition;
+                let definition = '';
+                let container = null;
 
-                if (preElement.parentNode) {
-                    preElement.parentNode.replaceChild(container, preElement);
+                if (el.tagName.toLowerCase() === 'pre') {
+                    // It's a raw pre block (either new or cache miss)
+                    definition = el.textContent || '';
+                    if (!definition.trim()) return;
+
+                    const renderId = `mermaid-render-${Date.now()}-${index}`;
+                    container = document.createElement('div');
+                    container.className = 'mermaid';
+                    container.id = `${renderId}-container`;
+                    container.dataset.mermaidDefinition = definition;
+                    
+                    // Replace <pre> with <div>
+                    if (el.parentNode) {
+                        el.parentNode.replaceChild(container, el);
+                    }
                 } else {
-                    console.error('Cannot replace Mermaid <pre> element: parentNode is null.');
-                    return;
+                    // It's a cached div
+                    container = el;
+                    definition = container.dataset.mermaidDefinition;
                 }
 
-                try {
-                    const { svg } = await mermaid.render(renderId, definition);
-                    container.innerHTML = svg;
-                    console.log(`Successfully rendered Mermaid chart ${index + 1} into container ${container.id}.`);
+                if (!container || !definition) return;
 
-                    // Add click listener to the container (or SVG) to open modal
-                    container.addEventListener('click', (event) => {
-                        const svgElement = container.querySelector('svg');
-                        if (svgElement) {
-                            event.stopPropagation(); // Prevent potential parent listeners
-                            showMermaidModal(svgElement.outerHTML, elements);
-                        }
-                    });
+                // Check cache if messageId is provided
+                const cacheKey = messageId ? `${messageId}-${index}` : null;
+                
+                try {
+                     // Optimization: If container already has SVG and definition matches cache, skip re-render
+                     // This prevents flicker if the logic is called repeatedly on the same content
+                     if (cacheKey && mermaidCache.has(cacheKey)) {
+                         const cached = mermaidCache.get(cacheKey);
+                         if (cached.definition === definition && container.querySelector('svg')) {
+                             // Already up to date, just ensure listeners are attached
+                             attachMermaidListeners(container, elements);
+                             return; 
+                         }
+                     }
+
+                    const { svg } = await mermaid.render(`mermaid-${Date.now()}-${index}`, definition);
+                    container.innerHTML = svg;
+                    container.dataset.rendered = "true"; // Mark as successfully rendered
+                    
+                    // Update Cache
+                    if (cacheKey) {
+                        mermaidCache.set(cacheKey, {
+                            definition: definition,
+                            svg: svg,
+                            timestamp: Date.now()
+                        });
+                    }
+
+                    attachMermaidListeners(container, elements);
 
                 } catch (error) {
-                    console.error(`Error rendering Mermaid chart ${index + 1} (ID: ${renderId}):`, error, 'Definition:', definition);
-                    container.innerHTML = `<div class="mermaid-error">Mermaid Render Error: ${escapeHtml(error.message)}</div>`;
+                    console.error(`Mermaid render error:`, error);
+                    
+                    // IF we have a cached version for this specific block, revert to it (or keep it if it's currently showing)
+                    if (cacheKey && mermaidCache.has(cacheKey)) {
+                        const cached = mermaidCache.get(cacheKey);
+                        console.log('Restoring cached mermaid due to syntax error in stream...');
+                         // Keep the old definition in dataset so we know what we are trying to render, 
+                         // but visually show the valid SVG
+                        if (container.innerHTML === '' || !container.querySelector('svg')) {
+                            container.innerHTML = cached.svg;
+                        }
+                        // Do NOT update custom error message, effectively "freezing" the last valid state
+                    } else {
+                        // No cache, show error (only if this is NOT a streaming intermediate state? 
+                        // Hard to know for sure, but showing error is better than empty)
+                        
+                        // For better UX during typing, maybe we show error only if it persists?
+                        // But for now, standard error behavior:
+                        container.innerHTML = `<div class="mermaid-error">Mermaid Render Error: ${escapeHtml(error.message)}</div>`;
+                    }
                 }
             });
         }
@@ -81,6 +135,74 @@ export function renderDynamicContent(element, elements) {
         // console.warn('Mermaid library not found during renderDynamicContent.');
     }
 }
+
+/**
+ * Pre-processes HTML content to inject cached Mermaid SVGs.
+ * This MUST be called before setting innerHTML to prevent flashing.
+ * @param {string} html - The raw HTML string (from markdown render).
+ * @param {string} messageId - The ID of the message.
+ * @returns {string} - The HTML with <pre> replaced by cached <div>.
+ */
+export function preProcessMermaidHTML(html, messageId) {
+    if (!messageId || !mermaidCache.size) return html;
+
+    // Regex to find <pre class="mermaid">...</pre> keys
+    // We need to match efficiently. Since markdown-it renders as <pre class="mermaid">code</pre>,
+    // we can iterate through the matches.
+    const mermaidRegex = /<pre class="mermaid">([\s\S]*?)<\/pre>/g;
+    
+    let match;
+    let index = 0;
+    
+    // We need to replace content. Using replace with callback ensures we handle global matches correctly.
+    return html.replace(mermaidRegex, (match, definition) => {
+        const cacheKey = `${messageId}-${index}`;
+        index++; // Increment index for the next match
+
+        if (mermaidCache.has(cacheKey)) {
+            const cached = mermaidCache.get(cacheKey);
+            // Verify if the *new* definition roughly matches or if we just fundamentally 
+            // want to show the old valid one while the new one is invalid.
+            // Actually, we ALWAYS want to show the old valid one immediately 
+            // to prevent the "Text -> SVG" jump.
+            // The async render will update it to the new version (or keep it if invalid).
+            
+            // We use the NEW definition in dataset, but OLD SVG in innerHTML.
+            return `<div class="mermaid" data-mermaid-definition="${escapeHtml(definition)}" data-rendered="true">${cached.svg}</div>`;
+        }
+        
+        // No cache, return original
+        return match;
+    });
+}
+
+function attachMermaidListeners(container, elements) {
+    // Helper to reduce duplication
+    // Remove old listeners to be safe (cloning node is cheaper but we have references)
+    // Simple approach: just add new one, assuming old one is gone because we re-created innerHTML 
+    // OR we are re-attaching to existing DOM. 
+    
+    // Actually, container.innerHTML = svg trashes internal listeners on SVG, 
+    // but the click listener is on the CONTAINER.
+    // So we might be adding multiple listeners if we are not careful.
+    
+    // Let's use a flag or remove property
+    container.onclick = null; // Clear old "on" property if used, but we used addEventListener
+    
+    // Best way: Clone and replace to strip listeners? No, that kills state.
+    // Just set a custom property?
+    if (container.dataset.hasListener === 'true') return;
+
+    container.addEventListener('click', (event) => {
+        const svgElement = container.querySelector('svg');
+        if (svgElement) {
+            event.stopPropagation(); 
+            showMermaidModal(svgElement.outerHTML, elements);
+        }
+    });
+    container.dataset.hasListener = 'true';
+}
+
 
 /**
  * 重新渲染页面上所有已存在的 Mermaid 图表

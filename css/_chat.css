@@ -2638,3 +2638,57 @@ body.dark-mode .tab-selection-actions .tab-action.cancel {
     background: rgba(239, 68, 68, 0.22);
     color: rgba(255, 180, 180, 1);
 }
+
+/* ============================================
+   Mermaid Streaming Refinements
+   ============================================ */
+
+/* 
+   During streaming, disable pointer events and transitions on the message bubble 
+   to prevent "hover bounce" (repeated zooming/shifting due to rapid DOM updates).
+*/
+.message.streaming {
+    pointer-events: none !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+/* 
+   Ensure Mermaid container takes full width.
+   This prevents the diagram from being squeezed into a narrow column 
+   during streaming before it's fully rendered/sized by the library.
+   
+   min-width ensures that even if the bubble is narrow, the mermaid
+   container is wide enough for reasonable rendering.
+*/
+.mermaid {
+    width: 100%;
+    min-width: 300px;
+    overflow-x: auto;
+    /* Hide scrollbars to prevent flicker, but keep scroll functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.mermaid::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+/* 
+   Make the SVG responsive - scale with container width.
+*/
+.mermaid svg {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* 
+   Force the message bubble to take full width if it contains a mermaid diagram.
+   This ensures the diagram has maximum space to render correctly from the start,
+   avoiding the "small diagram" issue during streaming.
+*/
+.bot-message:has(.mermaid) {
+    width: 100%;
+}
