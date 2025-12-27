@@ -73,6 +73,7 @@ const state = {
     images: [],
     videos: [],
     darkMode: false,
+    hasWebpageTheme: false,
     language: 'en', // Changed default language to English
     proxyAddress: '', // 代理地址
     isStreaming: false,
@@ -84,6 +85,32 @@ const state = {
     locallyIgnoredTabs: {}, // 新增: 跟踪用户从特定消息上下文中移除的标签页 { messageId: [tabId1, tabId2] }
     quickActionIgnoreAssistant: false, // 新增：快捷操作忽略助手标记
 };
+
+const THEME_READY_TIMEOUT_MS = 800;
+let themeReadyTimeoutId = null;
+
+function startThemeReadyTimeout() {
+    if (!document.body || !document.body.classList.contains('theme-pending')) {
+        return;
+    }
+    if (themeReadyTimeoutId) {
+        clearTimeout(themeReadyTimeoutId);
+    }
+    themeReadyTimeoutId = setTimeout(() => {
+        console.warn('[main.js] Theme detection timed out, showing panel with current theme');
+        markThemeReady();
+    }, THEME_READY_TIMEOUT_MS);
+}
+
+function markThemeReady() {
+    if (themeReadyTimeoutId) {
+        clearTimeout(themeReadyTimeoutId);
+        themeReadyTimeoutId = null;
+    }
+    if (document.body && document.body.classList.contains('theme-pending')) {
+        document.body.classList.remove('theme-pending');
+    }
+}
 
 // Default settings (used by agent module)
 const defaultSettings = {
@@ -201,7 +228,8 @@ const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 async function init() {
     console.log("Pagetalk Initializing...");
 
-    // Request theme early
+    // Listen for content script messages early to avoid missing initial theme updates.
+    window.addEventListener('message', handleContentScriptMessages);
     requestThemeFromContentScript();
 
     // Initialize ModelManager first
@@ -570,9 +598,6 @@ function setupEventListeners() {
         // No modals open – allow Escape to close the panel
         closePanel();
     });
-
-    // Window Messages (from content script)
-    window.addEventListener('message', handleContentScriptMessages);
 
     // Scroll Tracking
     if (elements.chatMessages) {
@@ -1238,6 +1263,7 @@ function handleContentScriptMessages(event) {
             // console.log('Copy successful (message from content script)');
             break;
         case 'panelShownAndFocusInput': // 修改：处理新的 action
+            startThemeReadyTimeout();
             // 首先确保聊天标签页是当前活动的标签页
             // 强制切换到聊天标签页并聚焦输入框
             switchTab('chat', elements, (subTab) => switchSettingsSubTab(subTab, elements)); // 确保聊天标签页被激活
@@ -1255,11 +1281,14 @@ function handleContentScriptMessages(event) {
             if (message.theme === 'dark' || message.theme === 'light') {
                 const isWebpageDark = message.theme === 'dark';
                 console.log(`Applying webpage theme: ${message.theme}`);
+                state.hasWebpageTheme = true;
                 state.darkMode = isWebpageDark;
                 applyTheme(isWebpageDark, elements);
                 updateMermaidTheme(isWebpageDark, rerenderAllMermaidChartsUI);
+                markThemeReady();
             } else {
                 console.log(`Ignoring non-explicit webpage theme: ${message.theme}`);
+                markThemeReady();
             }
             break;
         case 'languageChanged':
@@ -1318,6 +1347,7 @@ function requestThemeFromContentScript() {
         state.darkMode = prefersDark;
         applyTheme(state.darkMode, elements);
         updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+        markThemeReady();
         return;
     }
 
@@ -1330,6 +1360,7 @@ function requestThemeFromContentScript() {
                 state.darkMode = prefersDark;
                 applyTheme(state.darkMode, elements);
                 updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+                markThemeReady();
                 return;
             }
 
@@ -1343,6 +1374,7 @@ function requestThemeFromContentScript() {
                         state.darkMode = prefersDark;
                         applyTheme(state.darkMode, elements);
                         updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+                        markThemeReady();
                     } else {
                         // Theme will be applied via 'webpageThemeDetected' message handler
                         // console.log("Theme request sent to content script.");
@@ -1355,6 +1387,7 @@ function requestThemeFromContentScript() {
                 state.darkMode = prefersDark;
                 applyTheme(state.darkMode, elements);
                 updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+                markThemeReady();
             }
         });
     } catch (e) {
@@ -1369,11 +1402,19 @@ function requestThemeFromContentScript() {
             state.darkMode = prefersDark;
             applyTheme(state.darkMode, elements);
             updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+            markThemeReady();
         }
     }
 }
 
 function closePanel() {
+    if (themeReadyTimeoutId) {
+        clearTimeout(themeReadyTimeoutId);
+        themeReadyTimeoutId = null;
+    }
+    if (document.body) {
+        document.body.classList.add('theme-pending');
+    }
     window.parent.postMessage({ action: 'closePanel' }, '*');
 }
 

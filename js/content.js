@@ -1115,6 +1115,101 @@ function dedupeMarkdownParagraphs(md) {
 
 
 // --- 主题检测与发送 ---
+function parseCssColor(color) {
+  if (!color) return null;
+  const normalized = color.trim().toLowerCase();
+  if (normalized === 'transparent') {
+    return { r: 0, g: 0, b: 0, a: 0 };
+  }
+  const rgbaMatch = normalized.match(/^rgba?\(([^)]+)\)$/);
+  if (rgbaMatch) {
+    const parts = rgbaMatch[1].split(',').map(part => part.trim());
+    if (parts.length < 3) return null;
+    const r = Number(parts[0]);
+    const g = Number(parts[1]);
+    const b = Number(parts[2]);
+    const a = parts.length >= 4 ? Number(parts[3]) : 1;
+    if ([r, g, b, a].some(val => Number.isNaN(val))) return null;
+    return { r, g, b, a };
+  }
+  const hexMatch = normalized.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hexMatch) {
+    const hex = hexMatch[1];
+    const value = hex.length === 3
+      ? hex.split('').map(ch => ch + ch).join('')
+      : hex;
+    const r = parseInt(value.slice(0, 2), 16);
+    const g = parseInt(value.slice(2, 4), 16);
+    const b = parseInt(value.slice(4, 6), 16);
+    return { r, g, b, a: 1 };
+  }
+  return null;
+}
+
+function getRelativeLuminance({ r, g, b }) {
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
+
+function getOpaqueBackgroundColor(element) {
+  if (!element) return null;
+  const style = getComputedStyle(element);
+  const color = parseCssColor(style.backgroundColor);
+  if (!color || color.a < 0.1) return null;
+  return color;
+}
+
+function detectThemeFromColorScheme() {
+  const rootScheme = getComputedStyle(document.documentElement).colorScheme || '';
+  const bodyScheme = document.body ? (getComputedStyle(document.body).colorScheme || '') : '';
+  const combined = `${rootScheme} ${bodyScheme}`.trim().toLowerCase();
+  if (!combined || combined.includes('normal')) return null;
+  const hasLight = combined.includes('light');
+  const hasDark = combined.includes('dark');
+  if (hasLight && !hasDark) return 'light';
+  if (hasDark && !hasLight) return 'dark';
+  return null;
+}
+
+function getBackgroundColorAtPoint(x, y) {
+  let element = document.elementFromPoint(x, y);
+  while (element) {
+    const color = getOpaqueBackgroundColor(element);
+    if (color) return color;
+    element = element.parentElement;
+  }
+  return getOpaqueBackgroundColor(document.body) || getOpaqueBackgroundColor(document.documentElement);
+}
+
+function detectThemeFromSampledBackground() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  if (!width || !height) return null;
+
+  const gridSize = 4;
+  const samples = [];
+  for (let row = 1; row <= gridSize; row += 1) {
+    for (let col = 1; col <= gridSize; col += 1) {
+      const x = Math.round((col * width) / (gridSize + 1));
+      const y = Math.round((row * height) / (gridSize + 1));
+      const color = getBackgroundColorAtPoint(x, y);
+      if (!color) continue;
+      samples.push(getRelativeLuminance(color));
+    }
+  }
+
+  if (samples.length < 6) return null;
+
+  const darkSamples = samples.filter(lum => lum < 0.45).length;
+  const lightSamples = samples.filter(lum => lum > 0.55).length;
+  const average = samples.reduce((sum, lum) => sum + lum, 0) / samples.length;
+
+  if (darkSamples / samples.length >= 0.6) return 'dark';
+  if (lightSamples / samples.length >= 0.6) return 'light';
+  if (average <= 0.45) return 'dark';
+  if (average >= 0.55) return 'light';
+  return null;
+}
+
 /**
  * 检测网页当前的显式或系统颜色模式偏好，并发送给侧边栏 iframe
  */
@@ -1168,7 +1263,25 @@ function detectAndSendTheme() {
     }
   }
 
-  // 4. 如果 HTML 标记和类名都未明确指定，最后回退到 prefers-color-scheme
+  // 4. 如果仍未明确指定，检查 color-scheme 提示
+  if (detectedTheme === 'system') {
+    const schemeTheme = detectThemeFromColorScheme();
+    if (schemeTheme) {
+      detectedTheme = schemeTheme;
+      console.log(`[PageTalk content.js] Detected theme via color-scheme: ${detectedTheme}`);
+    }
+  }
+
+  // 5. 如果仍未明确指定，采样页面背景亮度做启发式判断
+  if (detectedTheme === 'system') {
+    const sampledTheme = detectThemeFromSampledBackground();
+    if (sampledTheme) {
+      detectedTheme = sampledTheme;
+      console.log(`[PageTalk content.js] Detected theme via sampled background: ${detectedTheme}`);
+    }
+  }
+
+  // 6. 如果仍未明确指定，最后回退到 prefers-color-scheme
   if (detectedTheme === 'system') {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     // 只有在系统偏好明确时才覆盖 'system'

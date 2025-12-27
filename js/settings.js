@@ -121,9 +121,11 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         }
         if (elements.proxyAddressInput) elements.proxyAddressInput.value = state.proxyAddress;
 
-        // Theme (Load default, content script might override)
-        state.darkMode = false; // Default to light
-        applyThemeCallback(state.darkMode); // Apply default
+        // Theme (Load default unless content script already applied a webpage theme)
+        if (!state.hasWebpageTheme) {
+            state.darkMode = false; // Default to light
+            applyThemeCallback(state.darkMode); // Apply default
+        }
 
         // Connection Status (检查是否有任何供应商配置了 API Key)
         state.isConnected = await checkAnyProviderConnected();
