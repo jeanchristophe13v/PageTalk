@@ -5,6 +5,22 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.9.2',
+        date: '2025-12-28',
+        changes: {
+            'zh-CN': [
+                '修复颜色模式切换时的闪烁',
+                '增加渐变流式输出样式',
+                '支持LaTeX和Mermaid的流式输出'
+            ],
+            'en': [
+                'Fixed flashing when switching color modes',
+                'Added gradient streaming output style',
+                'Support streaming output for LaTeX and Mermaid'
+            ]
+        }
+    },
+    {
         version: '3.9.0',
         date: '2025-12-19',
         changes: {
