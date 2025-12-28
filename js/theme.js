@@ -9,13 +9,16 @@
  */
 export function applyTheme(isDarkMode, elements) {
     const body = document.body;
+    const root = document.documentElement;
     if (isDarkMode) {
+        root.classList.add('dark-mode');
         body.classList.add('dark-mode');
         body.classList.add('hljs-theme-dark');
         body.classList.remove('hljs-theme-light');
         if (elements.moonIconSettings) elements.moonIconSettings.style.display = 'none';
         if (elements.sunIconSettings) elements.sunIconSettings.style.display = 'inline-block';
     } else {
+        root.classList.remove('dark-mode');
         body.classList.remove('dark-mode');
         body.classList.add('hljs-theme-light');
         body.classList.remove('hljs-theme-dark');
@@ -183,17 +186,17 @@ export function loadButtonPosition(elements) {
  * @param {object} elements - DOM elements reference
  */
 function setDefaultButtonPosition(elements) {
-     const button = elements.themeToggleBtnSettings;
-     if (!button) {
-         console.warn("Theme toggle button element not found during setDefaultButtonPosition.");
-         return;
-     }
-     // console.log("Setting default button position.");
-     button.style.position = 'absolute';
-     button.style.top = 'auto';
-     button.style.left = 'auto';
-     button.style.bottom = '80px'; // Default bottom
-     button.style.right = 'var(--spacing-lg)'; // Default right
+    const button = elements.themeToggleBtnSettings;
+    if (!button) {
+        console.warn("Theme toggle button element not found during setDefaultButtonPosition.");
+        return;
+    }
+    // console.log("Setting default button position.");
+    button.style.position = 'absolute';
+    button.style.top = 'auto';
+    button.style.left = 'auto';
+    button.style.bottom = '80px'; // Default bottom
+    button.style.right = 'var(--spacing-lg)'; // Default right
 }
 
 /**

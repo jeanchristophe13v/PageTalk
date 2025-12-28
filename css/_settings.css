@@ -1,9 +1,12 @@
 /* 包含 Pagetalk 插件设置界面的所有样式，包括通用设置、Agent 管理、模型配置、表单元素、滑块、按钮、提示框等。 */
 
 :root {
-    --toast-bottom-base: 120px; /* 常规提示的基础底部位置 */
-    --toast-bottom-error: 120px; /* 错误提示的特殊底部位置 */
-    --toast-visual-offset-y: -10px; /* toast.show 状态下的向上视觉偏移 */
+    --toast-bottom-base: 120px;
+    /* 常规提示的基础底部位置 */
+    --toast-bottom-error: 120px;
+    /* 错误提示的特殊底部位置 */
+    --toast-visual-offset-y: -10px;
+    /* toast.show 状态下的向上视觉偏移 */
 }
 
 /* 设置界面样式 */
@@ -111,6 +114,7 @@
     transform: scale(1);
     box-shadow: 0 2px 8px rgba(76, 110, 245, 0.15);
 }
+
 /* Push close button to the right */
 #close-panel-settings {
     margin-left: auto;
@@ -139,13 +143,15 @@
 #settings-model.active {
     display: flex !important;
     flex-direction: column;
-    gap: 0; /* 移除gap，使用各组件自己的margin控制间距 */
+    gap: 0;
+    /* 移除gap，使用各组件自己的margin控制间距 */
 }
 
 @keyframes settingsContentFadeIn {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -157,32 +163,40 @@
     padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border-color);
 }
+
 #settings-general .setting-group:last-of-type {
     border-bottom: none;
     padding-bottom: 0;
 }
-.theme-setting { /* For theme toggle within general settings if ever moved back */
+
+.theme-setting {
+    /* For theme toggle within general settings if ever moved back */
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
 }
+
 .theme-setting label {
-    margin-bottom: 0; 
+    margin-bottom: 0;
 }
 
 .export-setting label {
-    margin-bottom: var(--spacing-sm); 
+    margin-bottom: var(--spacing-sm);
 }
+
 .export-controls {
     display: flex;
     align-items: center;
     gap: var(--spacing-md);
 }
+
 .export-controls select {
-    flex: 1; 
-    max-width: 150px; 
+    flex: 1;
+    max-width: 150px;
 }
-.export-controls .action-button { /* 导出按钮使用测试按钮的形状样式 */
+
+.export-controls .action-button {
+    /* 导出按钮使用测试按钮的形状样式 */
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -198,6 +212,7 @@
     align-items: center;
     justify-content: center;
 }
+
 .export-controls .action-button:hover {
     background-color: var(--secondary-color);
     color: white;
@@ -514,8 +529,10 @@ body.dark-mode .setting-action-btn:hover {
 
 /* 设置组 (通用表单元素容器) */
 .setting-group {
-    margin-bottom: var(--spacing-md); /* 更紧凑间距 */
+    margin-bottom: var(--spacing-md);
+    /* 更紧凑间距 */
 }
+
 .setting-group label {
     display: block;
     margin-bottom: var(--spacing-sm);
@@ -524,6 +541,7 @@ body.dark-mode .setting-action-btn:hover {
     color: var(--text-color);
     letter-spacing: -0.01em;
 }
+
 .setting-group input[type="text"],
 .setting-group input[type="password"],
 .setting-group input[type="number"],
@@ -547,8 +565,10 @@ body.dark-mode .setting-action-btn:hover {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     font-size: 13px;
-    font-weight: normal; /* 修改为正常字重，不加粗 */
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; /* 添加字体族 */
+    font-weight: normal;
+    /* 修改为正常字重，不加粗 */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* 添加字体族 */
     outline: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--input-background);
@@ -572,7 +592,7 @@ body.dark-mode .setting-action-btn:hover {
 }
 
 .proxy-input-container #proxy-address-input {
-    flex: 0.5; 
+    flex: 0.5;
     width: 50% !important;
 }
 
@@ -612,10 +632,13 @@ body.dark-mode .setting-action-btn:hover {
 }
 
 /* 代理地址提示文本样式 */
-.proxy-input-container + .hint {
-    padding-left: var(--spacing-xs); /* 减少左边距，让文本往左一点 */
-    font-style: italic; /* 变成斜体 */
+.proxy-input-container+.hint {
+    padding-left: var(--spacing-xs);
+    /* 减少左边距，让文本往左一点 */
+    font-style: italic;
+    /* 变成斜体 */
 }
+
 .setting-group input:focus,
 .setting-group textarea:focus {
     border-color: var(--primary-color);
@@ -637,11 +660,13 @@ body.dark-mode .setting-action-btn:hover {
     border-color: rgba(49, 123, 245, 0.4);
     background-color: rgba(76, 110, 245, 0.02);
 }
+
 .setting-group textarea {
     min-height: 100px;
     resize: vertical;
     line-height: 1.5;
 }
+
 .hint {
     font-size: 12px;
     color: var(--text-secondary);
@@ -649,11 +674,13 @@ body.dark-mode .setting-action-btn:hover {
     padding-left: var(--spacing-sm);
     line-height: 1.4;
 }
+
 .hint a {
     color: var(--primary-color);
     text-decoration: none;
     font-weight: 500;
 }
+
 .hint a:hover {
     text-decoration: underline;
 }
@@ -666,6 +693,7 @@ body.dark-mode .setting-action-btn:hover {
     gap: var(--spacing-md);
     margin: var(--spacing-sm) 0;
 }
+
 .slider-container input[type="range"] {
     flex: 1;
     height: 4px;
@@ -675,28 +703,33 @@ body.dark-mode .setting-action-btn:hover {
     border-radius: var(--radius-full);
     outline: none;
     position: relative;
-    margin: 10px 0; 
+    margin: 10px 0;
 }
+
 .slider-container input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background-color: var(--card-background); /* Use variable */
+    background-color: var(--card-background);
+    /* Use variable */
     border: 2px solid var(--primary-color);
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-    margin-top: -6px; 
+    margin-top: -6px;
 }
+
 .slider-container input[type="range"]::-webkit-slider-thumb:hover,
 .slider-container input[type="range"]:active::-webkit-slider-thumb {
     transform: scale(1.2);
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
-.slider-container span { /* Slider value display */
+
+.slider-container span {
+    /* Slider value display */
     min-width: 30px;
     text-align: center;
     font-weight: 600;
@@ -711,6 +744,7 @@ body.dark-mode .setting-action-btn:hover {
     gap: var(--spacing-md);
     margin-top: var(--spacing-sm);
 }
+
 .checkbox-group input[type="checkbox"] {
     width: clamp(16px, 4.5vw, 18px);
     height: clamp(16px, 4.5vw, 18px);
@@ -755,7 +789,8 @@ body.dark-mode .setting-action-btn:hover {
     background: var(--primary-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(76, 110, 245, 0.3);
-    color: white; /* 确保悬浮时文字保持白色 */
+    color: white;
+    /* 确保悬浮时文字保持白色 */
 }
 
 .add-provider-btn svg {
@@ -794,7 +829,8 @@ body.dark-mode .setting-action-btn:hover {
 .provider-header {
     display: flex;
     align-items: center;
-    flex-wrap: wrap; /* 窄宽度时换行，避免右侧溢出 */
+    flex-wrap: wrap;
+    /* 窄宽度时换行，避免右侧溢出 */
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-sm);
@@ -806,7 +842,8 @@ body.dark-mode .setting-action-btn:hover {
     -webkit-appearance: none;
     appearance: none;
     background-color: var(--input-background);
-    border: 1px solid #4774ff8f; /* 设置统一边框颜色 */
+    border: 1px solid #4774ff8f;
+    /* 设置统一边框颜色 */
     border-radius: var(--radius-lg);
     padding: 6px 28px 6px 10px;
     min-height: 30px;
@@ -836,7 +873,8 @@ body.dark-mode .setting-action-btn:hover {
 /* 深色模式下的下拉箭头颜色与边框 */
 body.dark-mode .provider-selection-container .provider-select {
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 20 20" fill="%239aa3ad"><path d="M5.5 7l4.5 6 4.5-6z"/></svg>');
-    border-color: #4774ff8f; /* 深色模式下同样使用统一边框颜色 */
+    border-color: #4774ff8f;
+    /* 深色模式下同样使用统一边框颜色 */
 }
 
 .provider-icon {
@@ -890,7 +928,7 @@ body.dark-mode .provider-selection-container .provider-select {
     height: 14px;
 }
 
-.provider-header > .edit-custom-provider-btn:first-of-type {
+.provider-header>.edit-custom-provider-btn:first-of-type {
     margin-left: auto;
 }
 
@@ -961,7 +999,8 @@ body.dark-mode .provider-selection-container .provider-select {
 .model-selection-section select {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 14px;
-    font-weight: normal; /* 确保不是加粗 */
+    font-weight: normal;
+    /* 确保不是加粗 */
 }
 
 .model-selection-section select optgroup {
@@ -1037,6 +1076,7 @@ body.dark-mode .provider-selection-container .provider-select {
         opacity: 0;
         transform: translateY(-20px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -1187,6 +1227,7 @@ body.dark-mode .provider-selection-container .provider-select {
     margin-bottom: var(--spacing-sm);
     padding-bottom: 0;
 }
+
 .model-settings-group-box .setting-group:last-child {
     margin-bottom: 0;
 }
@@ -1355,17 +1396,22 @@ body.dark-mode .provider-selection-container .provider-select {
     align-items: center;
     justify-content: center;
     gap: var(--spacing-xs);
-    padding: var(--spacing-xs) var(--spacing-sm); /* 与其它按钮统一 */
-    background-color: #32a45cd4; /* 颜色保持不变 */
-    border: 1px solid #16a34a; /* 边框保持 */
+    padding: var(--spacing-xs) var(--spacing-sm);
+    /* 与其它按钮统一 */
+    background-color: #32a45cd4;
+    /* 颜色保持不变 */
+    border: 1px solid #16a34a;
+    /* 边框保持 */
     border-radius: var(--radius-lg);
     color: white;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    height: 32px; /* 统一高度 */
-    min-width: 60px; /* 与其它按钮最小宽度一致 */
+    height: 32px;
+    /* 统一高度 */
+    min-width: 60px;
+    /* 与其它按钮最小宽度一致 */
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -1556,13 +1602,16 @@ body.dark-mode .provider-selection-container .provider-select {
     /* 保存区域放在最后 */
     order: 5;
 }
+
 .model-save-area .connection-status {
-     position: relative;
-     width: auto;
-     text-align: right;
-     z-index: 1;
+    position: relative;
+    width: auto;
+    text-align: right;
+    z-index: 1;
 }
-.test-btn { /* General test button style */
+
+.test-btn {
+    /* General test button style */
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -1591,8 +1640,10 @@ body.dark-mode .provider-selection-container .provider-select {
 }
 
 .test-btn:hover {
-    transform: scale(1.02); /* 移除 translateY，只保留缩放 */
-    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2); /* 减少阴影强度 */
+    transform: scale(1.02);
+    /* 移除 translateY，只保留缩放 */
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.2);
+    /* 减少阴影强度 */
 }
 
 .test-btn:hover::before {
@@ -1604,13 +1655,18 @@ body.dark-mode .provider-selection-container .provider-select {
     transform: scale(0.98);
     box-shadow: 0 1px 3px rgba(76, 110, 245, 0.2);
 }
-.test-btn { /* Specific for test button, often beside save */
-     background-color: var(--warning-color);
-     margin-right: var(--spacing-md);
+
+.test-btn {
+    /* Specific for test button, often beside save */
+    background-color: var(--warning-color);
+    margin-right: var(--spacing-md);
 }
+
 .test-btn:hover {
-     background-color: #ffc107; /* Lighter warning color on hover */
-     box-shadow: 0 2px 8px rgba(230, 119, 0, 0.2); /* Warning color shadow */
+    background-color: #ffc107;
+    /* Lighter warning color on hover */
+    box-shadow: 0 2px 8px rgba(230, 119, 0, 0.2);
+    /* Warning color shadow */
 }
 
 /* 连接状态提示 (模型设置页) */
@@ -1624,6 +1680,7 @@ body.dark-mode .provider-selection-container .provider-select {
     transform: translateY(10px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .connection-status.success {
     display: block;
     opacity: 1;
@@ -1633,6 +1690,7 @@ body.dark-mode .provider-selection-container .provider-select {
     border: 1px solid rgba(52, 168, 83, 0.3);
     box-shadow: 0 2px 8px rgba(52, 168, 83, 0.1);
 }
+
 .connection-status.error {
     display: block;
     opacity: 1;
@@ -1697,18 +1755,26 @@ body.dark-mode .provider-selection-container .provider-select {
     font-size: clamp(11px, 2.5vw, 12px);
     font-weight: 500;
     transition: all 0.2s ease;
-    min-width: 50px; /* 缩小最小宽度 */
+    min-width: 50px;
+    /* 缩小最小宽度 */
     text-align: center;
-    display: flex; /* 使文本居中 */
-    justify-content: center; /* 使文本居中 */
-    align-items: center; /* 使文本居中 */
-    height: 28px; /* 调整高度与导入导出按钮一致 */
-    box-sizing: border-box; /* 确保padding和border包含在height内 */
-    cursor: pointer; /* 添加鼠标指针样式 */
+    display: flex;
+    /* 使文本居中 */
+    justify-content: center;
+    /* 使文本居中 */
+    align-items: center;
+    /* 使文本居中 */
+    height: 28px;
+    /* 调整高度与导入导出按钮一致 */
+    box-sizing: border-box;
+    /* 确保padding和border包含在height内 */
+    cursor: pointer;
+    /* 添加鼠标指针样式 */
 }
 
 .agent-action-button:hover {
-    background-color: var(--secondary-color); /* 悬停时使用 secondary-color */
+    background-color: var(--secondary-color);
+    /* 悬停时使用 secondary-color */
     color: white;
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(49, 123, 245, 0.3);
@@ -1720,15 +1786,20 @@ body.dark-mode .provider-selection-container .provider-select {
 
 /* 添加按钮的特定样式 */
 .add-agent-button {
-    background-color: var(--success-color); /* 绿色 */
+    background-color: var(--success-color);
+    /* 绿色 */
     min-width: 50px;
-    height: 29px; /* 确保高度一致 */
-    border: none; /* 移除黑色边框 */
+    height: 29px;
+    /* 确保高度一致 */
+    border: none;
+    /* 移除黑色边框 */
 }
 
 .add-agent-button:hover {
-    background-color: #45a049; /* 更好看的绿色悬停效果 */
-    box-shadow: 0 3px 8px rgba(69, 160, 73, 0.25); /* 调整阴影颜色和强度 */
+    background-color: #45a049;
+    /* 更好看的绿色悬停效果 */
+    box-shadow: 0 3px 8px rgba(69, 160, 73, 0.25);
+    /* 调整阴影颜色和强度 */
 }
 
 /* 助手列表容器 - 最终优化版 */
@@ -1772,8 +1843,10 @@ body.dark-mode .provider-selection-container .provider-select {
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    width: calc(100% - 4px); /* 为阴影预留 2px 左右空间 */
-    margin: 2px; /* 为上下阴影预留空间 */
+    width: calc(100% - 4px);
+    /* 为阴影预留 2px 左右空间 */
+    margin: 2px;
+    /* 为上下阴影预留空间 */
     transform: scale(1);
     opacity: 1;
 }
@@ -1784,6 +1857,7 @@ body.dark-mode .provider-selection-container .provider-select {
     transform: translateY(-1px) scale(1.005);
     z-index: 1;
 }
+
 .agent-item-header {
     display: flex;
     align-items: center;
@@ -1793,57 +1867,70 @@ body.dark-mode .provider-selection-container .provider-select {
     transition: background-color 0.2s ease;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
+
 .agent-item-header:hover {
-    background-color: var(--button-hover-bg); /* Primary color transparent hover */
+    background-color: var(--button-hover-bg);
+    /* Primary color transparent hover */
 }
-.agent-item-name { 
+
+.agent-item-name {
     font-weight: 500;
     color: var(--text-color);
     font-size: clamp(12px, 3vw, 13px);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex-grow: 1; 
-    margin-right: var(--spacing-sm); 
+    flex-grow: 1;
+    margin-right: var(--spacing-sm);
 }
+
 .expand-icon {
     flex-shrink: 0;
-    margin-left: auto; 
+    margin-left: auto;
     margin-right: var(--spacing-sm);
     color: var(--text-secondary);
     transition: transform 0.3s ease;
-    display: flex; 
+    display: flex;
     align-items: center;
 }
+
 .agent-item.expanded .expand-icon {
     transform: rotate(90deg);
 }
+
 .agent-item-actions {
     display: flex;
     gap: var(--spacing-xs);
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
-.agent-item-actions .delete-btn { /* Specific styles for delete button in agent item */
-     width: clamp(22px, 6.5vw, 26px);
-     height: clamp(22px, 6.5vw, 26px);
-     border-radius: var(--radius-full);
-     border: none;
-     background-color: transparent;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     cursor: pointer;
-     transition: all 0.2s ease;
-     color: var(--text-secondary);
-     opacity: 0.7; /* Slightly transparent by default */
-     padding: 0; 
+
+.agent-item-actions .delete-btn {
+    /* Specific styles for delete button in agent item */
+    width: clamp(22px, 6.5vw, 26px);
+    height: clamp(22px, 6.5vw, 26px);
+    border-radius: var(--radius-full);
+    border: none;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    /* Slightly transparent by default */
+    padding: 0;
 }
+
 .agent-item-actions .delete-btn:hover {
-     opacity: 1;
-     color: var(--error-color);
-     background-color: rgba(234, 67, 53, 0.1); /* Error color transparent hover */
+    opacity: 1;
+    color: var(--error-color);
+    background-color: rgba(234, 67, 53, 0.1);
+    /* Error color transparent hover */
 }
-.agent-item-header:hover .agent-item-actions .delete-btn { /* Make fully visible on header hover */
+
+.agent-item-header:hover .agent-item-actions .delete-btn {
+    /* Make fully visible on header hover */
     opacity: 1;
 }
 
@@ -1853,52 +1940,66 @@ body.dark-mode .provider-selection-container .provider-select {
     overflow: hidden;
     padding: 0 var(--spacing-lg);
     border-top: 1px solid transparent;
-    background-color: #fdfdfd; /* Slightly different background from card to differentiate */
+    background-color: #fdfdfd;
+    /* Slightly different background from card to differentiate */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0;
 }
+
 .agent-item.expanded .agent-item-body {
-    max-height: 800px; /* 足够大的高度 */
+    max-height: 800px;
+    /* 足够大的高度 */
     padding: var(--spacing-md) var(--spacing-lg);
     border-top-color: var(--border-color);
     opacity: 1;
 }
+
 .agent-item-body .setting-group {
-    margin-bottom: var(--spacing-md); 
-    padding-bottom: var(--spacing-md); /* Add padding for visual separation if no border */
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    /* Add padding for visual separation if no border */
     /* border-bottom: 1px solid var(--border-color); /* Optional: line between groups inside body */
 }
+
 .agent-item-body .setting-group:last-child {
     margin-bottom: 0;
     padding-bottom: 0;
     border-bottom: none;
 }
+
 .agent-item-body .setting-group label {
-    margin-bottom: var(--spacing-xs); 
+    margin-bottom: var(--spacing-xs);
 }
+
 .agent-item-body .setting-group input[type="text"],
 .agent-item-body .setting-group input[type="number"],
 .agent-item-body .setting-group textarea {
     padding: var(--spacing-sm) var(--spacing-md);
     font-size: 13px;
-    border-radius: var(--radius-lg); 
-    border-color: var(--border-color); /* Ensure correct border in light mode */
+    border-radius: var(--radius-lg);
+    border-color: var(--border-color);
+    /* Ensure correct border in light mode */
 }
+
 .agent-item-body .setting-group textarea {
-    min-height: 120px; 
+    min-height: 120px;
 }
+
 .agent-item-body .slider-container {
-    gap: var(--spacing-sm); 
+    gap: var(--spacing-sm);
 }
+
 .agent-item-body .slider-container input[type="range"] {
-    background: var(--border-color); /* Correct slider track in light mode */
+    background: var(--border-color);
+    /* Correct slider track in light mode */
 }
 
 
 /* 删除确认对话框样式 - 现在使用统一的 _chat.css 中的 .dialog-overlay 和 .dialog-content 样式 */
 /* 保留删除对话框特定的样式调整 */
 #delete-confirm-dialog .dialog-content {
-    max-width: 320px; /* 删除对话框稍微小一点 */
+    max-width: 320px;
+    /* 删除对话框稍微小一点 */
 }
 
 #delete-confirm-dialog .dialog-content h3 {
@@ -1923,47 +2024,62 @@ body.dark-mode .provider-selection-container .provider-select {
 /* 状态提示 Toast */
 .toast {
     position: fixed;
-    bottom: var(--toast-bottom-base); /* 使用变量 */
+    bottom: var(--toast-bottom-base);
+    /* 使用变量 */
     left: 50%;
-    transform: translateX(-50%); /* 初始 transform，show 状态会覆盖 Y 方向 */
+    transform: translateX(-50%);
+    /* 初始 transform，show 状态会覆盖 Y 方向 */
     padding: var(--spacing-sm) var(--spacing-md);
     border-radius: var(--radius-md);
     background-color: var(--card-background);
     color: var(--text-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    z-index: 11000; /* 高于各类模态框(10000) */
+    z-index: 11000;
+    /* 高于各类模态框(10000) */
     font-size: 13px;
     opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease, bottom 0.3s ease; /* 添加 transform 和 bottom 过渡 */
+    transition: opacity 0.3s ease, transform 0.3s ease, bottom 0.3s ease;
+    /* 添加 transform 和 bottom 过渡 */
     pointer-events: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 90%;
 }
+
 .toast.show {
     opacity: 1;
-    transform: translateX(-50%) translateY(var(--toast-visual-offset-y)); /* 使用变量 */
+    transform: translateX(-50%) translateY(var(--toast-visual-offset-y));
+    /* 使用变量 */
 }
+
 .toast.success {
     background-color: rgba(52, 168, 83, 0.1);
     color: var(--success-color);
     border: 1px solid rgba(52, 168, 83, 0.3);
-    bottom: var(--toast-bottom-base); /* 明确使用基础位置变量 */
+    bottom: var(--toast-bottom-base);
+    /* 明确使用基础位置变量 */
 }
+
 .toast.error {
     background-color: rgba(234, 67, 53, 0.1);
     color: var(--error-color);
     border: 1px solid rgba(234, 67, 53, 0.3);
-    bottom: var(--toast-bottom-error) !important; /* 使用变量, 保留 important */
+    bottom: var(--toast-bottom-error) !important;
+    /* 使用变量, 保留 important */
 }
-.toast.info { /* For informational toasts like "Streaming Aborted" */
+
+.toast.info {
+    /* For informational toasts like "Streaming Aborted" */
     background-color: rgba(76, 110, 245, 0.1);
     color: var(--primary-color);
     border: 1px solid rgba(76, 110, 245, 0.3);
-    bottom: var(--toast-bottom-base); /* info 提示也使用基础位置 */
+    bottom: var(--toast-bottom-base);
+    /* info 提示也使用基础位置 */
 }
-.toast.warning { /* For warning toasts like proxy auto-cleared */
+
+.toast.warning {
+    /* For warning toasts like proxy auto-cleared */
     background-color: rgba(230, 119, 0, 0.1);
     color: var(--warning-color);
     border: 1px solid rgba(230, 119, 0, 0.3);
@@ -1972,8 +2088,10 @@ body.dark-mode .provider-selection-container .provider-select {
 
 /* 代理自动清除通知的特殊样式 */
 .toast.toast-proxy-cleared {
-    max-width: 400px; /* 允许更宽的显示 */
-    white-space: normal; /* 允许换行 */
+    max-width: 400px;
+    /* 允许更宽的显示 */
+    white-space: normal;
+    /* 允许换行 */
     text-align: center;
     line-height: 1.4;
     padding: var(--spacing-sm) var(--spacing-lg);
@@ -1986,9 +2104,12 @@ body.dark-mode .provider-selection-container .provider-select {
     display: flex;
     align-items: center;
 }
+
 .api-key-input-container input {
-    padding-right: 40px; /* 紧凑的右侧空间 */
+    padding-right: 40px;
+    /* 紧凑的右侧空间 */
 }
+
 .toggle-api-key-button {
     position: absolute;
     right: var(--spacing-sm);
@@ -2009,6 +2130,7 @@ body.dark-mode .provider-selection-container .provider-select {
     align-items: center;
     justify-content: center;
 }
+
 .toggle-api-key-button:hover {
     color: var(--text-color);
     background-color: var(--button-hover-bg);
@@ -2019,18 +2141,22 @@ body.dark-mode .provider-selection-container .provider-select {
 /* 隐藏数字输入框的上下箭头 */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
-input[type=number] { /* For Firefox */
-  -moz-appearance: textfield; 
-  appearance: textfield; /* For other modern browsers */
+
+input[type=number] {
+    /* For Firefox */
+    -moz-appearance: textfield;
+    appearance: textfield;
+    /* For other modern browsers */
 }
 
 
 /* --- 可拖动主题切换按钮 --- */
 #theme-toggle-btn {
-    display: none !important; /* Hide by default, shown via JS for settings tab only */
+    display: none !important;
+    /* Hide by default, shown via JS for settings tab only */
     position: absolute;
     right: var(--spacing-lg);
     bottom: 80px;
@@ -2058,7 +2184,7 @@ input[type=number] { /* For Firefox */
 }
 
 /* 确保在聊天标签页激活时按钮被隐藏 */
-#chat.active ~ main #settings #theme-toggle-btn {
+#chat.active~main #settings #theme-toggle-btn {
     display: none !important;
 }
 
@@ -2347,12 +2473,12 @@ input[type=number] { /* For Firefox */
     transition: all 0.2s ease;
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark {
+.checkbox-label input[type="checkbox"]:checked+.checkmark {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
 
-.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+.checkbox-label input[type="checkbox"]:checked+.checkmark::after {
     content: '✓';
     color: white;
     font-size: 12px;
@@ -2483,7 +2609,7 @@ body.dark-mode .checkmark {
     border-color: var(--border-color);
 }
 
-body.dark-mode .checkbox-label input[type="checkbox"]:checked + .checkmark {
+body.dark-mode .checkbox-label input[type="checkbox"]:checked+.checkmark {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }

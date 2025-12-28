@@ -7,25 +7,39 @@
   /* width 由 JS 控制并从 localStorage 读取 */
   z-index: 2147483647 !important;
   display: none;
-  /* 旧的: box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1); */
   /* 新的: 使用多重阴影增加层次感和柔和的边缘 */
-  /* 第一层是一个非常细微的、几乎不可见的"边框"式阴影，用于清晰边界 */
-  /* 第二层是一个向左的、更柔和的投射阴影，用于增加深度 */
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.04), /* 极细的轮廓阴影 */
-    -4px 0 12px rgba(0, 0, 0, 0.08); /* 更柔和的左侧投射阴影 */
-  background-color: white; /* 确保 iframe 容器本身有背景色，以便阴影正确显示 */
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    /* 极细的轮廓阴影 */
+    -4px 0 12px rgba(0, 0, 0, 0.08);
+  /* 更柔和的左侧投射阴影 */
+  /* 默认浅色背景 */
+  background-color: #F8F9FB;
+}
+
+/* 深色模式时的容器背景色 - 防止闪烁 */
+@media (prefers-color-scheme: dark) {
+  #pagetalk-panel-container {
+    background-color: #1A1C20;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.2),
+      -4px 0 12px rgba(0, 0, 0, 0.3);
+  }
 }
 
 #pagetalk-panel-resizer {
   position: absolute;
-  left: -4px; /* 让一部分resizer在面板外部，更容易拖动 */
+  left: -4px;
+  /* 让一部分resizer在面板外部，更容易拖动 */
   top: 0;
-  width: 8px; /* 增加可点击区域 */
+  width: 8px;
+  /* 增加可点击区域 */
   height: 100%;
   cursor: ew-resize;
-  z-index: 10; /* 确保 resizer 在 iframe 之上，但在可能的其他插件模态框之下 */
-  /* background-color: rgba(0,0,0,0.01); */ /* 可选：给resizer一点视觉提示，但要确保不影响透明度 */
+  z-index: 10;
+  /* 确保 resizer 在 iframe 之上，但在可能的其他插件模态框之下 */
+  /* background-color: rgba(0,0,0,0.01); */
+  /* 可选：给resizer一点视觉提示，但要确保不影响透明度 */
 }
 
 #pagetalk-panel-iframe {
@@ -44,16 +58,19 @@ body.pagetalk-panel-open {
 body.pagetalk-resizing-active {
   cursor: ew-resize !important;
   user-select: none !important;
-  -webkit-user-select: none !important; /* Safari and Chrome */
-  -moz-user-select: none !important;    /* Firefox */
-  -ms-user-select: none !important;     /* IE10+ */
+  -webkit-user-select: none !important;
+  /* Safari and Chrome */
+  -moz-user-select: none !important;
+  /* Firefox */
+  -ms-user-select: none !important;
+  /* IE10+ */
 }
 
-body.pagetalk-resizing-active > *:not(#pagetalk-panel-container) {
-    pointer-events: none !important;
+body.pagetalk-resizing-active>*:not(#pagetalk-panel-container) {
+  pointer-events: none !important;
 }
 
 /* 针对PDF阅读器调整的辅助类 */
 .pagetalk-adjusted {
-    transition: margin-right 0.2s ease-out, width 0.2s ease-out;
+  transition: margin-right 0.2s ease-out, width 0.2s ease-out;
 }

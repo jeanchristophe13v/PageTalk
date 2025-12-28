@@ -36,7 +36,7 @@
     margin: var(--spacing-lg) auto;
     width: clamp(220px, 85%, 50%);
     /* 多层阴影营造深度感 */
-    box-shadow: 
+    box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.04),
         0 2px 4px rgba(0, 0, 0, 0.04),
         0 4px 8px rgba(0, 0, 0, 0.03),
@@ -49,8 +49,8 @@
     opacity: 0;
     transform: translateY(20px) scale(0.95);
     /* 平滑过渡 */
-    transition: 
-        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+    transition:
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
         box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
         border-color 0.25s ease;
 }
@@ -58,7 +58,7 @@
 .welcome-message:hover {
     transform: translateY(-2px);
     border-color: rgba(70, 116, 255, 0.2);
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.05),
         0 4px 8px rgba(0, 0, 0, 0.05),
         0 8px 16px rgba(0, 0, 0, 0.04),
@@ -68,7 +68,7 @@
 /* 深色模式下欢迎消息的微调 */
 body.dark-mode .welcome-message {
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 
+    box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.12),
         0 2px 4px rgba(0, 0, 0, 0.1),
         0 4px 8px rgba(0, 0, 0, 0.08),
@@ -77,7 +77,7 @@ body.dark-mode .welcome-message {
 
 body.dark-mode .welcome-message:hover {
     border-color: rgba(116, 143, 252, 0.25);
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.15),
         0 4px 8px rgba(0, 0, 0, 0.12),
         0 8px 16px rgba(0, 0, 0, 0.1),
@@ -255,20 +255,20 @@ body.dark-mode .welcome-message:hover {
     text-align: left;
     position: relative;
     /* 多层阴影营造深度感 */
-    box-shadow: 
+    box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.07),
         0 2px 4px rgba(0, 0, 0, 0.07),
         0 4px 8px rgba(0, 0, 0, 0.07),
         0 0 0 1px rgba(255, 255, 255, 0.1) inset;
     /* 平滑的过渡效果 */
-    transition: 
-        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+    transition:
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
         box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .user-message:hover {
     transform: translateY(-2px);
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.1),
         0 4px 8px rgba(0, 0, 0, 0.1),
         0 8px 16px rgba(0, 0, 0, 0.08),
@@ -277,7 +277,7 @@ body.dark-mode .welcome-message:hover {
 
 /* 深色模式下用户消息的微调 */
 body.dark-mode .user-message {
-    box-shadow: 
+    box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.15),
         0 2px 4px rgba(0, 0, 0, 0.12),
         0 4px 8px rgba(0, 0, 0, 0.1),
@@ -285,7 +285,7 @@ body.dark-mode .user-message {
 }
 
 body.dark-mode .user-message:hover {
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.2),
         0 4px 8px rgba(0, 0, 0, 0.15),
         0 8px 16px rgba(0, 0, 0, 0.12),
@@ -491,21 +491,21 @@ body.dark-mode .sent-tab-item:hover {
     line-height: 1.5;
     position: relative;
     /* 多层阴影营造深度感 */
-    box-shadow: 
+    box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.04),
         0 2px 4px rgba(0, 0, 0, 0.04),
         0 4px 8px rgba(0, 0, 0, 0.02);
     /* 平滑的过渡效果 */
-    transition: 
-        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
-        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+    transition:
+        transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
         border-color 0.25s ease;
 }
 
 .bot-message:hover {
     transform: translateY(-2px);
     border-color: rgba(70, 116, 255, 0.25);
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.06),
         0 4px 8px rgba(0, 0, 0, 0.06),
         0 8px 16px rgba(0, 0, 0, 0.04),
@@ -515,7 +515,7 @@ body.dark-mode .sent-tab-item:hover {
 /* 深色模式下机器人消息的微调 */
 body.dark-mode .bot-message {
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 
+    box-shadow:
         0 1px 2px rgba(0, 0, 0, 0.12),
         0 2px 4px rgba(0, 0, 0, 0.1),
         0 4px 8px rgba(0, 0, 0, 0.08),
@@ -524,7 +524,7 @@ body.dark-mode .bot-message {
 
 body.dark-mode .bot-message:hover {
     border-color: rgba(116, 143, 252, 0.3);
-    box-shadow: 
+    box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.15),
         0 4px 8px rgba(0, 0, 0, 0.12),
         0 8px 16px rgba(0, 0, 0, 0.1),
@@ -709,6 +709,7 @@ body.dark-mode .bot-message:hover {
     from {
         opacity: 0.7;
     }
+
     to {
         opacity: 1;
     }
@@ -719,6 +720,7 @@ body.dark-mode .bot-message:hover {
         opacity: 0.4;
         filter: blur(0.3px);
     }
+
     to {
         opacity: 1;
         filter: blur(0);
@@ -730,6 +732,7 @@ body.dark-mode .bot-message:hover {
         opacity: 0.1;
         filter: blur(0.8px);
     }
+
     to {
         opacity: 1;
         filter: blur(0);
@@ -2666,12 +2669,15 @@ body.dark-mode .tab-selection-actions .tab-action.cancel {
     min-width: 300px;
     overflow-x: auto;
     /* Hide scrollbars to prevent flicker, but keep scroll functionality */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
 }
 
 .mermaid::-webkit-scrollbar {
-    display: none; /* Chrome/Safari */
+    display: none;
+    /* Chrome/Safari */
 }
 
 /* 

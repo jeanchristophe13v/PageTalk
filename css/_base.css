@@ -35,10 +35,6 @@ body {
     /* border-left: 1px solid var(--border-color); /* 移除左侧边框 */
 }
 
-body.theme-pending {
-    visibility: hidden;
-}
-
 .container {
     display: flex;
     flex-direction: column;

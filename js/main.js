@@ -107,6 +107,7 @@ function markThemeReady() {
         clearTimeout(themeReadyTimeoutId);
         themeReadyTimeoutId = null;
     }
+    // 移除 theme-pending 类（在 body 上）
     if (document.body && document.body.classList.contains('theme-pending')) {
         document.body.classList.remove('theme-pending');
     }
@@ -312,7 +313,7 @@ async function init() {
         cometCaretInstance = initCometCaret(elements.userInput);
         console.log('[main.js] Comet caret initialized for user input');
     }
-    
+
     // Expose global function to update comet caret position
     // Used when textarea value is programmatically changed (e.g., quick actions, send message)
     window.updateCometCaret = () => {
@@ -741,7 +742,7 @@ function handleTabSelectedFromPopup(selectedTab) {
         elements.userInput.value = currentText.substring(0, atCharIndex);
     }
     elements.userInput.focus();
-    
+
     // Update custom caret position after programmatic value change
     if (window.updateCometCaret) window.updateCometCaret();
 
@@ -805,7 +806,7 @@ function handleTabsSelectedFromPopup(selectedTabs) {
         elements.userInput.value = currentText.substring(0, atCharIndex);
     }
     elements.userInput.focus();
-    
+
     // Update custom caret position after programmatic value change
     if (window.updateCometCaret) window.updateCometCaret();
 
@@ -1865,7 +1866,7 @@ async function triggerQuickAction(actionId, prompt, ignoreAssistant) {
     // 设置输入框内容
     elements.userInput.value = prompt.trim();
     elements.userInput.focus();
-    
+
     // Update custom caret position after programmatic value change
     if (window.updateCometCaret) window.updateCometCaret();
 

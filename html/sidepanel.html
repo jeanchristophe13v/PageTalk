@@ -4,7 +4,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <title>PageTalk</title>
+    <style>
+        /* 内联 Critical CSS - 防止主题闪烁 */
+        :root {
+            --background-color: #F8F9FB;
+            --panel-background: #F8F9FB;
+            --card-background: #FFFFFF;
+            --text-color: #343a40e5;
+            --text-secondary: #868E96;
+            --border-color: #E5E9F0;
+            --primary-color: #4674ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #1A1C20;
+                --panel-background: #1A1C20;
+                --card-background: #252830;
+                --text-color: #e9ecefdb;
+                --text-secondary: #ADB5BD;
+                --border-color: #2D3139;
+                --primary-color: #748FFC;
+            }
+        }
+
+        :root.dark-mode,
+        body.dark-mode {
+            --background-color: #1A1C20;
+            --panel-background: #1A1C20;
+            --card-background: #252830;
+            --text-color: #e9ecefdb;
+            --text-secondary: #ADB5BD;
+            --border-color: #2D3139;
+            --primary-color: #748FFC;
+        }
+
+        html,
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        body {
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+        }
+
+        body:not(.theme-pending) {
+            opacity: 1;
+        }
+    </style>
+    <script>
+        // 同步设置背景色，确保在 CSS 完全加载前就有正确的背景
+        (function () {
+            var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var html = document.documentElement;
+            html.style.backgroundColor = isDark ? '#1A1C20' : '#F8F9FB';
+            if (isDark) html.classList.add('dark-mode');
+        })();
+    </script>
     <link rel="stylesheet" href="../css/sidepanel.css">
     <!-- Highlight.js Themes -->
     <link rel="stylesheet" href="../css/github.min.css">
@@ -156,17 +217,17 @@
                                 <!-- 发送按钮 -->
                                 <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息"
                                     aria-label="发送消息">
-                                    <svg class="send-icon send-icon--send" xmlns="http://www.w3.org/2000/svg"
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-                                        focusable="false" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="send-icon send-icon--send" xmlns="http://www.w3.org/2000/svg" width="16"
+                                        height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <path d="m22 2-7 20-4-9-9-4Z"></path>
                                         <path d="M22 2 11 13"></path>
                                     </svg>
-                                    <svg class="send-icon send-icon--stop" xmlns="http://www.w3.org/2000/svg"
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"
-                                        focusable="false" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="send-icon send-icon--stop" xmlns="http://www.w3.org/2000/svg" width="16"
+                                        height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
                                         <rect x="7" y="7" width="10" height="10" rx="2"></rect>
                                     </svg>
                                 </button>
