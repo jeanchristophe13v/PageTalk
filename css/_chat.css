@@ -927,6 +927,8 @@ body.dark-mode .bot-message:hover {
     line-height: 1.5;
     outline: none;
     overflow-y: auto;
+    color: var(--text-color);
+    caret-color: var(--text-color);
 }
 
 .chat-input textarea::placeholder {
