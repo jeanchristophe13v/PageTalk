@@ -73,6 +73,7 @@ const state = {
     images: [],
     videos: [],
     darkMode: false,
+    userThemePreference: null,
     hasWebpageTheme: false,
     language: 'en', // Changed default language to English
     proxyAddress: '', // 代理地址
@@ -228,6 +229,30 @@ const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 // --- Initialization ---
 async function init() {
     console.log("Pagetalk Initializing...");
+
+    // 先加载持久化主题偏好，避免后续检测覆盖用户选择造成闪烁
+    await new Promise((resolve) => {
+        try {
+            if (!chrome?.storage?.sync) {
+                resolve();
+                return;
+            }
+            chrome.storage.sync.get(['themePreference'], (result) => {
+                try {
+                    const pref = result?.themePreference;
+                    if (pref === 'dark' || pref === 'light') {
+                        state.userThemePreference = pref;
+                        state.darkMode = pref === 'dark';
+                    }
+                } finally {
+                    resolve();
+                }
+            });
+        } catch (error) {
+            console.error('[main.js] Failed to preload theme preference:', error);
+            resolve();
+        }
+    });
 
     // Listen for content script messages early to avoid missing initial theme updates.
     window.addEventListener('message', handleContentScriptMessages);
@@ -1113,6 +1138,16 @@ function restoreSendButtonAndInputUI() {
 // Wrapper function for toggleTheme used by draggable button
 function toggleThemeAndUpdate() {
     toggleTheme(state, elements, rerenderAllMermaidChartsUI);
+    state.userThemePreference = state.darkMode ? 'dark' : 'light';
+    try {
+        chrome?.storage?.sync?.set({ themePreference: state.userThemePreference }, () => {
+            if (chrome.runtime?.lastError) {
+                console.error('[main.js] Failed to save theme preference:', chrome.runtime.lastError);
+            }
+        });
+    } catch (error) {
+        console.error('[main.js] Error saving theme preference:', error);
+    }
 }
 
 // Wrapper function for rerenderAllMermaidCharts
@@ -1279,6 +1314,11 @@ function handleContentScriptMessages(event) {
             break;
         case 'webpageThemeDetected':
             console.log(`[main.js] Received webpage theme: ${message.theme}`);
+            if (state.userThemePreference) {
+                console.log('[main.js] User theme preference set, ignoring webpage theme detection');
+                markThemeReady();
+                break;
+            }
             if (message.theme === 'dark' || message.theme === 'light') {
                 const isWebpageDark = message.theme === 'dark';
                 console.log(`Applying webpage theme: ${message.theme}`);
@@ -1330,6 +1370,14 @@ function requestPageContent() {
 }
 
 function requestThemeFromContentScript() {
+    // 如果已有用户主题偏好，直接应用并跳过页面/系统检测
+    if (state.userThemePreference) {
+        applyTheme(state.darkMode, elements);
+        updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+        markThemeReady();
+        return;
+    }
+
     // 检查是否在iframe中
     if (window.parent !== window) {
         // 在iframe中，检查Chrome API是否可用
