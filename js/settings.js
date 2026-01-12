@@ -57,7 +57,7 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         console.log('[Settings] Updated manual add button for language:', newLanguage);
     });
 
-    chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress', 'providerSettings'], async (syncResult) => {
+    chrome.storage.sync.get(['apiKey', 'model', 'language', 'proxyAddress', 'providerSettings', 'themePreference'], async (syncResult) => {
         // 初始化 ModelManager
         if (window.ModelManager?.instance) {
             try {
@@ -121,8 +121,13 @@ export function loadSettings(state, elements, updateConnectionIndicatorCallback,
         }
         if (elements.proxyAddressInput) elements.proxyAddressInput.value = state.proxyAddress;
 
-        // Theme (Load default unless content script already applied a webpage theme)
-        if (!state.hasWebpageTheme) {
+        // Theme (persisted user preference > webpage theme > default light)
+        const savedTheme = syncResult.themePreference;
+        if (savedTheme === 'dark' || savedTheme === 'light') {
+            state.userThemePreference = savedTheme;
+            state.darkMode = savedTheme === 'dark';
+            applyThemeCallback(state.darkMode);
+        } else if (!state.hasWebpageTheme) {
             state.darkMode = false; // Default to light
             applyThemeCallback(state.darkMode); // Apply default
         }

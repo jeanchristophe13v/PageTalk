@@ -73,6 +73,7 @@ const state = {
     images: [],
     videos: [],
     darkMode: false,
+    userThemePreference: null,
     hasWebpageTheme: false,
     language: 'en', // Changed default language to English
     proxyAddress: '', // 代理地址
@@ -1113,6 +1114,16 @@ function restoreSendButtonAndInputUI() {
 // Wrapper function for toggleTheme used by draggable button
 function toggleThemeAndUpdate() {
     toggleTheme(state, elements, rerenderAllMermaidChartsUI);
+    state.userThemePreference = state.darkMode ? 'dark' : 'light';
+    try {
+        chrome?.storage?.sync?.set({ themePreference: state.userThemePreference }, () => {
+            if (chrome.runtime?.lastError) {
+                console.error('[main.js] Failed to save theme preference:', chrome.runtime.lastError);
+            }
+        });
+    } catch (error) {
+        console.error('[main.js] Error saving theme preference:', error);
+    }
 }
 
 // Wrapper function for rerenderAllMermaidCharts
@@ -1279,6 +1290,11 @@ function handleContentScriptMessages(event) {
             break;
         case 'webpageThemeDetected':
             console.log(`[main.js] Received webpage theme: ${message.theme}`);
+            if (state.userThemePreference) {
+                console.log('[main.js] User theme preference set, ignoring webpage theme detection');
+                markThemeReady();
+                break;
+            }
             if (message.theme === 'dark' || message.theme === 'light') {
                 const isWebpageDark = message.theme === 'dark';
                 console.log(`Applying webpage theme: ${message.theme}`);
@@ -1330,6 +1346,14 @@ function requestPageContent() {
 }
 
 function requestThemeFromContentScript() {
+    // 如果已有用户主题偏好，直接应用并跳过页面/系统检测
+    if (state.userThemePreference) {
+        applyTheme(state.darkMode, elements);
+        updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+        markThemeReady();
+        return;
+    }
+
     // 检查是否在iframe中
     if (window.parent !== window) {
         // 在iframe中，检查Chrome API是否可用
