@@ -230,6 +230,30 @@ const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 async function init() {
     console.log("Pagetalk Initializing...");
 
+    // 先加载持久化主题偏好，避免后续检测覆盖用户选择造成闪烁
+    await new Promise((resolve) => {
+        try {
+            if (!chrome?.storage?.sync) {
+                resolve();
+                return;
+            }
+            chrome.storage.sync.get(['themePreference'], (result) => {
+                try {
+                    const pref = result?.themePreference;
+                    if (pref === 'dark' || pref === 'light') {
+                        state.userThemePreference = pref;
+                        state.darkMode = pref === 'dark';
+                    }
+                } finally {
+                    resolve();
+                }
+            });
+        } catch (error) {
+            console.error('[main.js] Failed to preload theme preference:', error);
+            resolve();
+        }
+    });
+
     // Listen for content script messages early to avoid missing initial theme updates.
     window.addEventListener('message', handleContentScriptMessages);
     requestThemeFromContentScript();
