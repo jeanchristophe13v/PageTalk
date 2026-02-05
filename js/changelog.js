@@ -5,6 +5,22 @@
 // 更新日志记录，按照时间倒序排列
 const changelog = [
     {
+        version: '3.9.4',
+        date: '2026-02-05',
+        changes: {
+            'zh-CN': [
+                '为聊天面板保留主题偏好设置（感谢 @Luo-hongyi 的 PR）',
+                '修复文本框颜色覆盖问题（感谢 @Luo-hongyi 的 PR）',
+                'PageTalk 收到了开发以来第一笔捐款，感谢 @kiang115 ！有机会请备注一下 ID，让我有机会感谢你们。'
+            ],
+            'en': [
+                'Persist theme preference for chat panel (Thanks to @Luo-hongyi for the PR)',
+                'Fix textarea color overriding issue (Thanks to @Luo-hongyi for the PR)',
+                'PageTalk received its first donation since development began. Thank you @kiang115! If possible, please leave your ID so I can thank you properly.'
+            ]
+        }
+    },
+    {
         version: '3.9.2',
         date: '2025-12-28',
         changes: {
