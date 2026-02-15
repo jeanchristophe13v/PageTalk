@@ -85,6 +85,7 @@ const state = {
     isTabSelectionPopupOpen: false, // 新增：跟踪标签页选择弹窗的状态
     locallyIgnoredTabs: {}, // 新增: 跟踪用户从特定消息上下文中移除的标签页 { messageId: [tabId1, tabId2] }
     quickActionIgnoreAssistant: false, // 新增：快捷操作忽略助手标记
+    isStandaloneSettingsPage: false, // 新增：是否为独立设置页模式
 };
 
 const THEME_READY_TIMEOUT_MS = 800;
@@ -112,6 +113,42 @@ function markThemeReady() {
     if (document.body && document.body.classList.contains('theme-pending')) {
         document.body.classList.remove('theme-pending');
     }
+}
+
+function detectStandaloneSettingsPageMode() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        return window.top === window && params.get('mode') === 'settings';
+    } catch (error) {
+        console.warn('[main.js] Failed to detect settings page mode:', error);
+        return false;
+    }
+}
+
+function hasChatUI() {
+    const requiredElements = [
+        elements.chatMessages,
+        elements.userInput,
+        elements.sendMessage,
+        elements.clearContextBtn,
+        elements.chatModelSelection,
+        elements.chatAgentSelection,
+        elements.uploadImage,
+        elements.fileInput,
+        elements.closeModal,
+        elements.addYoutubeUrl,
+        elements.cancelYoutube,
+        elements.confirmYoutube,
+        elements.youtubeUrlInput,
+        elements.mermaidCloseModal,
+        elements.mermaidModal
+    ];
+
+    return requiredElements.every(Boolean);
+}
+
+function hasSettingsUI() {
+    return !!elements.settingsSection;
 }
 
 // Default settings (used by agent module)
@@ -230,6 +267,12 @@ const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 async function init() {
     console.log("Pagetalk Initializing...");
 
+    state.isStandaloneSettingsPage = detectStandaloneSettingsPageMode();
+    if (state.isStandaloneSettingsPage) {
+        document.body.classList.add('settings-standalone');
+        document.documentElement.classList.add('settings-standalone');
+    }
+
     // 先加载持久化主题偏好，避免后续检测覆盖用户选择造成闪烁
     await new Promise((resolve) => {
         try {
@@ -256,6 +299,12 @@ async function init() {
 
     // Listen for content script messages early to avoid missing initial theme updates.
     window.addEventListener('message', handleContentScriptMessages);
+
+    // 在侧栏模式下监听外部设置变更，实现与独立设置页的实时同步
+    if (!state.isStandaloneSettingsPage) {
+        setupStorageSyncListeners();
+    }
+
     requestThemeFromContentScript();
 
     // Initialize ModelManager first
@@ -305,11 +354,11 @@ async function init() {
     await initModelSelection(state, elements); // Populate model dropdowns (now async)
     updateCurrentModelDisplay(); // 初始化内联模型显示
 
+    const chatUIAvailable = hasChatUI() && !state.isStandaloneSettingsPage;
+    const settingsUIAvailable = hasSettingsUI();
+
     // 确保翻译已加载后再初始化划词助手设置和快捷操作设置
     setTimeout(async () => {
-        console.log('[main.js] Initializing text selection helper with translations:', currentTranslations);
-        await initTextSelectionHelperSettings(elements, currentTranslations, showToastUI); // Initialize text selection helper settings
-
         console.log('[main.js] Initializing quick actions manager...');
         // 先初始化快捷操作管理器
         await QuickActionsManager.initQuickActionsManager();
@@ -317,11 +366,16 @@ async function init() {
         // 设置全局快捷操作相关函数
         setupQuickActionsGlobals();
 
-        console.log('[main.js] Initializing quick actions settings with translations:', currentTranslations);
-        await initQuickActionsSettings(elements, currentTranslations); // Initialize quick actions settings
+        if (settingsUIAvailable) {
+            console.log('[main.js] Initializing text selection helper with translations:', currentTranslations);
+            await initTextSelectionHelperSettings(elements, currentTranslations, showToastUI); // Initialize text selection helper settings
+
+            console.log('[main.js] Initializing quick actions settings with translations:', currentTranslations);
+            await initQuickActionsSettings(elements, currentTranslations); // Initialize quick actions settings
+        }
 
         // 初始化欢迎消息（如果聊天区域为空）
-        if (elements.chatMessages && elements.chatMessages.children.length === 0) {
+        if (!state.isStandaloneSettingsPage && chatUIAvailable && elements.chatMessages.children.length === 0) {
             // 确保快捷操作管理器已经初始化后再创建欢迎消息
             const welcomeMessage = await createWelcomeMessage(currentTranslations);
             elements.chatMessages.appendChild(welcomeMessage);
@@ -329,8 +383,10 @@ async function init() {
         }
     }, 100); // 给翻译加载一些时间
     setupEventListeners(); // Setup all event listeners
-    setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
-    setupAutoresizeTextarea(elements); // Setup textarea resize
+    if (chatUIAvailable) {
+        setupImagePaste(elements, (file) => handleImageFile(file, state, updateImagesPreviewUI)); // Setup paste
+        setupAutoresizeTextarea(elements); // Setup textarea resize
+    }
 
     // Initialize comet caret animation for chat input
     let cometCaretInstance = null;
@@ -354,8 +410,11 @@ async function init() {
     }
     updateContextStatus('contextStatusNone', {}, elements, currentTranslations); // Initial context status
 
-    // Request page content after setup
-    requestPageContent();
+    // 独立设置页不需要请求网页正文
+    if (!state.isStandaloneSettingsPage) {
+        // Request page content after setup
+        requestPageContent();
+    }
 
     // Mermaid Initialization (ensure library is loaded)
     if (typeof mermaid !== 'undefined') {
@@ -374,7 +433,13 @@ async function init() {
     }
 
     // Set initial visibility for theme button - ensure it's hidden on chat tab
-    const initialTab = document.querySelector('.footer-tab.active')?.dataset.tab || 'chat';
+    if (state.isStandaloneSettingsPage) {
+        switchTab('settings', elements, (subTab) => switchSettingsSubTab(subTab, elements));
+    }
+
+    const initialTab = state.isStandaloneSettingsPage
+        ? 'settings'
+        : (document.querySelector('.footer-tab.active')?.dataset.tab || 'chat');
     setThemeButtonVisibility(initialTab, elements);
 
     // Additional safety check to ensure button is hidden on chat tab
@@ -404,7 +469,7 @@ async function init() {
     };
 
     // 确保在所有初始化完成后，输入框获得焦点
-    if (elements.userInput) {
+    if (!state.isStandaloneSettingsPage && elements.userInput) {
         setTimeout(() => elements.userInput.focus(), 150); // 增加延迟以确保DOM完全准备好
     }
 
@@ -424,10 +489,19 @@ async function init() {
 
 // --- Event Listener Setup ---
 function setupEventListeners() {
+    const chatUIAvailable = hasChatUI() && !state.isStandaloneSettingsPage;
+    const settingsUIAvailable = hasSettingsUI();
+
     // Footer Tabs
     elements.tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const tabId = tab.dataset.tab;
+
+            if (tabId === 'settings' && !state.isStandaloneSettingsPage) {
+                openSettingsTabFromSidebar();
+                return;
+            }
+
             // 新增：在切换标签页前关闭标签页选择弹窗
             closeTabSelectionPopupUIFromMain();
             // 调用 ui.js 中的 switchTab (假设 switchTab 是一个可访问的函数，或者这部分逻辑在 main.js 中)
@@ -450,109 +524,97 @@ function setupEventListeners() {
     });
 
     // Settings Sub-Tabs
-    elements.settingsNavBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchSettingsSubTab(btn.dataset.subtab, elements));
-    });
+    if (settingsUIAvailable) {
+        elements.settingsNavBtns.forEach(btn => {
+            btn.addEventListener('click', () => switchSettingsSubTab(btn.dataset.subtab, elements));
+        });
+    }
 
     // Chat Actions
-    elements.sendMessage.addEventListener('click', handleSendButtonClick); // Initial listener
-    elements.userInput.addEventListener('keydown', handleUserInputKeydown);
-    // 新增：监听用户输入框的 input 事件，用于检测 "@"
-    elements.userInput.addEventListener('input', handleUserInputForTabSelection);
-    elements.clearContextBtn.addEventListener('click', async () => {
-        await clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations);
-        // Also clear the UI for selected tabs
-        state.selectedContextTabs = [];
-        updateSelectedTabsBarFromMain();
-    });
-
-    elements.chatModelSelection.addEventListener('change', handleChatModelChange);
-    elements.chatAgentSelection.addEventListener('change', handleChatAgentChange);
-
-    // 新增：监听由 ui.js 触发的弹窗关闭事件，以同步状态
-    document.addEventListener('tabPopupManuallyClosed', () => {
-        if (state.isTabSelectionPopupOpen) {
-            state.isTabSelectionPopupOpen = false;
-            console.log("Tab selection popup closed via custom event, state updated.");
-        }
-    });
-
-    // 新增：加号菜单交互
-    if (elements.attachmentMenuBtn && elements.attachmentMenu) {
-        elements.attachmentMenuBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            elements.attachmentMenu.classList.toggle('show');
-            // 同时关闭模型选择菜单
-            if (elements.modelSelectorMenu) elements.modelSelectorMenu.classList.remove('show');
-            if (elements.inlineModelSelector) elements.inlineModelSelector.classList.remove('active');
+    if (chatUIAvailable) {
+        elements.sendMessage.addEventListener('click', handleSendButtonClick); // Initial listener
+        elements.userInput.addEventListener('keydown', handleUserInputKeydown);
+        elements.userInput.addEventListener('input', handleUserInputForTabSelection);
+        elements.clearContextBtn.addEventListener('click', async () => {
+            await clearContextAction(state, elements, clearImagesUI, clearVideosUI, showToastUI, currentTranslations);
+            state.selectedContextTabs = [];
+            updateSelectedTabsBarFromMain();
         });
-    }
 
-    // 新增：模型选择器交互
-    if (elements.inlineModelSelector && elements.modelSelectorMenu) {
-        elements.inlineModelSelector.addEventListener('click', (e) => {
-            e.stopPropagation();
-            elements.inlineModelSelector.classList.toggle('active');
-            elements.modelSelectorMenu.classList.toggle('show');
-            // 同时关闭加号菜单
-            if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
-            // 渲染模型菜单内容
-            if (elements.modelSelectorMenu.classList.contains('show')) {
-                renderModelSelectorMenu();
+        elements.chatModelSelection.addEventListener('change', handleChatModelChange);
+        elements.chatAgentSelection.addEventListener('change', handleChatAgentChange);
+
+        document.addEventListener('tabPopupManuallyClosed', () => {
+            if (state.isTabSelectionPopupOpen) {
+                state.isTabSelectionPopupOpen = false;
+                console.log('Tab selection popup closed via custom event, state updated.');
             }
         });
+
+        if (elements.attachmentMenuBtn && elements.attachmentMenu) {
+            elements.attachmentMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                elements.attachmentMenu.classList.toggle('show');
+                if (elements.modelSelectorMenu) elements.modelSelectorMenu.classList.remove('show');
+                if (elements.inlineModelSelector) elements.inlineModelSelector.classList.remove('active');
+            });
+        }
+
+        if (elements.inlineModelSelector && elements.modelSelectorMenu) {
+            elements.inlineModelSelector.addEventListener('click', (e) => {
+                e.stopPropagation();
+                elements.inlineModelSelector.classList.toggle('active');
+                elements.modelSelectorMenu.classList.toggle('show');
+                if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
+                if (elements.modelSelectorMenu.classList.contains('show')) {
+                    renderModelSelectorMenu();
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (elements.attachmentMenu && !elements.attachmentMenu.contains(e.target) && e.target !== elements.attachmentMenuBtn) {
+                elements.attachmentMenu.classList.remove('show');
+            }
+            if (elements.modelSelectorMenu && !elements.modelSelectorMenu.contains(e.target) && !elements.inlineModelSelector?.contains(e.target)) {
+                elements.modelSelectorMenu.classList.remove('show');
+                if (elements.inlineModelSelector) elements.inlineModelSelector.classList.remove('active');
+            }
+        });
+
+        elements.uploadImage.addEventListener('click', (e) => {
+            e.stopPropagation();
+            elements.fileInput.click();
+            if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
+        });
+        elements.fileInput.addEventListener('change', (e) => handleImageSelect(e, (file) => handleImageFile(file, state, updateImagesPreviewUI), elements));
+        elements.closeModal.addEventListener('click', () => hideImageModal(elements));
+        window.addEventListener('click', (e) => { if (e.target === elements.imageModal) hideImageModal(elements); });
+
+        elements.addYoutubeUrl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showYouTubeDialog(elements);
+            if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
+        });
+        elements.cancelYoutube.addEventListener('click', () => hideYouTubeDialog(elements));
+        elements.confirmYoutube.addEventListener('click', () => {
+            const url = elements.youtubeUrlInput.value.trim();
+            if (url) {
+                handleYouTubeUrl(url, state, updateVideosPreviewUI, currentTranslations);
+                hideYouTubeDialog(elements);
+            }
+        });
+        elements.youtubeUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                elements.confirmYoutube.click();
+            }
+        });
+        window.addEventListener('click', (e) => { if (e.target === elements.youtubeUrlDialog) hideYouTubeDialog(elements); });
+
+        elements.mermaidCloseModal.addEventListener('click', () => hideMermaidModal(elements));
+        elements.mermaidModal.addEventListener('click', (e) => { if (e.target === elements.mermaidModal) hideMermaidModal(elements); });
     }
-
-    // 点击外部关闭菜单
-    document.addEventListener('click', (e) => {
-        // 关闭加号菜单
-        if (elements.attachmentMenu && !elements.attachmentMenu.contains(e.target) && e.target !== elements.attachmentMenuBtn) {
-            elements.attachmentMenu.classList.remove('show');
-        }
-        // 关闭模型选择菜单
-        if (elements.modelSelectorMenu && !elements.modelSelectorMenu.contains(e.target) && !elements.inlineModelSelector?.contains(e.target)) {
-            elements.modelSelectorMenu.classList.remove('show');
-            if (elements.inlineModelSelector) elements.inlineModelSelector.classList.remove('active');
-        }
-    });
-
-    // Image Handling
-    elements.uploadImage.addEventListener('click', (e) => {
-        e.stopPropagation();
-        elements.fileInput.click();
-        // 点击上传后关闭加号菜单
-        if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
-    });
-    elements.fileInput.addEventListener('change', (e) => handleImageSelect(e, (file) => handleImageFile(file, state, updateImagesPreviewUI), elements));
-    elements.closeModal.addEventListener('click', () => hideImageModal(elements));
-    window.addEventListener('click', (e) => { if (e.target === elements.imageModal) hideImageModal(elements); }); // Close modal on overlay click
-
-    // YouTube Video Handling
-    elements.addYoutubeUrl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showYouTubeDialog(elements);
-        // 点击后关闭加号菜单
-        if (elements.attachmentMenu) elements.attachmentMenu.classList.remove('show');
-    });
-    elements.cancelYoutube.addEventListener('click', () => hideYouTubeDialog(elements));
-    elements.confirmYoutube.addEventListener('click', () => {
-        const url = elements.youtubeUrlInput.value.trim();
-        if (url) {
-            handleYouTubeUrl(url, state, updateVideosPreviewUI, currentTranslations);
-            hideYouTubeDialog(elements);
-        }
-    });
-    elements.youtubeUrlInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            elements.confirmYoutube.click();
-        }
-    });
-    window.addEventListener('click', (e) => { if (e.target === elements.youtubeUrlDialog) hideYouTubeDialog(elements); }); // Close dialog on overlay click
-
-    // Mermaid Modal
-    elements.mermaidCloseModal.addEventListener('click', () => hideMermaidModal(elements));
-    elements.mermaidModal.addEventListener('click', (e) => { if (e.target === elements.mermaidModal) hideMermaidModal(elements); });
 
     // Settings Actions
     // Removed discover models button event listener
@@ -561,8 +623,12 @@ function setupEventListeners() {
 
     // 多供应商模式下，API Key 可见性切换由 setupProviderEventListeners 处理
     // elements.toggleApiKey.addEventListener('click', () => toggleApiKeyVisibility(elements));
-    elements.languageSelect.addEventListener('change', () => handleLanguageChange(state, elements, loadAndApplyTranslations, showToastUI, currentTranslations));
-    elements.exportChatHistoryBtn.addEventListener('click', () => handleExportChat(state, elements, showToastUI, currentTranslations));
+    if (elements.languageSelect) {
+        elements.languageSelect.addEventListener('change', () => handleLanguageChange(state, elements, loadAndApplyTranslations, showToastUI, currentTranslations));
+    }
+    if (elements.exportChatHistoryBtn) {
+        elements.exportChatHistoryBtn.addEventListener('click', () => handleExportChat(state, elements, showToastUI, currentTranslations));
+    }
 
     // Proxy Address Change
     if (elements.proxyAddressInput) {
@@ -586,7 +652,9 @@ function setupEventListeners() {
     }
     if (elements.importAllSettingsBtn) {
         elements.importAllSettingsBtn.addEventListener('click', () => {
-            elements.unifiedImportInput.click();
+            if (elements.unifiedImportInput) {
+                elements.unifiedImportInput.click();
+            }
         });
     }
     if (elements.unifiedImportInput) {
@@ -594,10 +662,22 @@ function setupEventListeners() {
     }
 
     // Agent Actions
-    elements.addNewAgent.addEventListener('click', () => createNewAgent(state, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveAgentsListState, showToastUI, currentTranslations));
-    elements.importAgentsBtn.addEventListener('click', () => elements.importAgentInput.click());
-    elements.importAgentInput.addEventListener('change', (e) => handleAgentImport(e, state, saveAgentsListState, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveCurrentAgentIdState, showToastUI, currentTranslations));
-    elements.exportAgentsBtn.addEventListener('click', () => handleAgentExport(state, showToastUI, currentTranslations));
+    if (elements.addNewAgent) {
+        elements.addNewAgent.addEventListener('click', () => createNewAgent(state, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveAgentsListState, showToastUI, currentTranslations));
+    }
+    if (elements.importAgentsBtn) {
+        elements.importAgentsBtn.addEventListener('click', () => {
+            if (elements.importAgentInput) {
+                elements.importAgentInput.click();
+            }
+        });
+    }
+    if (elements.importAgentInput) {
+        elements.importAgentInput.addEventListener('change', (e) => handleAgentImport(e, state, saveAgentsListState, updateAgentsListUIAllArgs, updateAgentSelectionInChatUI, saveCurrentAgentIdState, showToastUI, currentTranslations));
+    }
+    if (elements.exportAgentsBtn) {
+        elements.exportAgentsBtn.addEventListener('click', () => handleAgentExport(state, showToastUI, currentTranslations));
+    }
     // Re-resolve elements in case dialog was reconstructed
     elements.deleteConfirmDialog = document.getElementById('delete-confirm-dialog');
     elements.confirmDelete = document.getElementById('confirm-delete');
@@ -611,8 +691,12 @@ function setupEventListeners() {
     window.addEventListener('click', (e) => { if (e.target === elements.deleteConfirmDialog) elements.deleteConfirmDialog.style.display = 'none'; }); // Close delete confirm on overlay click
 
     // Panel Closing with smarter Escape handling
-    elements.closePanelBtnChat.addEventListener('click', closePanel);
-    elements.closePanelBtnSettings.addEventListener('click', closePanel);
+    if (elements.closePanelBtnChat) {
+        elements.closePanelBtnChat.addEventListener('click', closePanel);
+    }
+    if (elements.closePanelBtnSettings) {
+        elements.closePanelBtnSettings.addEventListener('click', closePanel);
+    }
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         // If any modal/popup is open, close that first and do not close the panel
@@ -626,7 +710,7 @@ function setupEventListeners() {
     });
 
     // Scroll Tracking
-    if (elements.chatMessages) {
+    if (chatUIAvailable && elements.chatMessages) {
         elements.chatMessages.addEventListener('scroll', handleChatScroll);
     }
 
@@ -635,6 +719,148 @@ function setupEventListeners() {
 
     // 设置多供应商事件监听器
     setupProviderEventListeners(state, elements, showToastUI, () => updateConnectionIndicator(state.isConnected, elements, currentTranslations));
+}
+
+let isOpeningSettingsTab = false;
+
+function openSettingsTabFromSidebar() {
+    if (isOpeningSettingsTab) {
+        return;
+    }
+    isOpeningSettingsTab = true;
+
+    const releaseLock = () => {
+        isOpeningSettingsTab = false;
+    };
+
+    const fallbackOpen = () => {
+        try {
+            const settingsUrl = chrome.runtime.getURL('html/sidepanel.html?mode=settings');
+            window.open(settingsUrl, '_blank', 'noopener,noreferrer');
+        } catch (error) {
+            console.error('[main.js] Failed to open settings tab fallback:', error);
+            const message = _('openSettingsFailed', {}, currentTranslations);
+            showToastUI(message, 'error');
+        } finally {
+            releaseLock();
+        }
+    };
+
+    try {
+        if (!chrome?.runtime?.sendMessage) {
+            fallbackOpen();
+            return;
+        }
+
+        chrome.runtime.sendMessage({ action: 'openSettings' }, (response) => {
+            if (chrome.runtime.lastError || !response?.success) {
+                console.warn('[main.js] Open settings by background failed, using fallback:', chrome.runtime.lastError || response?.error);
+                fallbackOpen();
+                return;
+            }
+
+            releaseLock();
+        });
+    } catch (error) {
+        console.error('[main.js] Failed to request open settings tab:', error);
+        fallbackOpen();
+    }
+}
+
+let storageSyncListenerBound = false;
+
+function setupStorageSyncListeners() {
+    if (storageSyncListenerBound) return;
+    if (!chrome?.storage?.onChanged) return;
+
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (!changes || (namespace !== 'sync' && namespace !== 'local')) {
+            return;
+        }
+
+        if (namespace === 'sync') {
+            if (changes.language && changes.language.newValue && changes.language.newValue !== state.language) {
+                loadAndApplyTranslations(changes.language.newValue);
+            }
+
+            if (changes.model && changes.model.newValue) {
+                state.model = changes.model.newValue;
+                if (elements.chatModelSelection) {
+                    elements.chatModelSelection.value = state.model;
+                }
+                if (elements.modelSelection) {
+                    elements.modelSelection.value = state.model;
+                }
+                updateCurrentModelDisplay();
+            }
+
+            if (changes.proxyAddress) {
+                state.proxyAddress = changes.proxyAddress.newValue || '';
+                if (elements.proxyAddressInput) {
+                    elements.proxyAddressInput.value = state.proxyAddress;
+                }
+            }
+
+            if (changes.themePreference) {
+                const nextPref = changes.themePreference.newValue;
+                if (nextPref === 'dark' || nextPref === 'light') {
+                    state.userThemePreference = nextPref;
+                    state.darkMode = nextPref === 'dark';
+                    applyTheme(state.darkMode, elements);
+                    updateMermaidTheme(state.darkMode, rerenderAllMermaidChartsUI);
+                }
+            }
+
+            if (changes.agents || changes.currentAgentId) {
+                loadAgents(
+                    state,
+                    () => updateAgentsListUI(state, elements, currentTranslations, autoSaveAgentSettings, showDeleteConfirmDialogUI, switchAgentAndUpdateState),
+                    () => updateAgentSelectionInChat(state, elements, currentTranslations),
+                    () => saveCurrentAgentId(state),
+                    currentTranslations
+                );
+            }
+
+            const modelStructureChanged = ['managedModels', 'userActiveModels', 'providerSettings', 'customProviders']
+                .some((key) => Object.prototype.hasOwnProperty.call(changes, key));
+
+            if (modelStructureChanged) {
+                (async () => {
+                    await handleModelsUpdatedFromContent();
+                    updateCurrentModelDisplay();
+                    await refreshConnectionStateFromProviders();
+                })();
+            }
+        }
+
+        if (namespace === 'local') {
+            if (changes.quickActions) {
+                if (window.refreshWelcomeMessageQuickActions) {
+                    window.refreshWelcomeMessageQuickActions();
+                }
+            }
+        }
+    });
+
+    storageSyncListenerBound = true;
+}
+
+async function refreshConnectionStateFromProviders() {
+    try {
+        if (!window.ModelManager?.instance || !window.ProviderManager?.getProviderIds) {
+            return;
+        }
+
+        await window.ModelManager.instance.initialize();
+        const providerIds = window.ProviderManager.getProviderIds();
+        state.isConnected = providerIds.some((providerId) => {
+            return window.ModelManager.instance.isProviderConfigured(providerId);
+        });
+        state.hasDeterminedConnection = true;
+        updateConnectionIndicator(state.isConnected, elements, currentTranslations);
+    } catch (error) {
+        console.warn('[main.js] Failed to refresh provider connection state:', error);
+    }
 }
 
 
@@ -1457,6 +1683,15 @@ function requestThemeFromContentScript() {
 }
 
 function closePanel() {
+    if (state.isStandaloneSettingsPage) {
+        try {
+            window.close();
+        } catch (error) {
+            console.warn('[main.js] Failed to close standalone settings tab:', error);
+        }
+        return;
+    }
+
     if (themeReadyTimeoutId) {
         clearTimeout(themeReadyTimeoutId);
         themeReadyTimeoutId = null;
@@ -1540,14 +1775,11 @@ async function handleLanguageChangeFromContent(newLanguage) {
     // 重新加载并应用翻译
     await loadAndApplyTranslations(newLanguage);
 
-    // 重新初始化划词助手设置（如果设置页面打开）
-    if (window.initTextSelectionHelperSettings && elements.textSelectionHelperSettings) {
-        const settingsContainer = elements.textSelectionHelperSettings;
-        if (settingsContainer && settingsContainer.style.display !== 'none') {
-            console.log('[main.js] Reinitializing text selection helper settings for language change');
-            const translations = window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {};
-            window.initTextSelectionHelperSettings(elements, translations, showToastUI);
-        }
+    // 设置页存在时，刷新划词助手设置文案
+    if (hasSettingsUI()) {
+        console.log('[main.js] Reinitializing text selection helper settings for language change');
+        const translations = window.translations && window.translations[newLanguage] ? window.translations[newLanguage] : {};
+        await initTextSelectionHelperSettings(elements, translations, showToastUI);
     }
 }
 
@@ -1567,10 +1799,10 @@ async function handleExtensionReloadFromContent() {
     }
 
     // 重新初始化所有设置
-    if (window.initTextSelectionHelperSettings && elements.textSelectionHelperSettings) {
+    if (hasSettingsUI()) {
         console.log('[main.js] Reinitializing text selection helper settings after extension reload');
         const translations = window.translations && window.translations[state.language] ? window.translations[state.language] : {};
-        window.initTextSelectionHelperSettings(elements, translations, showToastUI);
+        await initTextSelectionHelperSettings(elements, translations, showToastUI);
     }
 }
 
@@ -1608,9 +1840,16 @@ async function loadAndApplyTranslations(language) {
     console.log(`Applying translations for: ${language}`);
     updateUIElementsWithTranslations(currentTranslations); // Update static UI text
 
+    const chatUIAvailable = hasChatUI() && !state.isStandaloneSettingsPage;
+    const settingsUIAvailable = hasSettingsUI();
+
     // Update dynamic parts that depend on translations
-    updateAgentsListUIAllArgs(); // Re-render agent list with translated labels/placeholders
-    updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
+    if (settingsUIAvailable) {
+        updateAgentsListUIAllArgs(); // Re-render agent list with translated labels/placeholders
+    }
+    if (chatUIAvailable) {
+        updateAgentSelectionInChatUI(); // Ensure chat agent selection is updated with translations
+    }
     // 仅当已判定连接状态后才渲染连接状态文案
     if (state.hasDeterminedConnection) {
         updateConnectionIndicator(state.isConnected, elements, currentTranslations);
@@ -1624,10 +1863,12 @@ async function loadAndApplyTranslations(language) {
     }
 
     // 重新渲染快捷操作列表以更新翻译
-    try {
-        await renderQuickActionsList(currentTranslations);
-    } catch (error) {
-        console.warn('[main.js] Error updating quick actions list translations:', error);
+    if (settingsUIAvailable) {
+        try {
+            await renderQuickActionsList(currentTranslations);
+        } catch (error) {
+            console.warn('[main.js] Error updating quick actions list translations:', error);
+        }
     }
 
     // 广播语言变化事件给动态创建的UI组件（如自定义选项对话框）
@@ -1652,14 +1893,14 @@ async function loadAndApplyTranslations(language) {
     updateContextStatus(contextKey, contextReplacements, elements, currentTranslations);
 
     // Re-render welcome message if chat is empty
-    if (elements.chatMessages && elements.chatMessages.children.length === 1 && elements.chatMessages.firstElementChild.classList.contains('welcome-message')) {
+    if (chatUIAvailable && elements.chatMessages.children.length === 1 && elements.chatMessages.firstElementChild.classList.contains('welcome-message')) {
         // 只有在快捷操作管理器已经初始化的情况下才刷新欢迎消息
         if (window.QuickActionsManager && window.QuickActionsManager.isQuickActionsManagerInitialized && window.QuickActionsManager.isQuickActionsManagerInitialized()) {
             await refreshWelcomeMessageQuickActions();
         } else {
             console.log('[main.js] Skipping welcome message refresh - QuickActionsManager not yet initialized');
         }
-    } else {
+    } else if (chatUIAvailable) {
         // Update existing welcome message if present
         const welcomeHeading = elements.chatMessages.querySelector('.welcome-message h2');
         if (welcomeHeading) welcomeHeading.textContent = _('welcomeHeading');
@@ -1950,6 +2191,10 @@ async function triggerQuickAction(actionId, prompt, ignoreAssistant) {
  * 刷新欢迎消息中的快捷操作
  */
 async function refreshWelcomeMessageQuickActions() {
+    if (!elements.chatMessages) {
+        return;
+    }
+
     const welcomeMessage = elements.chatMessages.querySelector('.welcome-message');
     if (welcomeMessage) {
         // 确保快捷操作管理器可用

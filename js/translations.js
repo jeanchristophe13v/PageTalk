@@ -37,6 +37,7 @@ if (typeof window.translations === 'undefined') {
       'agentSelectLabel': '选择助手',
       'clearContextTitle': '清除聊天记录',
       'closePanelTitle': '关闭面板',
+      'openSettingsFailed': '打开设置页失败',
       'welcomeHeading': '欢迎使用 PageTalk :)',
       'summarizeAction': '总结一下',
       'imagePreviewAlt': 'Full size image preview', // Keep English for alt? Or translate? Let's translate.
@@ -552,6 +553,7 @@ Format：
       'agentSelectLabel': 'Select Agent',
       'clearContextTitle': 'Clear chat history',
       'closePanelTitle': 'Close Panel',
+      'openSettingsFailed': 'Failed to open settings page',
       'welcomeHeading': 'Welcome to PageTalk :)',
       'summarizeAction': 'Summarize',
       'imagePreviewAlt': 'Full size image preview',

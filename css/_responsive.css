@@ -117,3 +117,22 @@
 .test-btn:hover {
     background-color: #fdd835; /* Lighter on hover */
 }
+
+@media (max-width: 860px) {
+    body.settings-standalone #settings {
+        padding: var(--spacing-md);
+    }
+
+    body.settings-standalone #settings .settings-container {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    body.settings-standalone .settings-nav {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding-right: 0;
+        padding-bottom: var(--spacing-sm);
+        max-height: 220px;
+    }
+}

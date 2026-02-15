@@ -106,6 +106,45 @@ async function togglePagetalkPanel(tabId) {
     }
 }
 
+// 打开独立设置页标签
+let openingSettingsTabPromise = null;
+
+async function openSettingsTab() {
+    if (openingSettingsTabPromise) {
+        return openingSettingsTabPromise;
+    }
+
+    const settingsUrl = chrome.runtime.getURL('html/sidepanel.html?mode=settings');
+
+    openingSettingsTabPromise = (async () => {
+        try {
+            const tabs = await chrome.tabs.query({});
+            const existingTab = tabs.find((tab) => {
+                return typeof tab.url === 'string'
+                    && tab.url.startsWith(chrome.runtime.getURL('html/sidepanel.html'))
+                    && tab.url.includes('mode=settings');
+            });
+
+            if (existingTab && existingTab.id) {
+                await chrome.tabs.update(existingTab.id, { active: true });
+                return;
+            }
+
+            await chrome.tabs.create({
+                url: settingsUrl,
+                active: true
+            });
+        } catch (error) {
+            console.error('[Background] Failed to open settings tab:', error);
+            throw error;
+        }
+    })().finally(() => {
+        openingSettingsTabPromise = null;
+    });
+
+    return openingSettingsTabPromise;
+}
+
 // 监听来自内容脚本或面板的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "pageContentExtracted") { // 来自 content.js 通过 iframe -> main.js -> content script -> background (这条路径似乎不直接发生)
@@ -200,10 +239,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return true; // 异步响应
     }
     else if (message.action === "openSettings") {
-        // 处理打开设置页面的请求
-        chrome.runtime.openOptionsPage();
-        sendResponse({ success: true });
-        return false; // 同步响应
+        // 处理打开独立设置页的请求
+        openSettingsTab()
+            .then(() => {
+                sendResponse({ success: true });
+            })
+            .catch((error) => {
+                sendResponse({ success: false, error: error.message });
+            });
+        return true;
     }
     // 如果有其他同步消息处理，它们可以在这里返回 false 或 undefined
     // 但如果整个 onMessage 可能处理异步操作，最好总是返回 true

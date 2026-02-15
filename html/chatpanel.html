@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>PageTalk</title>
+    <style>
+        :root {
+            --background-color: #F8F9FB;
+            --panel-background: #F8F9FB;
+            --card-background: #FFFFFF;
+            --text-color: #343a40e5;
+            --text-secondary: #868E96;
+            --border-color: #E5E9F0;
+            --primary-color: #4674ff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #1A1C20;
+                --panel-background: #1A1C20;
+                --card-background: #252830;
+                --text-color: #e9ecefdb;
+                --text-secondary: #ADB5BD;
+                --border-color: #2D3139;
+                --primary-color: #748FFC;
+            }
+        }
+
+        :root.dark-mode,
+        body.dark-mode {
+            --background-color: #1A1C20;
+            --panel-background: #1A1C20;
+            --card-background: #252830;
+            --text-color: #e9ecefdb;
+            --text-secondary: #ADB5BD;
+            --border-color: #2D3139;
+            --primary-color: #748FFC;
+        }
+
+        html,
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        body {
+            opacity: 0;
+            transition: opacity 0.1s ease-out;
+        }
+
+        body:not(.theme-pending) {
+            opacity: 1;
+        }
+    </style>
+    <script>
+        (function () {
+            var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var html = document.documentElement;
+            html.style.backgroundColor = isDark ? '#1A1C20' : '#F8F9FB';
+            if (isDark) html.classList.add('dark-mode');
+        })();
+    </script>
+    <link rel="stylesheet" href="../css/sidepanel.css">
+    <link rel="stylesheet" href="../css/github.min.css">
+    <link rel="stylesheet" href="../css/github-dark-dimmed.min.css">
+    <link rel="stylesheet" href="../css/katex.min.css">
+    <script src="../js/lib/highlight.min.js"></script>
+    <script src="../js/lib/python.min.js"></script>
+    <script src="../js/lib/r.min.js"></script>
+    <script src="../js/lib/sql.min.js"></script>
+    <script type="module" src="../js/lib/java.min.js"></script>
+    <script type="module" src="../js/lib/javascript.min.js"></script>
+    <script src="../js/lib/json.min.js"></script>
+    <script src="../js/lib/markdown-it.min.js"></script>
+    <script src="../js/markdown-renderer.js"></script>
+</head>
+
+<body class="theme-pending">
+    <div class="container">
+        <main>
+            <section id="chat" class="tab-content active">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-agent-selector">
+                            <label for="chat-agent-selection" data-i18n="agentLabel">助手：</label>
+                            <select id="chat-agent-selection" aria-label="选择助手"></select>
+                        </div>
+                        <div class="chat-header-actions">
+                            <button id="clear-context" data-i18n-title="clearContextTitle" title="清除上下文和聊天记录"
+                                class="action-button">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+                                    <path fill-rule="evenodd"
+                                        d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
+                                </svg>
+                            </button>
+                            <button id="close-panel" data-i18n-title="closePanelTitle" title="关闭面板"
+                                class="action-button close-panel-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                                    viewBox="0 0 16 16">
+                                    <path
+                                        d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="image-preview-container" id="image-preview-container" style="display: none;">
+                        <div class="images-grid" id="images-grid"></div>
+                    </div>
+                    <div class="video-preview-container" id="video-preview-container" style="display: none;">
+                        <div class="videos-grid" id="videos-grid"></div>
+                    </div>
+                    <div id="image-modal" class="image-modal">
+                        <span class="close-modal">&times;</span>
+                        <img id="modal-image" class="modal-content" alt="Full size image preview">
+                    </div>
+                    <div id="youtube-url-dialog" class="dialog-overlay" style="display:none;">
+                        <div class="dialog-content">
+                            <h3 data-i18n="addYoutubeVideoTitle"></h3>
+                            <p data-i18n="enterYoutubeLinkPrompt"></p>
+                            <input type="url" id="youtube-url-input" data-i18n-placeholder="youtubeLinkPlaceholder" />
+                            <div class="dialog-actions">
+                                <button id="cancel-youtube" class="cancel-btn" data-i18n="cancelButton"></button>
+                                <button id="confirm-youtube" class="confirm-btn" data-i18n="addButton"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="chat-status-message" class="chat-status"></div>
+                    <div class="chat-input-wrapper">
+                        <div class="chat-input">
+                            <textarea id="user-input" data-i18n-placeholder="userInputPlaceholder"
+                                placeholder="..."></textarea>
+                            <div class="chat-input-controls">
+                                <button id="attachment-menu-btn" class="input-action-btn"
+                                    data-i18n-title="attachmentMenuTitle" title="添加附件">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" viewBox="0 0 24 24">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                                <div id="attachment-menu" class="attachment-menu">
+                                    <button id="upload-image" class="attachment-menu-item"
+                                        data-i18n-title="uploadImageTitle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z" />
+                                            <path
+                                                d="M1.5 2A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13zm13 1a.5.5 0 0 1 .5.5v6l-3.775-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12v.54A.505.505 0 0 1 1 12.5v-9a.5.5 0 0 1 .5-.5h13z" />
+                                        </svg>
+                                        <span data-i18n="uploadImageMenuItem">上传图片</span>
+                                    </button>
+                                    <button id="add-youtube-url" class="attachment-menu-item"
+                                        data-i18n-title="addYoutubeLinkTitle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            fill="currentColor" viewBox="0 0 16 16">
+                                            <path
+                                                d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.007 2.007 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.007 2.007 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31.4 31.4 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.007 2.007 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A99.788 99.788 0 0 1 7.858 2h.193zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z" />
+                                        </svg>
+                                        <span data-i18n="uploadYoutubeMenuItem">上传 YouTube URL</span>
+                                    </button>
+                                </div>
+                                <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
+                                <div id="inline-model-selector" class="inline-model-selector">
+                                    <span id="current-model-display">model</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor"
+                                        viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd"
+                                            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                                <div id="model-selector-menu" class="model-selector-menu"></div>
+                                <select id="chat-model-selection" aria-label="选择模型" style="display: none;"></select>
+                                <button id="send-message" data-i18n-title="sendMessageTitle" title="发送消息"
+                                    aria-label="发送消息">
+                                    <svg class="send-icon send-icon--send" xmlns="http://www.w3.org/2000/svg" width="16"
+                                        height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="m22 2-7 20-4-9-9-4Z"></path>
+                                        <path d="M22 2 11 13"></path>
+                                    </svg>
+                                    <svg class="send-icon send-icon--stop" xmlns="http://www.w3.org/2000/svg" width="16"
+                                        height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <div class="status-bar">
+                <span id="context-status" data-i18n="contextStatusPrefix">上下文：</span>
+                <span id="connection-indicator" class="disconnected"
+                    data-i18n="connectionIndicatorDisconnected">未连接</span>
+            </div>
+            <ul class="footer-tabs">
+                <li class="footer-tab active" data-tab="chat" data-i18n="chatTab">聊天</li>
+                <li class="footer-tab" data-tab="settings" data-i18n="settingsTab">设置</li>
+            </ul>
+        </footer>
+    </div>
+
+    <div id="changelog-modal" class="changelog-modal">
+        <div class="changelog-content">
+            <div class="changelog-header">
+                <h2 id="changelog-title" data-i18n="changelogTitle">更新</h2>
+                <p id="changelog-subtitle"></p>
+            </div>
+            <div class="changelog-list" id="changelog-list"></div>
+            <div class="changelog-footer">
+                <div class="changelog-checkbox">
+                    <input type="checkbox" id="never-show-checkbox">
+                    <label for="never-show-checkbox" id="never-show-label"
+                        data-i18n="changelogNeverShow">不再显示本版本更新</label>
+                </div>
+                <button id="changelog-ok-btn" class="changelog-ok-btn" data-i18n="changelogOK">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mermaid-modal" class="mermaid-modal">
+        <span class="close-modal mermaid-close-modal">&times;</span>
+        <div id="mermaid-modal-content" class="modal-content mermaid-modal-content"></div>
+    </div>
+
+    <script src="../js/lib/dayjs.min.js"></script>
+    <script src="../js/lib/en.min.js"></script>
+    <script src="../js/lib/zh-cn.min.js"></script>
+    <script defer src="../js/lib/katex.min.js"></script>
+    <script defer src="../js/lib/auto-render.min.js"></script>
+    <script defer src="../js/lib/mhchem.min.js"></script>
+    <script src="../js/lib/mermaid.min.js"></script>
+    <script src="../js/lib/panzoom.min.js"></script>
+    <script src="../js/lib/lucide.js"></script>
+    <script type="module" src="../js/providerManager.js"></script>
+    <script src="../js/modelManager.js"></script>
+    <script type="module" src="../js/api.js"></script>
+    <script src="../js/translations.js"></script>
+    <script src="../js/changelog.js"></script>
+    <script type="module" src="../js/main.js"></script>
+</body>
+
+</html>
