@@ -2211,6 +2211,11 @@ body.settings-standalone #settings .settings-container {
     gap: var(--spacing-lg);
     height: 100%;
     min-height: 0;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 var(--spacing-md); /* Add internal padding */
+    box-sizing: border-box;
 }
 
 body.settings-standalone .settings-nav {
@@ -2221,6 +2226,7 @@ body.settings-standalone .settings-nav {
     margin-bottom: 0;
     padding-right: var(--spacing-md);
     padding-bottom: 0;
+    padding-top: var(--spacing-xl); /* Push nav down */
     border-bottom: none;
     border-right: 1px solid var(--border-color);
     overflow-y: auto;
@@ -2239,7 +2245,7 @@ body.settings-standalone .settings-sub-content {
     height: 100%;
     min-height: 0;
     overflow-y: auto;
-    padding: 0 var(--spacing-sm) var(--spacing-md);
+    padding: 0 var(--spacing-xl) var(--spacing-xl);
 }
 
 body.settings-standalone .settings-sub-content.active {
