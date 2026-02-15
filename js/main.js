@@ -504,7 +504,6 @@ function setupEventListeners() {
 
             // 新增：在切换标签页前关闭标签页选择弹窗
             closeTabSelectionPopupUIFromMain();
-            // 调用 ui.js 中的 switchTab (假设 switchTab 是一个可访问的函数，或者这部分逻辑在 main.js 中)
             switchTab(tabId, elements, (subTab) => switchSettingsSubTab(subTab, elements));
             setThemeButtonVisibility(tabId, elements); // Update button visibility on tab switch
 
@@ -974,71 +973,6 @@ async function fetchAndShowTabsForSelection() {
     }
 }
 
-// 新增：处理从弹窗中选择标签页的回调
-function handleTabSelectedFromPopup(selectedTab) {
-    if (!selectedTab) {
-        // state.isTabSelectionPopupOpen = false; // closeTabSelectionPopupUIFromMain 会处理
-        closeTabSelectionPopupUIFromMain(); // <--- Ensure state is updated if no tab selected (e.g. Esc)
-        return;
-    }
-
-    console.log('Tab selected:', selectedTab);
-    // state.isTabSelectionPopupOpen = false; // closeTabSelectionPopupUIFromMain 会处理
-    closeTabSelectionPopupUIFromMain(); // <--- MODIFIED HERE (called by ui.js click handler, but ensure state sync)
-
-    const currentText = elements.userInput.value;
-    const cursorPos = elements.userInput.selectionStart;
-    const atCharIndex = currentText.lastIndexOf('@', cursorPos - 1);
-    if (atCharIndex !== -1) {
-        elements.userInput.value = currentText.substring(0, atCharIndex);
-    }
-    elements.userInput.focus();
-
-    // Update custom caret position after programmatic value change
-    if (window.updateCometCaret) window.updateCometCaret();
-
-    const isAlreadySelected = state.selectedContextTabs.some(tab => tab.id === selectedTab.id);
-    if (isAlreadySelected) {
-        if (showToastUI) showToastUI(`标签页 "${selectedTab.title.substring(0, 20)}..." 已添加`, 'info');
-        return;
-    }
-
-    const newSelectedTabEntry = {
-        id: selectedTab.id,
-        title: selectedTab.title,
-        url: selectedTab.url,
-        favIconUrl: selectedTab.favIconUrl,
-        content: null,
-        isLoading: true,
-        isContextSent: false
-    };
-    state.selectedContextTabs.push(newSelectedTabEntry);
-    updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // <--- MODIFIED HERE (added removeSelectedTabFromMain)
-
-    chrome.runtime.sendMessage({ action: 'extractTabContent', tabId: selectedTab.id }, (response) => {
-        const tabData = state.selectedContextTabs.find(t => t.id === selectedTab.id);
-        if (tabData) {
-            if (response.content && !response.error) {
-                tabData.content = response.content;
-                tabData.isLoading = false;
-                tabData.error = false;
-                console.log(`Content for tab ${selectedTab.id} loaded, length: ${response.content?.length}`);
-                // 使用自定义类名调用 showToastUI
-                showToastUI(_('tabContentLoadedSuccess', { title: tabData.title.substring(0, 20) }), 'success', 'toast-tab-loaded');
-            } else {
-                tabData.content = null; // 确保错误时内容为空
-                tabData.isLoading = false;
-                tabData.error = true;
-                const errorMessage = response.error || _('unknownErrorLoadingTab', {}, currentTranslations);
-                console.error(`Failed to load content for tab ${selectedTab.id}: ${errorMessage}`);
-                // 使用自定义类名调用 showToastUI
-                showToastUI(_('tabContentLoadFailed', { title: tabData.title.substring(0, 20), error: errorMessage }), 'error', 'toast-tab-loaded');
-            }
-            updateSelectedTabsBarUI(state.selectedContextTabs, elements, removeSelectedTabFromMain, currentTranslations); // 更新UI以反映加载/错误状态
-        }
-    });
-}
-
 // 新增：处理从弹窗中多选标签页的回调
 function handleTabsSelectedFromPopup(selectedTabs) {
     if (!Array.isArray(selectedTabs) || selectedTabs.length === 0) {
@@ -1111,12 +1045,6 @@ function handleTabsSelectedFromPopup(selectedTabs) {
         }
     }
 }
-
-// 后续步骤将定义:
-// - showTabSelectionPopupUI (在ui.js)
-// - closeTabSelectionPopupUI (在ui.js)
-// - navigateTabSelectionPopupUI (在ui.js)
-// - updateSelectedTabsBarUI (在ui.js)
 
 function handleChatModelChange() {
     state.model = elements.chatModelSelection.value;
@@ -1933,24 +1861,6 @@ window.addMessageActionButtons = addMessageActionButtonsUI;
 // window.updateStreamingMessage and window.finalizeBotMessage are set in init()
 window.showToast = showToastUI; // Expose toast globally if needed
 window.showToastUI = showToastUI; // Also expose as showToastUI for consistency
-
-// 假设这是在"首次操作"完成，并且聊天消息等已添加到DOM之后
-function onFirstOperationComplete() {
-    // ... 其他逻辑 ...
-
-    // 尝试强制重绘/回流聊天头部来修正选择框位置
-    const chatHeader = elements.chatMessages.previousElementSibling; // 假设 .chat-header 就在 .chat-messages 前面
-    if (chatHeader && chatHeader.classList.contains('chat-header')) {
-        // 一种轻微强制回流的方法
-        chatHeader.style.display = 'none';
-        void chatHeader.offsetHeight; // 读取 offsetHeight 会强制浏览器回流
-        chatHeader.style.display = 'flex'; // 恢复原状
-    }
-    // 或者，如果确认 resizeTextarea 能解决且无明显副作用，也可以调用它
-    // if (elements.userInput) {
-    //     resizeTextarea(elements);
-    // }
-}
 
 // --- Start Application ---
 document.addEventListener('DOMContentLoaded', init);
