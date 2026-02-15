@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/jeanchristophe13v/PageTalk"> <!-- Replace with your repo link if available -->
-    <img src="magic.png?raw=true" alt="Pagetalk Icon" title="Pagetalk Icon" width="250">
+    <img src="magic.png?raw=true" alt="PageTalk Icon" title="PageTalk Icon" width="250">
   </a>
 </p>
 
@@ -42,7 +42,7 @@ https://github.com/user-attachments/assets/3d998ee5-bf25-4a42-9269-417c80df6751
 
 ## Introduction
 
-Pagetalk is a browser extension that enhances your web browsing by integrating Google's Gemini API. Summarize pages, chat contextually, and manage custom AI agents effortlessly.
+PageTalk is a browser extension that enhances your web browsing by integrating Google's Gemini API. Summarize pages, chat contextually, and manage custom AI agents effortlessly.
 
 
 ## Features
@@ -134,7 +134,7 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
 
 ## Usage
 
-- **Open:** Click the Pagetalk icon or use shortcut (default `Alt+P`).
+- **Open:** Click the PageTalk icon or use shortcut (default `Alt+P`).
 - **Settings Tab:** (Contains General, Agents, Model sub-tabs)
     *   **General:** Switch Language/Theme, Export Chat History.
     *   **Agents:** Manage agents, Import/Export configurations.

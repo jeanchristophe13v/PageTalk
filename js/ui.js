@@ -1,5 +1,5 @@
 /**
- * Pagetalk - UI Update and DOM Manipulation Functions
+ * PageTalk - UI Update and DOM Manipulation Functions
  */
 import { generateUniqueId, escapeHtml } from './utils.js';
 import { renderDynamicContent, preProcessMermaidHTML } from './render.js';
@@ -60,10 +60,10 @@ export function switchSettingsSubTab(subTabId, elements) {
  */
 export function addMessageToChat(content, sender, options = {}, state, elements, currentTranslations, addCopyButtonToCodeBlock, addMessageActionButtons, isUserNearBottom) {
     const { isStreaming = false, images = [], videos = [], insertAfterElement = null, forceScroll = false, sentContextTabs = [] } = options;
-    
+
     const messageDiv = document.createElement('div');
     messageDiv.classList.add('message', `${sender}-message`);
-    
+
     const messageId = (options && options.id) ? options.id : generateUniqueId();
     messageDiv.dataset.messageId = messageId;
 
@@ -163,7 +163,7 @@ export function addMessageToChat(content, sender, options = {}, state, elements,
     if (sentImagesContainer) {
         parentNode.insertBefore(sentImagesContainer, actualInsertBeforeElement);
     }
-    
+
     // 然后插入消息气泡
     if (actualInsertBeforeElement) {
         parentNode.insertBefore(messageDiv, actualInsertBeforeElement);
@@ -330,19 +330,19 @@ export function updateStreamingMessage(messageElement, content, shouldScroll, el
                 const totalFadeLength = Math.min(8, text.length);
                 const stableText = text.slice(0, -totalFadeLength);
                 const fadeText = text.slice(-totalFadeLength);
-                
+
                 // 将渐变文字分成3段
                 const segment1Len = Math.ceil(fadeText.length / 3);
                 const segment2Len = Math.ceil(fadeText.length / 3);
                 const segment3Len = fadeText.length - segment1Len - segment2Len;
-                
+
                 const segment1 = fadeText.slice(0, segment1Len);
                 const segment2 = fadeText.slice(segment1Len, segment1Len + segment2Len);
                 const segment3 = fadeText.slice(segment1Len + segment2Len);
-                
+
                 // 创建包含渐变文字的 span（3段不同透明度）
                 const fadeContainer = document.createDocumentFragment();
-                
+
                 if (segment1) {
                     const span1 = document.createElement('span');
                     span1.className = 'streaming-text-fade streaming-text-fade-1';
@@ -361,7 +361,7 @@ export function updateStreamingMessage(messageElement, content, shouldScroll, el
                     span3.textContent = segment3;
                     fadeContainer.appendChild(span3);
                 }
-                
+
                 // 替换原文本节点
                 lastTextNode.textContent = stableText;
                 lastTextNode.parentNode.insertBefore(fadeContainer, lastTextNode.nextSibling);
@@ -484,7 +484,7 @@ export function showConnectionStatus(message, type, elements) {
         setTimeout(() => {
             // Check if the message is still the same before hiding
             if (elements.connectionStatus.textContent === message) {
-                 elements.connectionStatus.style.display = 'none';
+                elements.connectionStatus.style.display = 'none';
             }
         }, 3000);
     }
@@ -530,7 +530,7 @@ export function showToast(message, type, customClass = '') {
     document.body.appendChild(toast);
 
     // Trigger reflow to enable transition
-    toast.offsetHeight; 
+    toast.offsetHeight;
 
     toast.classList.add('show');
 
@@ -621,7 +621,7 @@ export function updateUIElementsWithTranslations(currentTranslations) {
     const setAttr = (selector, attr, key, rep = {}) => {
         const el = document.querySelector(selector);
         if (el) el.setAttribute(attr, _tr(key, rep));
-       // else console.warn(`Element not found for setAttr: ${selector}`);
+        // else console.warn(`Element not found for setAttr: ${selector}`);
     };
     const setPlaceholder = (selector, key, rep = {}) => setAttr(selector, 'placeholder', key, rep);
     const setTitle = (selector, key, rep = {}) => setAttr(selector, 'title', key, rep);
@@ -799,18 +799,18 @@ export function restoreSendButtonAndInput(state, elements, currentTranslations) 
  * @param {object} elements - DOM elements reference
  */
 export function toggleApiKeyVisibility(elements) {
-     if (!elements.toggleApiKey || !elements.apiKeyInput) return;
+    if (!elements.toggleApiKey || !elements.apiKeyInput) return;
 
-     const type = elements.apiKeyInput.type === 'password' ? 'text' : 'password';
-     elements.apiKeyInput.type = type;
+    const type = elements.apiKeyInput.type === 'password' ? 'text' : 'password';
+    elements.apiKeyInput.type = type;
 
-     const eyeIcon = document.getElementById('eye-icon');
-     const eyeSlashIcon = document.getElementById('eye-slash-icon');
+    const eyeIcon = document.getElementById('eye-icon');
+    const eyeSlashIcon = document.getElementById('eye-slash-icon');
 
-     if (eyeIcon && eyeSlashIcon) {
-         eyeIcon.style.display = (type === 'text') ? 'none' : 'inline-block';
-         eyeSlashIcon.style.display = (type === 'text') ? 'inline-block' : 'none';
-     }
+    if (eyeIcon && eyeSlashIcon) {
+        eyeIcon.style.display = (type === 'text') ? 'none' : 'inline-block';
+        eyeSlashIcon.style.display = (type === 'text') ? 'inline-block' : 'none';
+    }
 }
 
 /**
@@ -834,9 +834,9 @@ export function showChatStatusMessage(message, type, elements) {
             elements.chatStatusMessage.style.opacity = '0';
             elements.chatStatusMessage.style.transform = 'translateY(5px)';
             setTimeout(() => {
-                 if (elements.chatStatusMessage.textContent === message) {
-                     elements.chatStatusMessage.style.display = 'none';
-                 }
+                if (elements.chatStatusMessage.textContent === message) {
+                    elements.chatStatusMessage.style.display = 'none';
+                }
             }, 300);
         }, 2000);
     }
@@ -1020,7 +1020,7 @@ export function showCopyMessageFeedback(buttonElement) {
     setTimeout(() => {
         // Check if the button still exists and has the checkmark before restoring
         if (buttonElement.contains(newSVG)) {
-             buttonElement.replaceChild(originalSVGCopy, newSVG);
+            buttonElement.replaceChild(originalSVGCopy, newSVG);
         }
         buttonElement.disabled = false;
     }, 1500);
@@ -1057,7 +1057,7 @@ function showVideoModal(videoUrl, elements) {
             </video>
         `;
         document.body.appendChild(videoModal);
-        
+
         // 添加关闭事件
         const closeBtn = videoModal.querySelector('.close-modal');
         closeBtn.addEventListener('click', () => hideVideoModal());
@@ -1065,7 +1065,7 @@ function showVideoModal(videoUrl, elements) {
             if (e.target === videoModal) hideVideoModal();
         });
     }
-    
+
     const modalVideo = videoModal.querySelector('#modal-video source');
     const video = videoModal.querySelector('#modal-video');
     modalVideo.src = videoUrl;
@@ -1420,7 +1420,7 @@ export function updateSelectedTabsBarUI(selectedTabs, elements, onRemoveTabCallb
         // 将其插入到 chat-messages 和 chat-input 之间
         if (chatInputContainer && chatInputContainer.parentNode) {
             chatInputContainer.parentNode.insertBefore(bar, chatInputContainer);
-             // 调整 chat-input 的顶部圆角
+            // 调整 chat-input 的顶部圆角
             chatInputContainer.style.borderTopLeftRadius = '0';
             chatInputContainer.style.borderTopRightRadius = '0';
         }
@@ -1464,6 +1464,6 @@ export function updateSelectedTabsBarUI(selectedTabs, elements, onRemoveTabCallb
     // 调整聊天消息区域的底部内边距，为标签栏腾出空间
     if (elements.chatMessages) {
         const barHeight = bar.offsetHeight;
-        elements.chatMessages.style.paddingBottom = `calc(${barHeight}px + var(--spacing-sm))`; 
+        elements.chatMessages.style.paddingBottom = `calc(${barHeight}px + var(--spacing-sm))`;
     }
 }

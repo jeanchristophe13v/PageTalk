@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/jeanchristophe13v/PageTalk"> <!-- 如果有仓库链接，请替换 -->
-    <img src="magic.png?raw=true" alt="Pagetalk 图标" title="Pagetalk 图标" width="250">
+    <img src="magic.png?raw=true" alt="PageTalk 图标" title="PageTalk 图标" width="250">
   </a>
 </p>
 
@@ -40,7 +40,7 @@ https://github.com/user-attachments/assets/1315abf6-9773-4e54-bd2f-97ad480946c3
 
 ## 简介
 
-Pagetalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您的网页浏览体验。轻松总结页面、进行上下文对话，并管理自定义 AI 助手。
+PageTalk 是一款浏览器插件，通过集成 Google Gemini API 来增强您的网页浏览体验。轻松总结页面、进行上下文对话，并管理自定义 AI 助手。
 
 
 ## 主要特性
@@ -127,7 +127,7 @@ git clone https://github.com/jeanchristophe13v/PageTalk.git
 
 ## 使用说明
 
-- **打开:** 点击 Pagetalk 图标或使用快捷键 (默认 `Alt+P`)。
+- **打开:** 点击 PageTalk 图标或使用快捷键 (默认 `Alt+P`)。
 - **设置标签页:** (包含通用、助手、模型子标签页)
     *   **通用:** 切换语言/主题，导出聊天记录。
     *   **助手:** 管理助手，导入/导出配置。

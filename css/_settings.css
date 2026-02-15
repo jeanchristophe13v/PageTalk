@@ -1,4 +1,4 @@
-/* 包含 Pagetalk 插件设置界面的所有样式，包括通用设置、Agent 管理、模型配置、表单元素、滑块、按钮、提示框等。 */
+/* 包含 PageTalk 插件设置界面的所有样式，包括通用设置、Agent 管理、模型配置、表单元素、滑块、按钮、提示框等。 */
 
 :root {
     --toast-bottom-base: 120px;
@@ -2214,7 +2214,8 @@ body.settings-standalone #settings .settings-container {
     max-width: 1000px;
     margin: 0 auto;
     width: 100%;
-    padding: 0 var(--spacing-md); /* Add internal padding */
+    padding: 0 var(--spacing-md);
+    /* Add internal padding */
     box-sizing: border-box;
 }
 
@@ -2226,7 +2227,8 @@ body.settings-standalone .settings-nav {
     margin-bottom: 0;
     padding-right: var(--spacing-md);
     padding-bottom: 0;
-    padding-top: var(--spacing-xl); /* Push nav down */
+    padding-top: var(--spacing-xl);
+    /* Push nav down */
     border-bottom: none;
     border-right: 1px solid var(--border-color);
     overflow-y: auto;

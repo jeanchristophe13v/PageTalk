@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Text Selection Helper Settings Module
+ * PageTalk - Text Selection Helper Settings Module
  * 划词助手设置管理模块
  */
 
@@ -2157,7 +2157,7 @@ function handleCustomOptionsImport(event, translations) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             const importData = JSON.parse(e.target.result);
 

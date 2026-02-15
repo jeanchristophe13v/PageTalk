@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Theme Management and Draggable Button
+ * PageTalk - Theme Management and Draggable Button
  */
 
 /**

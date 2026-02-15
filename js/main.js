@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Main Sidepanel Script (Coordinator)
+ * PageTalk - Main Sidepanel Script (Coordinator)
  */
 
 // --- Imports ---
@@ -265,7 +265,7 @@ const SCROLL_THRESHOLD = 30; // Increased threshold slightly
 
 // --- Initialization ---
 async function init() {
-    console.log("Pagetalk Initializing...");
+    console.log("PageTalk Initializing...");
 
     state.isStandaloneSettingsPage = detectStandaloneSettingsPageMode();
     if (state.isStandaloneSettingsPage) {
@@ -484,7 +484,7 @@ async function init() {
     // Expose state object to global scope for settings functions
     window.state = state;
 
-    console.log("Pagetalk Initialized.");
+    console.log("PageTalk Initialized.");
 }
 
 // --- Event Listener Setup ---

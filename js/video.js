@@ -1,5 +1,5 @@
 /**
- * Pagetalk - YouTube Video Handling Functions
+ * PageTalk - YouTube Video Handling Functions
  */
 import { generateUniqueId, escapeHtml } from './utils.js';
 import { tr as _ } from './utils/i18n.js';
@@ -15,18 +15,18 @@ import { tr as _ } from './utils/i18n.js';
  */
 export function handleYouTubeUrl(url, state, updateVideosPreviewCallback, currentTranslations = {}) {
     if (!url) return;
-    
+
     // 验证YouTube URL格式
     const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     if (!youtubeRegex.test(url)) {
         alert(_('invalidYouTubeUrl', {}, currentTranslations) || '请输入有效的YouTube链接');
         return;
     }
-    
+
     // 提取视频ID用于缩略图
     const videoId = extractYouTubeVideoId(url);
     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-    
+
     const videoData = {
         url: url,
         id: generateUniqueId(),
@@ -35,7 +35,7 @@ export function handleYouTubeUrl(url, state, updateVideosPreviewCallback, curren
         thumbnailUrl: thumbnailUrl,
         name: `YouTube Video: ${videoId}`
     };
-    
+
     state.videos.push(videoData);
     updateVideosPreviewCallback(); // Use callback
 }
@@ -80,7 +80,7 @@ export function updateVideosPreview(state, elements, currentTranslations, remove
         thumbnailElement.src = video.thumbnailUrl;
         thumbnailElement.alt = `YouTube video thumbnail`;
         thumbnailElement.className = 'video-thumbnail';
-        thumbnailElement.onerror = function() {
+        thumbnailElement.onerror = function () {
             // 如果缩略图加载失败，使用默认缩略图
             this.src = `https://img.youtube.com/vi/${video.videoId}/hqdefault.jpg`;
         };
@@ -99,7 +99,7 @@ export function updateVideosPreview(state, elements, currentTranslations, remove
 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'video-info';
-        
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'video-name';
         nameSpan.textContent = video.name;
@@ -125,12 +125,12 @@ export function updateVideosPreview(state, elements, currentTranslations, remove
 
         overlayDiv.appendChild(playIcon);
         actionsDiv.appendChild(deleteBtn);
-        
+
         videoItem.appendChild(thumbnailElement);
         videoItem.appendChild(overlayDiv);
         videoItem.appendChild(infoDiv);
         videoItem.appendChild(actionsDiv);
-        
+
         elements.videosGrid.appendChild(videoItem);
     });
 }

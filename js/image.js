@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Image Handling Functions
+ * PageTalk - Image Handling Functions
  */
 import { generateUniqueId, escapeHtml } from './utils.js';
 import { tr as _ } from './utils/i18n.js';
@@ -29,10 +29,10 @@ export function setupImagePaste(elements, handleImageFileCallback) {
         }
         // Visual feedback
         if (imageFound) {
-             elements.userInput.classList.add('paste-highlight');
-             setTimeout(() => {
-                 elements.userInput.classList.remove('paste-highlight');
-             }, 500);
+            elements.userInput.classList.add('paste-highlight');
+            setTimeout(() => {
+                elements.userInput.classList.remove('paste-highlight');
+            }, 500);
         }
     });
 }

@@ -80,7 +80,7 @@
         "default": "Alt+P",
         "mac": "Alt+P"
       },
-      "description": "打开 Pagetalk 面板"
+      "description": "打开 PageTalk 面板"
     }
   },
   "content_security_policy": {

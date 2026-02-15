@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Text Selection Helper Styles
+ * PageTalk - Text Selection Helper Styles
  * 划词助手样式
  */
 
@@ -12,7 +12,8 @@
 
 /* Mini Icon 样式 (改为 absolute 定位) */
 .pagetalk-mini-icon {
-    position: absolute; /* 改动：从 fixed 改为 absolute */
+    position: absolute;
+    /* 改动：从 fixed 改为 absolute */
     z-index: 2147483646;
     width: 32px;
     height: 32px;
@@ -42,7 +43,8 @@
 
 /* 选项栏样式 (改为 absolute 定位) */
 .pagetalk-options-bar {
-    position: absolute; /* 改动：从 fixed 改为 absolute */
+    position: absolute;
+    /* 改动：从 fixed 改为 absolute */
     z-index: 2147483647;
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
@@ -56,9 +58,12 @@
     transition: all 0.3s ease;
     user-select: none;
     width: auto;
-    max-width: calc(100vw - 40px); /* 避免超出屏幕，留20px边距 */
-    max-height: 50vh; /* 高度上限，防止过高 */
-    overflow: auto; /* 内容过多时，内部滚动而不是让页面横向滚动 */
+    max-width: calc(100vw - 40px);
+    /* 避免超出屏幕，留20px边距 */
+    max-height: 50vh;
+    /* 高度上限，防止过高 */
+    overflow: auto;
+    /* 内容过多时，内部滚动而不是让页面横向滚动 */
 }
 
 /* 选项栏图标 */
@@ -84,8 +89,10 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    flex-wrap: wrap; /* 允许在窄屏时换行，避免溢出 */
-    white-space: normal; /* 允许换行 */
+    flex-wrap: wrap;
+    /* 允许在窄屏时换行，避免溢出 */
+    white-space: normal;
+    /* 允许换行 */
 }
 
 /* 添加选项按钮 */
@@ -173,12 +180,17 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: hidden;
     resize: both;
-    min-width: 400px; /* 保留最小宽度 */
-    min-height: 250px; /* 保留最小高度 */
+    min-width: 400px;
+    /* 保留最小宽度 */
+    min-height: 250px;
+    /* 保留最小高度 */
     /* 移除 max-width 限制，由 JavaScript 动态控制 */
-    width: 480px; /* 设置默认宽度 */
-    height: 300px; /* 设置默认高度，由 JavaScript 动态调整 */
-    transition: width 0.3s ease, height 0.3s ease; /* 添加宽度和高度变化动画 */
+    width: 480px;
+    /* 设置默认宽度 */
+    height: 300px;
+    /* 设置默认高度，由 JavaScript 动态调整 */
+    transition: width 0.3s ease, height 0.3s ease;
+    /* 添加宽度和高度变化动画 */
 }
 
 /* --- Start of Fix: Scoped CSS variables and styles --- */
@@ -234,7 +246,8 @@
 .pagetalk-function-window .markdown-rendered ol {
     margin: 0.6em 0;
     padding-left: 1.8em;
-    list-style: initial; /* 确保列表符号显示 */
+    list-style: initial;
+    /* 确保列表符号显示 */
 }
 
 /* 确保无序列表显示圆点 - 使用更高特异性避免重置样式影响 */
@@ -277,7 +290,8 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
 /* 基础段落样式 - 与主面板保持一致 */
 .pagetalk-function-window .markdown-rendered p {
     margin-top: 0;
-    margin-bottom: 0.6em; /* 与主面板 .bot-message p 保持一致的段落间距 */
+    margin-bottom: 0.6em;
+    /* 与主面板 .bot-message p 保持一致的段落间距 */
     line-height: 1.4;
 }
 
@@ -285,7 +299,7 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     margin-bottom: 0;
 }
 
-.pagetalk-function-window .markdown-rendered p + p::before {
+.pagetalk-function-window .markdown-rendered p+p::before {
     content: none;
     display: none;
     height: 0;
@@ -295,20 +309,20 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     margin: 0.3em 0;
 }
 
-.pagetalk-function-window .markdown-rendered p + ul,
-.pagetalk-function-window .markdown-rendered p + ol {
+.pagetalk-function-window .markdown-rendered p+ul,
+.pagetalk-function-window .markdown-rendered p+ol {
     margin-top: 0.4em;
 }
 
-.pagetalk-function-window .markdown-rendered ul + p,
-.pagetalk-function-window .markdown-rendered ol + p {
+.pagetalk-function-window .markdown-rendered ul+p,
+.pagetalk-function-window .markdown-rendered ol+p {
     margin-top: 0.6em;
 }
 
-.pagetalk-function-window .markdown-rendered h1 + p,
-.pagetalk-function-window .markdown-rendered h2 + p,
-.pagetalk-function-window .markdown-rendered h3 + p,
-.pagetalk-function-window .markdown-rendered h4 + p {
+.pagetalk-function-window .markdown-rendered h1+p,
+.pagetalk-function-window .markdown-rendered h2+p,
+.pagetalk-function-window .markdown-rendered h3+p,
+.pagetalk-function-window .markdown-rendered h4+p {
     margin-top: 0.3em;
 }
 
@@ -316,7 +330,8 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     width: 100%;
     overflow-x: auto;
     margin: 0.8em 0;
-    border-radius: 4px; /* --radius-sm */
+    border-radius: 4px;
+    /* --radius-sm */
     border: 1px solid var(--border-color);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -360,7 +375,8 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
 
 .pagetalk-function-window .markdown-rendered pre {
     background-color: var(--code-background);
-    border-radius: 4px; /* --radius-sm */
+    border-radius: 4px;
+    /* --radius-sm */
     padding: 0.8em 1em;
     margin: 0.8em 0;
     overflow-x: auto;
@@ -401,11 +417,11 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     background-color: var(--blockquote-bg);
 }
 
-.pagetalk-function-window .markdown-rendered blockquote > :first-child {
+.pagetalk-function-window .markdown-rendered blockquote> :first-child {
     margin-top: 0;
 }
 
-.pagetalk-function-window .markdown-rendered blockquote > :last-child {
+.pagetalk-function-window .markdown-rendered blockquote> :last-child {
     margin-bottom: 0;
 }
 
@@ -442,23 +458,107 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
 }
 
 /* Scoped Code Highlighting Styles (支持深色模式) */
-.pagetalk-function-window pre code.hljs { display: block; overflow-x: auto; padding: 1em; }
-.pagetalk-function-window code.hljs { padding: 3px 5px; }
-.pagetalk-function-window .hljs { color: var(--code-text-color); background: var(--code-background); }
-.pagetalk-function-window .hljs-doctag, .pagetalk-function-window .hljs-keyword, .pagetalk-function-window .hljs-meta .hljs-keyword, .pagetalk-function-window .hljs-template-tag, .pagetalk-function-window .hljs-template-variable, .pagetalk-function-window .hljs-type, .pagetalk-function-window .hljs-variable.language_ { color: #d73a49; }
-.pagetalk-function-window .hljs-title, .pagetalk-function-window .hljs-title.class_, .pagetalk-function-window .hljs-title.class_.inherited__, .pagetalk-function-window .hljs-title.function_ { color: #6f42c1; }
-.pagetalk-function-window .hljs-attr, .pagetalk-function-window .hljs-attribute, .pagetalk-function-window .hljs-literal, .pagetalk-function-window .hljs-meta, .pagetalk-function-window .hljs-number, .pagetalk-function-window .hljs-operator, .pagetalk-function-window .hljs-variable, .pagetalk-function-window .hljs-selector-attr, .pagetalk-function-window .hljs-selector-class, .pagetalk-function-window .hljs-selector-id { color: #005cc5; }
-.pagetalk-function-window .hljs-regexp, .pagetalk-function-window .hljs-string, .pagetalk-function-window .hljs-meta .hljs-string { color: #032f62; }
-.pagetalk-function-window .hljs-built_in, .pagetalk-function-window .hljs-symbol { color: #e36209; }
-.pagetalk-function-window .hljs-code, .pagetalk-function-window .hljs-comment, .pagetalk-function-window .hljs-formula { color: #6a737d; }
-.pagetalk-function-window .hljs-name, .pagetalk-function-window .hljs-quote, .pagetalk-function-window .hljs-selector-tag, .pagetalk-function-window .hljs-selector-pseudo { color: #22863a; }
-.pagetalk-function-window .hljs-subst { color: #24292e; }
-.pagetalk-function-window .hljs-section { color: #005cc5; font-weight: bold; }
-.pagetalk-function-window .hljs-bullet { color: #735c0f; }
-.pagetalk-function-window .hljs-emphasis { color: #24292e; font-style: italic; }
-.pagetalk-function-window .hljs-strong { color: #24292e; font-weight: bold; }
-.pagetalk-function-window .hljs-addition { color: #22863a; background-color: var(--success-bg, #f0fff4); }
-.pagetalk-function-window .hljs-deletion { color: #b31d28; background-color: var(--error-bg, #ffeef0); }
+.pagetalk-function-window pre code.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 1em;
+}
+
+.pagetalk-function-window code.hljs {
+    padding: 3px 5px;
+}
+
+.pagetalk-function-window .hljs {
+    color: var(--code-text-color);
+    background: var(--code-background);
+}
+
+.pagetalk-function-window .hljs-doctag,
+.pagetalk-function-window .hljs-keyword,
+.pagetalk-function-window .hljs-meta .hljs-keyword,
+.pagetalk-function-window .hljs-template-tag,
+.pagetalk-function-window .hljs-template-variable,
+.pagetalk-function-window .hljs-type,
+.pagetalk-function-window .hljs-variable.language_ {
+    color: #d73a49;
+}
+
+.pagetalk-function-window .hljs-title,
+.pagetalk-function-window .hljs-title.class_,
+.pagetalk-function-window .hljs-title.class_.inherited__,
+.pagetalk-function-window .hljs-title.function_ {
+    color: #6f42c1;
+}
+
+.pagetalk-function-window .hljs-attr,
+.pagetalk-function-window .hljs-attribute,
+.pagetalk-function-window .hljs-literal,
+.pagetalk-function-window .hljs-meta,
+.pagetalk-function-window .hljs-number,
+.pagetalk-function-window .hljs-operator,
+.pagetalk-function-window .hljs-variable,
+.pagetalk-function-window .hljs-selector-attr,
+.pagetalk-function-window .hljs-selector-class,
+.pagetalk-function-window .hljs-selector-id {
+    color: #005cc5;
+}
+
+.pagetalk-function-window .hljs-regexp,
+.pagetalk-function-window .hljs-string,
+.pagetalk-function-window .hljs-meta .hljs-string {
+    color: #032f62;
+}
+
+.pagetalk-function-window .hljs-built_in,
+.pagetalk-function-window .hljs-symbol {
+    color: #e36209;
+}
+
+.pagetalk-function-window .hljs-code,
+.pagetalk-function-window .hljs-comment,
+.pagetalk-function-window .hljs-formula {
+    color: #6a737d;
+}
+
+.pagetalk-function-window .hljs-name,
+.pagetalk-function-window .hljs-quote,
+.pagetalk-function-window .hljs-selector-tag,
+.pagetalk-function-window .hljs-selector-pseudo {
+    color: #22863a;
+}
+
+.pagetalk-function-window .hljs-subst {
+    color: #24292e;
+}
+
+.pagetalk-function-window .hljs-section {
+    color: #005cc5;
+    font-weight: bold;
+}
+
+.pagetalk-function-window .hljs-bullet {
+    color: #735c0f;
+}
+
+.pagetalk-function-window .hljs-emphasis {
+    color: #24292e;
+    font-style: italic;
+}
+
+.pagetalk-function-window .hljs-strong {
+    color: #24292e;
+    font-weight: bold;
+}
+
+.pagetalk-function-window .hljs-addition {
+    color: #22863a;
+    background-color: var(--success-bg, #f0fff4);
+}
+
+.pagetalk-function-window .hljs-deletion {
+    color: #b31d28;
+    background-color: var(--error-bg, #ffeef0);
+}
 
 
 
@@ -495,7 +595,8 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     background: rgba(255, 255, 255, 0.8);
     font-size: 12px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: normal; /* 确保不是加粗 */
+    font-weight: normal;
+    /* 确保不是加粗 */
     cursor: pointer;
     outline: none;
     transition: border-color 0.2s ease;
@@ -526,8 +627,10 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
 
 .pagetalk-window-controls button {
     display: flex;
-    align-items: center;     /* 垂直居中 */
-    justify-content: center; /* 水平居中 */
+    align-items: center;
+    /* 垂直居中 */
+    justify-content: center;
+    /* 水平居中 */
     width: 28px;
     height: 28px;
     border: none;
@@ -536,7 +639,8 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     cursor: pointer;
     transition: all 0.2s ease;
     color: #666;
-    padding: 0; /* 新增：移除可能导致偏移的内边距 */
+    padding: 0;
+    /* 新增：移除可能导致偏移的内边距 */
 }
 
 .pagetalk-window-controls button:hover {
@@ -544,12 +648,14 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     color: #333;
 }
 
-.pagetalk-window-close { /* 确保通用关闭按钮也居中 */
+.pagetalk-window-close {
+    /* 确保通用关闭按钮也居中 */
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     padding: 0 !important;
-    line-height: 1 !important; /* 确保行高不会影响垂直对齐 */
+    line-height: 1 !important;
+    /* 确保行高不会影响垂直对齐 */
 }
 
 .pagetalk-window-drag-handle {
@@ -579,7 +685,8 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
 }
 
 .pagetalk-quote-text.collapsed {
-    max-height: 2.8em; /* 约2行的高度 (1.4 * 2) */
+    max-height: 2.8em;
+    /* 约2行的高度 (1.4 * 2) */
     position: relative;
 }
 
@@ -589,20 +696,23 @@ html body .pagetalk-function-window.dark-mode .markdown-rendered ol li {
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 140px; /* 增加宽度，确保完全覆盖按钮区域 */
-    height: 1.6em; /* 稍微增加高度，确保覆盖完整 */
+    width: 140px;
+    /* 增加宽度，确保完全覆盖按钮区域 */
+    height: 1.6em;
+    /* 稍微增加高度，确保覆盖完整 */
     background: linear-gradient(to right,
-        var(--gradient-light-start, transparent) 0%,
-        var(--gradient-light-start, transparent) 10%,
-        var(--gradient-light-mid-1, rgba(252, 252, 252, 0.2)) 20%,
-        var(--gradient-light-mid-2, rgba(252, 252, 252, 0.5)) 35%,
-        var(--gradient-light-mid-3, rgba(252, 252, 252, 0.8)) 50%,
-        var(--gradient-light-mid-4, rgba(252, 252, 252, 0.95)) 65%,
-        var(--gradient-light-end, rgba(252, 252, 252, 1)) 80%,
-        var(--gradient-light-end, rgba(252, 252, 252, 1)) 100%
-    );
-    pointer-events: none; /* 不阻挡点击事件 */
-    z-index: 2; /* 提高层级，确保在文字上方 */
+            var(--gradient-light-start, transparent) 0%,
+            var(--gradient-light-start, transparent) 10%,
+            var(--gradient-light-mid-1, rgba(252, 252, 252, 0.2)) 20%,
+            var(--gradient-light-mid-2, rgba(252, 252, 252, 0.5)) 35%,
+            var(--gradient-light-mid-3, rgba(252, 252, 252, 0.8)) 50%,
+            var(--gradient-light-mid-4, rgba(252, 252, 252, 0.95)) 65%,
+            var(--gradient-light-end, rgba(252, 252, 252, 1)) 80%,
+            var(--gradient-light-end, rgba(252, 252, 252, 1)) 100%);
+    pointer-events: none;
+    /* 不阻挡点击事件 */
+    z-index: 2;
+    /* 提高层级，确保在文字上方 */
 }
 
 /* 深色模式下的渐变遮罩 */
@@ -610,15 +720,14 @@ body.dark-mode .pagetalk-quote-text.collapsed::after,
 body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::after,
 html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::after {
     background: linear-gradient(to right,
-        var(--gradient-start, transparent) 0%,
-        var(--gradient-start, transparent) 10%,
-        var(--gradient-mid-1, rgba(44, 46, 51, 0.2)) 20%,
-        var(--gradient-mid-2, rgba(44, 46, 51, 0.5)) 35%,
-        var(--gradient-mid-3, rgba(44, 46, 51, 0.8)) 50%,
-        var(--gradient-mid-4, rgba(44, 46, 51, 0.95)) 65%,
-        var(--gradient-end, rgba(44, 46, 51, 1)) 80%,
-        var(--gradient-end, rgba(44, 46, 51, 1)) 100%
-    );
+            var(--gradient-start, transparent) 0%,
+            var(--gradient-start, transparent) 10%,
+            var(--gradient-mid-1, rgba(44, 46, 51, 0.2)) 20%,
+            var(--gradient-mid-2, rgba(44, 46, 51, 0.5)) 35%,
+            var(--gradient-mid-3, rgba(44, 46, 51, 0.8)) 50%,
+            var(--gradient-mid-4, rgba(44, 46, 51, 0.95)) 65%,
+            var(--gradient-end, rgba(44, 46, 51, 1)) 80%,
+            var(--gradient-end, rgba(44, 46, 51, 1)) 100%);
 }
 
 .pagetalk-quote-text.expanded {
@@ -650,9 +759,11 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
-    z-index: 15; /* 提高层级，确保在渐变遮罩之上 */
+    z-index: 15;
+    /* 提高层级，确保在渐变遮罩之上 */
     box-shadow: 0 1px 3px rgba(0, 122, 255, 0.1);
-    backdrop-filter: blur(4px); /* 添加毛玻璃效果 */
+    backdrop-filter: blur(4px);
+    /* 添加毛玻璃效果 */
 }
 
 .pagetalk-quote-toggle:hover {
@@ -749,28 +860,33 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 /* 聊天消息区域 */
 .pagetalk-chat-messages {
     flex: 1;
-    padding: 16px 16px 24px 16px; /* 增加底部padding从16px到24px，为助手消息按钮留出空间 */
+    padding: 16px 16px 24px 16px;
+    /* 增加底部padding从16px到24px，为助手消息按钮留出空间 */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 16px; /* 增加消息间距，为用户消息下方的按钮留出更多空间 */
+    gap: 16px;
+    /* 增加消息间距，为用户消息下方的按钮留出更多空间 */
 }
 
 .pagetalk-chat-message {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    position: relative; /* 为按钮定位提供参考 */
+    position: relative;
+    /* 为按钮定位提供参考 */
 }
 
 .pagetalk-chat-message-user {
     align-items: flex-end;
-    margin-bottom: 24px; /* 为用户消息下方的按钮留出空间 */
+    margin-bottom: 24px;
+    /* 为用户消息下方的按钮留出空间 */
 }
 
 .pagetalk-chat-message-assistant {
     align-items: flex-start;
-    width: 100%; /* 新增：确保助手消息的容器占满整行宽度 */
+    width: 100%;
+    /* 新增：确保助手消息的容器占满整行宽度 */
 }
 
 .pagetalk-message-content {
@@ -778,15 +894,18 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     font-size: 14px;
     line-height: 1.4;
     word-wrap: break-word;
-    width: fit-content; /* 让气泡宽度由内容决定 */
-    position: relative; /* 为按钮定位提供参考 */
+    width: fit-content;
+    /* 让气泡宽度由内容决定 */
+    position: relative;
+    /* 为按钮定位提供参考 */
 }
 
 .pagetalk-chat-message-user .pagetalk-message-content {
     background: #007AFF;
     color: white;
     border-bottom-right-radius: 4px;
-    padding: 8px 12px; /* 用户消息保持原有padding */
+    padding: 8px 12px;
+    /* 用户消息保持原有padding */
 }
 
 .pagetalk-chat-message-assistant .pagetalk-message-content {
@@ -794,10 +913,13 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     color: var(--text-color);
     border-bottom-left-radius: 4px;
     border: 1px solid var(--border-color);
-    padding: 12px; /* 标准内边距 */
-    padding-bottom: 30px; /* 底部增加padding为按钮留出空间 */
+    padding: 12px;
+    /* 标准内边距 */
+    padding-bottom: 30px;
+    /* 底部增加padding为按钮留出空间 */
     max-width: 95%;
-    min-width: 120px; /* 设置最小宽度确保按钮有足够空间 */
+    min-width: 120px;
+    /* 设置最小宽度确保按钮有足够空间 */
 }
 
 /* 旧的思考动画样式已移除，现在使用独立的思考动画 */
@@ -820,8 +942,10 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 
 /* 助手消息按钮位置：在气泡内容内部的右下角 */
 .pagetalk-chat-message-assistant .pagetalk-message-content .pagetalk-message-actions {
-    bottom: 6px; /* 对应主面板的 var(--spacing-xs) */
-    right: 6px; /* 对应主面板的 var(--spacing-xs) */
+    bottom: 6px;
+    /* 对应主面板的 var(--spacing-xs) */
+    right: 6px;
+    /* 对应主面板的 var(--spacing-xs) */
 }
 
 .pagetalk-chat-message:hover .pagetalk-message-actions,
@@ -833,23 +957,28 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 .pagetalk-message-actions button {
     width: 24px;
     height: 24px;
-    border-radius: 50%; /* 完全圆形 */
-    background-color: rgba(255, 255, 255, 0.9); /* 浅色模式背景 */
-    border: none; /* 确保无边框 */
+    border-radius: 50%;
+    /* 完全圆形 */
+    background-color: rgba(255, 255, 255, 0.9);
+    /* 浅色模式背景 */
+    border: none;
+    /* 确保无边框 */
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 0;
-    color: #888; /* 默认灰色 */
+    color: #888;
+    /* 默认灰色 */
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
 
 .pagetalk-message-actions button:hover {
     transform: scale(1.1);
-    color: var(--primary-color); /* Default hover to primary color */
+    color: var(--primary-color);
+    /* Default hover to primary color */
     background-color: rgba(255, 255, 255, 0.95);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -866,17 +995,20 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 
 .pagetalk-user-message .pagetalk-message-actions button:hover {
     background-color: rgba(255, 255, 255, 0.6);
-    color: var(--primary-color); /* User message action buttons also hover to primary */
+    color: var(--primary-color);
+    /* User message action buttons also hover to primary */
 }
 
 /* 删除按钮特殊样式 */
 .pagetalk-message-actions .pagetalk-delete-btn:hover {
-    color: #dc3545 !important; /* 删除按钮悬停时显示红色 */
+    color: #dc3545 !important;
+    /* 删除按钮悬停时显示红色 */
     background-color: rgba(220, 53, 69, 0.1) !important;
 }
 
 .pagetalk-user-message .pagetalk-message-actions .pagetalk-delete-btn:hover {
-    color: #dc3545 !important; /* 用户消息中的删除按钮也显示红色 */
+    color: #dc3545 !important;
+    /* 用户消息中的删除按钮也显示红色 */
     background-color: rgba(220, 53, 69, 0.15) !important;
 }
 
@@ -892,18 +1024,22 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 
 .pagetalk-chat-input textarea {
     flex: 1;
-    height: 36px; /* 固定高度，与发送按钮同高 */
+    height: 36px;
+    /* 固定高度，与发送按钮同高 */
     min-height: 36px;
-    max-height: 36px; /* 限制最大高度 */
+    max-height: 36px;
+    /* 限制最大高度 */
     padding: 8px 12px;
     border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 18px; /* 增加圆角，配合发送按钮 */
+    border-radius: 18px;
+    /* 增加圆角，配合发送按钮 */
     background: rgba(255, 255, 255, 0.8);
     font-size: 14px;
     font-family: inherit;
     resize: none;
     outline: none;
-    line-height: 1.2; /* 调整行高 */
+    line-height: 1.2;
+    /* 调整行高 */
 }
 
 .pagetalk-chat-input textarea:focus {
@@ -918,12 +1054,14 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     width: 36px;
     height: 36px;
     border: none;
-    border-radius: 50%; /* 改为圆形 */
+    border-radius: 50%;
+    /* 改为圆形 */
     background: #007AFF;
     color: white;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex-shrink: 0; /* 防止按钮被压缩 */
+    flex-shrink: 0;
+    /* 防止按钮被压缩 */
 }
 
 .pagetalk-send-btn:hover {
@@ -939,12 +1077,15 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 
 /* 流式输出暂停按钮样式 */
 .pagetalk-send-btn.pagetalk-stop-streaming {
-    background: #007AFF; /* 保持蓝色背景 */
-    transform: none; /* 重置悬停变换 */
+    background: #007AFF;
+    /* 保持蓝色背景 */
+    transform: none;
+    /* 重置悬停变换 */
 }
 
 .pagetalk-send-btn.pagetalk-stop-streaming:hover {
-    background: #DC3545; /* 悬停时变成红色 */
+    background: #DC3545;
+    /* 悬停时变成红色 */
     color: white;
     transform: scale(1.05);
 }
@@ -953,7 +1094,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 .pagetalk-function-window .pagetalk-thinking-message {
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* 左对齐，与助手消息一致 */
+    justify-content: flex-start;
+    /* 左对齐，与助手消息一致 */
     margin: 8px 0;
     padding: 0;
 }
@@ -962,19 +1104,24 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 20px; /* 增加padding确保思考动画不会超出边界 */
-    min-height: 40px; /* 使用主面板相同的高度 */
-    min-width: 80px; /* 确保气泡足够宽以包含思考动画和光晕效果 */
+    padding: 16px 20px;
+    /* 增加padding确保思考动画不会超出边界 */
+    min-height: 40px;
+    /* 使用主面板相同的高度 */
+    min-width: 80px;
+    /* 确保气泡足够宽以包含思考动画和光晕效果 */
     background: var(--card-background);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    border-bottom-left-radius: 4px; /* 与助手消息气泡一致 */
+    border-bottom-left-radius: 4px;
+    /* 与助手消息气泡一致 */
     animation: thinkingAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     position: relative;
     opacity: 1;
     transform: translateY(0) scale(1);
     max-width: 95%;
-    width: fit-content; /* 让气泡根据内容调整大小 */
+    width: fit-content;
+    /* 让气泡根据内容调整大小 */
 }
 
 @keyframes thinkingAppear {
@@ -982,6 +1129,7 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
         opacity: 0;
         transform: translateY(8px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -991,7 +1139,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 .pagetalk-function-window .thinking-dots {
     display: flex;
     align-items: center;
-    gap: 8px; /* 使用主面板相同的间距 */
+    gap: 8px;
+    /* 使用主面板相同的间距 */
     position: relative;
 }
 
@@ -1002,18 +1151,23 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 40px; /* 使用主面板相同的尺寸 */
-    height: 20px; /* 使用主面板相同的尺寸 */
+    width: 40px;
+    /* 使用主面板相同的尺寸 */
+    height: 20px;
+    /* 使用主面板相同的尺寸 */
     background: radial-gradient(ellipse, rgba(49, 123, 245, 0.15) 0%, transparent 70%);
     border-radius: 50%;
     animation: thinkingGlow 2s infinite ease-in-out;
 }
 
 @keyframes thinkingGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 0.3;
         transform: translate(-50%, -50%) scale(1);
     }
+
     50% {
         opacity: 0.6;
         transform: translate(-50%, -50%) scale(1.2);
@@ -1022,14 +1176,17 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 
 .pagetalk-function-window .thinking-dots span {
     display: inline-block;
-    width: 7px; /* 使用主面板相同的尺寸 */
-    height: 7px; /* 使用主面板相同的尺寸 */
+    width: 7px;
+    /* 使用主面板相同的尺寸 */
+    height: 7px;
+    /* 使用主面板相同的尺寸 */
     border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-color), rgba(49, 123, 245, 0.7));
     opacity: 0.4;
     position: relative;
     z-index: 1;
-    box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2); /* 使用主面板相同的阴影 */
+    box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2);
+    /* 使用主面板相同的阴影 */
 }
 
 .pagetalk-function-window .thinking-dots span:nth-child(1) {
@@ -1048,13 +1205,18 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 }
 
 @keyframes thinkingPulseAdvanced {
-    0%, 60%, 100% {
+
+    0%,
+    60%,
+    100% {
         transform: scale(0.8) translateY(0);
         opacity: 0.4;
         box-shadow: 0 1px 3px rgba(49, 123, 245, 0.2);
     }
+
     30% {
-        transform: scale(1.3) translateY(-2px); /* 使用主面板相同的动画参数 */
+        transform: scale(1.3) translateY(-2px);
+        /* 使用主面板相同的动画参数 */
         opacity: 1;
         box-shadow: 0 3px 8px rgba(49, 123, 245, 0.4);
     }
@@ -1092,6 +1254,7 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
         transform: translate(-50%, -50%) scale(1);
         opacity: 0.6;
     }
+
     100% {
         transform: translate(-50%, -50%) scale(2.5);
         opacity: 0;
@@ -1111,10 +1274,13 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 }
 
 @keyframes pagetalkStreamingPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
         transform: scaleY(1);
     }
+
     50% {
         opacity: 0.4;
         transform: scaleY(0.8);
@@ -1190,11 +1356,11 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
     background-color: var(--primary-color);
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.toggle-switch input:checked+.toggle-slider:before {
     transform: translateX(20px);
 }
 
@@ -1202,13 +1368,17 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 #settings-text-selection-helper .setting-card {
     display: flex !important;
     flex-direction: column !important;
-    border-radius: var(--radius-lg) !important; /* 使用大圆角，与 .agent-item 保持一致 */
+    border-radius: var(--radius-lg) !important;
+    /* 使用大圆角，与 .agent-item 保持一致 */
     background-color: var(--card-background) !important;
     border: 1px solid var(--border-color) !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    width: 100% !important; /* 移除阴影预留空间，让卡片占满宽度 */
-    margin: 0 0 var(--spacing-sm) 0 !important; /* 完全覆盖通用样式的左右边距 */
-    padding: 0 !important; /* 覆盖通用样式的内边距 */
+    width: 100% !important;
+    /* 移除阴影预留空间，让卡片占满宽度 */
+    margin: 0 0 var(--spacing-sm) 0 !important;
+    /* 完全覆盖通用样式的左右边距 */
+    padding: 0 !important;
+    /* 覆盖通用样式的内边距 */
     transform: scale(1);
     opacity: 1;
     overflow: hidden;
@@ -1228,10 +1398,12 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md)) !important;
     cursor: pointer !important;
     transition: background-color 0.2s ease !important;
-    background-color: transparent !important; /* 初始背景透明，与 .agent-item-header 保持一致 */
+    background-color: transparent !important;
+    /* 初始背景透明，与 .agent-item-header 保持一致 */
     border-bottom: 1px solid transparent !important;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
-    margin: 0 !important; /* 确保没有额外的边距 */
+    margin: 0 !important;
+    /* 确保没有额外的边距 */
 }
 
 /* 注意：header 不设置悬浮背景色变化，因为整个卡片已经有悬浮效果了 */
@@ -1251,12 +1423,14 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     padding: clamp(var(--spacing-xs), 1.5vw, var(--spacing-sm)) clamp(var(--spacing-sm), 2.5vw, var(--spacing-md));
     cursor: pointer;
     transition: background-color 0.2s ease;
-    background-color: transparent; /* 初始背景透明，与 .agent-item-header 保持一致 */
+    background-color: transparent;
+    /* 初始背景透明，与 .agent-item-header 保持一致 */
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .pagetalk-function-window .setting-card-header:hover {
-    background-color: var(--button-hover-bg); /* Primary color transparent hover，与 .agent-item-header:hover 保持一致 */
+    background-color: var(--button-hover-bg);
+    /* Primary color transparent hover，与 .agent-item-header:hover 保持一致 */
 }
 
 #settings-text-selection-helper .setting-card-header h3 {
@@ -1313,14 +1487,17 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     overflow: hidden !important;
     padding: 0 var(--spacing-md) !important;
     border-top: 1px solid transparent !important;
-    background-color: var(--card-background) !important; /* 使用主题变量，支持深色模式 */
+    background-color: var(--card-background) !important;
+    /* 使用主题变量，支持深色模式 */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     opacity: 0 !important;
-    margin: 0 !important; /* 确保没有额外的边距 */
+    margin: 0 !important;
+    /* 确保没有额外的边距 */
 }
 
 #settings-text-selection-helper .setting-card.expanded .setting-card-content {
-    max-height: none !important; /* 移除高度限制，允许无限制显示内容 */
+    max-height: none !important;
+    /* 移除高度限制，允许无限制显示内容 */
     padding: var(--spacing-md) !important;
     border-top-color: var(--border-color) !important;
     opacity: 1 !important;
@@ -1336,7 +1513,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 /* 不可折叠的卡片样式（如选项顺序） */
 #settings-text-selection-helper .setting-card.no-collapse .setting-card-header {
     cursor: default !important;
-    pointer-events: none !important; /* 禁用所有点击事件 */
+    pointer-events: none !important;
+    /* 禁用所有点击事件 */
 }
 
 #settings-text-selection-helper .setting-card.no-collapse .setting-card-content {
@@ -1344,7 +1522,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     padding: var(--spacing-md) var(--spacing-lg) !important;
     border-top-color: var(--border-color) !important;
     opacity: 1 !important;
-    display: block !important; /* 确保始终显示 */
+    display: block !important;
+    /* 确保始终显示 */
 }
 
 .pagetalk-function-window .setting-card-header h3 {
@@ -1410,10 +1589,12 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     width: 100%;
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg); /* 16px 圆角，与主面板保持一致 */
+    border-radius: var(--radius-lg);
+    /* 16px 圆角，与主面板保持一致 */
     font-size: clamp(12px, 3vw, 13px);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: normal; /* 确保不是加粗 */
+    font-weight: normal;
+    /* 确保不是加粗 */
     outline: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--input-background);
@@ -1432,7 +1613,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(76, 110, 245, 0.1);
     background-color: var(--card-background);
-    transform: none; /* 取消选择框的上抬效果 */
+    transform: none;
+    /* 取消选择框的上抬效果 */
 }
 
 /* 划词助手设置页面模型选择器样式 - 统一样式 */
@@ -1479,7 +1661,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
     background: rgba(255, 255, 255, 0.8);
     font-size: 13px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: normal; /* 确保不是加粗 */
+    font-weight: normal;
+    /* 确保不是加粗 */
     outline: none;
     transition: border-color 0.2s ease;
 }
@@ -1720,7 +1903,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 
 #settings-text-selection-helper .custom-option-text {
     flex: 1;
-    min-width: 0; /* 允许文本截断 */
+    min-width: 0;
+    /* 允许文本截断 */
 }
 
 #settings-text-selection-helper .custom-option-actions {
@@ -1899,7 +2083,8 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 /* 自定义选项对话框中的 select 元素样式 */
 .custom-option-dialog select {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: normal; /* 确保不是加粗 */
+    font-weight: normal;
+    /* 确保不是加粗 */
 }
 
 /* 自定义选项对话框中的模型选择器样式 - 统一样式 */
@@ -2151,12 +2336,12 @@ html body .pagetalk-function-window.dark-mode .pagetalk-quote-text.collapsed::af
 }
 
 /* 当选择全部上下文时隐藏自定义输入 */
-input[name="chat-context-mode"][value="full"]:checked ~ .context-inputs,
-input[name="chat-context-mode"][value="full"]:checked + label + .context-inputs,
-input[name="interpret-context-mode"][value="full"]:checked ~ .context-inputs,
-input[name="interpret-context-mode"][value="full"]:checked + label + .context-inputs,
-input[name="translate-context-mode"][value="full"]:checked ~ .context-inputs,
-input[name="translate-context-mode"][value="full"]:checked + label + .context-inputs {
+input[name="chat-context-mode"][value="full"]:checked~.context-inputs,
+input[name="chat-context-mode"][value="full"]:checked+label+.context-inputs,
+input[name="interpret-context-mode"][value="full"]:checked~.context-inputs,
+input[name="interpret-context-mode"][value="full"]:checked+label+.context-inputs,
+input[name="translate-context-mode"][value="full"]:checked~.context-inputs,
+input[name="translate-context-mode"][value="full"]:checked+label+.context-inputs {
     display: none;
 }
 
@@ -2559,12 +2744,18 @@ html body .pagetalk-function-window.dark-mode {
     --inline-code-border: rgba(175, 184, 193, 0.2);
 
     /* 新增渐变背景颜色变量 - 用于折叠文本的渐变遮罩 */
-    --gradient-start: rgba(44, 46, 51, 0);    /* 完全透明 */
-    --gradient-mid-1: rgba(44, 46, 51, 0.2);  /* 20% 透明度 */
-    --gradient-mid-2: rgba(44, 46, 51, 0.5);  /* 50% 透明度 */
-    --gradient-mid-3: rgba(44, 46, 51, 0.8);  /* 80% 透明度 */
-    --gradient-mid-4: rgba(44, 46, 51, 0.95); /* 95% 透明度 */
-    --gradient-end: rgba(44, 46, 51, 1);      /* 完全不透明 */
+    --gradient-start: rgba(44, 46, 51, 0);
+    /* 完全透明 */
+    --gradient-mid-1: rgba(44, 46, 51, 0.2);
+    /* 20% 透明度 */
+    --gradient-mid-2: rgba(44, 46, 51, 0.5);
+    /* 50% 透明度 */
+    --gradient-mid-3: rgba(44, 46, 51, 0.8);
+    /* 80% 透明度 */
+    --gradient-mid-4: rgba(44, 46, 51, 0.95);
+    /* 95% 透明度 */
+    --gradient-end: rgba(44, 46, 51, 1);
+    /* 完全不透明 */
 
     /* 浅色模式的渐变背景颜色变量（默认） */
     --gradient-light-start: rgba(252, 252, 252, 0);
@@ -2859,7 +3050,8 @@ body.dark-mode #settings-text-selection-helper .setting-card-toggle:hover {
 }
 
 body.dark-mode #settings-text-selection-helper .setting-card-content {
-    background-color: var(--background-color); /* 使用主背景色，与深色模式保持一致 */
+    background-color: var(--background-color);
+    /* 使用主背景色，与深色模式保持一致 */
 }
 
 body.dark-mode #settings-text-selection-helper .setting-group label {
@@ -2991,7 +3183,8 @@ body.dark-mode #settings-text-selection-helper .delete-custom-option-btn:hover {
 
 /* 删除自定义选项确认对话框样式 */
 #delete-custom-option-dialog .dialog-content {
-    max-width: 320px; /* 删除对话框稍微小一点 */
+    max-width: 320px;
+    /* 删除对话框稍微小一点 */
 }
 
 #delete-custom-option-dialog .dialog-content h3 {
@@ -3356,7 +3549,8 @@ body.dark-mode #settings-text-selection-helper .add-custom-option-btn:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2147483648; /* 确保在划词助手之上 */
+    z-index: 2147483648;
+    /* 确保在划词助手之上 */
     padding: 30px;
     box-sizing: border-box;
     overflow: auto;
@@ -3399,7 +3593,8 @@ body.dark-mode #settings-text-selection-helper .add-custom-option-btn:hover {
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 2147483649; /* 确保关闭按钮在最上层 */
+    z-index: 2147483649;
+    /* 确保关闭按钮在最上层 */
     line-height: 1;
     user-select: none;
 }
@@ -3422,7 +3617,7 @@ body.dark-mode #settings-text-selection-helper .add-custom-option-btn:hover {
     text-align: center;
 }
 
-.pagetalk-function-window .katex-display > .katex {
+.pagetalk-function-window .katex-display>.katex {
     display: inline-block;
     white-space: nowrap;
 }

@@ -1,7 +1,7 @@
 // background.js 加载
 
 /**
- * Pagetalk 背景脚本
+ * PageTalk 背景脚本
  * 处理浏览器扩展的后台逻辑
  */
 
@@ -15,8 +15,8 @@ chrome.runtime.onInstalled.addListener(() => {
 
     // 创建右键菜单
     chrome.contextMenus.create({
-        id: "openPagetalk",
-        title: "打开 Pagetalk 面板",
+        id: "openPageTalk",
+        title: "打开 PageTalk 面板",
         contexts: ["page", "selection"]
     });
 
@@ -30,8 +30,8 @@ chrome.runtime.onInstalled.addListener(() => {
 // 处理右键菜单点击
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     // onClicked 事件触发 (右键菜单)
-    if (info.menuItemId === "openPagetalk" && tab) {
-        togglePagetalkPanel(tab.id);
+    if (info.menuItemId === "openPageTalk" && tab) {
+        togglePageTalkPanel(tab.id);
     }
 });
 
@@ -39,12 +39,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.action.onClicked.addListener((tab) => {
     // onClicked 事件触发 (扩展图标)
     if (tab) {
-        togglePagetalkPanel(tab.id);
+        togglePageTalkPanel(tab.id);
     }
 });
 
 // 切换面板状态
-async function togglePagetalkPanel(tabId) {
+async function togglePageTalkPanel(tabId) {
     try {
         // --- 新增代码 开始 ---
         // 1. 获取标签页信息
@@ -57,7 +57,7 @@ async function togglePagetalkPanel(tabId) {
             tab.url.startsWith('https:') // ||
             // tab.url.startsWith('file:') // 如果需要支持本地文件，取消此行注释
         )) {
-            console.debug(`Pagetalk: 不在受支持的页面 (${tab ? tab.url : 'N/A'}) 上执行操作，跳过。`);
+            console.debug(`PageTalk: 不在受支持的页面 (${tab ? tab.url : 'N/A'}) 上执行操作，跳过。`);
             return; // 直接退出，不执行后续操作
         }
         // --- 新增代码 结束 ---
@@ -102,7 +102,7 @@ async function togglePagetalkPanel(tabId) {
         }
     } catch (outerError) {
         // 捕获获取 tab 信息或其他意外错误
-        console.error('togglePagetalkPanel 获取 tab 信息或其他意外出错:', outerError);
+        console.error('togglePageTalkPanel 获取 tab 信息或其他意外出错:', outerError);
     }
 }
 

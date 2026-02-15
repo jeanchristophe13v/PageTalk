@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Settings Management Functions (Model, General)
+ * PageTalk - Settings Management Functions (Model, General)
  */
 import { generateUniqueId } from './utils.js'; // Might need utils later
 import * as QuickActionsManager from './quick-actions-manager.js';

@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Utility Functions
+ * PageTalk - Utility Functions
  */
 
 /**
@@ -27,7 +27,7 @@ export function escapeHtml(text) {
         '"': '&quot;',
         "'": '&#39;'
     };
-    return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    return text.replace(/[&<>"']/g, function (m) { return map[m]; });
 }
 
 // 可以添加其他通用辅助函数

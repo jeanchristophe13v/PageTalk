@@ -30,7 +30,7 @@ if (typeof window.translations === 'undefined') {
 
       // --- HTML Elements (sidepanel.html) ---
       'htmlLang': 'zh-CN',
-      'pageTitle': 'Pagetalk',
+      'pageTitle': 'PageTalk',
       'modelLabel': '模型：',
       'modelSelectLabel': '选择模型',
       'agentLabel': '助手：',
@@ -546,7 +546,7 @@ Format：
 
       // --- HTML Elements (sidepanel.html) ---
       'htmlLang': 'en',
-      'pageTitle': 'Pagetalk',
+      'pageTitle': 'PageTalk',
       'modelLabel': 'Model:',
       'modelSelectLabel': 'Select Model',
       'agentLabel': 'Agent:',

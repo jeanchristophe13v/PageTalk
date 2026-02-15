@@ -1,5 +1,5 @@
 /**
- * Pagetalk 内容脚本
+ * PageTalk 内容脚本
  * 用于从网页中提取内容并与面板通信
  */
 
@@ -64,7 +64,7 @@ if (window.contentScriptInitialized) {
   }
 
   // 初始化函数 - 创建面板DOM
-  function initPagetalkPanel() {
+  function initPageTalkPanel() {
     if (document.getElementById('pagetalk-panel-container')) {
       return;
     }
@@ -338,7 +338,7 @@ if (window.contentScriptInitialized) {
       }
 
       // 初始化面板（如果尚未初始化）
-      initPagetalkPanel();
+      initPageTalkPanel();
 
       // 切换面板显示
       togglePanel();
@@ -1400,7 +1400,7 @@ if (window.contentScriptInitialized) {
   // 初始运行
   // 在页面加载完成后立即发送主题更新消息
   window.addEventListener('load', () => {
-    // initPagetalkPanel(); // 考虑是否在load时立即初始化，或者按需初始化
+    // initPageTalkPanel(); // 考虑是否在load时立即初始化，或者按需初始化
     detectAndSendTheme(); // 页面加载完成后立即发送主题
   });
 

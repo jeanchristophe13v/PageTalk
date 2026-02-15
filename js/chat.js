@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Chat Core Logic
+ * PageTalk - Chat Core Logic
  */
 import { generateUniqueId } from './utils.js';
 import { tr as _ } from './utils/i18n.js';
@@ -78,7 +78,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
 
     elements.userInput.value = '';
     resizeTextareaCallback(); // Adjust textarea height
-    
+
     // Update custom caret position after programmatic value change
     if (window.updateCometCaret) window.updateCometCaret();
 
@@ -101,7 +101,7 @@ export async function sendUserMessage(state, elements, currentTranslations, show
             });
 
             state.selectedContextTabs = state.selectedContextTabs.filter(tab => !tab.isContextSent);
-            
+
             if (updateSelectedTabsBarCallback) {
                 updateSelectedTabsBarCallback(); // 立即更新UI
             }
@@ -351,11 +351,11 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
     // --- 在重新生成前，立即标记即将作为上下文发送的标签页并更新UI ---
     // Start with the effective previously sent context, filtering out locally ignored ones
     const ignoredTabIdsForThisTurn = (state.locallyIgnoredTabs && state.locallyIgnoredTabs[userMessageData.id]) ? state.locallyIgnoredTabs[userMessageData.id] : [];
-    
+
     let effectivePreviouslySentContext = previouslySentContextTabsFromHistory.filter(
         tab => !ignoredTabIdsForThisTurn.includes(tab.id)
     );
-    
+
     let contextTabsForApiRegen = [...effectivePreviouslySentContext]; // Contains {id, title, content}
 
     // 处理在"重新生成"之前新选择的、尚未发送的标签页
@@ -366,7 +366,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
 
         if (newlySelectedTabsToSend.length > 0) {
             const newTabsForApi = newlySelectedTabsToSend.map(tab => ({ id: tab.id, title: tab.title, url: tab.url, content: tab.content }));
-            
+
             // 合并新选择的标签页，避免重复（基于ID去重）
             newTabsForApi.forEach(newTab => {
                 if (!contextTabsForApiRegen.some(existingTab => existingTab.id === newTab.id)) {
@@ -382,7 +382,7 @@ export async function regenerateMessage(messageId, state, elements, currentTrans
                 }
             });
             state.selectedContextTabs = state.selectedContextTabs.filter(tab => !tab.isContextSent);
-            
+
             if (updateSelectedTabsBarCallback) {
                 updateSelectedTabsBarCallback(); // 立即更新UI
             }

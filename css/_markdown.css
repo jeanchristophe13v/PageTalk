@@ -1,22 +1,25 @@
-/* 包含 Pagetalk 插件中由 Markdown 渲染出来的内容的样式，例如代码块表格、列表、引用、标题、Mermaid 图表等。 */
+/* 包含 PageTalk 插件中由 Markdown 渲染出来的内容的样式，例如代码块表格、列表、引用、标题、Mermaid 图表等。 */
 
 /* 优化标题样式和间距 */
 .bot-message h1,
 .bot-message h2,
 .bot-message h3,
 .bot-message h4,
-.bot-message h5, /* 添加 h5, h6 */
+.bot-message h5,
+/* 添加 h5, h6 */
 .bot-message h6,
 .markdown-rendered h1,
 .markdown-rendered h2,
 .markdown-rendered h3,
 .markdown-rendered h4,
-.markdown-rendered h5, /* 添加 h5, h6 */
+.markdown-rendered h5,
+/* 添加 h5, h6 */
 .markdown-rendered h6 {
     margin-top: 1em;
     margin-bottom: 0.5em;
     line-height: 1.3;
-    color: var(--text-color); /* 使用 CSS 变量，适配浅色和深色模式 */
+    color: var(--text-color);
+    /* 使用 CSS 变量，适配浅色和深色模式 */
 }
 
 /* 优化列表样式 */
@@ -24,13 +27,16 @@
 .bot-message ol,
 .markdown-rendered ul,
 .markdown-rendered ol {
-    margin: 0.6em 0; /* 调整列表外边距 */
-    padding-left: 1.8em; /* 略微减小缩进 */
+    margin: 0.6em 0;
+    /* 调整列表外边距 */
+    padding-left: 1.8em;
+    /* 略微减小缩进 */
 }
 
 .bot-message li,
 .markdown-rendered li {
-    margin-bottom: 0.4em; /* 减小列表项间距 */
+    margin-bottom: 0.4em;
+    /* 减小列表项间距 */
 }
 
 .bot-message li p,
@@ -39,35 +45,38 @@
 }
 
 /* 调整段落和列表之间的间距 */
-.bot-message p + ul,
-.bot-message p + ol,
-.markdown-rendered p + ul,
-.markdown-rendered p + ol {
-    margin-top: 0.4em; /* 紧跟段落的列表上边距减小 */
+.bot-message p+ul,
+.bot-message p+ol,
+.markdown-rendered p+ul,
+.markdown-rendered p+ol {
+    margin-top: 0.4em;
+    /* 紧跟段落的列表上边距减小 */
 }
 
-.bot-message ul + p,
-.bot-message ol + p,
-.markdown-rendered ul + p,
-.markdown-rendered ol + p {
-    margin-top: 0.6em; /* 列表后的段落上边距减小 */
+.bot-message ul+p,
+.bot-message ol+p,
+.markdown-rendered ul+p,
+.markdown-rendered ol+p {
+    margin-top: 0.6em;
+    /* 列表后的段落上边距减小 */
 }
 
 /* 调整标题和段落之间的间距合理 */
-.bot-message h1 + p,
-.bot-message h2 + p,
-.bot-message h3 + p,
-.bot-message h4 + p,
-.markdown-rendered h1 + p,
-.markdown-rendered h2 + p,
-.markdown-rendered h3 + p,
-.markdown-rendered h4 + p {
+.bot-message h1+p,
+.bot-message h2+p,
+.bot-message h3+p,
+.bot-message h4+p,
+.markdown-rendered h1+p,
+.markdown-rendered h2+p,
+.markdown-rendered h3+p,
+.markdown-rendered h4+p {
     margin-top: 0.3em;
 }
 
 /* 改进代码块样式 */
 .code-block {
-    background-color: var(--code-background); /* Use variable */
+    background-color: var(--code-background);
+    /* Use variable */
     border-radius: var(--radius-sm);
     padding: clamp(8px, 2vw, 12px) clamp(10px, 3vw, 16px);
     margin: 10px 0;
@@ -75,9 +84,11 @@
     font-family: Consolas, 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
     font-size: clamp(11px, 3vw, 13px);
     line-height: 1.45;
-    border: 1px solid var(--code-border); /* Use variable */
+    border: 1px solid var(--code-border);
+    /* Use variable */
     position: relative;
-    white-space: pre-wrap;  /* 确保空白符被保留 */
+    white-space: pre-wrap;
+    /* 确保空白符被保留 */
     border-left: 3px solid var(--primary-color);
     width: 100%;
     max-width: 100%;
@@ -88,20 +99,25 @@
     font-family: inherit;
     background: transparent;
     padding: 0;
-    color: var(--code-text-color); /* Use variable */
-    display: block; /* 确保代码占据整个块 */
+    color: var(--code-text-color);
+    /* Use variable */
+    display: block;
+    /* 确保代码占据整个块 */
     width: 100%;
 }
 
 /* 确保代码块内换行符的显示 */
 .code-block code br {
-    display: block; /* 确保换行符被显示为新行 */
-    content: ""; /* 设置 content 属性以确保正常工作 */
-    margin-bottom: 0.5em; /* 调整间距 */
+    display: block;
+    /* 确保换行符被显示为新行 */
+    content: "";
+    /* 设置 content 属性以确保正常工作 */
+    margin-bottom: 0.5em;
+    /* 调整间距 */
 }
 
 /* 代码块复制按钮 */
-.code-copy-button { 
+.code-copy-button {
     position: absolute;
     top: 5px;
     right: 5px;
@@ -111,7 +127,8 @@
     width: 24px;
     height: 24px;
     font-size: 13px;
-    color: #888; /* Default color, hover changes it */
+    color: #888;
+    /* Default color, hover changes it */
     cursor: pointer;
     opacity: 0;
     transition: all 0.2s ease;
@@ -130,7 +147,8 @@
     opacity: 1 !important;
     background-color: white;
     transform: scale(1.05);
-    color: var(--primary-color); /* 悬停时变为蓝色 */
+    color: var(--primary-color);
+    /* 悬停时变为蓝色 */
 }
 
 .code-copy-button svg {
@@ -146,8 +164,10 @@
 }
 
 /* 优化内联代码块样式 - 适配markdown-it */
-.bot-message code:not(.code-block code):not(pre code), /* Exclude pre code for safety */
-.markdown-rendered code:not(pre code) { /* Exclude pre code */
+.bot-message code:not(.code-block code):not(pre code),
+/* Exclude pre code for safety */
+.markdown-rendered code:not(pre code) {
+    /* Exclude pre code */
     background-color: rgba(175, 184, 193, 0.2);
     border-radius: 4px;
     font-family: Consolas, 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
@@ -156,12 +176,15 @@
     margin: 0 0.1em;
     border: 1px solid rgba(175, 184, 193, 0.2);
     color: #24292e;
-    white-space: break-spaces; /* Allow breaking */
-    word-break: break-all; /* Break long words if necessary */
+    white-space: break-spaces;
+    /* Allow breaking */
+    word-break: break-all;
+    /* Break long words if necessary */
 }
 
 /* 强化用户消息内联代码块可读性 */
-.user-message code { /* No need to exclude pre code here, as user messages don't typically have pre */
+.user-message code {
+    /* No need to exclude pre code here, as user messages don't typically have pre */
     background-color: rgba(255, 255, 255, 0.3);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -176,14 +199,14 @@
 
 /* 用户消息中的链接样式 */
 .user-message a {
-    color: #FFFFFF; 
-    text-decoration: underline; 
-    font-weight: 500; 
+    color: #FFFFFF;
+    text-decoration: underline;
+    font-weight: 500;
 }
 
 .user-message a:hover {
-    opacity: 0.85; 
-    text-decoration: none; 
+    opacity: 0.85;
+    text-decoration: none;
 }
 
 /* AI 消息中的链接样式 */
@@ -191,6 +214,7 @@
     color: var(--primary-color);
     text-decoration: underline;
 }
+
 .bot-message a:hover {
     color: var(--secondary-color);
     text-decoration: none;
@@ -201,18 +225,21 @@
 .bot-message table,
 .markdown-rendered table {
     border-collapse: collapse;
-    margin: 0; /* Removed margin to be handled by .table-container */
+    margin: 0;
+    /* Removed margin to be handled by .table-container */
     width: 100%;
     font-size: 0.9em;
     /* Removed box-shadow and overflow: hidden as it's on container now */
 }
 
-.table-container { /* Wrapper for tables */
+.table-container {
+    /* Wrapper for tables */
     width: 100%;
     overflow-x: auto;
     margin: 0.8em 0;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border-color); /* Add border to container */
+    border: 1px solid var(--border-color);
+    /* Add border to container */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -227,22 +254,28 @@
 .markdown-rendered th {
     font-weight: 600;
     padding: 8px 10px;
-    border: 1px solid var(--border-color); /* Use variable */
+    border: 1px solid var(--border-color);
+    /* Use variable */
     text-align: left;
-    background-color: var(--primary-color); /* Ensure header cells also have this bg */
+    background-color: var(--primary-color);
+    /* Ensure header cells also have this bg */
     color: white;
-    white-space: pre-wrap; /* 优化换行显示 */
+    white-space: pre-wrap;
+    /* 优化换行显示 */
 }
 
 .bot-message table td,
 .markdown-rendered td {
     padding: 6px 10px;
-    border: 1px solid var(--border-color); /* Use variable */
-    white-space: pre-wrap; /* 优化换行显示 */
+    border: 1px solid var(--border-color);
+    /* Use variable */
+    white-space: pre-wrap;
+    /* 优化换行显示 */
 }
 
 
-.bot-message table tr:not(:last-child), /* Add border to all but last row in a tbody */
+.bot-message table tr:not(:last-child),
+/* Add border to all but last row in a tbody */
 .markdown-rendered tr:not(:last-child) {
     border-bottom: 1px solid var(--border-color);
 }
@@ -250,37 +283,46 @@
 
 .bot-message table tr:nth-child(even),
 .markdown-rendered tr:nth-child(even) {
-    background-color: var(--table-even-row-bg); /* Use variable */
+    background-color: var(--table-even-row-bg);
+    /* Use variable */
 }
 
 
 /* 优化代码块样式 - 适配markdown-it (pre + code) */
 .bot-message pre,
 .markdown-rendered pre {
-    background-color: var(--code-background); /* Use variable */
+    background-color: var(--code-background);
+    /* Use variable */
     border-radius: var(--radius-sm);
     padding: 0.8em 1em;
     margin: 0.8em 0;
     overflow-x: auto;
-    border: 1px solid var(--code-border); /* Use variable */
+    border: 1px solid var(--code-border);
+    /* Use variable */
     position: relative;
     border-left: 3px solid var(--primary-color);
 }
 
-.bot-message pre code, /* code specifically inside pre */
+.bot-message pre code,
+/* code specifically inside pre */
 .markdown-rendered pre code {
-    background-color: transparent !important; /* Ensure no nested background */
+    background-color: transparent !important;
+    /* Ensure no nested background */
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
     display: block;
     line-height: 1.4;
-    color: var(--code-text-color); /* Use variable */
+    color: var(--code-text-color);
+    /* Use variable */
     font-family: Consolas, 'SFMono-Regular', 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: 1em; /* Inherit from pre */
-    white-space: pre-wrap; /* Keep wrapping for pre code */
-    word-break: break-word; /* Keep word breaking for pre code */
+    font-size: 1em;
+    /* Inherit from pre */
+    white-space: pre-wrap;
+    /* Keep wrapping for pre code */
+    word-break: break-word;
+    /* Keep word breaking for pre code */
 }
 
 
@@ -290,17 +332,19 @@
     border-left: 4px solid var(--primary-color);
     margin: 0.7em 0;
     padding: 0.4em 0.8em;
-    color: #6a737d; /* Standard light mode quote text */
-    background-color: rgba(175, 184, 193, 0.1); /* Light gray background */
+    color: #6a737d;
+    /* Standard light mode quote text */
+    background-color: rgba(175, 184, 193, 0.1);
+    /* Light gray background */
 }
 
-.bot-message blockquote > :first-child,
-.markdown-rendered blockquote > :first-child {
+.bot-message blockquote> :first-child,
+.markdown-rendered blockquote> :first-child {
     margin-top: 0;
 }
 
-.bot-message blockquote > :last-child,
-.markdown-rendered blockquote > :last-child {
+.bot-message blockquote> :last-child,
+.markdown-rendered blockquote> :last-child {
     margin-bottom: 0;
 }
 
@@ -310,43 +354,58 @@
     height: 1px;
     padding: 0;
     margin: 1em 0;
-    background-color: var(--border-color); /* Use variable */
+    background-color: var(--border-color);
+    /* Use variable */
     border: 0;
 }
 
 /* --- Mermaid Modal Styles --- */
 .mermaid-modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 10000; /* Increased z-index to ensure visibility */
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 10000;
+    /* Increased z-index to ensure visibility */
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0, 0, 0, 0.85); /* Black w/ opacity */
-    padding: 30px; /* Add padding around content */
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgba(0, 0, 0, 0.85);
+    /* Black w/ opacity */
+    padding: 30px;
+    /* Add padding around content */
     box-sizing: border-box;
 }
 
 .mermaid-modal-content {
     margin: auto;
-    display: flex; /* Use flex to center SVG */
+    display: flex;
+    /* Use flex to center SVG */
     justify-content: center;
     align-items: center;
     width: 100%;
     height: 100%;
-    max-width: 95%; /* Limit max width */
-    max-height: 90vh; /* Limit max height */
+    max-width: 95%;
+    /* Limit max width */
+    max-height: 90vh;
+    /* Limit max height */
 }
 
 /* Style the SVG inside the modal */
 .mermaid-modal-content svg {
     max-width: 100%;
     max-height: 100%;
-    height: auto; /* Maintain aspect ratio */
-    width: auto; /* Maintain aspect ratio */
-    background-color: var(--card-background); /* Use theme variable for background */
+    height: auto;
+    /* Maintain aspect ratio */
+    width: auto;
+    /* Maintain aspect ratio */
+    background-color: var(--card-background);
+    /* Use theme variable for background */
     border-radius: var(--radius-md);
     padding: var(--spacing-md);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -362,7 +421,8 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 10001; /* Ensure close button is above modal content */
+    z-index: 10001;
+    /* Ensure close button is above modal content */
 }
 
 .mermaid-close-modal:hover {
@@ -371,12 +431,13 @@
 }
 
 /* Add cursor pointer to rendered mermaid diagrams in messages */
-.message .mermaid > svg {
+.message .mermaid>svg {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.message .mermaid > svg:hover {
-    transform: scale(1.02); /* Slight zoom effect on hover */
+.message .mermaid>svg:hover {
+    transform: scale(1.02);
+    /* Slight zoom effect on hover */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }

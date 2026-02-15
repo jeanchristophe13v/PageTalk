@@ -1,5 +1,5 @@
 /**
- * Pagetalk - Agent Management Functions
+ * PageTalk - Agent Management Functions
  */
 import { generateUniqueId } from './utils.js';
 import { tr as _ } from './utils/i18n.js';
@@ -721,5 +721,5 @@ export function loadCurrentAgentSettingsIntoState(state) {
         state.systemPrompt = defaultAgentSettings.systemPrompt;
         state.temperature = defaultAgentSettings.temperature;
         state.maxTokens = defaultAgentSettings.maxTokens;
-}
+    }
 }
