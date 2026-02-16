@@ -425,6 +425,16 @@ if (typeof window.translations === 'undefined') {
       'importProcessFailed': '导入处理失败',
       'quickActionError': '快捷操作执行失败',
 
+      // --- 关于页面相关翻译 ---
+      'aboutNav': '关于',
+      'aboutGreetingTitle': '🐴 乙巳马年，万事如意',
+      'aboutGreetingText': '感谢每一位 PageTalk 用户的信任与支持！新的一年，愿你策马奔腾、一路高歌，PageTalk 也将与你并肩前行，持续进化。祝大家马年大吉！',
+      'aboutGitHub': 'GitHub 仓库',
+      'aboutSponsorTitle': '赞助 PageTalk',
+      'aboutSponsorHint': '如果 PageTalk 对你有帮助，欢迎请作者喝杯咖啡 ☕',
+      'aboutShowQR': '展开收款码',
+      'aboutSponsorsWall': '感谢以下赞助者 ❤️',
+
       // --- 默认快捷操作 ---
       'defaultQuickActionSummarize': '总结',
       'defaultQuickActionSummarizePrompt': '总结一下',
@@ -938,6 +948,16 @@ Format：
       'importNoActions': 'No actions imported',
       'importProcessFailed': 'Import processing failed',
       'quickActionError': 'Quick action execution failed',
+
+      // --- About Page Related Translations ---
+      'aboutNav': 'About',
+      'aboutGreetingTitle': '🐴 Year of the Horse — Happy New Year!',
+      'aboutGreetingText': 'Thank you to every PageTalk user for your trust and support! In the new year, may you gallop ahead with confidence. PageTalk will continue to evolve alongside you. Wishing everyone a wonderful Year of the Horse!',
+      'aboutGitHub': 'GitHub Repository',
+      'aboutSponsorTitle': 'Sponsor PageTalk',
+      'aboutSponsorHint': 'If PageTalk has been helpful to you, consider buying the developer a coffee ☕',
+      'aboutShowQR': 'Show QR Codes',
+      'aboutSponsorsWall': 'Thanks to our sponsors ❤️',
 
       // --- Default Quick Actions ---
       'defaultQuickActionSummarize': 'Summarize',
