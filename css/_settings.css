@@ -549,6 +549,8 @@ body.dark-mode .setting-action-btn:hover {
     outline: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     background-color: var(--input-background);
+    color: var(--text-color);
+    -webkit-text-fill-color: var(--text-color);
     transform: translateY(0);
     min-height: 40px;
     box-sizing: border-box;
@@ -660,6 +662,14 @@ body.dark-mode .setting-action-btn:hover {
     min-height: 100px;
     resize: vertical;
     line-height: 1.5;
+}
+
+.setting-group input[type="text"]::placeholder,
+.setting-group input[type="password"]::placeholder,
+.setting-group input[type="number"]::placeholder,
+.setting-group textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
 }
 
 .hint {

@@ -35,6 +35,17 @@ body {
     /* border-left: 1px solid var(--border-color); /* 移除左侧边框 */
 }
 
+/* 让原生表单控件外观跟随插件手动主题，而不是系统主题 */
+:root,
+body {
+    color-scheme: light;
+}
+
+:root.dark-mode,
+body.dark-mode {
+    color-scheme: dark;
+}
+
 .container {
     display: flex;
     flex-direction: column;
